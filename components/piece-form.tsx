@@ -11,6 +11,7 @@ import type { HypeLevel } from "@/lib/hype/types";
 import { PieceConservationField } from "@/components/piece-conservation-field";
 import { TipoLavagemField } from "@/components/tipo-lavagem-field";
 import { PieceColecaoField } from "@/components/piece-colecao-field";
+import { CortesField } from "@/components/piece-cortes-field";
 import { PieceIntensidadeTermicaField } from "@/components/piece-intensidade-termica-field";
 import { PieceOrigemField } from "@/components/piece-origem-field";
 import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
@@ -130,6 +131,8 @@ export function PieceFields({ value, onChange, error, fieldErrors, afterBrand, c
         error={err.estadoConservacaoId} onChange={id => onChange({ ...value, estadoConservacaoId: id || null, clearEstadoConservacao: !id })} />
       <TipoLavagemField value={value.tipoLavagemId ?? ""} selectedName={value.tipoLavagemNome}
         error={err.tipoLavagemId} onChange={id => onChange({ ...value, tipoLavagemId: id || null, clearTipoLavagem: !id })} />
+    <CortesField value={value.cortesId ?? ""} selectedName={value.cortesId}
+        error={err.cortesId} onChange={id => onChange({ ...value, cortesId: id || null, clearcortes: !id })} />
       <PieceColecaoField value={value.colecaoId ?? ""} error={err.colecaoId} onChange={id => onChange({ ...value, colecaoId: id || null })} />
       <PieceIntensidadeTermicaField value={value.intensidadeTermicaId ?? ""} error={err.intensidadeTermicaId}
         onChange={id => onChange({ ...value, intensidadeTermicaId: id || null })} />
