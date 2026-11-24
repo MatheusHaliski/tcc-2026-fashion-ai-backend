@@ -5,7 +5,6 @@ import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ports.JobQueuePort;
 import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.service.WardrobeService.PieceForm;
 import br.com.fashionai.domain.model.ModerationQueueItem;
 import br.com.fashionai.domain.model.PipelineJob;
 import br.com.fashionai.domain.model.ProcessingJobLog;

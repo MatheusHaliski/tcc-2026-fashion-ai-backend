@@ -155,23 +155,22 @@ class WardrobeCollaboratorsTest {
     void subcategoriaLegadaPreservaTodosOsOutrosCamposDoFormulario() throws Exception {
         TaxonomyRegistry reg = TaxonomyRegistry.get();
         var legacy = reg.legacySubcategories().stream().filter(l -> reg.resolve(l.code()) != null).findFirst().orElseThrow();
-        WardrobeService.PieceForm f = new WardrobeService.PieceForm(UUID.randomUUID(), true, "Peça", legacy.category(), legacy.code(),
+        PieceForm f = new PieceForm(UUID.randomUUID(), true, "Peça", legacy.category(), legacy.code(),
                 "UNISSEX", UUID.randomUUID(), "Marca", "white", "COTTON", "m", "SS26", List.of("casual"), List.of("basic"),
                 List.of("selo"), new BigDecimal("10"), Visibility.PUBLIC, List.of("tag"), "nota", ItemCondition.GOOD,
                 LocalDate.of(2026, 1, 2), "Loja", "SKU1", "Lavar à mão", true, false, "/logo.png", "WEB", "ref",
                 Map.of("aura", "x"), UUID.randomUUID(), null, Map.of(), List.of("name"), UUID.randomUUID(), true, UUID.randomUUID(),
-                UUID.randomUUID());
+                UUID.randomUUID(), null, false);
 
-        WardrobeService.PieceForm r = PieceTaxonomyWriter.resolveLegacy(f);
+        PieceForm r = PieceTaxonomyWriter.resolveLegacy(f);
 
         assertThat(r).isNotSameAs(f);
         assertThat(r.subcategory()).isEqualTo(reg.resolve(legacy.code()).subcategory());
         Set<String> derivados = Set.of("subcategory", "material", "variation", "attributes");
-        for (RecordComponent c : WardrobeService.PieceForm.class.getRecordComponents()) {
+        for (RecordComponent c : PieceForm.class.getRecordComponents()) {
             if (!derivados.contains(c.getName())) {
                 assertThat(c.getAccessor().invoke(r)).as(c.getName()).isEqualTo(c.getAccessor().invoke(f));
             }
         }
-        assertThat(f.resolveTaxonomy()).isEqualTo(r);
     }
 }

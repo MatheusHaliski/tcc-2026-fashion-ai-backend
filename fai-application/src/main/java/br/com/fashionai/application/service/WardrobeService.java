@@ -16,7 +16,6 @@ import br.com.fashionai.application.imaging.PhotoAcceptance;
 import br.com.fashionai.application.ports.JobQueuePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.PipelineJob;
 import br.com.fashionai.domain.model.Scheme;
@@ -24,7 +23,6 @@ import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.ItemCondition;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.HypeSignalType;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
@@ -318,105 +316,6 @@ public class WardrobeService {
     }
 
     // ================================================================== RF4 — salvar
-    public record PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
-                            String sex, UUID brandId, String brandName, String color, String material, String size,
-                            String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
-                            Visibility visibility, List<String> tags, String notes, ItemCondition condition,
-                            LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
-                            Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                            Map<String, Object> background, UUID captureSessionId, String variation, Map<String, List<String>> attributes,
-                            List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao, UUID colecaoId, UUID intensidadeTermicaId,
-                            UUID tipoLavagemId, Boolean clearTipoLavagem) {
-        /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
-        public PieceForm {
-            occasion = Taxonomy.normalizeTags(occasion);
-            style = Taxonomy.normalizeTags(style);
-            variation = variation == null || variation.isBlank() ? null : variation.trim().toUpperCase(java.util.Locale.ROOT);
-        }
-
-        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
-                         String sex, UUID brandId, String brandName, String color, String material, String size,
-                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
-                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
-                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
-                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                         Map<String, Object> background, UUID captureSessionId, String variation, Map<String, List<String>> attributes,
-                         List<String> confirmed, UUID estadoConservacaoId, Boolean clearEstadoConservacao, UUID colecaoId, UUID intensidadeTermicaId) {
-            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
-                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
-                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
-                    variation, attributes, confirmed, estadoConservacaoId, clearEstadoConservacao, colecaoId, intensidadeTermicaId, null, false);
-        }
-
-        /** Compatibility constructor: old callers do not set or clear the conservation FK. */
-        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
-                         String sex, UUID brandId, String brandName, String color, String material, String size,
-                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
-                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
-                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
-                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                         Map<String, Object> background, UUID captureSessionId, String variation,
-                         Map<String, List<String>> attributes, List<String> confirmed) {
-            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
-                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
-                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
-                    variation, attributes, confirmed, null, false, null, null);
-        }
-
-        /**
-         * Formulário com variação/atributos, sem a lista {@code confirmed} (campos que a pessoa tocou ou confirmou — só
-         * servem para promover a origem a USER; a origem AI/CATALOG/RULE é deduzida no servidor, nunca declarada).
-         */
-        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
-                         String sex, UUID brandId, String brandName, String color, String material, String size,
-                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
-                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
-                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
-                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                         Map<String, Object> background, UUID captureSessionId, String variation,
-                         Map<String, List<String>> attributes) {
-            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
-                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
-                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
-                    variation, attributes, null);
-        }
-
-        /** Formulário sem variação/atributos (versões anteriores da tela, cadastro pelo catálogo, lote). */
-        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
-                         String sex, UUID brandId, String brandName, String color, String material, String size,
-                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
-                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
-                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
-                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                         Map<String, Object> background, UUID captureSessionId) {
-            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
-                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
-                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId, null, null);
-        }
-
-        /**
-         * Subcategoria LEGACY no padrão novo (docs/taxonomia, C.3): bermuda_shorts vira shorts + LENGTH=KNEE, coturno vira
-         * boots + COMBAT, short jeans vira shorts + material DENIM. O que a pessoa já escolheu (variação, atributo,
-         * material) vale mais que o implícito.
-         */
-        public PieceForm resolveTaxonomy() {
-            return PieceTaxonomyWriter.resolveLegacy(this);
-        }
-
-        /** Formulário sem sessão de captura adaptativa (lote, várias peças numa foto, edição). */
-        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
-                         String sex, UUID brandId, String brandName, String color, String material, String size,
-                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
-                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
-                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
-                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                         Map<String, Object> background) {
-            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
-                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
-                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, null);
-        }
-    }
-
     @Transactional
     public Views.PieceView create(CurrentUser user, PieceForm form) {
         return createInternal(user, form, null);
@@ -444,7 +343,7 @@ public class WardrobeService {
         guard.requireCanCreate(user);
         requireBackgroundAuraAccess(user, form.background());
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
-        form = form.resolveTaxonomy();
+        form = PieceTaxonomyWriter.resolveLegacy(form);
         PieceFormWriter.validate(form);
         // o rascunho é travado (SELECT … FOR UPDATE): dois envios simultâneos do mesmo rascunho são atendidos um depois do outro
         PipelineJob draft = form.draftId() == null ? null : jobs.findByIdForUpdate(form.draftId()).orElse(null);
@@ -648,7 +547,7 @@ public class WardrobeService {
         guard.requireCanCreate(user);
         requireBackgroundAuraAccess(user, form.background());
         WardrobeItem w = owned(user, id);
-        form = form.resolveTaxonomy();
+        form = PieceTaxonomyWriter.resolveLegacy(form);
         PieceFormWriter.validate(form);
         formWriter().apply(w, form, false);
         if (form.visibility() != null) {

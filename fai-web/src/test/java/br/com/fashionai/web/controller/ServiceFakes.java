@@ -4158,17 +4158,17 @@ final class ServiceFakes {
         }
 
         @Override
-        public java.util.List<br.com.fashionai.application.view.Views.PieceView> createBatch(br.com.fashionai.application.security.CurrentUser a0, java.util.List<br.com.fashionai.application.service.WardrobeService.PieceForm> a1) {
+        public java.util.List<br.com.fashionai.application.view.Views.PieceView> createBatch(br.com.fashionai.application.security.CurrentUser a0, java.util.List<br.com.fashionai.application.service.PieceForm> a1) {
             return (java.util.List<br.com.fashionai.application.view.Views.PieceView>) Fk.call(this, "createBatch", java.util.List.class, new Object[]{a0, a1});
         }
 
         @Override
-        public br.com.fashionai.application.view.Views.PieceView createFromCatalog(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.WardrobeService.PieceForm a1, br.com.fashionai.application.service.CatalogPick a2) {
+        public br.com.fashionai.application.view.Views.PieceView createFromCatalog(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.PieceForm a1, br.com.fashionai.application.service.CatalogPick a2) {
             return (br.com.fashionai.application.view.Views.PieceView) Fk.call(this, "createFromCatalog", br.com.fashionai.application.view.Views.PieceView.class, new Object[]{a0, a1, a2});
         }
 
         @Override
-        public br.com.fashionai.application.view.Views.PieceView create(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.WardrobeService.PieceForm a1) {
+        public br.com.fashionai.application.view.Views.PieceView create(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.PieceForm a1) {
             return (br.com.fashionai.application.view.Views.PieceView) Fk.call(this, "create", br.com.fashionai.application.view.Views.PieceView.class, new Object[]{a0, a1});
         }
 
@@ -4293,7 +4293,7 @@ final class ServiceFakes {
         }
 
         @Override
-        public br.com.fashionai.application.view.Views.PieceView update(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.WardrobeService.PieceForm a2) {
+        public br.com.fashionai.application.view.Views.PieceView update(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PieceForm a2) {
             return (br.com.fashionai.application.view.Views.PieceView) Fk.call(this, "update", br.com.fashionai.application.view.Views.PieceView.class, new Object[]{a0, a1, a2});
         }
 

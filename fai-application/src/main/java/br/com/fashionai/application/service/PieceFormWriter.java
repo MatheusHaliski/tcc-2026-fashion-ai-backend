@@ -4,7 +4,6 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.service.WardrobeService.PieceForm;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.domain.model.Brand;
 import br.com.fashionai.domain.model.WardrobeItem;

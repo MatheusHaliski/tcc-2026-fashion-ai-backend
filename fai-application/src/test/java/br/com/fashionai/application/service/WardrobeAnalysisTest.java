@@ -110,9 +110,9 @@ class WardrobeAnalysisTest {
 
     @Test
     void cadastroNormalizaAsListasQueATelaManda() {
-        WardrobeService.PieceForm f = new WardrobeService.PieceForm(null, true, "Camiseta", "upper_piece", "t_shirt", "UNISSEX", null,
+        PieceForm f = new PieceForm(null, true, "Camiseta", "upper_piece", "t_shirt", "UNISSEX", null,
                 null, "black", "COTTON", "m", null, List.of(" Casual ", "casual", ""), List.of("BASIC"), List.of(), BigDecimal.TEN,
-                null, List.of(), null, null, null, null, null, null, false, null, null, null, null, null);
+                null, List.of(), null, null, null, null, null, null, false, null, null, null, null, null, null, null, null, null, null, false, null, null, null, false);
         assertThat(f.occasion()).containsExactly("casual");
         assertThat(f.style()).containsExactly("basic");
         assertThatCode(() -> Taxonomy.requirePiece(f.category(), f.subcategory(), f.sex(), f.color(), f.material(), f.size(),

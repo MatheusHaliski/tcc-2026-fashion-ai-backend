@@ -477,7 +477,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/WardrobeService.java": {
-   "max": 990,
+   "max": 889,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/taxonomy/Taxonomy.java": {
@@ -725,7 +725,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/catalog/process_local_sd.py": {
-   "max": 930,
+   "max": 691,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/catalog/providers/official_sitemap.py": {
@@ -742,10 +742,6 @@
   },
   "scripts/catalog/tests/test_official_sitemap.py": {
    "max": 504,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/catalog/tests/test_process_local_sd.py": {
-   "max": 466,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/cloud/deploy_fashn_vertex.py": {

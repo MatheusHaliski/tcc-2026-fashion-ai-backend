@@ -1,6 +1,7 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.PieceForm;
 import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.web.support.Uploads;
@@ -39,14 +40,14 @@ public class WardrobeController {
     @PostMapping("/api/pieces")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "RF4.CA05 — Cadastrar a peça a partir do rascunho analisado")
-    public Views.PieceView create(CurrentUser user, @RequestBody WardrobeService.PieceForm form) {
+    public Views.PieceView create(CurrentUser user, @RequestBody PieceForm form) {
         return wardrobe.create(user, form);
     }
 
     @PostMapping("/api/pieces/batch")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "RF4.CA11 — Cadastrar várias peças de uma vez")
-    public List<Views.PieceView> createBatch(CurrentUser user, @RequestBody List<WardrobeService.PieceForm> forms) {
+    public List<Views.PieceView> createBatch(CurrentUser user, @RequestBody List<PieceForm> forms) {
         return wardrobe.createBatch(user, forms);
     }
 
@@ -98,7 +99,7 @@ public class WardrobeController {
 
     @PutMapping("/api/pieces/{id}")
     @Operation(summary = "RF7.CA05 — Editar a peça")
-    public Views.PieceView update(CurrentUser user, @PathVariable UUID id, @RequestBody WardrobeService.PieceForm form) {
+    public Views.PieceView update(CurrentUser user, @PathVariable UUID id, @RequestBody PieceForm form) {
         return wardrobe.update(user, id, form);
     }
 
