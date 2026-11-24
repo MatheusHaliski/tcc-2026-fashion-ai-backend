@@ -75,14 +75,14 @@ class WardrobeServiceCadastroTest {
         ana = Kit.as(world.me);
     }
 
-    static WardrobeService.PieceForm form(UUID draftId, boolean useDefault, String name, BigDecimal price, List<String> seals, String market,
+    static PieceForm form(UUID draftId, boolean useDefault, String name, BigDecimal price, List<String> seals, String market,
                                           UUID brandId, String brandName, String logo, String source, Visibility vis, UUID session) {
-        return new WardrobeService.PieceForm(draftId, useDefault, name, "upper_piece", "t_shirt", "UNISSEX", brandId, brandName, "white", "COTTON",
+        return new PieceForm(draftId, useDefault, name, "upper_piece", "t_shirt", "UNISSEX", brandId, brandName, "white", "COTTON",
                 "m", market, List.of("casual"), List.of("basic"), seals, price, vis, List.of("verão"), "nota", null, null, "Loja", "SKU1", "lavar",
-                true, null, logo, source, "ref", Map.of(), session, null, null, null);
+                true, null, logo, source, "ref", Map.of(), session, null, null, null, null, false, null, null, null, false);
     }
 
-    static WardrobeService.PieceForm simple(String brandName) {
+    static PieceForm simple(String brandName) {
         return form(null, true, "Camiseta", BigDecimal.TEN, null, null, null, brandName, null, null, null, null);
     }
 
@@ -209,9 +209,9 @@ class WardrobeServiceCadastroTest {
         PipelineJob d = draft("""
                 {"moderation":{"status":"APPROVED"},"backgroundRemoved":false,"processedUrl":"/p.png","originalUrl":"/o.jpg",
                  "studio":{"url":"/s.jpg","forced":true}}""");
-        var f = new WardrobeService.PieceForm(d.getId(), false, "Camiseta", "upper_piece", "t_shirt", "UNISSEX", null, null, "white", "COTTON",
+        var f = new PieceForm(d.getId(), false, "Camiseta", "upper_piece", "t_shirt", "UNISSEX", null, null, "white", "COTTON",
                 "m", null, List.of("casual"), List.of("basic"), null, BigDecimal.TEN, null, null, null, null, null, null, null, null,
-                null, false, null, null, null, null);
+                null, false, null, null, null, null, null, null, null, null, null, false, null, null, null, false);
         WardrobeItem w = service.owned(ana, service.create(ana, f).id());
         assertThat(w.getImageUrl()).isEqualTo("/o.jpg");
         assertThat(w.getStudioImageUrl()).isNull();

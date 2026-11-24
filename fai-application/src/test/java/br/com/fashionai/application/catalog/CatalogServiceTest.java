@@ -268,13 +268,13 @@ class CatalogServiceTest {
         assertThat(CatalogService.sizeOf("40", "lower_piece")).isEqualTo("br_40");
         assertThat(CatalogService.sizeOf("br_38", "lower_piece")).isEqualTo("br_38");
         assertThat(CatalogService.sizeOf("gigante", "lower_piece")).isEqualTo("m");
-        org.mockito.ArgumentCaptor<WardrobeService.PieceForm> form = org.mockito.ArgumentCaptor.forClass(WardrobeService.PieceForm.class);
+        org.mockito.ArgumentCaptor<br.com.fashionai.application.service.PieceForm> form = org.mockito.ArgumentCaptor.forClass(br.com.fashionai.application.service.PieceForm.class);
         CatalogProduct p = MemoryRepository.<CatalogProduct>rows(kit.dep(CatalogProductRepository.class)).get(0);
         WardrobeService wardrobe = kit.dep(WardrobeService.class);
         when(wardrobe.createFromCatalog(any(), form.capture(), any())).thenReturn(Views.piece(Kit.piece(user, "x", "shoes_piece", "casual_sneakers", "white"), null, null));
         catalog.addToWardrobe(ana, new CatalogService.AddRequest(p.getId(), null, null, null, null, null, null, null, null, null,
                 br.com.fashionai.domain.model.enums.Visibility.PRIVATE, null, null, null, null, null, null, null));
-        WardrobeService.PieceForm f = form.getValue();
+        br.com.fashionai.application.service.PieceForm f = form.getValue();
         assertThat(br.com.fashionai.application.taxonomy.Taxonomy.pieceErrors(f.category(), f.subcategory(), f.sex(), f.color(),
                 f.material(), f.size(), f.occasion(), f.style())).doesNotContainKey("size");
     }

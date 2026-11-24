@@ -1,6 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.service.WardrobeService.PieceForm;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
 import br.com.fashionai.domain.model.TaxonomyAttribute;
@@ -67,7 +66,7 @@ final class PieceTaxonomyWriter {
         w.setVariationConfidence(confidence);
     }
 
-    /** Ver {@link PieceForm#resolveTaxonomy()}: subcategoria LEGACY no padrão novo; o que a pessoa escolheu vale mais. */
+    /** Converte a subcategoria LEGACY no padrão novo; o que a pessoa escolheu vale mais. */
     static PieceForm resolveLegacy(PieceForm f) {
         TaxonomyRegistry.Resolved r = TaxonomyRegistry.get().resolve(f.subcategory());
         if (r == null || r.legacyCode() == null) {

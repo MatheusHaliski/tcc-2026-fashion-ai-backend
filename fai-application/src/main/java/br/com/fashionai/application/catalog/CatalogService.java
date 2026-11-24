@@ -691,11 +691,11 @@ public class CatalogService {
         }
         // Unapproved/original photos and another color never become the wardrobe image by fallback.
         String image = card!=null&&!"DEFAULT".equals(card.get("mode")) ? String.valueOf(card.get("url")) : null;
-        WardrobeService.PieceForm form = new WardrobeService.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
+        br.com.fashionai.application.service.PieceForm form = new br.com.fashionai.application.service.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
                 b.getId(), b.getName(), color, material, size, null, occasion, style, List.of(),
                 a.price() == null ? BigDecimal.ZERO : a.price(), a.visibility(), List.of(), a.notes(), a.condition(), a.purchaseDate(),
                 a.purchaseLocation(), p.getSku(), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
-                a.background());
+                a.background(), null, null, null, null, null, false, null, null, null, false);
         Views.PieceView view = wardrobe.createFromCatalog(user, form, new CatalogPick(p.getId(),
                 variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card,
                 productModels == null ? null : productModels.url(p.getId())));

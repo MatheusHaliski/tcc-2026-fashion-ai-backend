@@ -81,7 +81,7 @@ class PieceConservationServiceTest {
         WardrobeService wardrobe = kit.build(WardrobeService.class);
         PieceConservationService conservation = mock(PieceConservationService.class);
         wardrobe.setConservation(conservation);
-        var form = Json.read(Json.write(Map.of("estadoConservacaoId", UUID.randomUUID())), WardrobeService.PieceForm.class);
+        var form = Json.read(Json.write(Map.of("estadoConservacaoId", UUID.randomUUID())), PieceForm.class);
         assertThatThrownBy(() -> wardrobe.update(Kit.as(visitor), piece.getId(), form))
                 .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.status()).isEqualTo(403));
         verifyNoInteractions(conservation);
@@ -106,7 +106,7 @@ class PieceConservationServiceTest {
                 "color", "blue", "material", "COTTON", "size", "m", "occasion", java.util.List.of("casual"),
                 "style", java.util.List.of("basic"), "price", 100));
         body.put("estadoConservacaoId", state.getId());
-        var result = wardrobe.update(Kit.as(owner), piece.getId(), Json.read(Json.write(body), WardrobeService.PieceForm.class));
+        var result = wardrobe.update(Kit.as(owner), piece.getId(), Json.read(Json.write(body), PieceForm.class));
         assertThat(result.name()).isEqualTo("Camisa atualizada");
         assertThat(result.estadoConservacao().id()).isEqualTo(state.getId());
         assertThat(kit.dep(WardrobeItemRepository.class).findById(piece.getId()).orElseThrow().getEstadoConservacao()).isSameAs(state);

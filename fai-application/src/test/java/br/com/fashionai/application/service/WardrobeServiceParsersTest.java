@@ -511,7 +511,7 @@ class WardrobeServiceParsersTest {
         var legacy = reg.legacySubcategories().stream().filter(l -> reg.resolve(l.code()) != null && !reg.resolve(l.code()).implied().isEmpty())
                 .findFirst().orElseThrow();
         var r = reg.resolve(legacy.code());
-        var f = form(legacy.category(), legacy.code(), null, null, null).resolveTaxonomy();
+        var f = PieceTaxonomyWriter.resolveLegacy(form(legacy.category(), legacy.code(), null, null, null));
         assertThat(f.subcategory()).isEqualTo(r.subcategory());
         r.implied().forEach((k, v) -> {
             if ("MATERIAL".equals(k)) {
@@ -522,26 +522,26 @@ class WardrobeServiceParsersTest {
         });
         // subcategoria ativa: o formulário volta igual
         var ativa = form("upper_piece", "t_shirt", null, null, null);
-        assertThat(ativa.resolveTaxonomy()).isSameAs(ativa);
+        assertThat(PieceTaxonomyWriter.resolveLegacy(ativa)).isSameAs(ativa);
         // material escolhido que não é genérico vale mais que o implícito
         var shortsJeans = reg.legacySubcategories().stream().filter(l -> reg.resolve(l.code()) != null
                 && reg.resolve(l.code()).implied().containsKey("MATERIAL")).findFirst();
         shortsJeans.ifPresent(l -> {
-            assertThat(form(l.category(), l.code(), "WOOL", null, null).resolveTaxonomy().material()).isEqualTo("WOOL");
-            assertThat(form(l.category(), l.code(), "COTTON", null, null).resolveTaxonomy().material())
+            assertThat(PieceTaxonomyWriter.resolveLegacy(form(l.category(), l.code(), "WOOL", null, null)).material()).isEqualTo("WOOL");
+            assertThat(PieceTaxonomyWriter.resolveLegacy(form(l.category(), l.code(), "COTTON", null, null)).material())
                     .isEqualTo(reg.resolve(l.code()).implied().get("MATERIAL"));
         });
     }
 
-    static WardrobeService.PieceForm form(String category, String sub, String material, String variation, Map<String, List<String>> attrs) {
+    static PieceForm form(String category, String sub, String material, String variation, Map<String, List<String>> attrs) {
         return form(category, sub, material, variation, attrs, null);
     }
 
-    static WardrobeService.PieceForm form(String category, String sub, String material, String variation, Map<String, List<String>> attrs,
+    static PieceForm form(String category, String sub, String material, String variation, Map<String, List<String>> attrs,
                                           List<String> confirmed) {
-        return new WardrobeService.PieceForm(null, true, "Peça", category, sub, "UNISSEX", null, null, "white", material, "m",
+        return new PieceForm(null, true, "Peça", category, sub, "UNISSEX", null, null, "white", material, "m",
                 null, List.of("casual"), List.of("basic"), List.of(), new BigDecimal("10"), null, List.of(), null, null, null, null, null,
-                null, null, null, null, null, null, null, null, variation, attrs, confirmed);
+                null, null, null, null, null, null, null, null, variation, attrs, confirmed, null, false, null, null, null, false);
     }
 
     @Test
@@ -596,12 +596,12 @@ class WardrobeServiceParsersTest {
     void formularioNormalizaVariacao() {
         assertThat(form("upper_piece", "t_shirt", null, " regular ", null).variation()).isEqualTo("REGULAR");
         assertThat(form("upper_piece", "t_shirt", null, " ", null).variation()).isNull();
-        var curto = new WardrobeService.PieceForm(null, true, "P", "upper_piece", "t_shirt", "UNISSEX", null, null, "white", null, "m",
-                null, null, null, null, BigDecimal.ONE, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        var curto = new PieceForm(null, true, "P", "upper_piece", "t_shirt", "UNISSEX", null, null, "white", null, "m",
+                null, null, null, null, BigDecimal.ONE, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, false, null, null, null, false);
         assertThat(curto.captureSessionId()).isNull();
         assertThat(curto.variation()).isNull();
-        var comSessao = new WardrobeService.PieceForm(null, true, "P", "upper_piece", "t_shirt", "UNISSEX", null, null, "white", null, "m",
-                null, null, null, null, BigDecimal.ONE, null, null, null, null, null, null, null, null, null, null, null, null, null, null, UUID.randomUUID());
+        var comSessao = new PieceForm(null, true, "P", "upper_piece", "t_shirt", "UNISSEX", null, null, "white", null, "m",
+                null, null, null, null, BigDecimal.ONE, null, null, null, null, null, null, null, null, null, null, null, null, null, null, UUID.randomUUID(), null, null, null, null, false, null, null, null, false);
         assertThat(comSessao.captureSessionId()).isNotNull();
         assertThat(comSessao.attributes()).isNull();
         var pick = new CatalogPick(UUID.randomUUID(), null, "/img.png");
