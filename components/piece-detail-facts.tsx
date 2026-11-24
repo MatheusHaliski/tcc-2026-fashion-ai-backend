@@ -18,6 +18,7 @@ export function PieceDetailFacts({piece,excludeFashionMeta=false}:{piece:PieceVi
   [t('common.occasion'),excludeFashionMeta?null:(piece.occasion??[]).map(label).join(' · ')],
   [t('common.style'),excludeFashionMeta?null:(piece.style??[]).map(label).join(' · ')],
   [t('pieceReferences.origem.label'),piece.origem?.nome??null],
+  [t('pieceReferences.cortes.label'),piece.cortes?.nome??null],
   [t('pieceReferences.condition.label'),conservationLabel(piece,t)],
   [t('pieceReferences.colecao.label'),piece.colecao?.nome??null],
   [t('pieceReferences.intensidade.label'),piece.intensidadeTermica?.nome??null],
