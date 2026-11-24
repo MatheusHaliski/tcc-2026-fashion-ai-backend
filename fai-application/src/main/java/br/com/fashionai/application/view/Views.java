@@ -19,8 +19,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import static br.com.fashionai.application.view.PieceReferenceViews.estadoConservacao;
+import static br.com.fashionai.application.view.PieceReferenceViews.origem;
+import static br.com.fashionai.application.view.PieceReferenceViews.colecao;
 import static br.com.fashionai.application.view.PieceReferenceViews.tipoLavagem;
-
+import static br.com.fashionai.application.view.PieceReferenceViews.intensidadeTermica;
+import static br.com.fashionai.application.view.PieceReferenceViews.cortes;
 /** Visões expostas pela API (o frontend nunca recebe entidade JPA nem campo cifrado cru). */
 public final class Views {
     private Views() {
@@ -62,7 +65,7 @@ public final class Views {
                             String studioBackdrop, String studioThumbUrl, String studioDetailUrl,
                             String mannequinImageUrl, String mannequinImageFace, String brandSource, String studioFeedUrl,
                             boolean aiGeneratedImage, boolean forDonation,
-                            String variation, Map<String, List<String>> attributes, ReferenceOptionView estadoConservacao,
+                            String variation, Map<String, List<String>> attributes, ReferenceOptionView estadoConservacao, Cortes cortes,
                             ReferenceOptionView tipoLavagem, ReferenceOptionView colecao,ReferenceOptionView origem, ReferenceOptionView intensidadeTermica) {
     }
 
