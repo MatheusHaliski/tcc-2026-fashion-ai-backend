@@ -79,6 +79,10 @@ public final class PieceFormWriter {
     w.setOrigem(origem.findById(f.origemId())
         .orElseThrow(() -> ApiException.badRequest("ORIGEM_INVALIDA", "Origem inválida", Map.of())));
     }
+        if (f.cortesId() != null) {
+    w.setCortes(cortes.findById(f.cortesId())
+        .orElseThrow(() -> ApiException.badRequest("CORTE_INVALIDO", "Corte inválido", Map.of())));
+}
         apply(w, f, creating, null);
     }
  
