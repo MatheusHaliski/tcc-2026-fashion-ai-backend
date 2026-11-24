@@ -19,7 +19,7 @@ import { MAX_TAGS, keepAllowed } from "@/lib/pieces/tags";
 export interface PieceFormValue {
   draftId?: string | null; useDefaultImage: boolean; name: string; category: string; subcategory: string; sex: string; brandId?: string | null; brandName: string;
   color: string; material: string; size: string; market?: string; occasion: string[]; style: string[]; seals: string[]; price: string; visibility: string;
-  tags: string; colecaoId?: string | null; intensidadeTermicaId?: string | null; origemId?: string | null; notes: string; condition: string; purchaseDate: string; purchaseLocation: string; sku: string; careInstructions: string; forSale: boolean;
+  tags: string; colecaoId?: string | null; intensidadeTermicaId?: string | null; origemId?: string | null; cortesId?: string | null; notes: string; condition: string; purchaseDate: string; purchaseLocation: string; sku: string; careInstructions: string; forSale: boolean;
   estadoConservacaoId?: string | null; estadoConservacaoNome?: string | null; clearEstadoConservacao?: boolean;
   tipoLavagemId?: string | null; tipoLavagemNome?: string | null; clearTipoLavagem?: boolean;
   /** RF4 · Estúdio: false = salvar sem a foto de estúdio gerada no rascunho */
