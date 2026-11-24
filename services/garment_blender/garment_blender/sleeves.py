@@ -15,6 +15,10 @@ from .sizes import TopMeasures
 SLOPE = 0.03          # queda da linha de cima da manga (m por m)
 SLEEVE_RATIO = 0.85   # profundidade/altura da seção da manga
 CAP = 0.15            # da cava até o bíceps a seção muda aos poucos da forma da cava para a da manga (m)
+# Queda da manga: o pivô é a articulação do ombro (5 cm para dentro da ponta do ombro e 12 cm abaixo dela) e o giro
+# entra ao longo de 25 cm. Medido no provador (meshy-real.test.ts, suéter M a 80°): pivô na ponta do ombro furava a
+# axila (6 %); aqui, 1,3 % de furos e esticamento 1,12, aceito em P, M e GG.
+JOINT_IN, JOINT_DOWN, DROP_RAMP = 0.05, 0.12, 0.25
 
 
 def _stations(m: TopMeasures, loop_perimeter: float, ribbed: bool) -> list[tuple[float, float, str]]:
@@ -134,8 +138,8 @@ def bend(mesh: Mesh, side: int, m: TopMeasures, y_shoulder: float, angle: float)
         (sleeve if p == part else torso).update(f)
     moving = sorted(sleeve - torso)
     x_sp = m.ombro * 0.01 / 2
-    pivot = np.array([side * (x_sp - 0.02), y_shoulder - 0.05])
-    x0, x1 = x_sp - 0.01, x_sp + CAP
+    pivot = np.array([side * (x_sp - JOINT_IN), y_shoulder - JOINT_DOWN])
+    x0, x1 = x_sp - 0.01, x_sp + DROP_RAMP
     a = np.radians(angle) * -side
     for i in moving:
         x, y, z = mesh.verts[i]

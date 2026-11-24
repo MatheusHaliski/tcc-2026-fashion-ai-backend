@@ -42,20 +42,23 @@ Cada tamanho gera, em `saida/<tamanho>/`: o `modelo.glb` (metros, Y para cima, f
   pespontos dos bolsos e da braguilha) afundam 0,9 mm na direção de dentro: o vinco aparece na luz.
 - **Conferência:** `measure.py` corta a malha por planos e mede os perímetros; o relatório traz ficha × malha.
 
-## Estado no provador (24/11/2026, corpo padrão, manga gerada na horizontal)
+## Estado no provador (24/11/2026, corpo padrão, manga caída a 80°)
 
-Com `medidaReal`, o provador usa escala 1 e não estica a peça em profundidade por faixa (o passo feito para a Meshy
-rasa estufava o tronco em faixas); só a colisão a tira de dentro da pele. Medido offline (`meshy-real.test.ts`):
+Com `medidaReal`, o provador usa escala 1, conta o tamanho escolhido a partir do tamanho gerado (não do corpo) e não
+estica a peça em profundidade por faixa (o passo feito para a Meshy rasa estufava o tronco); só a colisão a tira de
+dentro da pele. A manga cai até o ângulo do braço do avatar girando em torno da articulação do ombro (5 cm para dentro
+da ponta do ombro, 12 cm abaixo; `JOINT_IN`, `JOINT_DOWN`, `DROP_RAMP` em `sleeves.py`). Medido offline
+(`meshy-real.test.ts`):
 
 | Peça | P / 36 | M / 40 | GG / 46 |
 |---|---|---|---|
 | Calça cargo, calça joelho duplo | veste | veste | veste |
+| Suéter (Stockton) | veste (esticada 1,12, furos 1,3 %) | veste | veste |
 | Moletom careca (Script) | veste | veste | veste |
-| Suéter (Stockton) | veste | veste | furos 3,3 % (limite 3 %) |
-| Camiseta (sacai) | veste | furos 3,3 % | furos 3,2 % |
-| Moletom com capuz | recusado: o capuz é furado pela cabeça (5–15 %) e estica | | |
+| Camiseta (sacai) | veste | veste | veste |
+| Moletom com zíper, sem o capuz | veste | veste | veste |
+| Moletom com capuz | recusado: o capuz levantado estica (1,85) e fura (5–7 %); o abaixado atravessa as costas | | |
 
-No laboratório (corpo de referência), as cinco capturas de cima vestiram. O que ainda está errado: o giro da manga
-feito pelo provador deixa a ponta do ombro em bico e a manga larga. A manga caída feita no Blender (`--angulo 80`)
-fica certa na prévia, mas no provador fura na axila (5–7 %) e, com o aceite afrouxado, a tela mostrou a peça
-deformada: o aceite não foi afrouxado. Evidências em `docs/provador/garment-blender/2026-11-24/`.
+O que ainda está errado: o capuz precisa de encaixe próprio no provador (preso à nuca, não embrulhado no corpo); a
+ponta do ombro da camiseta ainda fica em bico; bordados e etiquetas não são modelados. Evidências em
+`docs/provador/garment-blender/2026-11-24/`.

@@ -224,6 +224,6 @@ aberturas). Motivo imediato: o Stockton Sweater importado da Meshy saía enorme 
   `medidaReal` faz o encaixe usar escala 1 (`realScale` em `lib/avatar3d/human/glb-garment/align.ts`).
 - **Cor:** mediana dos pixels da peça na foto de entrada ou na textura de cor do lote da Meshy já no bucket (só
   leitura); quando não há imagem, a cor da variante, dita na ficha (`observacao`).
-- **Medido no provador (corpo padrão):** calças (cargo e joelho duplo) vestem em 36, 40 e 46; o suéter em P, M e GG; o
-  moletom careca e a camiseta em dois de três tamanhos; os moletons com capuz são recusados (o capuz é furado pela
-  cabeça). O giro da manga no provador ainda deixa o ombro quadrado nas peças de cima.
+- **Medido no provador (corpo padrão):** calças (cargo e joelho duplo), suéter, moletom careca e camiseta vestem em
+  todos os tamanhos, com a manga caída em torno da articulação do ombro; os moletons com capuz são recusados (o capuz
+  precisa de encaixe próprio).

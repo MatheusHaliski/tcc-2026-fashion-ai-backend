@@ -49,9 +49,9 @@ class GarmentSpec:
     ribana: bool = True               # barra e punho em ribana (sweater, moletom)
     manga_curta: bool = False
     cor_ziper: str = "#a7a9ac"        # dentes e cursor (metal)
-    angulo_manga: float = 0.0         # graus abaixo da horizontal: 0 = pose T (o provador gira a manga até o braço); 80 = pose de exibição
+    angulo_manga: float = 80.0        # graus abaixo da horizontal: 80 = braço do avatar na pose de exibição; 0 = pose T
     passantes: bool = False           # calça: passantes de cinto no cós
-    capuz_abaixado: bool = True       # capuz deitado nas costas (o avatar não o veste na cabeça)
+    capuz_abaixado: bool = False      # capuz deitado nas costas (experimental: atravessa as costas no provador)
     medidas_marca: dict[str, float] = field(default_factory=dict)
 
     @property
@@ -104,9 +104,9 @@ def parse(raw: dict, size: str | None = None) -> GarmentSpec:
         fechamento=_pick(raw.get("fechamento", "nenhum"), CLOSURES, "fechamento"),
         bolsos=tuple(_pick(p, POCKETS, "bolso") for p in raw.get("bolsos", [])),
         ribana=bool(raw.get("ribana", True)), manga_curta=bool(raw.get("manga_curta", False)),
-        angulo_manga=float(raw.get("angulo_manga", 0.0)),
+        angulo_manga=float(raw.get("angulo_manga", 80.0)),
         cor_ziper=str(raw.get("cor_ziper", "#a7a9ac")).lower(), passantes=bool(raw.get("passantes", False)),
-        capuz_abaixado=bool(raw.get("capuz_abaixado", True)),
+        capuz_abaixado=bool(raw.get("capuz_abaixado", False)),
         medidas_marca=measures)
     if not HEX.match(spec.cor_ziper):
         raise ValueError("cor_ziper precisa ser #rrggbb")

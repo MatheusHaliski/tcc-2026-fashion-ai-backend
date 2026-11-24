@@ -14,15 +14,14 @@ produto quando havia) e detalhes de construção.
 | Carhartt WIP x Nicholas Daley Cargo Pant | Carhartt WIP | cós com passantes, braguilha em J e botão, bolsos faca, traseiros e cargo com lapela | sarja | quadril 107,3 (108), coxa 69,5 (69,6), entreperna 81 (81) |
 | Carhartt WIP x Nicholas Daley OG Double Knee Pant | Carhartt WIP | cós com passantes, braguilha, bolsos faca e traseiros, joelho duplo | sarja | quadril 103,4 (104), coxa 65,5 (65,6) |
 
-- `00-pecas-geradas-frente.jpg` e `<peça>-frente.jpg` / `<peça>-tres-quartos.jpg`: prévias em Cycles com a manga caída
-  (`--angulo 80`).
-- `01-provador-folha.jpg` e `provador-*.jpg`: as peças vestidas no laboratório do provador (corpo de referência), em
-  escala real e sem o estiramento em profundidade da Meshy, nos tamanhos indicados no nome. O `.glb` do provador sai
-  com a manga na horizontal.
-- `02-provador-manga-caida-recusada-na-tela.jpg`: a manga caída feita no Blender com o aceite de furos afrouxado para
-  8 %: passa no número, mas a tela mostra o tronco estufado e a camiseta serrilhada — por isso o aceite não foi
-  afrouxado.
+- `00-pecas-geradas-frente.jpg` e `<peça>-frente.jpg` / `<peça>-tres-quartos.jpg`: prévias em Cycles, com a manga caída
+  a 80° em torno da articulação do ombro (o mesmo `.glb` que vai ao provador).
+- `01-provador-folha.jpg` e `provador-*.jpg`: a prévia do suéter e as peças de cima vestidas no laboratório do provador
+  (corpo de referência), em escala real, tamanho M.
+- `02-provador-manga-caida-recusada-na-tela.jpg`: a primeira manga caída (pivô na ponta do ombro) com o aceite de furos
+  afrouxado para 8 %: passava no número, mas a tela mostrou o tronco estufado — o aceite não foi afrouxado.
+- `03-provador-antes-manga-horizontal.jpg`: antes, com a manga gerada na horizontal e girada pelo provador: ombro em
+  bico e manga em "asa".
 
-O que ainda está errado: nas peças de cima o giro da manga do provador deixa a ponta do ombro em bico e a manga larga
-(a camiseta fica com a manga em aba); os moletons com capuz são recusados (o capuz é furado pela cabeça); o bordado e as
-etiquetas não são modelados.
+O que ainda está errado: os moletons com capuz são recusados (o capuz precisa de encaixe próprio no provador); a ponta
+do ombro da camiseta fica em bico; o bordado e as etiquetas não são modelados.
