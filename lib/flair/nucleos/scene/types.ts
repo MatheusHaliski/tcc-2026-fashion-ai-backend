@@ -106,11 +106,16 @@ export interface Movel {
    * manifesto e carrega; sem ele (ou sem WebGL), valem as partes procedurais
    */
   glb?: GlbRef;
+  /**
+   * papéis de cor do móvel (ex.: `{ estofado: "veludo", metal: "latao" }`): o objeto GLB do motor Blender nomeia os
+   * materiais `sala:<papel>` e cada um é pintado com o material da sala que o móvel procedural usava
+   */
+  papeis?: Record<string, string>;
 }
 
 export interface GlbRef {
   slug: string;
-  /** escala fixa; sem ela, o objeto é ajustado à altura do móvel procedural e apoiado no piso */
+  /** escala fixa; sem ela, o objeto é ajustado à altura do móvel procedural e encaixado na caixa dele */
   escala?: number;
   /** giro extra em y (graus), para modelos que vêm virados */
   giro?: number;

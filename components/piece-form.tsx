@@ -100,20 +100,52 @@ export function PieceMoreDetails({ value, onChange, error, idPrefix = "" }: { va
   );
 }
 
-/** Dados da peça (RF4/RF7) dirigidos pela taxonomia oficial; até 2 ocasiões e 2 estilos; cor sempre com nome (acessível). */
-export function PieceFields({ value, onChange, error, fieldErrors, afterBrand }: {
+type PieceFieldsProps = {
   value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null; fieldErrors?: Record<string, string>;
   /** nota logo abaixo do campo Marca (ex.: marca lida com incerteza na foto, com "Usar {marca}") */
   afterBrand?: React.ReactNode;
+};
+
+/** Dados da peça (RF4/RF7) dirigidos pela taxonomia oficial; até 2 ocasiões e 2 estilos; cor sempre com nome (acessível). */
+export function PieceFields({ value, onChange, error, fieldErrors, afterBrand, withAdditional = true }: PieceFieldsProps & {
+  /** false: só identidade e cor (o criador mostra os demais na etapa "Mais detalhes", com {@link PieceAdditionalFields}) */
+  withAdditional?: boolean;
 }) {
   const { t } = useI18n(); const tax = useTaxonomy(); const err: Record<string, string> = { ...(error?.fields ?? {}), ...(fieldErrors ?? {}) };
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
   const allowedOccasions = (category: string) => (category ? tax?.allowedOccasionsByCategory?.[category] : undefined) ?? tax?.occasions;
-  const occasions = allowedOccasions(value.category) ?? [];
   const categories = Object.keys(tax?.subcategories ?? {}).filter((c) => PIECE_CATEGORIES.includes(c));
-  const additional = <>
+  // código fora da taxonomia (peça antiga): o ChipMultiSelect mostra o problema com "Remover" — nada some em silêncio
+  return (
+    <div className="grid gap-x-4 sm:grid-cols-2">
+      <Field label={t("common.nome")} id="name" required error={err.name} className="sm:col-span-2"><Input id="name" value={value.name} onChange={(e) => set("name", e.target.value)} required maxLength={80} /></Field>
+      <Field label={t("common.category")} id="category" required error={err.category}>
+        <Select id="category" value={value.category} onChange={(e) => onChange({ ...value, category: e.target.value, subcategory: "", occasion: keepAllowed(value.occasion, allowedOccasions(e.target.value)) })}><option value="">—</option>{categories.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>)}</Select>
+      </Field>
+      <Field label={t("common.subcategory")} id="subcategory" required error={err.subcategory}>
+        <Select id="subcategory" value={value.subcategory} onChange={(e) => set("subcategory", e.target.value)} disabled={!value.category}><option value="">—</option>{(tax?.subcategories?.[value.category] ?? []).map((s) => <option key={s} value={s}>{subcategoryLabel(s)}</option>)}</Select>
+      </Field>
+      <Field label={t("common.color")} id="color" required error={err.color} hint={value.color ? `${label(value.color)}${tax?.colors?.[value.color] ? ` (${tax.colors[value.color]})` : ""}` : undefined}>
+        <div className="flex items-center gap-2">
+          <span aria-hidden className="h-6 w-6 shrink-0 rounded-full border border-line-soft" style={{ background: tax?.colors?.[value.color] ?? "transparent" }} />
+          <Select id="color" value={value.color} onChange={(e) => set("color", e.target.value)}><option value="">—</option>{Object.entries(tax?.colors ?? {}).map(([k]) => <option key={k} value={k}>{label(k)}</option>)}</Select>
+        </div>
+      </Field>
+      {withAdditional && <PieceAdditionalFields value={value} onChange={onChange} error={error} fieldErrors={fieldErrors} afterBrand={afterBrand} />}
+    </div>
+  );
+}
+
+/** Material, tamanho, marca, preço, referências (conservação, lavagem, coleção, intensidade, origem, corte), ocasião e estilo. */
+export function PieceAdditionalFields({ value, onChange, error, fieldErrors, afterBrand, autoSex }: PieceFieldsProps & {
+  /** Tipo Look automático do perfil: com ele ligado o criador não pede o campo (o servidor aplica o tipo) */ autoSex?: string | null;
+}) {
+  const { t } = useI18n(); const tax = useTaxonomy(); const err: Record<string, string> = { ...(error?.fields ?? {}), ...(fieldErrors ?? {}) };
+  const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
+  const occasions = (value.category ? tax?.allowedOccasionsByCategory?.[value.category] : undefined) ?? tax?.occasions ?? [];
+  return <>
       <Field label={t("common.material")} id="material" required error={err.material}><Select id="material" value={value.material} onChange={(e) => set("material", e.target.value)}><option value="">—</option>{(tax?.materials ?? []).map((m) => <option key={m} value={m}>{label(m.toLowerCase())}</option>)}</Select></Field>
-      <Field label={t("pieceForm.sexo")} id="sex" required error={err.sex}><Select id="sex" value={value.sex} onChange={(e) => set("sex", e.target.value)}>{(tax?.sexes ?? ["MASCULINO", "FEMININO", "UNISSEX"]).map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></Field>
+      {!autoSex && <Field label={t("pieceForm.sexo")} id="sex" required error={err.sex}><Select id="sex" value={value.sex} onChange={(e) => set("sex", e.target.value)}>{(tax?.sexes ?? ["MASCULINO", "FEMININO", "UNISSEX"]).map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></Field>}
       <Field label={t("common.size")} id="size" required error={err.size}><Select id="size" value={value.size} onChange={(e) => set("size", e.target.value)}>{(tax?.sizes ?? ["m"]).map((s) => <option key={s} value={s}>{s.toUpperCase().replace("BR_", "BR ")}</option>)}</Select></Field>
       <Field label={t("common.brand")} id="brand" error={err.brandName} className="sm:col-span-2">
         <BrandSearchInput error={err.brandName}
@@ -136,25 +168,6 @@ export function PieceFields({ value, onChange, error, fieldErrors, afterBrand }:
       <ChipMultiSelect className="sm:col-span-2" legend={t("common.style")} max={PIECE_MAX_TAGS} options={(tax?.styles ?? []).map((o) => ({ id: o, label: label(o) }))} value={value.style} onChange={(v) => set("style", v)}
         error={err.style} hint={t("pieceForm.dica_estilos")} limitMessage={t("pieceForm.limite_estilos")} problem={(v) => tagProblem("style", v, tax, value.category)} />
   </>;
-  // código fora da taxonomia (peça antiga): o ChipMultiSelect mostra o problema com "Remover" — nada some em silêncio
-  return (
-    <div className="grid gap-x-4 sm:grid-cols-2">
-      <Field label={t("common.nome")} id="name" required error={err.name} className="sm:col-span-2"><Input id="name" value={value.name} onChange={(e) => set("name", e.target.value)} required maxLength={80} /></Field>
-      <Field label={t("common.category")} id="category" required error={err.category}>
-        <Select id="category" value={value.category} onChange={(e) => onChange({ ...value, category: e.target.value, subcategory: "", occasion: keepAllowed(value.occasion, allowedOccasions(e.target.value)) })}><option value="">—</option>{categories.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>)}</Select>
-      </Field>
-      <Field label={t("common.subcategory")} id="subcategory" required error={err.subcategory}>
-        <Select id="subcategory" value={value.subcategory} onChange={(e) => set("subcategory", e.target.value)} disabled={!value.category}><option value="">—</option>{(tax?.subcategories?.[value.category] ?? []).map((s) => <option key={s} value={s}>{subcategoryLabel(s)}</option>)}</Select>
-      </Field>
-      <Field label={t("common.color")} id="color" required error={err.color} hint={value.color ? `${label(value.color)}${tax?.colors?.[value.color] ? ` (${tax.colors[value.color]})` : ""}` : undefined}>
-        <div className="flex items-center gap-2">
-          <span aria-hidden className="h-6 w-6 shrink-0 rounded-full border border-line-soft" style={{ background: tax?.colors?.[value.color] ?? "transparent" }} />
-          <Select id="color" value={value.color} onChange={(e) => set("color", e.target.value)}><option value="">—</option>{Object.entries(tax?.colors ?? {}).map(([k]) => <option key={k} value={k}>{label(k)}</option>)}</Select>
-        </div>
-      </Field>
-      {additional}
-    </div>
-  );
 }
 
 /** Peça: até 2 ocasiões e até 2 estilos (esquemas de vestimenta: até 3 — regra própria, em scheme-builder). */
@@ -172,11 +185,15 @@ export function tagProblem(field: "occasion" | "style", v: string, tax: ReturnTy
   return tr(field === "style" ? "pieceForm.estilo_desconhecido" : "pieceForm.ocasiao_desconhecida", { v });
 }
 
-/** Campos da peça em cada etapa do criador (para levar a pessoa ao campo com problema). */
+/** Campos da peça em cada etapa do criador: 1 · Peça ("data") ou 2 · Mais detalhes ("more"), para levar a pessoa ao campo com problema. */
 export const PIECE_FIELD_STEP: Record<string, "data" | "more"> = {
-  name: "data", category: "data", subcategory: "data", color: "data", material: "data", sex: "data", size: "data", brandName: "data",
-  estadoConservacaoId: "data", tipoLavagemId: "data", colecaoId: "data", intensidadeTermicaId: "data", origemId: "data", corteId: "data", price: "data", occasion: "data", style: "data", seals: "more", visibility: "more", forSale: "more", market: "data",
+  name: "data", category: "data", subcategory: "data", color: "data", material: "more", sex: "more", size: "more", brandName: "more",
+  estadoConservacaoId: "more", tipoLavagemId: "more", colecaoId: "more", intensidadeTermicaId: "more", origemId: "more", corteId: "more",
+  price: "more", occasion: "more", style: "more", seals: "more", visibility: "more", forSale: "more", market: "more",
 };
+
+/** Campos de "Mais detalhes" sem controle próprio na etapa (selos, visibilidade, venda): o erro aparece em texto. */
+export const MORE_STEP_MESSAGE_FIELDS = ["seals", "visibility", "forSale"];
 
 /** Validação no cliente, antes de enviar — as mesmas regras do servidor, com as mesmas mensagens compreensíveis. */
 export function validatePieceForm(v: PieceFormValue, tax: ReturnType<typeof useTaxonomy>): Record<string, string> {

@@ -2,7 +2,7 @@
  * Móveis de loja, provador e hall: arara, balcão, espelho com moldura (e lâmpadas), cabine de provador, vitrine,
  * tapete, vaso alto, cordão de isolamento e porta dupla. Medidas reais, em metros; a frente aponta para +z.
  */
-import { caixa, chanfrada, cilindro, esfera, extrusao, movel, plano, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
+import { caixa, chanfrada, cilindro, comGlb, esfera, extrusao, movel, plano, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
 import { perfilDeCortina } from "@/lib/flair/nucleos/scene/moveis/palco";
 import type { Movel, Parte } from "@/lib/flair/nucleos/scene/types";
 
@@ -20,7 +20,7 @@ export function arara(em: Em, metal: string, roupas: string, largura = 1.4, peca
     const comprimento = 0.75 + (i % 3) * 0.14;
     partes.push(chanfrada(roupas, [0.045, comprimento, 0.42], [x, 1.52 - comprimento / 2, 0], [0, i % 2 === 0 ? 6 : -6, 0]));
   }
-  return movel("arara", em, partes);
+  return comGlb(movel("arara", em, partes, { metal, roupas }), `arara-${Math.round(largura * 10)}-${pecas}`);
 }
 
 /** Balcão de loja: corpo de madeira, tampo e um nicho de vidro. */
@@ -52,7 +52,8 @@ export function espelho(em: Em, moldura: string, vidro: string, luz: string | nu
       partes.push(esfera(luz, 0.045, [largura / 2 + m / 2, y, 0.06], 8));
     }
   }
-  return movel("espelho", em, partes);
+  const medida = `${Math.round(largura * 10)}x${Math.round(altura * 10)}${luz ? "-luz" : ""}`;
+  return comGlb(movel("espelho", em, partes, { moldura, vidro, ...(luz ? { luz } : {}) }), `espelho-${medida}`);
 }
 
 /** Cabine de provador: três painéis, o varão e a cortina meio aberta. */

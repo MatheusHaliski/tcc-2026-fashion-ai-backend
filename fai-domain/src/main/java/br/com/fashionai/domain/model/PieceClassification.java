@@ -15,7 +15,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class PieceClassification extends PieceStudioMedia {
+public abstract class PieceClassification extends PieceCaptureSource {
     /** Coleção escolhida pelo dono (FK para a tabela colecao). */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "colecao_id")

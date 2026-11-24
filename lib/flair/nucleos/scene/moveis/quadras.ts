@@ -95,5 +95,5 @@ export function bastao(em: Em, metal: string): Movel {
 /** Skate: shape, dois eixos e quatro rodas (ocupa o lugar da bola nas sequências). */
 export function skate(em: Em, shape: string, metal: string, roda: string): Movel {
   const rodas = [-0.07, 0.07].flatMap((x) => [-0.27, 0.27].map((z) => cilindro(roda, 0.028, 0.03, [x, 0.028, z], [0, 0, 90], 8)));
-  return movel("skate", em, [caixa(shape, [0.2, 0.02, 0.8], [0, 0.075, 0]), caixa(metal, [0.16, 0.02, 0.05], [0, 0.055, -0.27]), caixa(metal, [0.16, 0.02, 0.05], [0, 0.055, 0.27]), ...rodas]);
+  return movel("skate", em, [caixa(shape, [0.2, 0.02, 0.8], [0, 0.075, 0]), caixa(metal, [0.16, 0.02, 0.05], [0, 0.055, -0.27]), caixa(metal, [0.16, 0.02, 0.05], [0, 0.055, 0.27]), ...rodas], { shape, metal, roda });
 }

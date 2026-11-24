@@ -2,7 +2,7 @@
  * Móveis de sentar e de público: cadeira de plateia, banco estofado, poltrona, cadeira de diretor, banco de rua,
  * banco de reservas e arquibancada. Medidas reais, em metros; a frente do móvel aponta para +z.
  */
-import { caixa, chanfrada, cilindro, movel, type Em } from "@/lib/flair/nucleos/scene/parts";
+import { caixa, chanfrada, cilindro, comGlb, movel, type Em } from "@/lib/flair/nucleos/scene/parts";
 import type { Movel, Parte } from "@/lib/flair/nucleos/scene/types";
 
 /** Cadeira de plateia: assento e encosto estofados, pés de metal. */
@@ -12,19 +12,20 @@ export function cadeira(em: Em, estofado: string, metal: string): Movel {
     chanfrada(estofado, [0.46, 0.07, 0.44], [0, 0.455, 0]),
     chanfrada(estofado, [0.44, 0.42, 0.05], [0, 0.72, -0.21], [-8, 0, 0]),
     ...pes,
-  ]);
+  ], { estofado, metal });
 }
 
 /** Banco estofado comprido (provador). */
 export function bancoEstofado(em: Em, estofado: string, base: string, largura = 1.3): Movel {
-  return movel("bancoEstofado", em, [
+  const banco = movel("bancoEstofado", em, [
     chanfrada(estofado, [largura, 0.14, 0.45], [0, 0.4, 0]),
     chanfrada(base, [largura - 0.08, 0.06, 0.38], [0, 0.3, 0]),
     cilindro(base, [0.025, 0.018], 0.28, [-largura / 2 + 0.1, 0.14, 0.14], undefined, 8),
     cilindro(base, [0.025, 0.018], 0.28, [largura / 2 - 0.1, 0.14, 0.14], undefined, 8),
     cilindro(base, [0.025, 0.018], 0.28, [-largura / 2 + 0.1, 0.14, -0.14], undefined, 8),
     cilindro(base, [0.025, 0.018], 0.28, [largura / 2 - 0.1, 0.14, -0.14], undefined, 8),
-  ]);
+  ], { estofado, base });
+  return comGlb(banco, `banco-estofado-${Math.round(largura * 10)}`);
 }
 
 /** Poltrona baixa de loja: assento, encosto e dois braços. */
@@ -53,7 +54,7 @@ export function cadeiraDiretor(em: Em, madeira: string, lona: string): Movel {
     ...pernas,
     chanfrada(lona, [0.54, 0.02, 0.4], [0, 0.56, 0]),
     chanfrada(lona, [0.54, 0.2, 0.02], [0, 1.06, -0.2]),
-  ]);
+  ], { madeira, lona });
 }
 
 /** Banco de rua: ripas de madeira num pé de ferro. */
