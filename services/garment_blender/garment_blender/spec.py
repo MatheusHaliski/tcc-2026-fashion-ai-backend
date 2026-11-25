@@ -10,13 +10,14 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .prints import AllOver, Decal, Stripes, parse_prints
 from .sizes import EASE, LETTERS, TopMeasures, check, top_measures
 from .sizes_pants import CUTS, NUMBERS, PantsMeasures, check_pants, pants_measures
 
 SUBCATEGORIES = ("sweater", "sweatshirt", "hoodie", "t_shirt", "long_sleeve", "shirt", "jacket", "blouse", "tank_top", "top",
                  "crop_top", "polo_shirt", "bodysuit", "cardigan", "vest", "blazer", "coat", "parka", "windbreaker", "kimono")
 PANTS = tuple(CUTS)
-FABRICS = ("malha_la", "malha_algodao", "jersey", "moletom", "sarja", "denim")
+FABRICS = ("malha_la", "malha_algodao", "jersey", "moletom", "sarja", "denim", "tricoline")   # tricoline: tecido plano
 COLLARS = ("careca", "alta", "capuz", "colarinho", "v", "lapela", "polo", "vies", "faixa")   # colarinho: pé + folha virada; lapela: V + colarinho + lapelas
 CLOSURES = ("nenhum", "ziper_inteiro", "botao_ziper", "cordao", "botoes", "polo", "aberto")   # polo: vista curta; aberto: frente sem fecho
 POCKETS = ("canguru", "peito", "faca", "traseiro", "cargo", "joelho_duplo", "vivo", "lateral")   # joelho_duplo: reforço chapado
@@ -59,6 +60,9 @@ class GarmentSpec:
     cor_botao: str = "#2e2a26"
     cor_linha: str | None = None      # linha do pesponto; None: um tom abaixo do tecido (costura tom sobre tom)
     medidas_marca: dict[str, float] = field(default_factory=dict)
+    estampas: tuple[Decal, ...] = ()  # desenhos colados no tronco (prints.py)
+    listras: Stripes | None = None
+    estampa_corrida: AllOver | None = None
 
     @property
     def calca(self) -> bool:
@@ -83,11 +87,12 @@ def _pick(value, allowed, name):
     return value
 
 
-def parse(raw: dict, size: str | None = None) -> GarmentSpec:
-    """Ficha a partir de um dicionário (JSON). ``size`` troca o tamanho da ficha (gerar a grade inteira)."""
+def parse(raw: dict, size: str | None = None, base_dir: Path | None = None) -> GarmentSpec:
+    """Ficha a partir de um dicionário (JSON). ``size`` troca o tamanho da ficha (gerar a grade inteira); ``base_dir``:
+    de onde as imagens das estampas são lidas (a pasta da ficha)."""
     known = {"produto", "marca", "subcategoria", "tamanho", "sexo", "caimento", "tecido", "gola", "fechamento",
              "bolsos", "ribana", "manga_curta", "angulo_manga", "cor_ziper", "passantes", "capuz_abaixado", "medidas_marca", "url_oficial", "observacao",
-             "botoes", "cor_botao", "cor_linha", "pregas", "sem_manga"}
+             "botoes", "cor_botao", "cor_linha", "pregas", "sem_manga", "estampas", "listras", "estampa_corrida", "origem"}
     unknown = set(raw) - known
     if unknown:
         raise ValueError(f"campos desconhecidos na ficha: {', '.join(sorted(unknown))}")
@@ -116,7 +121,7 @@ def parse(raw: dict, size: str | None = None) -> GarmentSpec:
         capuz_abaixado=bool(raw.get("capuz_abaixado", False)),
         botoes=int(raw.get("botoes", 6)), pregas=int(raw.get("pregas", 0)), sem_manga=bool(raw.get("sem_manga", False)), cor_botao=str(raw.get("cor_botao", "#2e2a26")).lower(),
         cor_linha=str(raw["cor_linha"]).lower() if raw.get("cor_linha") else None,
-        medidas_marca=measures)
+        medidas_marca=measures, **parse_prints(raw, base_dir))
     for name in ("cor_ziper", "cor_botao", "cor_linha"):
         if getattr(spec, name) is not None and not HEX.match(getattr(spec, name)):
             raise ValueError(f"{name} precisa ser #rrggbb")
@@ -133,4 +138,4 @@ def parse(raw: dict, size: str | None = None) -> GarmentSpec:
 
 
 def load(path: Path, size: str | None = None) -> GarmentSpec:
-    return parse(json.loads(Path(path).read_text(encoding="utf-8")), size)
+    return parse(json.loads(Path(path).read_text(encoding="utf-8")), size, Path(path).parent)

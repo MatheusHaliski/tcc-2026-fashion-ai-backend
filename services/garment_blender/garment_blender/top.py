@@ -9,6 +9,7 @@ from .bodysuit import add_brief
 from .buttons import LAP, buttons
 from .closures import ZIP_GAP, facing, zipper
 from .collars import neck_finish
+from .decals import add_decal
 from .details import chest_pocket, kangaroo
 from .geometry import ARMHOLE_HALF_ANGLE, COLUMNS, Mesh, build_torso, ellipse_semi_axes
 from .hood import build_hood
@@ -93,9 +94,16 @@ def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
     if "peito" in spec.bolsos:
         chest_pocket(mesh, rows, rows[i_arm].y, "corpo")
     # a fita métrica mede a manga ao longo do eixo x: com a manga caída, mede a mesma peça construída em pose T
-    medido = measure_top(mesh, m) if not spec.angulo_manga else build_top(replace(spec, angulo_manga=0.0))[1]["medido_cm"]
+    medido = measure_top(mesh, m) if not spec.angulo_manga else \
+        build_top(replace(spec, angulo_manga=0.0, estampas=()))[1]["medido_cm"]
     if spec.sem_manga:
         medido = {k: v for k, v in medido.items() if k not in ("biceps", "punho", "manga")}
+    # desenhos da foto colados na frente, depois de medir (não são pano); fora do vão de uma frente que abre
+    gap = ZIP_GAP / 2 if zipped else LAP if buttoned else OPEN_GAP / 2 if spec.fechamento == "aberto" else 0.0
+    gap_from = rows[i_neck].y - POLO_PLACKET if spec.fechamento == "polo" else -1.0
+    for k, decal in enumerate(spec.estampas):
+        add_decal(mesh, rows, decal, f"estampa_{k}", rows[-1].y - m.decote_frente * 0.01, rib_top + 0.015,
+                  gap + 0.004 if gap else 0.0, gap_from)
     used = {k: getattr(m, k) for k in m.__dataclass_fields__}
     if body:             # medido antes: as medidas da blusa contam a partir da barra, que agora sobe
         used |= add_brief(mesh, hem, m.barra * 0.01, thick)

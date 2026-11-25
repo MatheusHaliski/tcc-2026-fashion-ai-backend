@@ -15,6 +15,7 @@ SIZE = 512
 # colunas e carreiras de ponto por repetição de 5 cm e força do relevo; na sarja, diagonais por repetição
 KNITS = {"malha_la": (11, 15, 5.0), "malha_algodao": (16, 22, 3.5), "moletom": (30, 40, 1.6), "jersey": (34, 46, 1.4)}
 TWILLS = {"sarja": (70, 2.0), "denim": (60, 2.6)}
+WEAVES = {"tricoline": (110, 1.1)}   # tela (um fio por cima, um por baixo): fios por repetição (par) e força
 
 
 def _grid():
@@ -54,6 +55,10 @@ def height_map(kind: str, rib: bool = False) -> tuple[np.ndarray, float]:
     if kind == "dentes":   # 20 dentes por 5 cm (passo de 2,5 mm), cada um um bloco arredondado
         f = (y * 20) % 1
         return np.clip(1 - ((f - 0.5) / 0.32) ** 2, 0, 1) ** 0.5, 6.0
+    if kind in WEAVES:   # xadrez fininho dos cruzamentos de urdume e trama
+        n, strength = WEAVES[kind]
+        h = 0.5 + 0.5 * np.cos(np.pi * x * n) * np.cos(np.pi * y * n)
+        return 0.8 * h + 0.2 * _noise(5, 64), strength
     if kind in TWILLS:
         lines, strength = TWILLS[kind]
         h = 0.5 + 0.5 * np.sin(2 * np.pi * (x + y) * lines)        # diagonal da sarja (repete na borda)
@@ -72,9 +77,25 @@ def _rgb(hex_color: str) -> np.ndarray:
     return np.array([int(hex_color[i:i + 2], 16) for i in (1, 3, 5)], float) / 255
 
 
-def write_maps(kind: str, color: str, out: Path, rib: bool = False) -> dict[str, Path]:
-    """Grava a cor e o normal map (PNG) e devolve os caminhos; a rugosidade vai como valor no material."""
+def _normal(h: np.ndarray, strength: float) -> np.ndarray:
+    hs = h * strength   # derivada circular: o relevo fecha na borda da repetição, sem emenda
+    gx = (np.roll(hs, -1, 1) - np.roll(hs, 1, 1)) / 2
+    gy = (np.roll(hs, -1, 0) - np.roll(hs, 1, 0)) / 2
+    n = np.stack([-gx * SIZE / 64, gy * SIZE / 64, np.ones_like(h)], -1)   # +Y para cima (convenção do glTF)
+    return n / np.linalg.norm(n, axis=-1, keepdims=True)
+
+
+def _save(rgb: np.ndarray, normal: np.ndarray, out: Path, tag: str) -> dict[str, Path]:
+    """Cor e normal map em JPEG (o .glb leva JPEG; o PNG fica para o que tem alfa, o decalque)."""
     out.mkdir(parents=True, exist_ok=True)
+    paths = {"cor": out / f"{tag}-cor.jpg", "normal": out / f"{tag}-normal.jpg"}
+    Image.fromarray((np.clip(rgb, 0, 1) * 255).astype(np.uint8)).save(paths["cor"], quality=90)
+    Image.fromarray(((normal * 0.5 + 0.5) * 255).astype(np.uint8)).save(paths["normal"], quality=92)
+    return paths
+
+
+def write_maps(kind: str, color: str, out: Path, rib: bool = False) -> dict[str, Path]:
+    """Grava a cor e o normal map e devolve os caminhos; a rugosidade vai como valor no material."""
     h, strength = height_map(kind, rib)
     base = _rgb(color)
     shade = 0.78 + 0.3 * h[..., None]
@@ -83,13 +104,5 @@ def write_maps(kind: str, color: str, out: Path, rib: bool = False) -> dict[str,
         rgb = rgb * 0.85 + 0.15 * (1 - h[..., None]) * np.array([0.92, 0.93, 0.95])
     if kind != "dentes":
         rgb = rgb * (0.94 + 0.12 * _noise(11, 128)[..., None])
-    hs = h * strength   # derivada circular: o relevo fecha na borda da repetição, sem emenda
-    gx = (np.roll(hs, -1, 1) - np.roll(hs, 1, 1)) / 2
-    gy = (np.roll(hs, -1, 0) - np.roll(hs, 1, 0)) / 2
-    n = np.stack([-gx * SIZE / 64, gy * SIZE / 64, np.ones_like(h)], -1)   # +Y para cima (convenção do glTF)
-    n /= np.linalg.norm(n, axis=-1, keepdims=True)
-    tag = f"{kind}{'-ribana' if rib else ''}"
-    paths = {"cor": out / f"{tag}-cor.png", "normal": out / f"{tag}-normal.png"}
-    Image.fromarray((np.clip(rgb, 0, 1) * 255).astype(np.uint8)).save(paths["cor"])
-    Image.fromarray(((n * 0.5 + 0.5) * 255).astype(np.uint8)).save(paths["normal"])
-    return paths
+    # a cor no nome: o cadarço do zíper (sarja um tom abaixo) não sobrescreve o corpo de sarja
+    return _save(rgb, _normal(h, strength), out, f"{kind}{'-ribana' if rib else ''}-{color.lstrip('#')}")
