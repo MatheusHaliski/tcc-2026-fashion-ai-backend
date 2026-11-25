@@ -124,7 +124,7 @@ export function NucleoGame(props: Props) {
   useNucleoSinais({ codigo, sel: estado.sel, acionamento, preparando, efetiva, onPrevia });
   /** a regra peça-recurso: os atributos do look e o que a última peça vestida mudou (a roda no palco) */
   const recursos = useLookDosRecursos(vestidas, efeitos.perfil, preparando, props.previa);
-  const usoDeRecursos = useRecursosDaPartida(props.partida?.id, cartas, efeitos.perfil, momento !== "RESULTADO");
+  const usoDeRecursos = useRecursosDaPartida(props.partida?.id, cartas, efeitos.perfil, momento !== "RESULTADO", definicao.deck?.semDeck ? vestidas : undefined);
   const cinema = useCinemaDaPartida({ codigo, partida: props.partida?.id, momento, resultado, reduzido });
   useEffect(() => {
     setAcionou(false);

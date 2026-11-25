@@ -3,6 +3,7 @@ package br.com.fashionai.application.flair3d.recurso;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.flair3d.Andamento;
+import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dCartas;
 import br.com.fashionai.application.flair3d.Flair3dFixtures;
 import br.com.fashionai.application.flair3d.Flair3dNucleoService;
@@ -104,6 +105,25 @@ class Flair3dRecursoUsoTest {
         Flair3dMatch m = kit.dep(Flair3dMatchRepository.class).findById(partida).orElseThrow();
         m.setStatus(Flair3dMatch.ENTREGUE);
         assertThat(status(() -> uso.usar(ana, partida, new Flair3dRecursoUso.PedidoDeUso(top.getId(), "z")))).isEqualTo(409);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void noRoadToGlorySemDeckAPecaVestidaNaPartidaPodeSerUsada() {
+        FlairCardInstance casaco = carta(ana, "SUP", "sub:coat", "material:wool");
+        FlairCardInstance calca = carta(ana, "INF");
+        FlairCardInstance guardada = carta(ana, "CAL");
+        UUID partida = (UUID) nucleos.abrir(ana, "ROAD_TO_GLORY", new Flair3dNucleoService.AbrirPartida(List.of(), null, "ENSAIO_VERAO")).get("id");
+        // antes de vestir não há o que usar: o jogo não tem deck
+        assertThat(capturar(() -> uso.usar(ana, partida, new Flair3dRecursoUso.PedidoDeUso(casaco.getId(), "a"))).code()).isEqualTo("CARTA_FORA_DO_DECK");
+        nucleos.entregar(ana, partida, new Entrega(Map.of("SUP", casaco.getId(), "INF", calca.getId()), null, null, null));
+        Map<String, Object> r = uso.usar(ana, partida, new Flair3dRecursoUso.PedidoDeUso(casaco.getId(), "b"));
+        assertThat((Map<String, Object>) r.get("uso")).containsEntry("carta", casaco.getId());
+        assertThat((Map<String, Long>) r.get("usados")).containsEntry(casaco.getId().toString(), 1L).containsKey(calca.getId().toString());
+        // a peça que ficou no guarda-roupa e a de outra pessoa continuam de fora
+        assertThat(capturar(() -> uso.usar(ana, partida, new Flair3dRecursoUso.PedidoDeUso(guardada.getId(), "c"))).code()).isEqualTo("CARTA_FORA_DO_DECK");
+        FlairCardInstance daBia = carta(bia, "ACE");
+        assertThat(capturar(() -> uso.usar(ana, partida, new Flair3dRecursoUso.PedidoDeUso(daBia.getId(), "d"))).code()).isEqualTo("CARTA_FORA_DO_DECK");
     }
 
     @Test
