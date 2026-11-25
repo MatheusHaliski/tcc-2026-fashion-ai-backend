@@ -42,7 +42,9 @@ it("shows both reference names and preserves distinct additional care text", () 
   const careInstructions = "Secar à sombra.\nNão alvejar nem torcer. " + "Conservar separadamente. ".repeat(35);
   const { container } = renderApp(<PieceDetailFacts piece={{ ...PIECE, estadoConservacao, tipoLavagem, careInstructions }} />);
   expect(screen.getByText(estadoConservacao.nome)).toBeTruthy();
-  expect(screen.getByText(tipoLavagem.nome)).toBeTruthy();
+  // o tipo de lavagem do catálogo tem linha própria, com o rótulo dele
+  expect(screen.getByText(tipoLavagem.nome).parentElement!.querySelector("dt")?.textContent).toBe("Tipo de lavagem");
+  expect(screen.queryByText("Lavagem")).toBeNull();
   const careRow = screen.getByText("Cuidados adicionais").parentElement!;
   expect(careRow.querySelector("dd")?.textContent).toBe(careInstructions.trim());
   expect(careRow.querySelector("dd")?.classList.contains("whitespace-pre-wrap")).toBe(true);
