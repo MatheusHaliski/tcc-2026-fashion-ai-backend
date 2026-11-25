@@ -160,6 +160,24 @@ class Flair3dRodadasCartasTest {
     }
 
     @Test
+    void noFilmeAPacienciaDoDiretorCaiComARespostaErradaEComAParteForaDaCena() {
+        PersonagemFilmeNucleo n = new PersonagemFilmeNucleo();
+        CbcRules.Card casaco = card("SUP", "sub:coat");
+        CbcRules.Card amarela = card("INF", "color:yellow");
+        CbcRules.Card rosa = card("CAL", "color:pink");
+        CbcRules.Card verde = card("ACE", "color:green");
+        Contexto c = Flair3dFixtures.contexto(1L, casaco, amarela, rosa, verde);
+        Entrega certa = new Entrega(vestir(casaco, amarela).cartas(), null, null, PersonagemFilmeNucleo.CERTO);
+        assertThat(valor(n.pontuar(certa, c), "DESGASTE")).containsEntry("recurso", "FOCO").containsEntry("restante", 30)
+                .containsEntry("motivos", Map.of("PARTE_FORA_DA_CENA", 10));
+        // título errado (15) e três partes fora da cena (30): o diretor corta a cena
+        Entrega errada = new Entrega(vestir(casaco, amarela, rosa, verde).cartas(), null, null, "FILME_VERAO_EM_NEON");
+        Resultado cortada = n.pontuar(errada, c);
+        assertThat(cortada.resultado()).isEqualTo(PersonagemFilmeNucleo.CORTOU);
+        assertThat(valor(cortada, "DESGASTE")).containsEntry("restante", 0);
+    }
+
+    @Test
     void quatroPecasForaDoPerfilZeramAConfiancaDaEstrela() {
         DressTheStarNucleo n = new DressTheStarNucleo();
         CbcRules.Card[] fora = {card("SUP", "style:classic"), card("INF", "color:green"), card("CAL"), card("ACE")};
