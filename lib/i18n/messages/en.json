@@ -12910,5 +12910,5 @@
   "lookReferences.nivelTermico.pedido": "Requested thermal level: {nivel}",
   "lookReferences.nivelTermico.fit": "{ok} matching piece(s), {diverge} diverging, {semDado} without declared intensity",
   "mirror.painel.abrir": "Mirror controls",
-  "mirror.painel.fechar": "Close controls"
+  "mirror.painel.fechar_nome": "Close {name}"
 }

@@ -23,7 +23,7 @@ import { MirrorPartSheet } from "@/components/mirror/mirror-part-sheet";
  *    camada externa do servidor (jaqueta, blazer…) entra na Parte de cima — não existe "Camada externa" na tela.
  *    Tocar numa célula abre a folha da parte: vestindo agora, roupas em mãos (a lista do espelho e a peça na mão),
  *    guarda-roupa e sugestões. As roupas em mãos só aparecem aqui (a célula conta quantas há).
- *  - Vista-me (MirrorVistaSection): nível térmico opcional, células de ocasião + humor/clima; peças fixadas viram âncoras.
+ *  - Vista-me (MirrorVistaSection; em /mirror fica no painel próprio): nível térmico, ocasiões + humor/clima, âncoras.
  *  - Ações: usar hoje, salvar (um toque), abrir no editor, provar no Provador, tira uma coisa e limpar (desfazíveis).
  */
 export interface MirrorPieceRef {
@@ -116,8 +116,6 @@ export type MirrorPins = ReturnType<typeof useMirrorPins>;
  * servidor não recebe corpo); se a pessoa fixou ou soltou peças depois, vai o mesmo pedido ao /vista-me com as âncoras
  * novas — as combinações já mostradas continuam de fora do mesmo jeito.
  */
-export { vistaRequest } from "@/components/mirror/mirror-vista-section";
-
 /** Ações que uma tela anfitriã pode fazer do jeito dela (era o Meu Quarto, retirado em 15/11/2026); sem anfitrião, o padrão. */
 export interface MirrorHost {
   wear?: (p: MirrorPieceRef) => Promise<unknown> | void;
@@ -131,7 +129,7 @@ export interface MirrorHost {
 type Notice = { text: string; actions?: { label: string; href?: string; onClick?: () => void }[] };
 const ASSET_TONE = { PENDING: "mark", IMAGE_2D: "chalk", MOULD_3D: undefined, MODEL_3D: "thread" } as const;
 
-export function MirrorControls<T extends MirrorData>({ data, setData, reload, compact = false, children, host, preview2d, held, arrivedId, pins }: {
+export function MirrorControls<T extends MirrorData>({ data, setData, reload, compact = false, children, host, preview2d, held, arrivedId, pins, vista = true }: {
   data: T; setData: (d: T) => void; reload: () => void;
   /** dentro do quarto (coluna estreita ao lado da cena) */
   compact?: boolean;
@@ -146,6 +144,8 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
   arrivedId?: string | null;
   /** peças fixadas guardadas por quem usa o painel (o quarto); sem isto, o painel guarda as suas */
   pins?: MirrorPins;
+  /** false: o Vista-me não entra aqui (em /mirror ele tem o próprio painel lateral) */
+  vista?: boolean;
 }) {
   const { t } = useI18n(); const toast = useToast();
   const { run, busy } = useMirrorActions<T>(setData, reload);
@@ -246,7 +246,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
       <MirrorLookType currentId={data.tipoLook?.id} busy={busy === "tipo-look"}
         onChoose={(tipoLookId) => void run("tipo-look", () => api.put("/api/me/mirror/tipo-look", { tipoLookId }))} />
 
-      <MirrorVistaSection data={data} busy={busy} anchorIds={anchorIds} run={run} onVista={host?.onVista} />
+      {vista && <MirrorVistaSection data={data} busy={busy} anchorIds={anchorIds} run={run} onVista={host?.onVista} />}
 
       {worn.length > 0 && data.scores && (
         <Card>

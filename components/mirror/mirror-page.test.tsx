@@ -49,6 +49,25 @@ describe("/mirror — o Espelho com casa própria", () => {
     expect(screen.getByRole("link", { name: "Provador" }).getAttribute("href")).toBe("/try-on");
   });
 
+  it("Vista-me no painel próprio, à esquerda, com os ícones FAI das ocasiões; o painel de controles não repete o Vista-me", async () => {
+    loggedAs(undefined, { ...base, "GET /api/me/mirror": state({ upper: TEE }) });
+    renderApp(<MirrorRoute />);
+    const toggle = await screen.findByRole("button", { name: "Vista-me" });
+    expect(toggle.getAttribute("data-side")).toBe("left");
+    fireEvent.click(toggle);
+    const vista = within(screen.getByRole("complementary", { name: "Vista-me" }));
+    const trabalho = vista.getByRole("button", { name: /Trabalho/ });
+    expect(trabalho.querySelector("img")?.getAttribute("src")).toBe("/icons/fai/glyph/occ-01-48.png");
+    expect(trabalho.textContent).not.toMatch(/💼/u);
+    fireEvent.click(screen.getByRole("button", { name: "Controles do espelho" }));
+    const controls = within(screen.getByRole("complementary", { name: "Controles do espelho" }));
+    expect(controls.queryByRole("heading", { name: "Vista-me" })).toBeNull();
+    expect(controls.getByRole("button", { name: /^Parte de cima:/ })).toBeTruthy();
+    fireEvent.click(vista.getByRole("button", { name: "Fechar Vista-me" }));
+    expect(screen.queryByRole("complementary", { name: "Vista-me" })).toBeNull();
+    expect(document.activeElement).toBe(toggle);
+  });
+
   it("espelho vazio: a dica no vidro e as partes do look vazias", async () => {
     loggedAs(undefined, { ...base, "GET /api/me/mirror": state() });
     renderApp(<MirrorRoute />);

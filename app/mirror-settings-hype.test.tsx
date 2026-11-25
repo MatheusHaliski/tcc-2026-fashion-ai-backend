@@ -13,7 +13,7 @@ import SettingsPage from "@/app/(site)/(app)/settings/page";
 
 const routes = { "GET /api/tipos-look": [], "GET /api/me/avatar3d": { exists: false } };
 // os controles ficam no painel lateral do espelho: abre o painel antes de usar
-const openMirror = async () => { const r = renderApp(<MirrorRoute />); fireEvent.click(await screen.findByRole("button", { name: "Controles do espelho" })); await screen.findByTestId("mirror-controls"); return r; };
+const openMirror = async () => { const r = renderApp(<MirrorRoute />); fireEvent.click(await screen.findByRole("button", { name: "Controles do espelho" })); fireEvent.click(screen.getByRole("button", { name: "Vista-me" })); await screen.findByTestId("mirror-controls"); return r; };
 
 const score = (scope: HTMLElement, label: string) => within(scope).getByText(label).nextElementSibling?.textContent;
 

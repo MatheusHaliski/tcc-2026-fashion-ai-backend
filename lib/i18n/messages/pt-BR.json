@@ -12910,5 +12910,5 @@
   "lookReferences.nivelTermico.pedido": "Nível térmico pedido: {nivel}",
   "lookReferences.nivelTermico.fit": "{ok} peça(s) compatível(is), {diverge} divergente(s), {semDado} sem intensidade declarada",
   "mirror.painel.abrir": "Controles do espelho",
-  "mirror.painel.fechar": "Fechar controles"
+  "mirror.painel.fechar_nome": "Fechar {name}"
 }
