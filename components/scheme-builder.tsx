@@ -57,7 +57,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const { data: b, loading, error, reload } = useApi<Builder>((signal) => api.get("/api/schemes/builder", { signal }), []);
   const [mode, setMode] = useState<"manual" | "ai">(initial?.creationMode === "AI_ASSISTED" ? "ai" : "manual");
   const [selected, setSelected] = useState<{ id: string; slot: string }[]>(initial ? initial.items.map((i) => ({ id: i.wardrobeItemId, slot: i.slot })) : []);
-  const [form, setForm] = useState({ title: initial?.title ?? "", description: initial?.description ?? "", occasion: initial?.occasion ?? [], style: initial?.style ?? [], season: initial?.season ?? "", mood: initial?.mood ?? "", visibility: initial?.visibility ?? "PRIVATE", publish: false, lookDoDia: initial?.lookDoDia ?? false, tags: (initial?.tags ?? []).join(", "), colecaoId: (initial?.colecao?.id ?? null) as string | null, intensidadeTermicaId: (initial?.intensidadeTermica?.id ?? null) as string | null });
+  const [form, setForm] = useState({ title: initial?.title ?? "", description: initial?.description ?? "", occasion: initial?.occasion ?? [], style: initial?.style ?? [], season: initial?.season ?? "", mood: initial?.mood ?? "", visibility: initial?.visibility ?? "PRIVATE", publish: false, lookDoDia: initial?.lookDoDia ?? false, tags: (initial?.tags ?? []).join(", "), colecaoId: (initial?.colecao?.id ?? null) as string | null, intensidadeTermicaId: (initial?.intensidadeTermica?.id ?? null) as string | null, nivelTermicoId: (initial?.nivelTermico?.id ?? null) as string | null });
   const [bg, setBg] = useState<BgConfig>(() => { const st = studioOf(initial?.background) as BgConfig; const { photo: _p, ...rest } = st; void _p; return rest; });
   const artUndo = useUndo(bg, setBg); // "Desfazer" acima do preview: volta a arte ao estado anterior
   // foto do conjunto (como um post): o sistema só a verifica (formato e políticas da FAI Network) — nunca edita a foto do look
@@ -95,7 +95,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   // navegação livre (RF5): voltar sempre; avançar para qualquer etapa cujo pré-requisito já está cumprido
   const enoughPieces = selected.length >= 2 || selected.length === 1 && selected[0].slot === "FULL_BODY";
   const canGo = (i: number) => i < step || i <= 1 || (enoughPieces && (i === 2 || !!form.title.trim()));
-  const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), seals: [], creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy, photo: { url: photo.url ?? null } }, pieces: { anatomy: pieceAnatomy }, selectedSeals: selectedSeals.selected }, cardSkin: skin, layoutAnatomy: anatomy });
+  const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), seals: [], creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy, photo: { url: photo.url ?? null } }, pieces: { anatomy: pieceAnatomy }, selectedSeals: selectedSeals.selected }, cardSkin: skin, layoutAnatomy: anatomy, clearNivelTermico: !form.nivelTermicoId && !!initial?.nivelTermico });
   async function uploadPhoto(file: File) {
     const fd = new FormData(); fd.append("file", file);
     try { const r = await api.upload<{ url: string }>("/api/schemes/photos", fd); setPhoto({ url: r.url }); toast.success(t("schemeBuilder.foto_verificada")); } catch (e) { toast.fromError(e); }
@@ -205,7 +205,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <Field label={t("common.descricao")} id="description" className="sm:col-span-2"><Textarea id="description" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={500} /></Field>
             <SchemeTags k="occasion" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
             <SchemeTags k="style" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
-            <SchemeDetailFields form={form} setForm={setForm} />
+            <SchemeDetailFields form={form} setForm={setForm} nivelTermicoNome={initial?.nivelTermico?.nome} />
             <Field label={t("common.visibility")} id="visibility"><Select id="visibility" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
 
             <Field label={t("schemeBuilder.selos_do_look")} className="sm:col-span-2"><SealSuggestions {...sealVerification} {...selectedSeals} selectionOnly /></Field>

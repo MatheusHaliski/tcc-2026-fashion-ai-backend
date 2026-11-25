@@ -11,7 +11,7 @@ import { GarmentGlyph } from "@/components/capture/garment-glyphs";
 import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
 import { assetStateOf } from "@/lib/mirror/asset-state";
 import type { Illustration } from "@/lib/capture/capture-guides";
-import { VistaMeCells } from "@/components/mirror/vista-me-cells";
+import { MirrorVistaSection } from "@/components/mirror/mirror-vista-section";
 import { MirrorLookType } from "@/components/mirror/mirror-look-type";
 import { MirrorPartSheet } from "@/components/mirror/mirror-part-sheet";
 import { MirrorGrwmDialog, type GrwmStoryboard } from "@/components/mirror/mirror-grwm";
@@ -24,7 +24,7 @@ import { MirrorGrwmDialog, type GrwmStoryboard } from "@/components/mirror/mirro
  *    camada externa do servidor (jaqueta, blazer…) entra na Parte de cima — não existe "Camada externa" na tela.
  *    Tocar numa célula abre a folha da parte: vestindo agora, roupas em mãos (a lista do espelho e a peça na mão),
  *    guarda-roupa e sugestões. As roupas em mãos só aparecem aqui (a célula conta quantas há).
- *  - Vista-me: células de ocasião + humor/clima opcionais; peças fixadas ("Manter") viram âncoras.
+ *  - Vista-me (MirrorVistaSection): nível térmico opcional, células de ocasião + humor/clima; peças fixadas viram âncoras.
  *  - Ações: usar hoje, salvar (um toque), abrir no editor, provar no Provador, tira uma coisa, GRWM e limpar (desfazíveis).
  */
 export interface MirrorPieceRef {
@@ -38,7 +38,7 @@ export interface MirrorData {
   missing?: { slot: string; action: string; message: string }[]; warnings?: string[]; prompt?: string | null; shownCount?: number;
   scores?: LookScoreValues | null; restriction?: { challenge: string; allowed?: number } | null; postIt?: string | null;
   silhouette?: { letter?: string; rule?: string } | string | null; light?: { kelvin?: number } | null; rack?: MirrorPieceRef[];
-  origin?: string | null; actions?: string[]; interpretation?: { anchors?: string[] | null } | null;
+  origin?: string | null; actions?: string[]; interpretation?: { anchors?: string[] | null; nivelTermicoId?: string | null } | null;
   /** extras da resposta do Vista-me / Outra sugestão */
   sequence?: MirrorSequenceStep[]; fallbackMessage?: string | null; challengeNotice?: string | null; message?: string | null;
 }
@@ -117,15 +117,7 @@ export type MirrorPins = ReturnType<typeof useMirrorPins>;
  * servidor não recebe corpo); se a pessoa fixou ou soltou peças depois, vai o mesmo pedido ao /vista-me com as âncoras
  * novas — as combinações já mostradas continuam de fora do mesmo jeito.
  */
-export function vistaRequest(kind: "vista-me" | "another", data: MirrorData | null | undefined, anchorIds: string[], prompt?: string): { path: string; body?: { prompt: string; anchorIds: string[] } } {
-  if (kind === "another") {
-    const before = (data?.interpretation?.anchors ?? []).map(String);
-    const same = before.length === anchorIds.length && anchorIds.every((id) => before.includes(id));
-    if (same) return { path: "/api/me/mirror/another" };
-    return { path: "/api/me/mirror/vista-me", body: { prompt: data?.prompt ?? "", anchorIds } };
-  }
-  return { path: "/api/me/mirror/vista-me", body: { prompt: prompt ?? "", anchorIds } };
-}
+export { vistaRequest } from "@/components/mirror/mirror-vista-section";
 
 /** Ações que uma tela anfitriã pode fazer do jeito dela (era o Meu Quarto, retirado em 15/11/2026); sem anfitrião, o padrão. */
 export interface MirrorHost {
@@ -161,18 +153,12 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
   const [open, setOpen] = useState<string | null>(null);
   const ownPins = useMirrorPins(data);
   const { pinned, toggle: togglePin, anchorIds } = pins ?? ownPins;
-  const [extras, setExtras] = useState<Pick<MirrorData, "sequence" | "fallbackMessage" | "challengeNotice" | "message"> | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [grwm, setGrwm] = useState<GrwmStoryboard | null>(null);
   const worn = wornOf(data);
   const dressOn = asList(data.slots.dress).length > 0;
   const restore = async (ids: string[]) => { for (const id of ids) await run("restore", () => api.post("/api/me/mirror/pieces", { pieceId: id })); setNotice(null); };
 
-  async function vista(path: "vista-me" | "another", prompt?: string) {
-    const req = vistaRequest(path, data, anchorIds(), prompt);
-    const r = await run("vista", () => api.post(req.path, req.body));
-    if (r && (r as T).slots) { const x = r as T; setExtras({ sequence: x.sequence, fallbackMessage: x.fallbackMessage, challengeNotice: x.challengeNotice, message: x.message }); host?.onVista?.(x); }
-  }
   async function use() {
     if (host?.use) { await host.use(); return; }
     try { const r = await api.post<{ message?: string }>("/api/me/mirror/use"); toast.success(r.message ?? t("mirror.look_do_dia_registrado")); reload(); } catch (e) { toast.fromError(e); }
@@ -262,21 +248,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
       <MirrorLookType currentId={data.tipoLook?.id} busy={busy === "tipo-look"}
         onChoose={(tipoLookId) => void run("tipo-look", () => api.put("/api/me/mirror/tipo-look", { tipoLookId }))} />
 
-      <section className="mirror-section" aria-labelledby="mirror-vista-h">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 id="mirror-vista-h" className="mirror-section-h">{t("mirror.vista_me")}</h3>
-          <Button size="sm" disabled={data.origin !== "vista_me" || busy === "vista"} onClick={() => void vista("another")}>{t("room.outra_sugestao")}</Button>
-        </div>
-        <VistaMeCells busy={busy === "vista"} lastPrompt={data.prompt} pinnedCount={anchorIds().length} onRun={(prompt) => void vista("vista-me", prompt)} />
-        {extras && (extras.message || extras.fallbackMessage || extras.challengeNotice || extras.sequence?.length) ? (
-          <div className="mirror-vista-result" role="status">
-            {extras.message && <p className="type-body-sm">{extras.message}</p>}
-            {extras.sequence?.length ? <ol className="mirror-sequence">{extras.sequence.map((s) => <li key={s.pieceId}>{s.legend}</li>)}</ol> : null}
-            {extras.fallbackMessage && <p className="type-body-sm text-muted">{extras.fallbackMessage}</p>}
-            {extras.challengeNotice && <p className="type-body-sm text-muted">{extras.challengeNotice}</p>}
-          </div>
-        ) : data.prompt ? <p className="type-body-sm text-muted">{t("mirror.ultimo_pedido_combinacoes_mostradas", { prompt: data.prompt, value: data.shownCount ?? 0 })}</p> : null}
-      </section>
+      <MirrorVistaSection data={data} busy={busy} anchorIds={anchorIds} run={run} onVista={host?.onVista} />
 
       {worn.length > 0 && data.scores && (
         <Card>

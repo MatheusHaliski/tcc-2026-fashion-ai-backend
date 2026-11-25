@@ -1,4 +1,4 @@
-{ 
+{
   "pieceReferences.tipoLavagem.label": "Tipo de lavagem",
   "pieceReferences.tipoLavagem.unselected": "Não informado",
   "pieceReferences.tipoLavagem.unavailable": "Lavagem salva indisponível",
@@ -12898,5 +12898,15 @@
   "pieceReferences.origem.hint": "Escolha a origem desta peça (compra, herança, presente, etc).",
   "settings.autoLookType": "Tipo Look automático",
   "settings.autoLookTypeHint": "Ligado, o tipo escolhido entra sozinho nas novas peças e looks, e o criador não pede mais esse campo.",
-  "settings.autoLookTypeChoose": "Tipo aplicado"
+  "settings.autoLookTypeChoose": "Tipo aplicado",
+  "lookReferences.nivelTermico.label": "Nível térmico do look",
+  "lookReferences.nivelTermico.unselected": "Não informado",
+  "lookReferences.nivelTermico.unavailable": "Nível salvo indisponível",
+  "lookReferences.nivelTermico.loadError": "Não foi possível carregar os níveis térmicos.",
+  "lookReferences.nivelTermico.empty": "Nenhum nível térmico cadastrado.",
+  "lookReferences.nivelTermico.hint": "O quanto o look aquece: leve, moderado ou intenso.",
+  "lookReferences.nivelTermico.loading": "Carregando níveis térmicos…",
+  "lookReferences.nivelTermico.mirrorUnavailable": "Níveis térmicos indisponíveis no momento; o Vista-me segue sem esse critério.",
+  "lookReferences.nivelTermico.pedido": "Nível térmico pedido: {nivel}",
+  "lookReferences.nivelTermico.fit": "{ok} peça(s) compatível(is), {diverge} divergente(s), {semDado} sem intensidade declarada"
 }
