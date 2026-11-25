@@ -17,8 +17,8 @@ export function PieceArtPreview({ piece, toolbar, inDialog = false }: {
       {toolbar}
       <CardPreviewModeToggle expanded={view === "expanded"} onToggle={() => setView(current => current === "feed" ? "expanded" : "feed")} feedLabel={t("pieceArt.previa_feed")} expandedLabel={t("pieceArt.previa_ampliado")}>
         {view === "feed"
-          ? <div className="pae-preview-card"><PieceCard piece={piece} href="#" /></div>
-          : <div className="pae-expanded-card" aria-label={t("pieceArt.previa_ampliada")}><ExpandedPieceCard piece={piece} preview /></div>}
+          ? <div className="pae-preview"><PieceCard piece={piece} href="#" /></div>
+          : <div className="pae-preview" aria-label={t("pieceArt.previa_ampliada")}><ExpandedPieceCard piece={piece} preview /></div>}
       </CardPreviewModeToggle>
     </aside>
   );
