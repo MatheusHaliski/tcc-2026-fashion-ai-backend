@@ -118,11 +118,40 @@ def armhole_columns() -> int:
     return max(2, round(ARMHOLE_HALF_ANGLE / (2 * math.pi / COLUMNS)))
 
 
-def build_torso(mesh: Mesh, m: TopMeasures, ribbed: bool):
-    """Tronco em grade; as cavas ficam abertas. Devolve a grade de índices e os contornos das cavas (direita, esquerda)."""
+FRONT_COLUMN = COLUMNS // 4   # centro da frente (theta = 90°, +z)
+
+
+@dataclass
+class FrontOpening:
+    """Frente aberta (zíper ou botões): a coluna do centro da frente vira duas bordas, uma por painel.
+
+    ``plus``/``minus``: vértices da borda do painel do lado +x / −x, da barra ao decote. ``hem``/``neck``: a barra e o
+    decote como contornos abertos (da borda −x, dando a volta pelas costas, até a borda +x)."""
+    plus: list
+    minus: list
+    hem: list
+    neck: list
+
+
+def _split_front(mesh: Mesh, grid: np.ndarray, rings: list, opening: float, lap_depth: float) -> np.ndarray:
+    """Duplica a coluna do centro da frente: a original fica com o painel +x, a cópia com o painel −x. ``opening`` > 0:
+    vão entre as bordas (o zíper ocupa); < 0: transpasse (o painel +x passa por cima do −x, que recua ``lap_depth``)."""
+    minus = np.empty(len(grid), int)
+    for j, ring in enumerate(rings):
+        p = ring[FRONT_COLUMN].copy()
+        mesh.verts[grid[j, FRONT_COLUMN]] = (opening / 2, p[1], p[2])
+        q = (-opening / 2, p[1], p[2] - (lap_depth if opening < 0 else 0.0))
+        minus[j] = mesh.add(q)
+    return minus
+
+
+def build_torso(mesh: Mesh, m: TopMeasures, ribbed: bool, opening: float = 0.0, lap_depth: float = 0.0):
+    """Tronco em grade; as cavas ficam abertas. Devolve a grade de índices, os contornos das cavas (direita, esquerda),
+    os anéis, os índices (axila, ombro, decote) e a frente aberta (``FrontOpening``; None com ``opening`` = 0)."""
     rows, i_arm, i_sh, i_neck = _torso_rows(m, ribbed)
     grid = np.array([[mesh.add(p) for p in _ring(r)] for r in rows])
     rings = [_ring(r) for r in rows]
+    minus = _split_front(mesh, grid, rings, opening, lap_depth) if opening else None
     k = armhole_columns()
     sides = {0: set(range(-k, k)), COLUMNS // 2: set(range(COLUMNS // 2 - k, COLUMNS // 2 + k))}
     hole = {c % COLUMNS for cols in sides.values() for c in cols}
@@ -132,10 +161,12 @@ def build_torso(mesh: Mesh, m: TopMeasures, ribbed: bool):
             if i_arm <= j < i_sh and i in hole:
                 continue
             n = (i + 1) % COLUMNS
+            first = minus[j] if minus is not None and i == FRONT_COLUMN else grid[j, i]
+            first_up = minus[j + 1] if minus is not None and i == FRONT_COLUMN else grid[j + 1, i]
             y0, y1 = rows[j].y / TILE, rows[j + 1].y / TILE   # arc[COLUMNS] é o perímetro: a última coluna não volta a 0
             uv = [(arc0[i] / TILE, y0), (arc0[i + 1] / TILE, y0), (arc1[i + 1] / TILE, y1), (arc1[i] / TILE, y1)]
             mat = "ribana" if rows[j].mat == "ribana" else "corpo"
-            mesh.quad((grid[j, i], grid[j, n], grid[j + 1, n], grid[j + 1, i]), uv, mat)
+            mesh.quad((first, grid[j, n], grid[j + 1, n], first_up), uv, mat)
     loops = []
     for center in (0, COLUMNS // 2):
         lo, hi = center - k, center + k
@@ -151,7 +182,12 @@ def build_torso(mesh: Mesh, m: TopMeasures, ribbed: bool):
         mesh.seams.update(int(grid[j, c]) for j in range(i_sh, i_neck + 1))
     for loop in loops:
         mesh.seams.update(int(v) for v in loop)
-    return grid, loops, rows, (i_arm, i_sh, i_neck)
+    front = None
+    if minus is not None:
+        around = lambda j: [int(minus[j])] + [int(grid[j, (FRONT_COLUMN + k) % COLUMNS]) for k in range(1, COLUMNS)] \
+            + [int(grid[j, FRONT_COLUMN])]   # noqa: E731
+        front = FrontOpening([int(v) for v in grid[:, FRONT_COLUMN]], [int(v) for v in minus], around(0), around(i_neck))
+    return grid, loops, rows, (i_arm, i_sh, i_neck), front
 
 
 def densify(stations: list, step: float = 0.03) -> list:

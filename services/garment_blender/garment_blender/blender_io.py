@@ -63,7 +63,18 @@ def fabric_materials(spec, tex_dir: Path) -> dict:
         darker = "#" + "".join(f"{int(int(color[i:i + 2], 16) * 0.8):02x}" for i in (1, 3, 5))
         mats["cadarco"] = _material("cadarco", write_maps("sarja", darker, tex_dir), 0.7)
         mats["dentes"] = _material("dentes", write_maps("dentes", spec.cor_ziper, tex_dir), 0.35, metal=0.85)
+    thread = spec.cor_linha or "#" + "".join(f"{int(int(color[i:i + 2], 16) * 0.72):02x}" for i in (1, 3, 5))
+    mats["linha"] = solid_material("linha", _rgb(thread), 0.6)
+    if spec.fechamento == "botoes":
+        mats["botao"] = solid_material("botao", _rgb(spec.cor_botao), 0.35)
+        mats["furo"] = solid_material("furo", tuple(c * 0.35 for c in _rgb(spec.cor_botao)), 0.8)
     return mats
+
+
+def _rgb(hex_color: str) -> tuple[float, float, float]:
+    """#rrggbb → cor linear do Blender (o Base Color é linear; a ficha está em sRGB)."""
+    srgb = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    return tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in srgb)
 
 
 def to_object(mesh: Mesh, name: str, materials: dict) -> bpy.types.Object:

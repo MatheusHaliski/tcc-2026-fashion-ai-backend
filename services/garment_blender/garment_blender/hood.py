@@ -27,11 +27,13 @@ def _fold_back(pts: np.ndarray, pivot: np.ndarray, angle: float) -> np.ndarray:
     return np.stack([pts[:, 0], pivot[1] + y, pivot[2] + z], 1)
 
 
-def build_hood(mesh: Mesh, neck: list[int], ease: float, mat: str, thickness: float, down: bool = False) -> None:
+def build_hood(mesh: Mesh, neck: list[int], ease: float, mat: str, thickness: float, down: bool = False,
+               order: list[int] | None = None) -> None:
     """``neck``: vértices do decote em ordem de coluna (coluna COLUMNS/4 = centro da frente). ``ease``: folga (m).
     ``down``: capuz abaixado, deitado nas costas (como fica no corpo quando não está na cabeça)."""
     front = COLUMNS // 4
-    order = [neck[(front + k) % COLUMNS] for k in range(COLUMNS + 1)]   # centro da frente → costas → centro da frente
+    # centro da frente → costas → centro da frente; com a frente aberta, cada ponta é a borda de um painel
+    order = order or [neck[(front + k) % COLUMNS] for k in range(COLUMNS + 1)]
     base = np.array([mesh.verts[i] for i in order])
     side_y = float(np.array([mesh.verts[i] for i in neck])[:, 1].max())
     center = np.array([0.0, side_y + 0.10, -0.015])                     # centro da cabeça, acima do decote

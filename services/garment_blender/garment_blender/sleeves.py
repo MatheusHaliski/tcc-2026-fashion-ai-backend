@@ -109,21 +109,24 @@ def build_sleeve(mesh: Mesh, loop: list[int], m: TopMeasures, side: int, y_shoul
     return rings[-1], d
 
 
-def extend(mesh: Mesh, loop: list[int], axis, steps: list[tuple[float, float]], mat: str, part: str = "tronco") -> list[int]:
+def extend(mesh: Mesh, loop: list[int], axis, steps: list[tuple[float, float]], mat: str, part: str = "tronco",
+           closed: bool = True, center=None) -> list[int]:
     """Anéis novos a partir de um contorno: cada passo (avanço em m ao longo de ``axis``, escala radial em torno do
-    centro do contorno). Faz a dobra da barra, do punho e a gola. Devolve o último anel."""
+    centro do contorno). Faz a dobra da barra, do punho e a gola. ``closed=False``: contorno aberto (barra e decote da
+    frente aberta), sem a face que fecharia a última borda na primeira; ``center``: centro da escala (o do contorno
+    aberto fica deslocado para as costas). Devolve o último anel."""
     axis = np.asarray(axis, float) / np.linalg.norm(axis)
     base = np.array([mesh.verts[i] for i in loop])
-    c = base.mean(0)
+    c = base.mean(0) if center is None else np.asarray(center, float)
     prev, prev_pts, travelled = list(loop), base, 0.0
     n = len(loop)
     for advance, scale in steps:
         pts = c + (base - c) * scale + axis * advance
         ring = [mesh.add(p) for p in pts]
-        a0, a1 = _arc(prev_pts), _arc(pts)
+        a0, a1 = _arc(prev_pts, closed), _arc(pts, closed)
         step = float(np.linalg.norm(pts.mean(0) - prev_pts.mean(0))) + 1e-4
         v0, v1 = travelled / TILE, (travelled + step) / TILE
-        for i in range(n):
+        for i in range(n if closed else n - 1):
             j = (i + 1) % n
             mesh.quad((prev[i], prev[j], ring[j], ring[i]),
                       [(a0[i] / TILE, v0), (a0[i + 1] / TILE, v0), (a1[i + 1] / TILE, v1), (a1[i] / TILE, v1)], mat,
