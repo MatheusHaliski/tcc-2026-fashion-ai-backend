@@ -27,7 +27,8 @@ public final class Flair3dRecursoPerfil {
             Map.entry("PASSARELA", new PerfilDoJogo(Map.of(Atributo.CARISMA, 2, Atributo.AGILIDADE, 1), Recurso.FOCO)),
             Map.entry("DRESS_THE_STAR", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1), Recurso.FOCO)),
             Map.entry("PERSONAGEM_FILME", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1, Atributo.FURTIVIDADE, 1, Atributo.AGILIDADE, 1, Atributo.FORCA, 1), Recurso.FOCO)),
-            Map.entry("BOUTIQUE_3D", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1), Recurso.MOEDAS)),
+            // a vida da loja é a paciência da cliente: cai com peça fora do pedido e com erro na execução
+            Map.entry("BOUTIQUE_3D", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1), Recurso.VIDA)),
             Map.entry("AROUND_THE_WORLD", new PerfilDoJogo(Map.of(Atributo.RESISTENCIA, 1, Atributo.AGILIDADE, 1), Recurso.ENERGIA)),
             Map.entry("LABIRINTO", new PerfilDoJogo(Map.of(Atributo.AGILIDADE, 1, Atributo.FURTIVIDADE, 1), Recurso.ENERGIA)),
             Map.entry("ROAD_TO_GLORY", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1, Atributo.RESISTENCIA, 1), Recurso.ENERGIA)),

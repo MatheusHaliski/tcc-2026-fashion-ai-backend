@@ -112,26 +112,61 @@ class Flair3dRodadasCartasTest {
     }
 
     @Test
-    void modoStylistVesteAEstrelaSorteadaEAPlateiaAbreUmaPistaPorPecaForaDoPerfil() {
+    void modoStylistPedeDeducaoEAPlateiaAbreUmaPistaPorPecaForaDoPerfil() {
         DressTheStarNucleo n = new DressTheStarNucleo();
         CbcRules.Card rock = card("SUP", "style:grunge");
         CbcRules.Card preta = card("INF", "color:black");
         CbcRules.Card neutra = card("CAL");
+        CbcRules.Card jaqueta = card("SUP", "style:grunge", "color:black");
         long semente = 1;
         while (!"ESTRELA_ROCK_80".equals(n.abertura(naRodada(DressTheStarNucleo.STYLIST, semente, rock)).get("estrela"))) {
             semente++;
         }
-        Contexto c = naRodada(DressTheStarNucleo.STYLIST, semente, rock, preta, neutra);
+        Contexto c = naRodada(DressTheStarNucleo.STYLIST, semente, rock, preta, neutra, jaqueta);
+        // só o estilo ou só a cor valem 10; os dois, 25; fora do perfil, nada
         Resultado r = n.pontuar(vestir(rock, preta, neutra), c);
-        assertThat(r.pontos()).isEqualTo(50);
+        assertThat(r.pontos()).isEqualTo(20);
+        assertThat(n.pontuar(vestir(jaqueta, preta), c).pontos()).isEqualTo(35);
         assertThat(simples(r, "ESTRELA")).isEqualTo("ESTRELA_ROCK_80");
         assertThat(simples(r, "PISTAS_ABERTAS")).isEqualTo(2L);
-        assertThat(n.previa(vestir(rock, preta, neutra), c).eventos()).isEmpty();
-        assertThat(n.efeitos(rock, c)).containsExactly(new Efeito("FIGURINO", 25));
-        assertThat(n.efeitos(neutra, c)).containsExactly(Efeito.motivo("FORA_DO_FIGURINO"));
+        // a peça fora do perfil tira 10 da confiança da estrela (o FOCO)
+        assertThat(valor(r, "DESGASTE")).containsEntry("recurso", "FOCO").containsEntry("restante", 30)
+                .containsEntry("motivos", Map.of("PECA_FORA_DO_PERFIL", 10));
+        // a prévia e a carta não respondem pela pessoa: nem nota, nem selo de quem bate
+        Resultado previa = n.previa(vestir(rock, preta, neutra), c);
+        assertThat(previa.pontos()).isZero();
+        assertThat(previa.resultado()).isEqualTo("PREVIA");
+        assertThat(previa.eventos()).isEmpty();
+        assertThat(n.efeitos(rock, c)).containsExactly(Efeito.conformeAEtapa());
+        assertThat(n.efeitos(neutra, c)).containsExactly(Efeito.conformeAEtapa());
         assertThat(r.eventos()).isEqualTo(n.pontuar(vestir(rock, preta, neutra), c).eventos());
         Resultado nada = n.pontuar(vestir(neutra), c);
         assertThat(nada.eventos()).extracting(Resultado.Evento::codigo).contains("PLATEIA_NAO_ADIVINHOU");
+    }
+
+    @Test
+    void naPassarelaCadaPecaForaDoTemaTiraConfiancaDaModelo() {
+        PassarelaNucleo n = new PassarelaNucleo();
+        CbcRules.Card farm = card("SUP", "brand:Farm");
+        CbcRules.Card gucci = card("INF", "brand:Gucci");
+        CbcRules.Card semMarca = card("CAL");
+        Resultado r = n.pontuar(vestir(farm, gucci, semMarca), Flair3dFixtures.contexto(1L, farm, gucci, semMarca));
+        assertThat(valor(r, "DESGASTE")).containsEntry("recurso", "FOCO").containsEntry("reserva", 40).containsEntry("restante", 20)
+                .containsEntry("motivos", Map.of("PECA_FORA_DO_TEMA", 20));
+        CbcRules.Card[] fora = {card("SUP"), card("INF"), card("CAL"), card("ACE")};
+        Resultado semConfianca = n.pontuar(vestir(fora), Flair3dFixtures.contexto(1L, fora));
+        assertThat(semConfianca.resultado()).isEqualTo("REPROVADO");
+        assertThat(valor(semConfianca, "DESGASTE")).containsEntry("restante", 0);
+    }
+
+    @Test
+    void quatroPecasForaDoPerfilZeramAConfiancaDaEstrela() {
+        DressTheStarNucleo n = new DressTheStarNucleo();
+        CbcRules.Card[] fora = {card("SUP", "style:classic"), card("INF", "color:green"), card("CAL"), card("ACE")};
+        Resultado r = n.pontuar(vestir(fora), Flair3dFixtures.contexto(1L, fora));
+        assertThat(r.resultado()).isEqualTo("REPROVADO");
+        assertThat(r.pontos()).isZero();
+        assertThat(valor(r, "DESGASTE")).containsEntry("restante", 0);
     }
 
     @Test
