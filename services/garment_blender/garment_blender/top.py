@@ -10,6 +10,7 @@ from .buttons import LAP, buttons
 from .closures import ZIP_GAP, facing, zipper
 from .collars import neck_finish
 from .decals import add_decal
+from .sleeve_decals import add_sleeve_decal
 from .details import chest_pocket, kangaroo
 from .geometry import ARMHOLE_HALF_ANGLE, COLUMNS, Mesh, build_torso, ellipse_semi_axes
 from .hood import build_hood
@@ -101,9 +102,13 @@ def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
     # desenhos da foto colados na frente, depois de medir (não são pano); fora do vão de uma frente que abre
     gap = ZIP_GAP / 2 if zipped else LAP if buttoned else OPEN_GAP / 2 if spec.fechamento == "aberto" else 0.0
     gap_from = rows[i_neck].y - POLO_PLACKET if spec.fechamento == "polo" else -1.0
+    sleeve_of = {("manga_esquerda" if sl["side"] > 0 else "manga_direita"): sl for sl in mesh.sleeves}
     for k, decal in enumerate(spec.estampas):
-        add_decal(mesh, rows, decal, f"estampa_{k}", rows[-1].y - m.decote_frente * 0.01, rib_top + 0.015,
-                  gap + 0.004 if gap else 0.0, gap_from)
+        if decal.lado == "frente":
+            add_decal(mesh, rows, decal, f"estampa_{k}", rows[-1].y - m.decote_frente * 0.01, rib_top + 0.015,
+                      gap + 0.004 if gap else 0.0, gap_from)
+        elif decal.lado in sleeve_of:   # peça sem manga: o desenho de manga não tem onde ir
+            add_sleeve_decal(mesh, sleeve_of[decal.lado], decal, f"estampa_{k}")
     used = {k: getattr(m, k) for k in m.__dataclass_fields__}
     if body:             # medido antes: as medidas da blusa contam a partir da barra, que agora sobe
         used |= add_brief(mesh, hem, m.barra * 0.01, thick)

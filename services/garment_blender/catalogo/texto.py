@@ -100,9 +100,21 @@ def first(rules, *texts: str) -> str | None:
     return None
 
 
-def skip_reason(name: str) -> str | None:
+KIDS_URL = {"infantil", "kids", "kid", "boys", "boy", "girls", "girl", "bebe", "baby", "menino", "menina", "toddler",
+            "juvenil", "crianca", "teen", "teens", "children", "child", "infant", "youth", "crewcuts"}
+
+
+def skip_reason(name: str, url: str = "", brand: str = "", sub: str = "") -> str | None:
+    """Por que o produto não vira peça de cima adulta (None: vira). O nome decide; o endereço e a linha da marca pegam o
+    infantil que o nome não diz (a linha Mini da Reserva, o body de bebê, o crewcuts da J.Crew)."""
     n = plain(name)
-    return next((reason for reason, rx in SKIP.items() if rx.search(n)), None)
+    found = next((reason for reason, rx in SKIP.items() if rx.search(n)), None)
+    if found:
+        return found
+    tokens = set(re.split(r"[^a-z0-9]+", plain(url))) | set(re.split(r"[^a-z0-9]+", n))
+    if tokens & KIDS_URL or (plain(brand) == "reserva" and ("mini" in tokens or sub == "bodysuit")):
+        return "infantil"
+    return None
 
 
 def sex_of(text: str) -> str | None:

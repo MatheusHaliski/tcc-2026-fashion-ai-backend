@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
-SIDES = ("frente",)
+SIDES = ("frente", "manga_esquerda", "manga_direita")   # esquerda: a de quem veste (+x; à direita na foto)
 DIRECTIONS = ("horizontal", "vertical")
 
 
@@ -19,7 +19,7 @@ class Decal:
     """Desenho colado no tronco. Medidas em metros, na peça pronta."""
     imagem: str              # PNG com alfa (caminho resolvido no ``parse``)
     x: float                 # centro, a partir do centro da frente, ao longo do pano (+: lado esquerdo de quem veste)
-    abaixo_do_ombro: float   # centro, abaixo do ponto alto do ombro (HPS)
+    abaixo_do_ombro: float   # centro, abaixo do ponto alto do ombro (HPS); na manga, da ponta do ombro manga abaixo
     largura: float           # a altura sai da proporção da imagem
     lado: str = "frente"
 

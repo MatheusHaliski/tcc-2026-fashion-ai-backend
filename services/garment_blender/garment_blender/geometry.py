@@ -38,6 +38,7 @@ class Mesh:
     mats: list = field(default_factory=list)           # por face: nome do material
     parts: list = field(default_factory=list)          # por face: "tronco", "manga_d", "manga_e" (para medir)
     seams: set = field(default_factory=set)            # vértices de costura (viram vinco)
+    sleeves: list = field(default_factory=list)        # anéis de cada manga (para o desenho de manga)
 
     def add(self, p) -> int:
         self.verts.append(tuple(float(c) for c in p))

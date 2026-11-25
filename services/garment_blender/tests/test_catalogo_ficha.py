@@ -94,6 +94,15 @@ def test_pula_o_que_nao_e_roupa_de_cima_adulta(name, reason):
     assert texto.skip_reason(name) == reason
 
 
+def test_infantil_pelo_endereco_e_pela_linha_da_marca():
+    assert texto.skip_reason("Camiseta Estampada Spacebus", "https://x.com/camiseta-mini-spacebus/p", "Reserva") == \
+        "infantil"
+    assert texto.skip_reason("Body Pica-Pau", "https://x.com/body-pica-pau/p", "Reserva", "bodysuit") == "infantil"
+    assert texto.skip_reason("Rash Vest", "https://x.com/rash-vest-boys-8-16-years") == "infantil"
+    assert texto.skip_reason("Camisa Mini Xadrez", "https://x.com/camisa-mini-xadrez", "Aramis") is None   # padrão
+    assert texto.skip_reason("Blusa Feminina", "https://x.com/blusa-feminina-preta") is None
+
+
 def test_botao_tom_sobre_tom_e_dourado_quando_o_texto_diz():
     on_white = spec_for(product("shirt", "Camisa Social"), "#f2f2f0", {})["cor_botao"]
     on_black = spec_for(product("shirt", "Camisa Social"), "#1b1b1b", {})["cor_botao"]

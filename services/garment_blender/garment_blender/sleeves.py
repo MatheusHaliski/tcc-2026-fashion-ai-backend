@@ -101,6 +101,7 @@ def build_sleeve(mesh: Mesh, loop: list[int], m: TopMeasures, side: int, y_shoul
             mesh.quad((rings[r][i], rings[r][j], rings[r + 1][j], rings[r + 1][i]),
                       [(a0[i] / TILE, v0), (a0[i + 1] / TILE, v0), (a1[i + 1] / TILE, v1), (a1[i] / TILE, v1)], mat,
                       "manga_d" if side > 0 else "manga_e")
+    mesh.sleeves.append({"side": side, "rings": rings, "phi": phi})
     under = int(np.argmin(np.cos(phi)))            # costura de baixo da manga: o ponto mais baixo do contorno
     mesh.seams.update(int(ring[under]) for ring in rings)
     if ribbed:                                     # emenda do punho
