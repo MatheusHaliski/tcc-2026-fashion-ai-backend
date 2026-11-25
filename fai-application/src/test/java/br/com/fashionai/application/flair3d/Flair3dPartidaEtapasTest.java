@@ -146,6 +146,9 @@ class Flair3dPartidaEtapasTest {
         // o espelho abriu: falta a execução no percurso; os três botões a tempo somam 15
         Resultado espelho = service.entregar(ana, id, vestir(sup, inf, cal));
         assertThat(espelho.status()).isEqualTo("EM_ACAO");
+        // a execução começa com o Reflexo que a apresentação errada deixou (40 - 15)
+        assertThat(espelho.eventos()).filteredOn(e -> e.codigo().equals("EXECUCAO_PEDIDA")).extracting(Resultado.Evento::valor)
+                .first().asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP).containsEntry("recurso", "ENERGIA").containsEntry("reserva", 25);
         Resultado abriu = service.acionar(ana, id, Flair3dFixtures.perfeita(espelho));
         assertThat(abriu.status()).isEqualTo("ENTREGUE");
         assertThat(abriu.resultado()).isEqualTo("ABRE");
@@ -156,14 +159,16 @@ class Flair3dPartidaEtapasTest {
         assertThat(partida(id).getEstrelas()).isEqualTo(Resultado.estrelas(96));
         assertThat(erro(() -> service.entregar(ana, id, vestir(sup, inf, cal))).code()).isEqualTo("PARTIDA_JA_ENTREGUE");
 
+        // cada apresentação errada gasta 15 de Reflexo (a energia, 40 no começo): a terceira zera e a partida é perdida
         UUID outra = abrir("LABIRINTO", sup, inf, cal, ace);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 2; i++) {
             assertThat(service.entregar(ana, outra, vestir(sup, ace)).status()).isEqualTo("ABERTA");
         }
-        Resultado naQuarta = service.entregar(ana, outra, vestir(sup, inf, cal));
-        assertThat(naQuarta.resultado()).isEqualTo("ABRE");
-        assertThat(naQuarta.pontos()).isZero();
-        assertThat(naQuarta.status()).isEqualTo("ENTREGUE");
+        Resultado semReflexo = service.entregar(ana, outra, vestir(sup, ace));
+        assertThat(semReflexo.resultado()).isEqualTo("DERROTA");
+        assertThat(semReflexo.pontos()).isZero();
+        assertThat(semReflexo.status()).isEqualTo("ENTREGUE");
+        assertThat(erro(() -> service.entregar(ana, outra, vestir(sup, inf, cal))).code()).isEqualTo("PARTIDA_JA_ENTREGUE");
     }
 
     @Test

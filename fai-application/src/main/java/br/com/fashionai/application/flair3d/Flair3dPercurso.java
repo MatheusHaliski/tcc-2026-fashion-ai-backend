@@ -3,6 +3,7 @@ package br.com.fashionai.application.flair3d;
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
+import br.com.fashionai.application.flair3d.recurso.Flair3dDesgaste;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -13,7 +14,9 @@ import java.util.Map;
  * Rodada em etapas (um look por etapa: a cliente da vez, a região, o espelho, a rodada da batalha). Cada entrega tenta a
  * etapa da vez; quando passa, a partida segue ABERTA na etapa seguinte, e a última fecha com a média das etapas. Nada é
  * guardado além das entregas: o percurso inteiro é refeito da semente a cada chamada, então a prévia nunca gasta nada e a
- * revisão dá sempre o mesmo resultado.
+ * revisão dá sempre o mesmo resultado. Nas rodadas que gastam a cada apresentação que não passa ({@link Etapas#falha()}:
+ * o espelho e a porta do Labirinto, a região da viagem), cada falha tira do recurso-vida; zerado, a partida fecha em
+ * derrota com a média das etapas que fechou (as que faltaram contam zero).
  */
 public final class Flair3dPercurso {
     public static final String CUMPRIDA = "ETAPA_CUMPRIDA";
@@ -49,13 +52,19 @@ public final class Flair3dPercurso {
         default List<Evento> fecho(List<Passo> passos) {
             return List.of();
         }
+
+        /** O que cada apresentação que não passa gasta do recurso-vida; nulo quando errar só custa a nota. */
+        default Flair3dDesgaste.Falha falha() {
+            return null;
+        }
     }
 
     /** Uma etapa já fechada: quantas tentativas levou, a avaliação que a fechou e o look que a fechou. */
     public record Passo(int etapa, String codigo, int tentativas, Avaliacao avaliacao, Map<String, CbcRules.Card> pecas) {
     }
 
-    private record Andado(List<Passo> fechadas, Avaliacao ultima, boolean passou, int etapa, int tentativa, Map<String, CbcRules.Card> anterior) {
+    private record Andado(List<Passo> fechadas, Avaliacao ultima, boolean passou, int etapa, int tentativa, Map<String, CbcRules.Card> anterior,
+                          int falhas) {
     }
 
     private Flair3dPercurso() {
@@ -72,6 +81,7 @@ public final class Flair3dPercurso {
         boolean passou = false;
         int etapa = 1;
         int tentativa = 1;
+        int falhas = 0;
         Map<String, CbcRules.Card> anterior = null;
         for (Andamento.Etapa e : entregas) {
             if (etapa > etapas.total()) {
@@ -87,9 +97,10 @@ public final class Flair3dPercurso {
                 anterior = look;
             } else {
                 tentativa++;
+                falhas++;
             }
         }
-        return new Andado(fechadas, ultima, passou, etapa, tentativa, anterior);
+        return new Andado(fechadas, ultima, passou, etapa, tentativa, anterior, falhas);
     }
 
     private static Map<String, Object> etapaDaVez(Andado a, Etapas etapas) {
@@ -103,7 +114,7 @@ public final class Flair3dPercurso {
 
     /** A primeira etapa, para a abertura da partida: {etapa, codigo, total, tentativa}. */
     public static Map<String, Object> primeira(Etapas etapas) {
-        return etapaDaVez(new Andado(List.of(), null, false, 1, 1, null), etapas);
+        return etapaDaVez(new Andado(List.of(), null, false, 1, 1, null, 0), etapas);
     }
 
     /** A entrega de agora, depois das anteriores: a partida segue ABERTA até a última etapa fechar. */
@@ -111,7 +122,14 @@ public final class Flair3dPercurso {
         List<Andamento.Etapa> entregas = new ArrayList<>(contexto.andamento().anteriores());
         entregas.add(new Andamento.Etapa(entrega.cartas(), List.of(), entrega.resposta()));
         Andado a = andar(entregas, contexto, etapas);
+        Flair3dDesgaste gasto = desgaste(a, contexto, etapas);
+        if (gasto != null && gasto.esgotou() && !a.passou()) {
+            return esgotada(a, etapas, gasto);
+        }
         List<Evento> eventos = new ArrayList<>(a.ultima().eventos());
+        if (gasto != null) {
+            eventos.add(gasto.evento());
+        }
         if (a.etapa() <= etapas.total()) {
             if (a.passou()) {
                 eventos.add(new Evento("PONTOS_DA_ETAPA", Math.round(a.ultima().pontos())));
@@ -120,8 +138,33 @@ public final class Flair3dPercurso {
             return Resultado.parcial(Resultado.ABERTA, a.passou() ? CUMPRIDA : NAO_CUMPRIDA, a.ultima().regras(), eventos);
         }
         double pontos = a.fechadas().stream().mapToDouble(p -> p.avaliacao().pontos()).average().orElse(0);
-        List<RegraResultado> regras = new ArrayList<>();
         List<Evento> fim = new ArrayList<>();
+        List<RegraResultado> regras = fechadas(a, etapas, fim);
+        fim.addAll(etapas.fecho(a.fechadas()));
+        if (gasto != null) {
+            fim.add(gasto.evento());
+        }
+        return Resultado.of(pontos, etapas.resultado(pontos, a.fechadas()), regras, fim).comCartas(cartas(a.fechadas(), etapas.total()));
+    }
+
+    /** O desgaste das apresentações que não passaram, nas rodadas que gastam com elas (nulo nas outras). */
+    private static Flair3dDesgaste desgaste(Andado a, Contexto contexto, Etapas etapas) {
+        Flair3dDesgaste.Falha f = etapas.falha();
+        return f == null ? null : Flair3dDesgaste.de(f.recurso(), contexto.andamento().usos()).com(f.motivo(), a.falhas(), f.custo());
+    }
+
+    /** A falha que zerou a reserva fecha a partida em derrota: a nota é a soma das etapas fechadas sobre o total. */
+    private static Resultado esgotada(Andado a, Etapas etapas, Flair3dDesgaste gasto) {
+        List<Evento> fim = new ArrayList<>(a.ultima().eventos());
+        List<RegraResultado> regras = fechadas(a, etapas, fim);
+        fim.add(gasto.evento());
+        double pontos = a.fechadas().stream().mapToDouble(p -> p.avaliacao().pontos()).sum() / etapas.total();
+        return Resultado.of(pontos, Flair3dDesgaste.ESGOTOU, regras, fim).comCartas(cartas(a.fechadas(), etapas.total()));
+    }
+
+    /** A regra e o evento ETAPA de cada etapa fechada (o evento vai para {@code fim}). */
+    private static List<RegraResultado> fechadas(Andado a, Etapas etapas, List<Evento> fim) {
+        List<RegraResultado> regras = new ArrayList<>();
         for (Passo p : a.fechadas()) {
             double parte = p.avaliacao().pontos() / etapas.total();
             regras.add(new RegraResultado(p.codigo(), p.avaliacao().pontos() >= 60, Math.round(parte * 100) / 100.0));
@@ -132,8 +175,7 @@ public final class Flair3dPercurso {
             m.put("tentativas", p.tentativas());
             fim.add(new Evento("ETAPA", m));
         }
-        fim.addAll(etapas.fecho(a.fechadas()));
-        return Resultado.of(pontos, etapas.resultado(pontos, a.fechadas()), regras, fim).comCartas(cartas(a.fechadas(), etapas.total()));
+        return regras;
     }
 
     /**

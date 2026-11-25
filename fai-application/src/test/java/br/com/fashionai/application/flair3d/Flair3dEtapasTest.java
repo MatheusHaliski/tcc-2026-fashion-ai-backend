@@ -39,7 +39,7 @@ class Flair3dEtapasTest {
     void labirintoPerdeEstrelasACadaApresentacaoMasAbre() {
         CbcRules.Card[] azuis = {card("SUP", "color:navy"), card("INF", "color:blue"), card("CAL", "color:cobalt")};
         LabirintoNucleo n = new LabirintoNucleo();
-        int[] pontos = {100, 80, 60, 0, 0};
+        int[] pontos = {100, 80, 60, 40, 20};
         int[] estrelas = {3, 2, 1, 0, 0};
         for (int tentativa = 1; tentativa <= 5; tentativa++) {
             Resultado r = n.pontuar(vestir(azuis), contexto(7L, azuis).comAndamento(new Andamento(tentativa, List.of())));
