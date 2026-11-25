@@ -176,11 +176,25 @@ class Flair3dNucleoServiceTest {
         FlairCardInstance gucci = carta(ana, "INF", "brand:Gucci");
         Map<String, Object> out = service.efeitos(ana, "PASSARELA",
                 new Flair3dNucleoService.PedidoEfeitos(List.of(farm.getId(), gucci.getId())));
-        assertThat(out.get("efeitos")).isEqualTo(List.of(
+        assertThat(semPerfil(out.get("efeitos"))).isEqualTo(List.of(
                 Map.of("cardId", farm.getId(), "itens", List.of(new Efeito("MARCA_BR", 10))),
                 Map.of("cardId", gucci.getId(), "itens", List.of(Efeito.motivo("MARCA_NAO_BR")))));
+        // cada carta leva o perfil da regra peça-recurso: o top na vaga SUP rende foco quando usado
+        @SuppressWarnings("unchecked")
+        Map<String, Object> perfil = (Map<String, Object>) ((List<Map<String, Object>>) out.get("efeitos")).get(0).get("perfil");
+        assertThat(perfil).containsEntry("vaga", "SUP").containsEntry("recurso", "FOCO").containsKeys("atributos", "usos", "acoes", "dominante");
         FlairCardInstance daBia = carta(bia, "SUP");
         assertThat(status(() -> service.efeitos(ana, "PASSARELA", new Flair3dNucleoService.PedidoEfeitos(List.of(daBia.getId())))))
                 .isEqualTo(422);
+    }
+
+    /** Os efeitos sem o perfil da peça (a regra peça-recurso tem teste próprio: Flair3dRecursoTabelaTest). */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> semPerfil(Object efeitos) {
+        return ((List<Map<String, Object>>) efeitos).stream().map(m -> {
+            Map<String, Object> copia = new java.util.LinkedHashMap<>(m);
+            copia.remove("perfil");
+            return copia;
+        }).toList();
     }
 }

@@ -207,10 +207,20 @@ class Flair3dPartidaEtapasTest {
         FlairCardInstance leve = carta(ana, "SUP", "material:linen");
         Map<String, Object> out = service.efeitos(ana, "AROUND_THE_WORLD",
                 new Flair3dNucleoService.PedidoEfeitos(List.of(neutra.getId(), leve.getId())));
-        assertThat(out.get("efeitos")).isEqualTo(List.of(
+        assertThat(semPerfil(out.get("efeitos"))).isEqualTo(List.of(
                 Map.of("cardId", neutra.getId(), "itens", List.of(Efeito.motivo("SEM_BONUS"))),
                 Map.of("cardId", leve.getId(), "itens", List.of(new Efeito("CIMA_LEVE", 25)))));
         Map<String, Object> zonas = service.efeitos(ana, "SUPER_HEROI", new Flair3dNucleoService.PedidoEfeitos(List.of(neutra.getId())));
-        assertThat(zonas.get("efeitos")).isEqualTo(List.of(Map.of("cardId", neutra.getId(), "itens", List.of())));
+        assertThat(semPerfil(zonas.get("efeitos"))).isEqualTo(List.of(Map.of("cardId", neutra.getId(), "itens", List.of())));
+    }
+
+    /** Os efeitos sem o perfil da peça (a regra peça-recurso tem teste próprio: Flair3dRecursoTabelaTest). */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> semPerfil(Object efeitos) {
+        return ((List<Map<String, Object>>) efeitos).stream().map(m -> {
+            Map<String, Object> copia = new java.util.LinkedHashMap<>(m);
+            copia.remove("perfil");
+            return copia;
+        }).toList();
     }
 }

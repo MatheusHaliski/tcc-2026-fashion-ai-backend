@@ -30,7 +30,9 @@ import { useNucleoAction } from "@/components/flair/nucleos/use-nucleo-action";
 import { useNucleoBriefing } from "@/components/flair/nucleos/use-nucleo-briefing";
 import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-controls";
 import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects";
+import { useNucleoSinais } from "@/components/flair/nucleos/use-nucleo-sinais";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { useLookDosRecursos } from "@/components/flair/nucleos/recursos/use-look-dos-recursos";
 import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewport";
 import { useModoPorCartas } from "@/components/flair/nucleos/use-modo-por-cartas";
 import { useResultCards } from "@/components/flair/nucleos/use-result-cards";
@@ -115,13 +117,9 @@ export function NucleoGame(props: Props) {
   const entrada = useCardFx({ nucleo: codigo, vestidas: estado.sel.cartas, cards: cartas, itens: efeitos.itens, ativo: preparando, reduzido, prefs: fx.prefs });
   const acao = useNucleoAction({ nucleo: codigo, momento, resultado, automatico: !!config.automatico, reduzido, prefs: fx.prefs, onFim: onFimAcao ?? SEM_FIM });
 
-  useEffect(() => {
-    if (estado.sel.resposta && acionamento?.tipo === "RESPOSTA") emitirFx({ tipo: "acionamento", nucleo: codigo, acionamento: "RESPOSTA" });
-  }, [estado.sel.resposta, acionamento?.tipo, codigo]);
-
-  useEffect(() => {
-    if (preparando) onPrevia?.(estado.sel, efetiva);
-  }, [preparando, estado.sel, efetiva, onPrevia]);
+  useNucleoSinais({ codigo, sel: estado.sel, acionamento, preparando, efetiva, onPrevia });
+  /** a regra peça-recurso: os atributos do look e o que a última peça vestida mudou (a roda no palco) */
+  const recursos = useLookDosRecursos(vestidas, efeitos.perfil, preparando);
   useEffect(() => {
     setAcionou(false);
   }, [props.erroAcionar, resultado]);
@@ -179,7 +177,7 @@ export function NucleoGame(props: Props) {
           zonas={estado.sel.zonas}
           prefs={fx.prefs}
           onPref={fx.alternar}
-          entrada={entrada}
+          entrada={entrada} recursos={recursos}
           reduzido={reduzido}
           passos={acao.passos}
           mostrados={acao.mostrados}

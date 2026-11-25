@@ -75,7 +75,8 @@ public class Flair3dNucleoService {
     }
 
     /**
-     * O efeito de cada carta da pessoa neste núcleo: {efeitos:[{cardId, itens:[{codigo, valor, motivo}]}]}. Carta que não
+     * O efeito de cada carta da pessoa neste núcleo: {efeitos:[{cardId, itens:[{codigo, valor, motivo}], perfil}]}
+     * (Flair3dEfeitosDaCarta). Carta que não
      * pontua num núcleo de cartas leva um item de motivo (o do núcleo, ou SEM_BONUS), nunca a lista vazia.
      */
     @Transactional(readOnly = true)
@@ -86,13 +87,7 @@ public class Flair3dNucleoService {
         Contexto ctx = contextoDosEfeitos(user, n, minhas, pedido);
         boolean deCartas = n.definicao().recursos().contains(Definicao.CARTAS);
         List<Map<String, Object>> out = new ArrayList<>();
-        minhas.forEach((id, carta) -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("cardId", id);
-            List<Efeito> itens = n.efeitos(carta, ctx);
-            m.put("itens", comEfeitoDaCor(n.codigo(), carta, itens.isEmpty() && deCartas ? List.of(Efeito.motivo(Efeito.SEM_BONUS)) : itens));
-            out.add(m);
-        });
+        minhas.forEach((id, carta) -> out.add(Flair3dEfeitosDaCarta.daCarta(n, id, carta, ctx, deCartas)));
         return Map.of("efeitos", out);
     }
 
@@ -186,18 +181,6 @@ public class Flair3dNucleoService {
         Flair3dMatch m = matches.findById(pedido.partida()).filter(x -> x.getUserId().equals(user.id()) && x.getNucleo().equals(n.codigo()))
                 .orElseThrow(() -> Flair3dErros.naoEncontrado("PARTIDA_NAO_ENCONTRADA", "partida_nao_encontrada"));
         return base.comSemente(m.getSemente()).comAndamento(Andamento.ler(m.getEstadoJson()));
-    }
-
-    /** Os itens da carta com o efeito da cor dela no jogo no fim (Flair3dCores), quando há um e o núcleo não o mandou. */
-    private static List<Efeito> comEfeitoDaCor(String nucleo, CbcRules.Card carta, List<Efeito> itens) {
-        Efeito cor = Flair3dCores.efeitoDaCor(nucleo, carta);
-        if (cor == null) {
-            return itens;
-        }
-        List<Efeito> out = new ArrayList<>(itens);
-        out.removeIf(e -> e.codigo().equals(cor.codigo()));
-        out.add(cor);
-        return out;
     }
 
     /** A partida da pessoa (404, 403) no status que a operação pede (409). */
