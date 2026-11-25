@@ -109,11 +109,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/scheme-anatomies.tsx": {
-   "max": 542,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/scheme-card.test.tsx": {
-   "max": 417,
+   "max": 541,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/seal-medallion.tsx": {
