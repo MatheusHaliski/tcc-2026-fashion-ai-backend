@@ -17,7 +17,8 @@ final class MirrorPromptRules {
     private MirrorPromptRules() {
     }
 
-    static final Map<String, List<String>> KEYWORDS = Map.ofEntries(
+    // ordem fixa (LinkedHashMap): o corte de 3 ocasiões sempre fica com as mesmas, na ordem em que aparecem aqui
+    static final Map<String, List<String>> KEYWORDS = ordered(
             Map.entry("faculdade", List.of("university")), Map.entry("aula", List.of("university", "school")), Map.entry("escola", List.of("school")),
             Map.entry("trabalho", List.of("work")), Map.entry("trabajo", List.of("work")), Map.entry("escritório", List.of("work", "business")), Map.entry("reunião", List.of("business")),
             Map.entry("apresentação", List.of("business", "formal")), Map.entry("entrevista", List.of("business", "formal")),
@@ -41,16 +42,36 @@ final class MirrorPromptRules {
             Map.entry("playa", List.of("beach")), Map.entry("viaje", List.of("travel")), Map.entry("gimnasio", List.of("gym")), Map.entry("entrenamiento", List.of("gym", "sport")),
             Map.entry("carrera", List.of("sport")), Map.entry("deporte", List.of("sport")), Map.entry("concierto", List.of("festival")), Map.entry("paseo", List.of("casual", "outdoor")));
 
-    /** palavra inteira (inglês): "hot" não casa com "photo", "cold" não casa com "scolding" */
+    @SafeVarargs
+    private static Map<String, List<String>> ordered(Map.Entry<String, List<String>>... entries) {
+        Map<String, List<String>> m = new java.util.LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> e : entries) {
+            m.put(e.getKey(), e.getValue());
+        }
+        return java.util.Collections.unmodifiableMap(m);
+    }
+
+    /** palavra inteira, com acentos: "hot" não casa com "photo", "casa" não casa com "casamento", "sol" com "solteiro" */
     static boolean hasWord(String text, String word) {
-        return java.util.regex.Pattern.compile("\\b" + java.util.regex.Pattern.quote(word) + "\\b").matcher(text).find();
+        return java.util.regex.Pattern.compile("(?<![\\p{L}\\p{N}])" + java.util.regex.Pattern.quote(word) + "(?![\\p{L}\\p{N}])")
+                .matcher(text).find();
+    }
+
+    /** O pedido foi entendido pelas regras locais (ocasião, humor ou clima reconhecidos, ou vazio = Surpreenda-me): dispensa a IA. */
+    static boolean recognized(String prompt) {
+        String p = prompt == null ? "" : prompt.toLowerCase(Locale.ROOT).trim();
+        if (p.isEmpty() || KEYWORDS.keySet().stream().anyMatch(k -> hasWord(p, k))) {
+            return true;
+        }
+        MirrorService.Interpretation it = localInterpretation(p, List.of());
+        return it.mood() != null || !it.constraints().isEmpty();
     }
 
     static MirrorService.Interpretation localInterpretation(String prompt, List<UUID> anchors) {
         String p = prompt == null ? "" : prompt.toLowerCase(Locale.ROOT);
         LinkedHashSet<String> occ = new LinkedHashSet<>();
         KEYWORDS.forEach((k, v) -> {
-            if (p.contains(k)) {
+            if (hasWord(p, k)) {
                 occ.addAll(v);
             }
         });
@@ -62,7 +83,7 @@ final class MirrorPromptRules {
         if (p.contains("frio") || p.contains("frío") || p.contains("chuva") || hasWord(p, "cold") || hasWord(p, "rainy") || p.contains("lluvia")) {
             constraints.add("cold");
         }
-        if (p.contains("calor") || p.contains("quente") || p.contains("sol") || hasWord(p, "hot") || hasWord(p, "warm") || p.contains("caluroso")) {
+        if (p.contains("calor") || p.contains("quente") || hasWord(p, "sol") || hasWord(p, "hot") || hasWord(p, "warm") || p.contains("caluroso")) {
             constraints.add("hot");
         }
         if (p.contains("diferente") || p.contains("ousad")) {

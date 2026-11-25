@@ -179,7 +179,7 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .vista-occasions { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }
 .vista-cell { min-width: 0; }
 .vista-cell:disabled { opacity: .6; cursor: progress; }
-.vista-cell-ico { font-size: 22px; line-height: 1; }
+.vista-cell-ico { display: grid; place-items: center; line-height: 0; }
 .vista-cell-caption { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-caption); color: var(--muted); }
 .mirror-vista-result { display: grid; gap: 4px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); }
 .mirror-sequence { display: grid; gap: 2px; padding-left: 18px; list-style: decimal; font-size: var(--text-body-sm); }
@@ -214,7 +214,13 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .mirror-side-panel:focus { outline: none; }
 .mirror-side-panel[hidden] { display: none; }
 .mirror-side-panel-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 0 8px; background: var(--surface); }
-@media (max-width: 640px) { .mirror-side-panel { border-left: 0; border-radius: 0; } .mirror-panel-toggle { top: 20px; right: 20px; } }
+.mirror-panel-toggle[data-side="left"] { right: auto; left: 28px; }
+.mirror-side-panel[data-side="left"] { right: auto; left: 0; border-left: 0; border-right: 1px solid var(--line-soft); border-radius: 0 16px 16px 0; box-shadow: 12px 0 32px -16px rgba(0,0,0,.35); }
+@media (max-width: 640px) {
+  .mirror-side-panel, .mirror-side-panel[data-side="left"] { border-left: 0; border-right: 0; border-radius: 0; }
+  .mirror-panel-toggle { top: 20px; right: 20px; }
+  .mirror-panel-toggle[data-side="left"] { left: 20px; }
+}
 /* espelho sem WebGL (MirrorFlatStill): as peças vestidas em 2D sobre o vidro, sem Canvas */
 .mirror-flat { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 56px 16% 44px; }
 .mirror-flat img { flex: 0 1 auto; min-height: 0; max-width: 100%; max-height: 32%; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.18)); }

@@ -714,6 +714,9 @@ public class MirrorService {
 
     // ================================================================== Vista-me (CA08–CA15)
     Interpretation interpret(CurrentUser user, String prompt, List<UUID> anchors, List<WardrobeItem> eligible, AiOutcome<?>[] holder) {
+        if (MirrorPromptRules.recognized(prompt)) {
+            return MirrorPromptRules.localInterpretation(prompt, anchors);      // células do Vista-me: sem a 1ª chamada à IA
+        }
         Map<String, UUID> refs = new LinkedHashMap<>();
         List<Map<String, Object>> names = new ArrayList<>();
         int i = 1;
@@ -749,7 +752,8 @@ public class MirrorService {
                     if (season != null && !Set.of("SPRING", "SUMMER", "AUTUMN", "WINTER").contains(season)) {
                         season = null;
                     }
-                    return new Interpretation(occ.isEmpty() ? local.occasion() : occ, mood == null ? local.mood() : mood, new ArrayList<>(anc), cons, season, null);
+                    return new Interpretation(occ.isEmpty() ? local.occasion() : occ, mood == null ? local.mood() : mood, new ArrayList<>(anc),
+                            cons.isEmpty() ? local.constraints() : cons, season == null ? local.season() : season, null);
                 }, () -> local, null));
         holder[0] = outcome;
         return outcome.value() == null ? local : outcome.value();
@@ -761,7 +765,7 @@ public class MirrorService {
         Map<String, WardrobeItem> byRef = new LinkedHashMap<>();
         List<Map<String, Object>> catalog = new ArrayList<>();
         int i = 1;
-        for (WardrobeItem w : eligible) {
+        for (WardrobeItem w : MirrorLookComposer.shortlist(it, eligible, 8)) {        // as melhores por parte, não o acervo todo
             String ref = "p" + i++;
             byRef.put(ref, w);
             Map<String, Object> m = new LinkedHashMap<>();
@@ -782,7 +786,9 @@ public class MirrorService {
         java.util.function.Supplier<List<WardrobeItem>> local = () -> localCompose(it, eligible, shown);
         AiOutcome<List<WardrobeItem>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.SCHEME_COMPOSER,
                 "Você é o Vista-me do Smart Mirror do Fashion AI. Monte UM look completo usando SOMENTE as peças do acervo (refs). "
-                        + "Obrigatório: (upper + lower) ou dress, e shoes; até 1 outer_layer e até 2 accessory. Toda peça marcada anchor=true DEVE "
+                        + "Obrigatório: (upper + lower) ou dress, e shoes; até 1 outer_layer e até 2 accessory. Frio (cold/WINTER): inclua 1 outer_layer; "
+                        + "calor (hot/SUMMER): nenhum outer_layer. Respeite a ocasião: academia/esporte só peças esportivas, praia e casa sem peças "
+                        + "formais, trabalho sem chinelo, moletom ou regata. Toda peça marcada anchor=true DEVE "
                         + "entrar. Nunca invente peças. Com nivelTermico no pedido (LEVE, MODERADO, INTENSO), prefira peças cuja intensidadeTermica "
                         + "declarada combine (LEVE, MODERADA, ALTA): é o que a pessoa declarou da peça, não clima nem certificado do tecido. "
                         + "Responda SOMENTE com JSON {\"refs\":[...],\"title\":string,\"rationale\":\"até 2 frases\"}.",
@@ -819,66 +825,9 @@ public class MirrorService {
         return look == null || look.isEmpty() ? Optional.empty() : Optional.of(look);
     }
 
+    /** Regras locais por ocasião, humor, clima e nível térmico (MirrorLookComposer); vazio quando tudo já foi mostrado. */
     static List<WardrobeItem> localCompose(Interpretation it, List<WardrobeItem> eligible, Set<String> shown) {
-        Set<UUID> anchors = new HashSet<>(it.anchors());
-        List<LocalSchemeComposer.Composition> comps = LocalSchemeComposer.compose(eligible, it.occasion(), List.of(), it.season(),
-                String.join(" ", it.constraints()), 24);
-        Map<UUID, WardrobeItem> byId = eligible.stream().collect(Collectors.toMap(WardrobeItem::getId, w -> w));
-        List<WardrobeItem> best = null;
-        for (LocalSchemeComposer.Composition c : comps) {
-            List<UUID> ids = c.items().stream().map(LocalSchemeComposer.Pick::wardrobeItemId).toList();
-            if (ids.containsAll(anchors) && !shown.contains(key(ids))) {
-                List<WardrobeItem> look = ids.stream().map(byId::get).filter(Objects::nonNull).toList();
-                if (it.nivelTermico() == null) {
-                    return look;
-                }
-                if (best == null || MirrorThermalFit.of(it.nivelTermico(), look).score() > MirrorThermalFit.of(it.nivelTermico(), best).score()) {
-                    best = look;
-                }
-            }
-        }
-        if (best != null) {
-            return best;
-        }
-        // monta na mão: âncoras + melhor candidata por slot faltante (similaridade com as âncoras + ocasião)
-        List<WardrobeItem> look = new ArrayList<>(anchors.stream().map(byId::get).filter(Objects::nonNull).toList());
-        Set<String> filled = look.stream().map(MirrorService::slotOf).collect(Collectors.toSet());
-        List<String> need = new ArrayList<>();
-        if (!filled.contains("dress")) {
-            if (!filled.contains("upper")) {
-                need.add("upper");
-            }
-            if (!filled.contains("lower")) {
-                need.add("lower");
-            }
-        }
-        if (!filled.contains("shoes")) {
-            need.add("shoes");
-        }
-        for (String slot : need) {
-            List<WardrobeItem> cands = eligible.stream().filter(w -> slotOf(w).equals(slot)).filter(w -> !look.contains(w)).toList();
-            if (slot.equals("upper") && cands.isEmpty()) {
-                cands = eligible.stream().filter(w -> slotOf(w).equals("dress")).toList();
-            }
-            List<Map<String, Object>> ranked = localAlternatives(cands, look);
-            for (Map<String, Object> r : ranked) {
-                WardrobeItem w = byId.get((UUID) r.get("pieceId"));
-                if (w != null && !shown.contains(key(concat(look, w)))) {
-                    look.add(w);
-                    break;
-                }
-            }
-            if (look.stream().noneMatch(w -> slotOf(w).equals(slot)) && !ranked.isEmpty()) {
-                look.add(byId.get((UUID) ranked.get(0).get("pieceId")));
-            }
-        }
-        return look.size() >= 2 ? look : List.of();
-    }
-
-    private static List<UUID> concat(List<WardrobeItem> look, WardrobeItem w) {
-        List<UUID> ids = look.stream().map(WardrobeItem::getId).collect(Collectors.toCollection(ArrayList::new));
-        ids.add(w.getId());
-        return ids;
+        return MirrorLookComposer.compose(it, eligible, shown);
     }
 
     @Transactional
@@ -909,7 +858,8 @@ public class MirrorService {
         Interpretation lido = interpret(user, prompt, new ArrayList<>(anchors), eligible, holder);
         Interpretation it = new Interpretation(lido.occasion(), lido.mood(), lido.anchors(), lido.constraints(), lido.season(), nivelTermico);
         AiOutcome<?> interpretOutcome = holder[0];
-        Set<String> shown = new LinkedHashSet<>(Json.strings(s.getShownCombinationsJson()));
+        // "já mostradas" vale para o mesmo pedido (Outra sugestão); um pedido novo começa do zero
+        Set<String> shown = prompt.equals(s.getLastPrompt()) ? new LinkedHashSet<>(Json.strings(s.getShownCombinationsJson())) : new LinkedHashSet<>();
         Optional<List<WardrobeItem>> composed = compose(user, it, eligible, shown, mirrorContext, holder);
         AiOutcome<?> composeOutcome = holder[0];
         if (composed.isEmpty()) {
