@@ -89,7 +89,6 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
 .hype-mini-stars { display: block; animation: hype-star-pulse 2s ease-in-out infinite alternate; }
 @keyframes hype-star-pulse { from { opacity: .4; } to { opacity: 1; } }
 .pc-tab-live-score { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
-.pae-expanded-card { width: 100%; }
 .card-preview-mode-toggle { z-index: 12; }
 @media (prefers-reduced-motion: reduce) { .hype-mini-stars { animation: none; } .hype-led-track i { transition: none; } }
 /* The art editor keeps its preview before the controls on mobile; scrolling inside it keeps the entire final card reachable. */
@@ -109,7 +108,6 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
 .pae.pae-modal .pae-main { grid-row: 1; grid-column: 1; }
 .pae-modal-trigger { grid-row: 2; grid-column: 1; }
 .card-preview-mode[data-preview-mode="expanded"] { width: min(100%, 420px); margin-inline: auto; }
-.card-preview-mode > .pae-expanded-card { width: 100%; }
 .fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dt { order: 0; grid-column: 1; }
 .fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dd { order: 0; grid-column: 2; justify-self: end; }
 .fashion-hype-matrix[data-layout="ranked-bars"] .hype-led-track { grid-row: 2; }

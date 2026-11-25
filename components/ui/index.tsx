@@ -493,7 +493,7 @@ function useIsClient() { return useSyncExternalStore(noSubscribe, () => true, ()
  * Diálogos e painéis vão para o fim do <body> (portal): dentro de um card, a contenção do card (container query,
  * contain, transform, backdrop-filter) virava o "viewport" do position:fixed e o diálogo ficava preso e cortado no card.
  */
-function Overlay({ children }: { children: ReactNode }) {
+export function Overlay({ children }: { children: ReactNode }) {
   return createPortal(children, document.body);
 }
 
