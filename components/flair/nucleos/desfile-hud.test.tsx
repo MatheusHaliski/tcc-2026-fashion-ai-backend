@@ -28,9 +28,9 @@ describe("desfile jogável", () => {
     const onFimAcao = vi.fn();
     renderApp(<NucleoGame definicao={definicao("PASSARELA")} cartas={CARTAS} entregando={false} erro={null} onEntregar={vi.fn()} momento="ACAO" resultado={RESULTADO_PASSARELA} onFimAcao={onFimAcao} />);
     const hud = await screen.findByTestId("desfile-hud");
-    expect(hud.textContent).toContain("0 de 3 marcas");
+    expect(hud.textContent).toContain("0 de 3 pontos");
     act(() => emitirFx({ tipo: "desfile", nucleo: "PASSARELA", alcancadas: 3, total: 3, naPonta: true }));
-    expect(hud.textContent).toContain("Na ponta");
+    expect(hud.textContent).toContain("a pose final");
     fireEvent.keyDown(window, { key: "f" });
     expect(eventos.some((e) => e.tipo === "desfile-pose")).toBe(true);
     expect(onFimAcao).not.toHaveBeenCalled();

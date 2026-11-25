@@ -43,7 +43,7 @@ const QUADRADO: Record<NucleoCodigo, string | null> = {
 
 const COM_PERIGO = new Set<NucleoCodigo>(["DRESS_FIGHTER", "FASHION_DETECTIVE", "FASHION_SPORTS"]);
 /** Os jogos em que a personagem anda pela sala na preparação (passarela, palco, set, loja, labirinto, rua). */
-const ANDAR_LIVRE = new Set<NucleoCodigo>(["PASSARELA", "DRESS_THE_STAR", "PERSONAGEM_FILME", "BOUTIQUE_3D", "LABIRINTO", "AROUND_THE_WORLD", "BATALHA_LOOKS"]);
+const ANDAR_LIVRE = new Set<NucleoCodigo>(["PASSARELA", "DRESS_THE_STAR", "PERSONAGEM_FILME", "BOUTIQUE_3D", "LABIRINTO", "AROUND_THE_WORLD", "BATALHA_LOOKS", "ROAD_TO_GLORY"]);
 
 export function mapaDoJogo(codigo: NucleoCodigo, acoes: readonly NucleoAcao[]): MapaDoJogo {
   return {

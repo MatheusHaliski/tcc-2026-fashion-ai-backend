@@ -7,9 +7,7 @@
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
 import { duracaoDaSequencia, type Sequencia } from "@/lib/flair/nucleos/scene/director";
 import { MONTAGENS_DO_ATELIE } from "@/lib/flair/nucleos/scene/montagens-atelie";
-import { LABIRINTO_ESPELHO, LABIRINTO_PORTA } from "@/lib/flair/nucleos/scene/salas/labirinto";
 import { AVATAR, fig, luzId, movelId, Roteiro } from "@/lib/flair/nucleos/scene/script";
-import { giroPara } from "@/lib/flair/nucleos/scene/sequences-manual";
 import { sequenciaDaLuta, sequenciaDaPartida } from "@/lib/flair/nucleos/scene/sequences-match";
 import { desfechoDe, type Desfecho } from "@/lib/flair/nucleos/narrativa";
 
@@ -82,23 +80,16 @@ const boutique: Montagem = (r, res) => {
 };
 
 const labirinto: Montagem = (r, res) => {
-  const [ex, ez] = LABIRINTO_ESPELHO;
-  const [px, pz] = LABIRINTO_PORTA;
-  r.depois(AVATAR, "MEIA_VOLTA", { mover: { giro: giroPara(ex, ez) } });
-  r.depois(AVATAR, "CAMINHAR", { repete: 2, mover: { x: ex, z: ez } });
+  // a pessoa leva a personagem até o espelho (ação jogável); aqui só a apresentação e o que o espelho responde
   r.depois(AVATAR, "APRESENTAR_O_LOOK");
   if (res.resultado !== "ABRE") {
     r.depois(luzId("falha"), "L_ONDULA");
     return;
   }
   r.junto(luzId("espelho"), "L_ACENDE", { mantem: true }).depois(movelId("porta"), "M_PORTA_ABRE", { mantem: true });
-  r.depois(AVATAR, "MEIA_VOLTA", { mover: { giro: giroPara(px - ex, pz + 0.9 - ez) } });
-  r.depois(AVATAR, "CAMINHAR", { repete: 2, mover: { x: px, z: pz + 0.9 } });
-  r.depois(AVATAR, "ATRAVESSAR_A_PORTA", { mover: { x: px, z: pz - 0.5, giro: 180 } });
 };
 
 const aroundTheWorld: Montagem = (r, res) => {
-  r.depois(AVATAR, "CAMINHADA_DE_RUA", { repete: 2, mover: { z: 1.2 } });
   // os passantes reagem ao look pela nota: aplaudem, acenam ou seguem o caminho deles
   if (res.estrelas >= 2) r.junto(fig("PASSANTE"), "F_APLAUSO").depois(AVATAR, "ACENAR");
   else if (res.estrelas === 1) r.junto(fig("PASSANTE", 0), "F_ACENA").depois(AVATAR, "ACENAR");
@@ -159,7 +150,7 @@ const MONTAGENS: Partial<Record<NucleoCodigo, Montagem>> = {
 
 /** O avatar saiu de cena no fim (atravessou a porta)? Então não há reação na frente da câmera. */
 function saiuDeCena(codigo: NucleoCodigo, res: NucleoResultado): boolean {
-  return (codigo === "LABIRINTO" && res.resultado === "ABRE") || (codigo === "FASHION_DETECTIVE" && res.resultado === "FAVORAVEL");
+  return codigo === "FASHION_DETECTIVE" && res.resultado === "FAVORAVEL";
 }
 
 /** Sequência automática do jogo para este resultado, terminando na reação do avatar ao desfecho. */

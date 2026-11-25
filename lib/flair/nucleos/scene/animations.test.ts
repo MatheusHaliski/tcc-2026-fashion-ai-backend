@@ -203,7 +203,9 @@ describe("sequências automáticas", () => {
     }
     const abre = sequenciaDoResultado("LABIRINTO", resultado({ resultado: "ABRE", estrelas: 3 }));
     expect(clipsDe(abre, "movel:porta")).toEqual(["M_PORTA_ABRE"]);
-    expect(clipsDe(abre, "avatar").at(-1)).toBe("ATRAVESSAR_A_PORTA");
+    // a pessoa levou a personagem até o espelho (ação jogável): a porta abre e ela comemora diante dele
+    expect(clipsDe(abre, "avatar")).toContain("APRESENTAR_O_LOOK");
+    expect(clipsDe(abre, "avatar").at(-1)).toBe("REACAO_3");
     expect(clipsDe(sequenciaDoResultado("LABIRINTO", resultado({ resultado: "NAO_ABRE", estrelas: 0 })), "luz:falha")).toEqual(["L_ONDULA"]);
     const gala = sequenciaDoResultado("FASHION_DETECTIVE", resultado({ resultado: "FAVORAVEL", estrelas: 3, regras: [{ codigo: "ACESSO", ok: true, pontos: 50 }] }));
     expect(clipsDe(gala, "movel:portaE")).toEqual(["M_PORTA_ABRE"]);
@@ -271,10 +273,10 @@ describe("diretor de cena e reduzir movimento", () => {
     expect(d.lugar("avatar", 0, origem)).toEqual(origem);
     expect(d.amostra("avatar", 0.01)["LeftArm.rz"]).toBe(155);
     expect(d.amostra("avatar", 0.01)["LeftUpLeg.rx"]).toBeUndefined();
-    // quem atravessa a porta já aparece do outro lado, sem caminhar
+    // a porta já aparece aberta; a personagem fica onde a pessoa a levou (o percurso é da pessoa)
     const porta = new Diretor();
     porta.tocar(sequenciaDoResultado("LABIRINTO", resultado({ resultado: "ABRE", estrelas: 3 })), 0, true);
-    expect(porta.lugar("avatar", 0, origem).z).toBeLessThan(-4);
+    expect(porta.lugar("avatar", 0, origem)).toEqual(origem);
     expect(porta.amostra("movel:porta", 30)["movel.ry"]).toBe(96);
   });
 
