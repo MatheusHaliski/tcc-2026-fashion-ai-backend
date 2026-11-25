@@ -5,7 +5,7 @@
  * relógio, "Pistas N de 12", mapa, inventário, câmera), o aviso do último passo, as cutscenes com legenda e as folhas do
  * caso. O que a pessoa faz com as cartas fica na faixa de baixo (detetive-painel.tsx).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Look3dPiece } from "@/components/three/common";
@@ -30,6 +30,8 @@ interface Props {
   semente: number;
   ocupado: boolean;
   onAcao: (alvo: string, cardId?: string) => void;
+  /** o que a tela de jogo põe por cima da sala (a roda de recursos da regra peça-recurso) */
+  children?: ReactNode;
 }
 
 /** O texto do aviso do último passo ("VISTO:SEG_SALAO" → "Um segurança viu você..."). */
@@ -42,7 +44,7 @@ function useAviso(r: Retrato): string | null {
   return tx.ou(`flair3d.detetive.aviso.${codigo}`, codigo, { assunto: nome });
 }
 
-export function DetetivePalco({ r, pecas, protagonista, semente, ocupado, onAcao }: Props) {
+export function DetetivePalco({ r, pecas, protagonista, semente, ocupado, onAcao, children }: Props) {
   const tx = useNucleoText();
   const webgl = useWebGL();
   const reduzido = useReducedMotion();
@@ -87,6 +89,7 @@ export function DetetivePalco({ r, pecas, protagonista, semente, ocupado, onAcao
       {aviso && !cena && <p className="dtv-aviso" role="status" data-testid="detetive-aviso">{aviso}</p>}
       {cena && <DetetiveCutscene cena={cena} reduzido={reduzido} onFechar={() => setCena(null)} />}
       {folha && <DetetiveFolha folha={folha} r={r} onFechar={() => setFolha(null)} />}
+      {children}
     </div>
   );
 }

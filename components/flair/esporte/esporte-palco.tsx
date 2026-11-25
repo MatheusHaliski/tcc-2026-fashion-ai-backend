@@ -64,6 +64,8 @@ interface Props {
   fim: boolean;
   /** semente da partida: o elenco de cada time sai dela */
   semente?: number;
+  /** o que a tela de jogo põe por cima do campo (a roda de recursos da regra peça-recurso) */
+  children?: ReactNode;
 }
 
 /** A câmera escolhida no seletor (vale enquanto a partida está na tela). */
@@ -71,7 +73,7 @@ function useCameraDoCampo() {
   return useState<string>(CAMERAS_DO_CAMPO[0]);
 }
 
-export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, semente }: Props) {
+export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, semente, children }: Props) {
   const tx = useNucleoText();
   const webgl = useWebGL();
   const reduzido = useReducedMotion();
@@ -128,6 +130,7 @@ export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, seme
       </div>
       <EsporteMomento modalidade={modalidade} jogadas={jogadas} fim={fim} />
       {atual && <p className="fsp-narracao" data-testid="esporte-narracao">{narracao(tx, modalidade, atual)}</p>}
+      {children}
     </div>
   );
 }

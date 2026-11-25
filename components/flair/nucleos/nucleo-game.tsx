@@ -34,6 +34,7 @@ import { useNucleoSinais } from "@/components/flair/nucleos/use-nucleo-sinais";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { useLookDosRecursos } from "@/components/flair/nucleos/recursos/use-look-dos-recursos";
 import { useRecursosDaPartida } from "@/components/flair/nucleos/recursos/use-recursos-da-partida";
+import { NucleoRodaRecursos } from "@/components/flair/nucleos/recursos/nucleo-roda-recursos";
 import { useCinemaDaPartida } from "@/components/flair/cinema/use-cinema-da-partida";
 import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewport";
 import { useModoPorCartas } from "@/components/flair/nucleos/use-modo-por-cartas";
@@ -149,7 +150,8 @@ export function NucleoGame(props: Props) {
   const doEsporte = codigo === "FASHION_SPORTS";
   /** Fashion Sports e Fashion Detective jogados por cartas: o palco e a faixa de baixo do jogo (use-modo-por-cartas) */
   const modo = useModoPorCartas({ codigo, rodada: definicao.rodada, momento, resultado, escolhida: estado.sel.resposta, acao, cartas, vestidas: estado.sel.cartas, itens: efeitos.itens,
-    pecas, protagonista, semente: props.partida?.semente, ocupado: !!props.acionando, erro: props.erroAcionar ?? null, acionar });
+    pecas, protagonista, semente: props.partida?.semente, ocupado: !!props.acionando, erro: props.erroAcionar ?? null, acionar,
+    extra: <NucleoRodaRecursos recursos={usoDeRecursos} reduzido={reduzido} efeitos={fx.prefs.efeitos} /> });
   const partida = modo.esporte;
 
   const pontuadas = useResultCards({ momento, resultado, vestidas, cards: cartas, efeitos: efeitos.porCarta });

@@ -73,7 +73,8 @@ public class Flair3dRecursoUso {
         if (Flair3dRecursoEstado.usosDa(pedido.carta(), a.usos()) >= perfil.usos()) {
             throw Flair3dErros.invalido("SEM_USOS", "sem_usos");
         }
-        UsoDeRecurso uso = new UsoDeRecurso(pedido.carta(), perfil.recurso().name(), perfil.quantidade(), pedido.pedido());
+        UsoDeRecurso uso = new UsoDeRecurso(pedido.carta(), perfil.recurso().name(), perfil.quantidade(), pedido.pedido(),
+                a.acionamentos().size(), a.anteriores().size());
         Andamento depois = a.comUso(uso);
         m.setEstadoJson(Json.write(depois));
         matches.save(m);

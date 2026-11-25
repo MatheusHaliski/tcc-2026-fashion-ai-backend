@@ -36,8 +36,15 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
         }
     }
 
-    /** Uma peça usada como recurso: a carta, o recurso e a quantidade que o servidor deu, e o pedido (idempotência). */
-    public record UsoDeRecurso(UUID carta, String recurso, int quantidade, String pedido) {
+    /**
+     * Uma peça usada como recurso: a carta, o recurso e a quantidade que o servidor deu, o pedido (idempotência) e quando
+     * — o lance (quantos acionamentos já havia) e a etapa (quantas entregas anteriores): o motor do jogo aplica o uso
+     * dali em diante, sem mudar o que já aconteceu.
+     */
+    public record UsoDeRecurso(UUID carta, String recurso, int quantidade, String pedido, int lance, int etapa) {
+        public UsoDeRecurso(UUID carta, String recurso, int quantidade, String pedido) {
+            this(carta, recurso, quantidade, pedido, 0, 0);
+        }
     }
 
     public Andamento {

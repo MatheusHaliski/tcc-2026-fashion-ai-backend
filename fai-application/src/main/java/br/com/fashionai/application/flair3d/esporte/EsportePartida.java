@@ -3,6 +3,7 @@ package br.com.fashionai.application.flair3d.esporte;
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Acionamento;
 import br.com.fashionai.application.flair3d.Contexto;
+import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoNoMotor;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 
 import java.util.ArrayList;
@@ -52,7 +53,8 @@ public final class EsportePartida {
     public EsportePartida(EsporteRegras regras, Map<String, CbcRules.Card> uniforme, Contexto contexto) {
         this.regras = regras;
         this.contexto = contexto;
-        time = EsporteForcas.time(uniforme.values());
+        // a peça usada como recurso (ENERGIA) devolve o fôlego ao time a partir da jogada em que foi usada
+        time = EsporteForcas.time(uniforme.values()).comRecargas(Flair3dRecursoNoMotor.lances(contexto.andamento().usos(), "ENERGIA"));
         mao = new EsporteMao(contexto, uniforme.values().stream().map(CbcRules.Card::id).toList());
         Random r = contexto.sorteio("rival");
         for (int i = 0; i < rival.length; i++) {
