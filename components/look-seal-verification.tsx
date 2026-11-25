@@ -38,7 +38,7 @@ export function SealSuggestions({ search, picked, onToggle, consent, onConsent, 
           {!selectionOnly && celebrityPicked && <label className="flex items-start gap-2 type-body-sm"><input type="checkbox" checked={consent} onChange={(e) => onConsent(e.target.checked)} className="mt-1" />{t("schemeBuilder.consentimento_imagem")}</label>}
         </>
       )}
-      <Button size="sm" disabled={search.loading} onClick={onRetry}>{t("lookSeals.verify")}</Button>
+      <Button size="sm" className="justify-self-start" disabled={search.loading} onClick={onRetry}>{t("lookSeals.verify")}</Button>
       <p className="type-caption text-faint">{t(selectionOnly ? "selectedSeals.help" : "schemeBuilder.selos_vem_de_marca")}</p>
     </div>
   );
