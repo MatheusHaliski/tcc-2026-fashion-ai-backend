@@ -158,9 +158,6 @@
 :is(.piece-card.is-social, .scheme-card-social) .pc-panels .fashion-hype-cell { min-height: 0; padding: 3px 4px; }
 :is(.piece-card.is-social, .scheme-card-social) .pc-panels .fashion-hype-cell dd { font-size: 15px; }
 
-/* no ampliado a janela de identidade não existe como caixa: os itens seguem no layout de detalhe */
-.piece-card-expanded .pc-window.is-identity { display: contents; }
-
 /* ---------- grades: uma coluna por card, mesmo tamanho em todo lugar ---------- */
 .feed-compact-grid,
 .grid-looks.social-card-grid, .grid-cards.social-card-grid,

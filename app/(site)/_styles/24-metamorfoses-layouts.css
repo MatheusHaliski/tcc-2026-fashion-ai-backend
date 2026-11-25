@@ -89,11 +89,6 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
 .hype-mini-stars { display: block; animation: hype-star-pulse 2s ease-in-out infinite alternate; }
 @keyframes hype-star-pulse { from { opacity: .4; } to { opacity: 1; } }
 .pc-tab-live-score { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
-/* The expanded preview changes the actual content layout, not just the photograph. */
-.piece-card-expanded .pc-content { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
-.piece-card-expanded .pc-header, .piece-card-expanded .c-actions { grid-column: 1 / -1; }
-.piece-card-expanded .pc-media { grid-column: 1; }
-.piece-card-expanded .pc-id { grid-column: 2; grid-row: 2; align-self: stretch; padding: 12px; }
 .pae-expanded-card { width: 100%; }
 .card-preview-mode-toggle { z-index: 12; }
 @media (prefers-reduced-motion: reduce) { .hype-mini-stars { animation: none; } .hype-led-track i { transition: none; } }
@@ -113,18 +108,8 @@ html[data-reduce-motion="true"] .atelier-hub *, html[data-reduce-motion="true"] 
 .pae.pae-modal { grid-template-columns: minmax(0, 1fr); }
 .pae.pae-modal .pae-main { grid-row: 1; grid-column: 1; }
 .pae-modal-trigger { grid-row: 2; grid-column: 1; }
-@media (max-width: 639px) {
-  .piece-card-expanded .pc-content { display: block; }
-  .piece-card-expanded .c-facts { gap: 10px 16px; }
-  .piece-card-expanded .pc-seg { flex-wrap: wrap; }
-  .piece-card-expanded .pc-seg-btn { min-width: 0; flex: 1; }
-}
 .card-preview-mode[data-preview-mode="expanded"] { width: min(100%, 420px); margin-inline: auto; }
 .card-preview-mode > .pae-expanded-card { width: 100%; }
-.piece-card-expanded .c-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); }
-/* "Detalhes" usa a mesma tipografia das células de cima (.card-fashion-meta): rótulo pequeno e discreto, valor em destaque */
-.piece-card-expanded .c-facts dt { margin-bottom: 3px; font-family: var(--font-ui); font-size: 12px; line-height: 1.3; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--card-muted, var(--muted)); }
-.piece-card-expanded .c-facts dd { margin: 0; font-family: var(--font-ui); font-size: var(--card-info-value-size); line-height: 1.4; font-weight: 600; }
 .fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dt { order: 0; grid-column: 1; }
 .fashion-hype-matrix[data-layout="ranked-bars"] .fashion-hype-cell dd { order: 0; grid-column: 2; justify-self: end; }
 .fashion-hype-matrix[data-layout="ranked-bars"] .hype-led-track { grid-row: 2; }

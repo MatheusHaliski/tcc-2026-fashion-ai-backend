@@ -6,7 +6,7 @@ import type { PieceView } from "@/lib/api/types";
 import { mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
-import { CardSealSummary, SealSlot, SealStuds, type SealBadge } from "@/components/scheme-card";
+import { CardSealSummary, SealSlot, type SealBadge } from "@/components/scheme-card";
 import { pieceSealPlacement } from "@/components/scheme-anatomies";
 import { useDetailModal } from "@/components/detail-modal";
 import { CardActions } from "@/components/interactions";
@@ -26,13 +26,12 @@ import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { CardFashionMeta } from "@/components/card-fashion-meta";
 import { DefaultGarmentPhoto } from "@/components/catalog/default-garment-photo";
-import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, piecePhotoAspect } from "@/components/catalog/catalog-photo";
+import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource } from "@/components/catalog/catalog-photo";
 import { catalogWholeFrame, resolveFraming, usePhotoFraming, type PhotoFraming } from "@/lib/photo-framing";
 import type { CatalogCardImage } from "@/lib/api/catalog";
 import { ImpersonationMedia, impersonationMedia } from "@/components/impersonation-media";
 import { useFashionDepth } from "@/lib/hype/use-fashion-depth";
 import { FashionMotionButton } from "@/components/hype/fashion-motion-button";
-import { PieceDetailFacts } from "@/components/piece-detail-facts";
 import { FashionCardStats } from "@/components/hype/fashion-card-panel";
 import { PieceCardPanels } from "@/components/piece-card-panels";
 import { fashionCardLevel } from "@/lib/hype/fashion-card";
@@ -53,12 +52,11 @@ export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: strin
   return { src: thumbUrl(raw, 640), srcSet: thumbSrcSet(raw), cover: false };
 }
 
-export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true, framing: forcedFraming, expanded = false }: {
+export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true, framing: forcedFraming }: {
   piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
   extra?: ReactNode;
   flip?: boolean;
   framing?: PhotoFraming;
-  expanded?: boolean;
 }) {
   const detail = useDetailModal();
   const { t } = useI18n(); const { user } = useAuth();
@@ -78,10 +76,10 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const wholeImage = whole?.image && (!preview || catalogWholeFrame(whole.image)) ? whole.image : null;
   // prévia com o recorte da foto que a pessoa acabou de escolher (blob:): a peça inteira, não um zoom no tecido
   const fillFrame = preview && framing === "FABRIC" && !img.src?.startsWith("blob:");
-  const mediaStyle = { aspectRatio: expanded ? (whole ? "3 / 4" : piecePhotoAspect(piece)) : "4 / 3" };
+  const mediaStyle = { aspectRatio: "4 / 3" };
   const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);
-  const surface = artSurfaceProps(piece.background, art, expanded ? "expanded" : "compact");
+  const surface = artSurfaceProps(piece.background, art, "compact");
   const skin = (piece.background?.skin as string | undefined) ?? null;
   const mine = !!user && piece.owner?.id === user.id;
   const visibility = mine && piece.visibility && piece.visibility !== "PUBLIC" ? (piece.visibility === "FOLLOWERS" ? t("common.followers") : t("common.private")) : null;
@@ -101,7 +99,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
     <>
       {impersonationMedia(piece.background, piece.owner.id) ? <ImpersonationMedia background={piece.background} ownerId={piece.owner.id}/> : piece.defaultImage ? <DefaultGarmentPhoto category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} framing={framing} alt=""/> : whole && (whole.image || whole.sources.length) ? <CatalogPhoto requiredFrame={!!wholeImage} category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} framing="WHOLE" image={wholeImage} fallbackUrl={whole.sources[0]} alternatives={whole.sources.slice(1)} alt="" /> : crop ? <CatalogPhoto category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} requiredFrame image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 100vw, 620px" alt="" loading="lazy" decoding="async" className={img.cover || fillFrame ? "is-cover" : "is-contain"} /> : null}
       <AuraMetamorphose mode={piece.background?.auraMetamorphose as string | undefined} presetId={piece.background?.auraMetamorphosePreset as string | undefined} preview live={live}/>{auraEnabled && <AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview} showScore={false} />}
-      {(expanded || selectable) && (zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
+      {selectable && (zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">
           {piece.aiGeneratedImage && <span className="pc-flag" title={t("pieceCard.gerada_por_ia")}><span aria-hidden>{t("multiPiece.selo_ia_curto")}</span><span className="sr-only">{t("pieceCard.gerada_por_ia")}</span></span>}
@@ -117,18 +115,16 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const identity = <div className="pc-window is-identity">
     <span className="seal-row">
       {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
-      {expanded && zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
     </span>
-    {expanded && <span className="pc-sub">{secondary}{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>}
-    {!expanded && !!seals?.length && <CardSealSummary seals={seals} />}
+    {!!seals?.length && <CardSealSummary seals={seals} />}
     {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular"><Price value={piece.price} /></b></span>}
   </div>;
   
   const card = (
-    <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode={expanded ? "expanded" : "feed"} className={`fai-card piece-card ${expanded ? "piece-card-expanded" : selectable ? "" : "is-social"} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
+    <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode="feed" className={`fai-card piece-card ${selectable ? "" : "is-social"} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
       <CardBorder entityId={`PIECE:${piece.id}`} background={piece.background} auraHype={auraEnabled} hype={hypeState} live={live}/>
       {tilt && <span className="fashion-depth-glare" aria-hidden/>}
-      <ArtStage bg={piece.background} art={art} density={expanded ? "expanded" : "compact"} pieceHex={piece.colorHex} animate={preview} />
+      <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} animate={preview} />
       <div className="pc-frame">
         <div className="pc-content">
           {!selectable && <CardHeader owner={piece.owner} sub={visibility} linked={!preview} className="pc-header" trailing={flippable ? <CardFlipButton side="front" /> : undefined} />}
@@ -149,11 +145,9 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 ? <div className="pc-media" data-photo-framing={framing} style={mediaStyle}>{media}</div>
                 : <Link href={link} onClick={openModal} className="pc-media" data-photo-framing={framing} style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
               <div className="pc-id">
-                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded}
+                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts
                   infoBefore={<>{identity}<CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ?
-                [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} /></>} infoContent={expanded ? 
-                <PieceDetailFacts piece={piece} excludeFashionMeta /> : undefined} replaceInfoRows={expanded} live={live} />
-                {expanded && zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
+                [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} /></>} live={live} />
               </div>
             </>
           )}

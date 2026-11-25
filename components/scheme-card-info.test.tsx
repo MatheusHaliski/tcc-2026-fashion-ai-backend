@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { ExpandedPieceCard } from "@/components/expanded-card/expanded-piece-card";
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, mockApi, renderApp, screen, within } from "@/test-utils/render";
 import { PIECE, SCHEME } from "@/test-utils/fixtures";
@@ -21,7 +22,6 @@ it("mostra as peças do look ampliado dentro de Info e alterna para Hype", () =>
 
 it.each([
   ["peça", <PieceCard key="piece" piece={PIECE} href="#" />],
-  ["peça ampliada", <PieceCard key="expanded-piece" piece={PIECE} href="#" expanded />],
   ["look", <SchemeCard key="scheme" scheme={SCHEME} href="#" />],
 ])("mostra marca, cor, ocasião e estilo na aba Info do card de %s", (_kind, card) => {
   mockApi({});
@@ -38,7 +38,7 @@ it.each([
 
 it.each([
   ["peça", <PieceCard key="piece" piece={{ ...PIECE, seals: ["BRAND:Marca teste"] }} href="#" />],
-  ["peça ampliada", <PieceCard key="piece-expanded" piece={{ ...PIECE, seals: ["CELEBRITY:Artista teste"] }} href="#" expanded />],
+  ["peça ampliada", <ExpandedPieceCard key="piece-expanded" piece={{ ...PIECE, seals: ["CELEBRITY:Artista teste"] }} preview />],
   ["look", <SchemeCard key="scheme" scheme={{ ...SCHEME, background: { selectedSeals: [{ targetOwnerId: "b1", kind: "BRAND", name: "Marca teste" }] } }} href="#" />],
 ])("mostra selo selecionado e não verificado em Info e Hype no card de %s", (_kind, card) => {
   mockApi({});
