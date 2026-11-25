@@ -1,16 +1,17 @@
 /**
  * O que roda sozinho depois de entregar (seção 2, coluna "Automático"), montado com o resultado do servidor: a
  * plateia aplaude pela nota, a silhueta se revela, a claquete bate, a porta abre, a cliente prova, o mapa avança.
- * No fim, o avatar reage às estrelas. A cena só mostra o que o servidor calculou.
+ * No fim, o avatar reage ao desfecho (vitória, empate, derrota; sem ele, às estrelas). A cena só mostra o que o servidor
+ * calculou.
  */
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
-import { reacaoPorEstrelas } from "@/lib/flair/nucleos/scene/clips/comuns";
 import { duracaoDaSequencia, type Sequencia } from "@/lib/flair/nucleos/scene/director";
+import { MONTAGENS_DO_ATELIE } from "@/lib/flair/nucleos/scene/montagens-atelie";
 import { LABIRINTO_ESPELHO, LABIRINTO_PORTA } from "@/lib/flair/nucleos/scene/salas/labirinto";
 import { AVATAR, fig, luzId, movelId, Roteiro } from "@/lib/flair/nucleos/scene/script";
 import { giroPara, PONTA_DA_PASSARELA } from "@/lib/flair/nucleos/scene/sequences-manual";
 import { sequenciaDaLuta, sequenciaDaPartida } from "@/lib/flair/nucleos/scene/sequences-match";
-import { desfechoDe } from "@/lib/flair/nucleos/narrativa";
+import { desfechoDe, type Desfecho } from "@/lib/flair/nucleos/narrativa";
 
 /** Reação da plateia pela nota: levanta com 3 estrelas, aplaude com 1 ou 2, lamenta com 0. */
 export function reacaoDaPlateia(estrelas: number): string {
@@ -104,26 +105,43 @@ const aroundTheWorld: Montagem = (r, res) => {
   if (res.estrelas >= 1) r.junto(luzId("mapa"), "L_ACENDE", { mantem: true }).depois(movelId("marcador"), "M_MAPA_AVANCA", { mantem: true });
 };
 
+/** Reação do avatar no fim, pelo desfecho: o modo artístico do ateliê conclui com 0 estrela e ainda assim é vitória. */
+export function reacaoDoAvatar(res: Pick<NucleoResultado, "resultado" | "estrelas">): string {
+  const d = desfechoDe(res);
+  return d === "BOM" ? "REACAO_3" : d === "MEDIO" ? "REACAO_1" : "REACAO_0";
+}
+
+/**
+ * O desfecho da batalha. Na campanha a rodada volta como ETAPA_CUMPRIDA ou ABERTA, sem VITORIA nem DERROTA: aí quem
+ * venceu é quem fez mais pontos que o adversário daquela rodada (evento ADVERSARIO).
+ */
+export function desfechoDaBatalha(res: NucleoResultado): Desfecho {
+  if (res.resultado === "VITORIA" || res.resultado === "DERROTA" || res.resultado === "EMPATE") return desfechoDe(res);
+  const adversario = Number(res.eventos.find((e) => e.codigo === "ADVERSARIO")?.valor);
+  if (!Number.isFinite(adversario)) return desfechoDe(res);
+  return res.pontos > adversario ? "BOM" : res.pontos === adversario ? "MEDIO" : "RUIM";
+}
+
 /**
  * A plateia da batalha segue o desfecho, não só a nota: comemora ou aplaude quando escolhe a pessoa, hesita na batalha
  * apertada e, na derrota, aplaude o desafiante se o look da pessoa foi bom (2 estrelas ou mais) ou lamenta.
  */
 export function plateiaDaBatalha(res: NucleoResultado): string {
-  const desfecho = desfechoDe(res);
+  const desfecho = desfechoDaBatalha(res);
   if (desfecho === "BOM") return res.estrelas >= 3 ? "F_COMEMORA" : "F_APLAUSO";
   if (desfecho === "MEDIO") return "F_POSE";
   return res.estrelas >= 2 ? "F_APLAUSO" : "F_LAMENTA";
 }
 
 const batalha: Montagem = (r, res) => {
-  const venceu = res.resultado === "VITORIA";
+  const venceu = desfechoDaBatalha(res) === "BOM";
   r.depois(AVATAR, "ENTRADA_NO_PALCO", { mover: { z: 0.5 } });
   // os jurados avaliam os dois looks de mão no queixo; depois, plateia e jurados reagem ao desfecho de verdade
   r.junto(fig("JURADO"), "F_POSE").junto(fig("ADVERSARIO", 0), "F_POSE").depois(AVATAR, "POSE_LADO_A_LADO");
-  r.junto(fig("PLATEIA"), plateiaDaBatalha(res)).junto(fig("JURADO"), desfechoDe(res) === "MEDIO" ? "F_POSE" : "F_APLAUSO");
+  r.junto(fig("PLATEIA"), plateiaDaBatalha(res)).junto(fig("JURADO"), desfechoDaBatalha(res) === "MEDIO" ? "F_POSE" : "F_APLAUSO");
   // o braço que sobe é o de quem venceu; quem perdeu lamenta
   if (venceu) r.junto(fig("ADVERSARIO", 0), "F_LAMENTA").junto(luzId("vencedor"), "L_ACENDE", { mantem: true }).depois(AVATAR, "VENCEDOR_LEVANTA_O_BRACO");
-  else r.depois(fig("ADVERSARIO", 0), "F_LEVANTA_O_BRACO");
+  else if (desfechoDaBatalha(res) === "RUIM") r.depois(fig("ADVERSARIO", 0), "F_LEVANTA_O_BRACO");
 };
 
 const MONTAGENS: Partial<Record<NucleoCodigo, Montagem>> = {
@@ -136,6 +154,7 @@ const MONTAGENS: Partial<Record<NucleoCodigo, Montagem>> = {
   LABIRINTO: labirinto,
   AROUND_THE_WORLD: aroundTheWorld,
   BATALHA_LOOKS: batalha,
+  ...MONTAGENS_DO_ATELIE,
 };
 
 /** O avatar saiu de cena no fim (atravessou a porta)? Então não há reação na frente da câmera. */
@@ -143,7 +162,7 @@ function saiuDeCena(codigo: NucleoCodigo, res: NucleoResultado): boolean {
   return (codigo === "LABIRINTO" && res.resultado === "ABRE") || (codigo === "FASHION_DETECTIVE" && res.resultado === "FAVORAVEL");
 }
 
-/** Sequência automática do jogo para este resultado, terminando na reação do avatar às estrelas. */
+/** Sequência automática do jogo para este resultado, terminando na reação do avatar ao desfecho. */
 export function sequenciaDoResultado(codigo: NucleoCodigo, resultado: NucleoResultado): Sequencia {
   const r = new Roteiro("resultado");
   if (codigo === "DRESS_FIGHTER" || codigo === "FASHION_SPORTS") {
@@ -154,8 +173,13 @@ export function sequenciaDoResultado(codigo: NucleoCodigo, resultado: NucleoResu
     MONTAGENS[codigo]?.(r, resultado);
   }
   // no meio da disputa (EM_ACAO) ainda não há estrelas: a reação fica para o fim
-  if (!saiuDeCena(codigo, resultado) && resultado.status !== "EM_ACAO" && resultado.resultado !== "EM_ACAO") r.depois(AVATAR, reacaoPorEstrelas(resultado.estrelas));
+  if (!saiuDeCena(codigo, resultado) && resultado.status !== "EM_ACAO" && resultado.resultado !== "EM_ACAO") r.depois(AVATAR, codigo === "BATALHA_LOOKS" ? reacaoDaBatalha(resultado) : reacaoDoAvatar(resultado));
   return r.fim();
+}
+
+function reacaoDaBatalha(res: NucleoResultado): string {
+  const d = desfechoDaBatalha(res);
+  return d === "BOM" ? "REACAO_3" : d === "MEDIO" ? "REACAO_1" : "REACAO_0";
 }
 
 /** Texto do placar no painel de LED (só números), quando o jogo tem placar. */

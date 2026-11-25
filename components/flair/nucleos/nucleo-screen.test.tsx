@@ -95,7 +95,7 @@ describe("núcleo de zonas (CLUBE_CORACAO)", () => {
     const { calls } = loggedAs(ME, {
       "GET /api/flair/3d/nucleos/CLUBE_CORACAO": { message: "fora do ar" },
       "POST /api/flair/3d/nucleos/CLUBE_CORACAO/partidas": { id: "m8", nucleo: "CLUBE_CORACAO", status: "ABERTA", semente: 3 },
-      "POST /api/flair/3d/partidas/m8/entrega": { pontos: 100, estrelas: 3, resultado: "CONCLUIDO", regras: [{ codigo: "TODAS_AS_ZONAS", ok: true, pontos: 0 }, { codigo: "CORES_DO_CLUBE", ok: true, pontos: 0 }], eventos: [] },
+      "POST /api/flair/3d/partidas/m8/entrega": { pontos: 0, estrelas: 0, resultado: "CONCLUIDO", regras: [{ codigo: "TODAS_AS_ZONAS", ok: true, pontos: 0 }, { codigo: "CORES_DO_CLUBE", ok: true, pontos: 0 }], eventos: [] },
     });
     renderApp(<NucleoScreen nucleo="CLUBE_CORACAO" />);
     const janela = await screen.findByTestId("nucleo-resource-window");
@@ -107,7 +107,8 @@ describe("núcleo de zonas (CLUBE_CORACAO)", () => {
     expect(screen.queryByRole("button", { name: "Tirar" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Entregar o look" }));
     fireEvent.click(await screen.findByRole("button", { name: "Ver o resultado" }));
-    expect((await screen.findByTestId("nucleo-result")).textContent).toContain("100 pontos");
+    // o modo artístico do servidor conclui com 0 ponto e 0 estrela (ClubeCoracaoNucleo): é vitória mesmo assim
+    expect((await screen.findByTestId("nucleo-result")).textContent).toContain("0 pontos");
     expect(calls.find((c) => c.path === "/api/flair/3d/partidas/m8/entrega")?.body).toMatchObject({ zonas: { FRENTE: { cor: "#1E4FBF", acabamento: "BRILHANTE" } } });
     expect(calls.find((c) => c.path.endsWith("/partidas"))?.body).toEqual({ deck: [] });
   });
