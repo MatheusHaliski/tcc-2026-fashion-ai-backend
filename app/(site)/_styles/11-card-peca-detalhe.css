@@ -92,6 +92,12 @@
   .piece-detail .pd-layout { grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr); align-items: start; }
   .piece-detail .pd-media { position: sticky; top: 0; }
   .piece-detail .pd-info { border-left: 1px solid var(--line-soft); }
+  /* prévia "Ampliado" do editor de arte: a foto acompanha a altura da coluna de dados (mesma altura dos dois lados);
+     4/5 continua como altura mínima, e a foto cresce até o fim das informações */
+  .piece-detail[data-preview] .pd-layout { align-items: stretch; }
+  .piece-detail[data-preview] .pd-media { position: relative; display: flex; flex-direction: column; }
+  .piece-detail[data-preview] .pd-gallery { display: flex; flex: 1 1 auto; flex-direction: column; }
+  .piece-detail[data-preview] .pd-slide { flex: 1 1 auto; }
 }
 .piece-detail .pd-media { position: relative; }
 .pd-gallery { position: relative; }
