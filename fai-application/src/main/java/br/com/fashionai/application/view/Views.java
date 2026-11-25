@@ -224,7 +224,7 @@ public final class Views {
                              UUID remixedFromId, boolean revalidationPending, Counters counters, ViewerState viewer,
                              Instant publishedAt, Instant createdAt, Instant updatedAt,
                              List<Map<String, Object>> sealBadges, String mannequinImageUrl, String mannequinImageFace, TipoLookView tipoLook,
-                             ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica) {
+                             ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica, ReferenceOptionView nivelTermico) {
     }
 
     public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions) {
@@ -253,7 +253,7 @@ public final class Views {
                 s.getRemixCount(), s.getViewCount(), s.getSaveCount(), reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt(),
                 sealBadges == null ? List.of() : sealBadges, s.getMannequinImageUrl(), s.getMannequinImageFace(), tipoLook(s.getTipoLook()),
-                PieceReferenceViews.colecao(s.getColecao()), PieceReferenceViews.intensidadeTermica(s.getIntensidadeTermica()));
+                PieceReferenceViews.colecao(s.getColecao()), PieceReferenceViews.intensidadeTermica(s.getIntensidadeTermica()), PieceReferenceViews.nivelTermico(s.getNivelTermico()));
     }
 
     public record PhotoView(UUID id, String origin, UUID sourceEntityId, String url, String thumbnailUrl,

@@ -229,7 +229,7 @@ class MirrorScoresTest {
         when(wardrobe.eligible(uid)).thenReturn(List.of(top, bottom, shoes));
         when(ai.text(any())).thenReturn(new AiOutcome<>(null, null, AiCallResult.FALLBACK_LOCAL, true, "local", "local", 0, BigDecimal.ZERO, null, null, null));
 
-        Map<String, Object> out = mirror.vistaMe(me, "algo confortável para o trabalho", List.of(), null, false);
+        Map<String, Object> out = mirror.vistaMe(me, "algo confortável para o trabalho", List.of(), null, false, null);
         Map<String, Object> s = scores(out);
         assertThat(s).containsOnlyKeys("compatibility", "hype", "novelty", "reuse", "usage", "sustainability");
         assertThat(s.get("hype")).isEqualTo(70);

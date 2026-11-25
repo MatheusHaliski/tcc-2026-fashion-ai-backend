@@ -3206,8 +3206,8 @@ final class ServiceFakes {
         }
 
         @Override
-        public java.util.Map<java.lang.String, java.lang.Object> vistaMe(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.util.List<java.util.UUID> a2, java.util.UUID a3, boolean a4) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "vistaMe", java.util.Map.class, new Object[]{a0, a1, a2, a3, a4});
+        public java.util.Map<java.lang.String, java.lang.Object> vistaMe(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.util.List<java.util.UUID> a2, java.util.UUID a3, boolean a4, java.util.UUID a5) {
+            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "vistaMe", java.util.Map.class, new Object[]{a0, a1, a2, a3, a4, a5});
         }
 
         @Override
@@ -3590,16 +3590,6 @@ final class ServiceFakes {
         @Override
         public br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView> mine(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.lang.String a2, java.lang.String a3, java.lang.String a4, java.lang.String a5, int a6, int a7) {
             return (br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView>) Fk.call(this, "mine", br.com.fashionai.application.view.Views.Page.class, new Object[]{a0, a1, a2, a3, a4, a5, a6, a7});
-        }
-
-        @Override
-        public br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView> mine(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.lang.String a2, java.lang.String a3, int a4, int a5) {
-            return (br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView>) Fk.call(this, "mine", br.com.fashionai.application.view.Views.Page.class, new Object[]{a0, a1, a2, a3, a4, a5});
-        }
-
-        @Override
-        public br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView> mine(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.lang.String a2, int a3, int a4) {
-            return (br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView>) Fk.call(this, "mine", br.com.fashionai.application.view.Views.Page.class, new Object[]{a0, a1, a2, a3, a4});
         }
 
         @Override

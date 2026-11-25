@@ -532,7 +532,7 @@ public class AutopilotService {
             return null;
         }
         String e = event.toLowerCase();
-        for (Map.Entry<String, List<String>> k : MirrorService.KEYWORDS.entrySet()) {
+        for (Map.Entry<String, List<String>> k : MirrorPromptRules.KEYWORDS.entrySet()) {
             if (e.contains(k.getKey())) {
                 return k.getValue().get(0);
             }
