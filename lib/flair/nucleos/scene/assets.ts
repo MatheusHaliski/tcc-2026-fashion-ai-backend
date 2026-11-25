@@ -18,11 +18,23 @@ export interface AssetGlb {
   bytes?: number;
   /** tipo de móvel procedural que o objeto substitui (opcional; sem ele vale o slug igual ao tipo em kebab-case) */
   movel?: string;
+  /** triângulos da versão leve (`<slug>-leve.glb`), quando ela existe: é a que entra sem placa de vídeo */
+  leve?: number;
 }
 
 export type ManifestoGlb = AssetGlb[];
 
-export const urlDoGlb = (slug: string): string => `${GLB_PASTA}/${slug}.glb`;
+export const urlDoGlb = (slug: string, leve = false): string => `${GLB_PASTA}/${slug}${leve ? "-leve" : ""}.glb`;
+
+/** Prefixo do material do GLB que herda a cor da sala: `sala:estofado` usa o material do papel "estofado" do móvel. */
+export const PAPEL_DA_SALA = "sala:";
+
+/** O material da sala que pinta um material do GLB, ou nulo (o material fica com a cor do arquivo). */
+export function materialDoPapel(nomeNoGlb: string, m: Movel): string | null {
+  if (!nomeNoGlb.startsWith(PAPEL_DA_SALA)) return null;
+  // o exportador do Blender numera materiais repetidos entre arquivos ("sala:metal.001")
+  return m.papeis?.[nomeNoGlb.slice(PAPEL_DA_SALA.length).replace(/\.\d+$/, "")] ?? null;
+}
 
 /** Lê o manifesto como veio do arquivo: aceita a lista direta ou `{assets: [...]}` e descarta entradas sem slug. */
 export function lerManifesto(json: unknown): ManifestoGlb {
@@ -38,6 +50,7 @@ export function lerManifesto(json: unknown): ManifestoGlb {
       triangles: Number(a.triangles) > 0 ? Number(a.triangles) : 0,
       bytes: typeof a.bytes === "number" ? a.bytes : undefined,
       movel: typeof a.movel === "string" ? a.movel : undefined,
+      leve: Number(a.leve) > 0 ? Number(a.leve) : undefined,
     }));
 }
 

@@ -92,6 +92,7 @@ public final class DraftPieceImport {
         w.setFlatLayMetadataJson(Json.write(flatMeta));
         w.setProcessingJobId(draft.getId());
         w.setProcessingTimeMs(draft.getTotalTimeMs());
+        w.setDraftId(draft.getId());   // único no banco: o mesmo rascunho nunca vira duas peças
         pieces.save(w);
         draft.setInputResourceId(w.getId());
         draft.setTargetType("PIECE");

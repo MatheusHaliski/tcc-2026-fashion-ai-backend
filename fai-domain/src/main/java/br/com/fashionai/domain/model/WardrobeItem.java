@@ -274,10 +274,6 @@ public class WardrobeItem extends PieceClassification {
     @Column(name = "canonical_image_url", length = 1024)
     private String canonicalImageUrl;
 
-    /** RF4 · sessão de captura adaptativa que originou a peça (fotos originais, canônicos e identificação). */
-    @Column(name = "capture_session_id", length = 36)
-    private java.util.UUID captureSessionId;
-
     /** RF47 · produto global do catálogo que esta peça pessoal possui (referência, sem cópia de foto nem metadados). */
     @Column(name = "catalog_product_id", length = 36)
     private java.util.UUID catalogProductId;

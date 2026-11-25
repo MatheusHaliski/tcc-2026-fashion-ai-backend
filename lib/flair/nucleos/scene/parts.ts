@@ -74,8 +74,9 @@ export interface Em {
   id?: string;
 }
 
-export function movel(tipo: string, em: Em, partes: Parte[]): Movel {
-  return { tipo, pos: em.pos, giro: em.giro ?? 0, zona: em.zona ?? "decoracao", partes, id: em.id };
+/** `papeis`: os materiais da sala por papel de cor, para o objeto GLB do móvel herdar a paleta (types.ts). */
+export function movel(tipo: string, em: Em, partes: Parte[], papeis?: Record<string, string>): Movel {
+  return { tipo, pos: em.pos, giro: em.giro ?? 0, zona: em.zona ?? "decoracao", partes, id: em.id, ...(papeis ? { papeis } : {}) };
 }
 
 /** O mesmo móvel, com um objeto GLB no lugar das partes quando o arquivo existir (as partes ficam de reserva). */

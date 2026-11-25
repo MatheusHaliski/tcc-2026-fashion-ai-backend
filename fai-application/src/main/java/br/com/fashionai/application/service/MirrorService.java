@@ -1145,7 +1145,7 @@ public class MirrorService {
         Map<String, Object> created = schemeService.create(user, form);
         Views.SchemeView view = (Views.SchemeView) created.get("scheme");
         Scheme scheme = schemes.findById(view.id()).orElseThrow();
-        scheme.setTipoLook(mirror.getTipoLook());
+        if (mirror.getTipoLook() != null) scheme.setTipoLook(mirror.getTipoLook());
         return schemes.save(scheme);
     }
 
