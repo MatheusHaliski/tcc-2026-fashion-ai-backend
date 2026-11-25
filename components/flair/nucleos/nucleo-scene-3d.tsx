@@ -17,6 +17,7 @@ import { CinemaCamera } from "@/components/flair/cinema/cinema-camera";
 import { Andarilho, NA_MARCA, type Jogador } from "@/components/flair/nucleos/scene/andarilho";
 import { DesfileJogavel } from "@/components/flair/nucleos/scene/desfile-jogavel";
 import { DistanciaDaLuta } from "@/components/flair/nucleos/scene/distancia-da-luta";
+import { INICIO_DO_DESFILE } from "@/lib/flair/nucleos/movimento/desfile";
 import { FigurantesHumanos } from "@/components/flair/nucleos/gente/figurantes-humanos";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { QualidadeDaCena } from "@/components/flair/nucleos/scene/scene-quality";
@@ -76,10 +77,10 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
 
 export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO", andarLivre = false, agilidade, desfileAtivo = false }: NucleoScene3DProps) {
   const jogador = useRef<Jogador>({ pos: NA_MARCA, andando: false });
-  // cada momento começa na marca (o desfile parte dela)
+  // cada momento começa na marca; o desfile da Passarela parte do arco do backstage
   useEffect(() => {
-    jogador.current = { pos: NA_MARCA, andando: false };
-  }, [momento]);
+    jogador.current = { pos: (momento === "ACAO" && desfileAtivo && INICIO_DO_DESFILE[config.codigo]) || NA_MARCA, andando: false };
+  }, [momento, desfileAtivo, config.codigo]);
   const rosto = useMemo(() => maquiagemNoRosto(maquiagem), [maquiagem]);
   const manequim = config.personagens.find((p) => p.papel === "MANEQUIM");
   const sala = salaDe(config.codigo, variante);
