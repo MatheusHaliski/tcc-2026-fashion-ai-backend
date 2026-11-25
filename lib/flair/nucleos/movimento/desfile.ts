@@ -11,6 +11,8 @@ import { LABIRINTO_ESPELHO } from "@/lib/flair/nucleos/scene/salas/labirinto";
 
 type Ponto = [number, number];
 
+const ATELIE: Ponto[] = [[-0.4, -0.4], [-0.75, -0.75]];
+
 /** Os pontos de cada jogo (x, z), na ordem; o último é onde o gesto final vale. Desfile e palco vêm da sala. */
 const PERCURSOS: Partial<Record<NucleoCodigo, (sala: Sala) => Ponto[]>> = {
   PASSARELA: (s) => naFrente(2.0, s),
@@ -21,6 +23,11 @@ const PERCURSOS: Partial<Record<NucleoCodigo, (sala: Sala) => Ponto[]>> = {
   PERSONAGEM_FILME: () => [[0, -0.6], [0, -1.2]],
   AROUND_THE_WORLD: () => [[0, 1], [0, 2], [0, 3]],
   ROAD_TO_GLORY: () => [[0, -0.6], [0, -1.2]],
+  // jogos de zonas (ateliê): do tablado até a beira, diante do manequim com a peça pintada — a estreia do traje
+  CLUBE_CORACAO: () => ATELIE,
+  FAVORITE_SINGER: () => ATELIE,
+  PILOTO_FAVORITO: () => ATELIE,
+  SUPER_HEROI: () => ATELIE,
 };
 
 /** Três marcas da marca do avatar até a ponta, em linha reta para a plateia (passarela e palco). */

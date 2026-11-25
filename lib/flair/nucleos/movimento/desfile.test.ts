@@ -24,8 +24,8 @@ describe("desfile jogável", () => {
     expect(noDesfile(e, { x: 0, z: 0, giro: 0 }, marcas)).toEqual({ alcancadas: 3, naPonta: false });
   });
 
-  it("set, loja e caminho também têm percurso, dentro da área de andar de cada sala", () => {
-    for (const codigo of ["LABIRINTO", "BOUTIQUE_3D", "PERSONAGEM_FILME", "AROUND_THE_WORLD", "ROAD_TO_GLORY"] as const) {
+  it("set, loja, caminho e ateliê também têm percurso, dentro da área de andar de cada sala", () => {
+    for (const codigo of ["LABIRINTO", "BOUTIQUE_3D", "PERSONAGEM_FILME", "AROUND_THE_WORLD", "ROAD_TO_GLORY", "CLUBE_CORACAO", "FAVORITE_SINGER", "PILOTO_FAVORITO", "SUPER_HEROI"] as const) {
       const sala = SALAS[codigo];
       const area = areaDeAndar(sala, obstaculosDaSala(sala, 0));
       const marcas = marcasDoDesfile(codigo, sala);

@@ -18,8 +18,9 @@ import { agora, useCena } from "@/components/flair/nucleos/scene/stage-context";
 export const POSE_FINAL_MS = 1600;
 
 /** Quem reage a cada ponto e o gesto final de cada jogo. */
-const PUBLICO: Partial<Record<NucleoCodigo, string>> = { PASSARELA: "PLATEIA", DRESS_THE_STAR: "PLATEIA", BATALHA_LOOKS: "PLATEIA", BOUTIQUE_3D: "VENDEDORA", AROUND_THE_WORLD: "PASSANTE", PERSONAGEM_FILME: "CAMERA" };
-const GESTO: Partial<Record<NucleoCodigo, string>> = { LABIRINTO: "APRESENTAR_O_LOOK", BOUTIQUE_3D: "ENTREGAR_A_PECA", PERSONAGEM_FILME: "ACAO", AROUND_THE_WORLD: "ACENAR", ROAD_TO_GLORY: "OLHAR_PARA_A_CAMERA" };
+const PUBLICO: Partial<Record<NucleoCodigo, string>> = { PASSARELA: "PLATEIA", DRESS_THE_STAR: "PLATEIA", BATALHA_LOOKS: "PLATEIA", BOUTIQUE_3D: "VENDEDORA", AROUND_THE_WORLD: "PASSANTE", PERSONAGEM_FILME: "CAMERA", CLUBE_CORACAO: "TORCIDA" };
+const GESTO: Partial<Record<NucleoCodigo, string>> = { LABIRINTO: "APRESENTAR_O_LOOK", BOUTIQUE_3D: "ENTREGAR_A_PECA", PERSONAGEM_FILME: "ACAO", AROUND_THE_WORLD: "ACENAR", ROAD_TO_GLORY: "OLHAR_PARA_A_CAMERA",
+  PILOTO_FAVORITO: "BAIXAR_A_VISEIRA", SUPER_HEROI: "POSE_DE_HEROI_1" };
 
 export function DesfileJogavel({ codigo, sala, jogador, ativo }: { codigo: NucleoCodigo; sala: Sala; jogador: React.MutableRefObject<Jogador>; ativo: boolean }) {
   const cena = useCena();
