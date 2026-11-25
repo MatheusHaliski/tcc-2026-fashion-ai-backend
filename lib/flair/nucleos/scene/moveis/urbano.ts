@@ -50,7 +50,7 @@ export function calcada(em: Em, pedra: string, largura = 1.4, comprimento = 14):
 
 /** Vitrine de fachada: moldura, vidro, toldo listrado e a soleira. `pos` é o pé, encostado na fachada. */
 export function fachadaVitrine(em: Em, moldura: string, vidro: string, toldo: string, largura = 2.6): Movel {
-  return movel("fachadaVitrine", em, [
+  return comGlb(movel("fachadaVitrine", em, [
     chanfrada(moldura, [largura + 0.2, 0.3, 0.16], [0, 0.15, 0.08]),
     caixa(vidro, [largura, 2.0, 0.02], [0, 1.3, 0.1]),
     chanfrada(moldura, [0.1, 2.0, 0.14], [-largura / 2 - 0.05, 1.3, 0.08]),
@@ -59,7 +59,7 @@ export function fachadaVitrine(em: Em, moldura: string, vidro: string, toldo: st
     chanfrada(toldo, [largura + 0.3, 0.04, 0.95], [0, 2.62, 0.5], [22, 0, 0]),
     caixa(toldo, [largura + 0.3, 0.18, 0.02], [0, 2.36, 0.94]),
     chanfrada(moldura, [largura * 0.5, 0.5, 0.4], [0, 0.55, -0.2]),
-  ]);
+  ], { moldura, vidro, toldo }), `fachada-vitrine-${Math.round(largura * 10)}`);
 }
 
 /** Placa da região: poste e painel com a calçada da cidade desenhada (sem texto). */
@@ -178,8 +178,8 @@ export function parapeito(em: Em, concreto: string, metal: string, largura = 9):
 
 /** Prédio ao longe com janelas acesas e a caixa-d'água no topo. */
 export function predio(em: Em, janelas: string, largura = 2, altura = 6, profundidade = 1.6): Movel {
-  return movel("predio", em, [
+  return comGlb(movel("predio", em, [
     caixa(janelas, [largura, altura, profundidade], [0, altura / 2, 0]),
     caixa(janelas, [largura * 0.4, 0.5, profundidade * 0.5], [largura * 0.15, altura + 0.25, 0]),
-  ]);
+  ], { janelas }), `predio-${Math.round(largura * 10)}x${Math.round(altura * 10)}`);
 }

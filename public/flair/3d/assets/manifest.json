@@ -78,7 +78,7 @@
       0.953,
       0.465
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 484,
     "movel": "cadeira"
   },
@@ -96,7 +96,7 @@
       1.032,
       0.5
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 568,
     "movel": "cadeiraDiretor"
   },
@@ -114,7 +114,7 @@
       1.232,
       0.521
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 850,
     "movel": "cadeiraDeCamarim"
   },
@@ -132,7 +132,7 @@
       1.082,
       0.513
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 602,
     "movel": "penteadeira"
   },
@@ -150,7 +150,7 @@
       0.722,
       0.439
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "movel": "luminaria"
   },
   {
@@ -167,7 +167,7 @@
       1.709,
       1.028
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1082,
     "movel": "cameraTripe"
   },
@@ -185,7 +185,7 @@
       1.825,
       0.699
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1110,
     "movel": "canhaoLuz"
   },
@@ -203,7 +203,7 @@
       4.12,
       0.22
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 684,
     "movel": "poste"
   },
@@ -221,7 +221,7 @@
       0.719,
       0.754
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 938,
     "movel": "caixote"
   },
@@ -239,7 +239,7 @@
       0.884,
       0.604
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 594,
     "movel": "tambor"
   },
@@ -257,7 +257,7 @@
       2.04,
       0.96
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "movel": "trave"
   },
   {
@@ -274,7 +274,7 @@
       0.131,
       0.808
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 632,
     "movel": "skate"
   },
@@ -292,7 +292,7 @@
       0.4,
       0.845
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 748,
     "movel": "pilhaDePneus"
   },
@@ -310,7 +310,7 @@
       0.6,
       0.96
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1122,
     "movel": "pilhaDePneus"
   },
@@ -328,7 +328,7 @@
       0.8,
       0.96
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1496,
     "movel": "pilhaDePneus"
   },
@@ -346,7 +346,7 @@
       1.02,
       0.8
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 642,
     "movel": "bancada"
   },
@@ -364,7 +364,7 @@
       1.02,
       0.8
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 642,
     "movel": "bancada"
   },
@@ -382,7 +382,7 @@
       1.02,
       0.8
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 642,
     "movel": "bancada"
   },
@@ -400,7 +400,7 @@
       1.554,
       0.75
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 558,
     "movel": "rolosDeTecido"
   },
@@ -418,7 +418,7 @@
       1.327,
       1.244
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1456,
     "movel": "lustre"
   },
@@ -436,7 +436,7 @@
       1.327,
       1.544
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1456,
     "movel": "lustre"
   },
@@ -454,7 +454,7 @@
       0.61,
       2.2
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "movel": "luminariaDeTeto"
   },
   {
@@ -471,7 +471,7 @@
       0.61,
       2.4
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "movel": "luminariaDeTeto"
   },
   {
@@ -488,7 +488,7 @@
       0.61,
       2.6
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "movel": "luminariaDeTeto"
   },
   {
@@ -505,7 +505,7 @@
       0.61,
       3.0
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "movel": "luminariaDeTeto"
   },
   {
@@ -522,7 +522,7 @@
       0.373,
       6.262
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1100,
     "movel": "trilhoSpots"
   },
@@ -540,7 +540,7 @@
       0.373,
       9.262
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1352,
     "movel": "trilhoSpots"
   },
@@ -558,7 +558,7 @@
       1.626,
       0.5
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 940,
     "movel": "arara"
   },
@@ -576,7 +576,7 @@
       1.626,
       0.5
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1046,
     "movel": "arara"
   },
@@ -594,7 +594,7 @@
       1.626,
       0.5
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 834,
     "movel": "arara"
   },
@@ -612,7 +612,7 @@
       1.626,
       0.5
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 940,
     "movel": "arara"
   },
@@ -630,7 +630,7 @@
       1.626,
       0.5
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1046,
     "movel": "arara"
   },
@@ -648,7 +648,7 @@
       2.08,
       0.079
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 536,
     "movel": "espelho"
   },
@@ -666,7 +666,7 @@
       2.98,
       0.079
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 536,
     "movel": "espelho"
   },
@@ -684,7 +684,7 @@
       2.58,
       0.138
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1544,
     "movel": "espelho"
   },
@@ -702,7 +702,7 @@
       0.478,
       0.45
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 678,
     "movel": "bancoEstofado"
   },
@@ -720,7 +720,7 @@
       0.478,
       0.45
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 718,
     "movel": "bancoEstofado"
   },
@@ -738,7 +738,7 @@
       0.997,
       0.55
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "movel": "armarioFerramentas"
   },
   {
@@ -755,7 +755,7 @@
       1.795,
       0.299
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 590
   },
   {
@@ -772,7 +772,7 @@
       0.99,
       1.125
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 894,
     "movel": "mesaDosJurados"
   },
@@ -790,7 +790,7 @@
       1.15,
       0.68
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "movel": "balcao"
   },
   {
@@ -807,7 +807,7 @@
       1.87,
       0.4
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1082,
     "movel": "prateleiraDeBolsas"
   },
@@ -825,7 +825,7 @@
       0.857,
       1.63
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 1174,
     "movel": "carroDeCorrida"
   },
@@ -843,7 +843,7 @@
       1.36,
       0.36
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 460,
     "movel": "capaceteNoSuporte"
   },
@@ -861,7 +861,7 @@
       2.23,
       0.084
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "movel": "espelhoDeParede"
   },
   {
@@ -878,7 +878,7 @@
       1.0,
       0.28
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 954,
     "movel": "pedestaisComCordao"
   },
@@ -896,7 +896,7 @@
       1.438,
       0.46
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "movel": "monitorDeVideo"
   },
   {
@@ -913,7 +913,7 @@
       2.351,
       1.091
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 816,
     "movel": "bancoReservas"
   },
@@ -931,8 +931,219 @@
       3.875,
       1.73
     ],
-    "hash": "20488eb83eab710f",
+    "hash": "424385f923d0a6af",
     "leve": 498,
     "movel": "tabelaDeBasquete"
+  },
+  {
+    "slug": "predio-18x32",
+    "title": "Prédio de 1.8 m por 3.2 m com janelas",
+    "category": "scene",
+    "triangles": 476,
+    "bytes": 19884,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      1.88,
+      3.7,
+      1.28
+    ],
+    "hash": "424385f923d0a6af",
+    "movel": "predio"
+  },
+  {
+    "slug": "predio-15x24",
+    "title": "Prédio de 1.5 m por 2.4 m com janelas",
+    "category": "scene",
+    "triangles": 392,
+    "bytes": 19016,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      1.58,
+      2.9,
+      1.28
+    ],
+    "hash": "424385f923d0a6af",
+    "movel": "predio"
+  },
+  {
+    "slug": "predio-20x34",
+    "title": "Prédio de 2.0 m por 3.4 m com janelas",
+    "category": "scene",
+    "triangles": 524,
+    "bytes": 20044,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      2.08,
+      3.9,
+      1.28
+    ],
+    "hash": "424385f923d0a6af",
+    "movel": "predio"
+  },
+  {
+    "slug": "predio-17x27",
+    "title": "Prédio de 1.7 m por 2.7 m com janelas",
+    "category": "scene",
+    "triangles": 392,
+    "bytes": 19140,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      1.78,
+      3.2,
+      1.28
+    ],
+    "hash": "424385f923d0a6af",
+    "movel": "predio"
+  },
+  {
+    "slug": "fachada-vitrine-22",
+    "title": "Fachada com vitrine de 2.2 m e toldo",
+    "category": "scene",
+    "triangles": 952,
+    "bytes": 40608,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      2.5,
+      2.816,
+      1.35
+    ],
+    "hash": "424385f923d0a6af",
+    "leve": 436,
+    "movel": "fachadaVitrine"
+  },
+  {
+    "slug": "fachada-vitrine-26",
+    "title": "Fachada com vitrine de 2.6 m e toldo",
+    "category": "scene",
+    "triangles": 952,
+    "bytes": 40664,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      2.9,
+      2.816,
+      1.35
+    ],
+    "hash": "424385f923d0a6af",
+    "leve": 436,
+    "movel": "fachadaVitrine"
+  },
+  {
+    "slug": "fachada-vitrine-28",
+    "title": "Fachada com vitrine de 2.8 m e toldo",
+    "category": "scene",
+    "triangles": 952,
+    "bytes": 40608,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      3.1,
+      2.816,
+      1.35
+    ],
+    "hash": "424385f923d0a6af",
+    "leve": 436,
+    "movel": "fachadaVitrine"
+  },
+  {
+    "slug": "fachada-vitrine-30",
+    "title": "Fachada com vitrine de 3.0 m e toldo",
+    "category": "scene",
+    "triangles": 952,
+    "bytes": 41384,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      3.3,
+      2.816,
+      1.35
+    ],
+    "hash": "424385f923d0a6af",
+    "leve": 436,
+    "movel": "fachadaVitrine"
+  },
+  {
+    "slug": "palco-pequeno",
+    "title": "Palco de show com treliça e caixas de som",
+    "category": "scene",
+    "triangles": 1216,
+    "bytes": 86504,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      5.4,
+      3.35,
+      2.22
+    ],
+    "hash": "424385f923d0a6af",
+    "leve": 960,
+    "movel": "palcoPequeno"
+  },
+  {
+    "slug": "cenario-de-tres-paredes",
+    "title": "Cenário de três paredes do set de filmagem",
+    "category": "scene",
+    "triangles": 396,
+    "bytes": 34988,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      6.883,
+      3.239,
+      3.638
+    ],
+    "hash": "424385f923d0a6af",
+    "movel": "cenarioDeTresParedes"
+  },
+  {
+    "slug": "arquibancada-72",
+    "title": "Arquibancada de 7.2 m com três degraus",
+    "category": "scene",
+    "triangles": 1288,
+    "bytes": 39032,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      7.2,
+      1.7,
+      2.525
+    ],
+    "hash": "424385f923d0a6af",
+    "leve": 1108,
+    "movel": "arquibancada"
+  },
+  {
+    "slug": "arquibancada-90",
+    "title": "Arquibancada de 9.0 m com três degraus",
+    "category": "scene",
+    "triangles": 1504,
+    "bytes": 40716,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      9.0,
+      1.7,
+      2.525
+    ],
+    "hash": "424385f923d0a6af",
+    "leve": 1324,
+    "movel": "arquibancada"
   }
 ]

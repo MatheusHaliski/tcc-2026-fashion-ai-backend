@@ -117,6 +117,10 @@ Em três lotes, do que mais aparece para o que menos aparece.
 
 Aceite: nenhuma das 18 salas tem móvel de objeto ou de arquitetura desenhado só com caixas e cilindros.
 
+**Estado do lote 2 (arquitetura):** prédio, fachada com vitrine, palco pequeno, cenário de três paredes e arquibancada
+entregues, um arquivo por medida usada nas salas. Passarela, ringue, grades, redes e portas continuam procedurais: são
+blocos ou marcas no piso, e o objeto, ajustado pela altura, deformaria nas salas compridas.
+
 **Estado do lote 1: 19 de 22 tipos entregues.** Os 9 que aparecem em mais salas (arara, espelho, bancoEstofado,
 armarioFerramentas, lustre, luminariaDeTeto, trilhoSpots, bancada, rolosDeTecido) e 10 de uma sala só (mesaDosJurados,
 balcao, prateleiraDeBolsas, carroDeCorrida, capaceteNoSuporte, espelhoDeParede, pedestaisComCordao, monitorDeVideo,

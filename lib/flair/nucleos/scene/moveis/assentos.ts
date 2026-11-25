@@ -100,5 +100,5 @@ export function arquibancada(em: Em, concreto: string, assento: string, largura 
     }
   }
   partes.push(caixa(concreto, [largura, 0.4 * degraus + 0.5, 0.12], [0, (0.4 * degraus + 0.5) / 2, -0.8 * degraus + 0.34]));
-  return movel("arquibancada", em, partes);
+  return comGlb(movel("arquibancada", em, partes, { concreto, assento }), `arquibancada-${Math.round(largura * 10)}`);
 }

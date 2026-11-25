@@ -67,6 +67,11 @@ python -m scripts.blender3d.preview --pasta /tmp/previas   # folha de contato re
 | `monitor-de-video.glb` | `monitorDeVideo` | 452 |
 | `banco-reservas.glb` | `bancoReservas` | 1596 |
 | `tabela-de-basquete.glb` | `tabelaDeBasquete` | 832 |
+| `predio-18x32/15x24/20x34/17x27.glb` | `predio` (janelas acesas, cornija, casa de máquinas) | 392 a 524 |
+| `fachada-vitrine-22/26/28/30.glb` | `fachadaVitrine` (vitrine com bustos e toldo) | 952 |
+| `palco-pequeno.glb` | `palcoPequeno` | 1216 |
+| `cenario-de-tres-paredes.glb` | `cenarioDeTresParedes` | 396 |
+| `arquibancada-72/90.glb` | `arquibancada` | 1288 / 1504 |
 
 Móvel que muda de medida por sala tem um arquivo por medida: a fábrica do móvel monta o slug com as medidas
 (por exemplo `arara-16-7`: 1,6 m e 7 peças) e o aponta com `comGlb`. Medida sem arquivo cai no móvel procedural, sem erro.
