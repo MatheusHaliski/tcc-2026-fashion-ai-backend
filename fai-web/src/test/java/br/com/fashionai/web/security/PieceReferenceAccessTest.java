@@ -5,17 +5,20 @@ import br.com.fashionai.domain.model.Colecao;
 import br.com.fashionai.domain.model.Corte;
 import br.com.fashionai.domain.model.EstadoConservacao;
 import br.com.fashionai.domain.model.IntensidadeTermica;
+import br.com.fashionai.domain.model.NivelTermico;
 import br.com.fashionai.domain.model.Origem;
 import br.com.fashionai.domain.model.TipoLavagem;
 import br.com.fashionai.domain.repository.ColecaoRepository;
 import br.com.fashionai.domain.repository.CorteRepository;
 import br.com.fashionai.domain.repository.EstadoConservacaoRepository;
 import br.com.fashionai.domain.repository.IntensidadeTermicaRepository;
+import br.com.fashionai.domain.repository.NivelTermicoRepository;
 import br.com.fashionai.domain.repository.OrigemRepository;
 import br.com.fashionai.domain.repository.TipoLavagemRepository;
 import br.com.fashionai.web.config.SecurityConfig;
 import br.com.fashionai.web.controller.PieceReferenceController;
 import br.com.fashionai.web.controller.OrigemReferenceController;
+import br.com.fashionai.web.controller.LookReferenceController;
 import br.com.fashionai.web.error.ErrorWriter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,8 +47,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({PieceReferenceController.class, OrigemReferenceController.class})
-@Import({PieceReferenceController.class, OrigemReferenceController.class, SecurityConfig.class, FashionAuthorization.class,
+@WebMvcTest({PieceReferenceController.class, OrigemReferenceController.class, LookReferenceController.class})
+@Import({PieceReferenceController.class, OrigemReferenceController.class, LookReferenceController.class, SecurityConfig.class, FashionAuthorization.class,
         AuditAccessDeniedHandler.class, AuditAuthenticationEntryPoint.class, ErrorWriter.class,
         PieceReferenceAccessTest.CampoNovo.class})
 class PieceReferenceAccessTest {
@@ -55,6 +58,7 @@ class PieceReferenceAccessTest {
     private static final UUID THERMAL_ID = UUID.fromString("c4f1e0d2-8b3a-4e6f-9d21-5a7b8c9d0e11");
     private static final UUID CUT_ID = UUID.fromString("5b2e9f41-3c7d-4a8e-b1f0-6d9c2a7e4b13");
     private static final UUID ORIGIN_ID = UUID.fromString("05aa203c-8b3a-4e6f-9d21-5a7b8c9d0e11");
+    private static final UUID LOOK_THERMAL_ID = UUID.fromString("9e2d4c1a-7b3f-4a5e-8c6d-1f2a3b4c5d6e");
 
     @Autowired
     private MockMvc mvc;
@@ -93,12 +97,17 @@ class PieceReferenceAccessTest {
                 .andExpect(jsonPath("$[0].codigo").value("ADQUIRIDA"))
                 .andExpect(jsonPath("$[0].nome").value("Adquirida"))
                 .andExpect(jsonPath("$[0].createdAt").doesNotExist());
+        mvc.perform(get("/api/opcoes/niveis-termicos")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(LOOK_THERMAL_ID.toString()))
+                .andExpect(jsonPath("$[0].codigo").value("INTENSO"))
+                .andExpect(jsonPath("$[0].nome").value("Intenso"))
+                .andExpect(jsonPath("$[0].ativo").doesNotExist());
     }
 
     @Test
     void anonymousMutationsAndUnrelatedRoutesRemainProtected() throws Exception {
         for (String path : List.of("/api/estados-conservacao", "/api/opcoes/estados-conservacao", "/api/tipos-lavagem",
-                "/api/colecoes", "/api/intensidades-termicas", "/api/origens", "/api/cortes")) {
+                "/api/colecoes", "/api/intensidades-termicas", "/api/origens", "/api/cortes", "/api/opcoes/niveis-termicos")) {
             mvc.perform(post(path)).andExpect(status().isUnauthorized());
             mvc.perform(put(path)).andExpect(status().isUnauthorized());
             mvc.perform(patch(path)).andExpect(status().isUnauthorized());
@@ -222,6 +231,15 @@ class PieceReferenceAccessTest {
             origin.setCodigo("ADQUIRIDA");
             origin.setNome("Adquirida");
             return repository(OrigemRepository.class, List.of(origin));
+        }
+
+        @Bean
+        NivelTermicoRepository niveisTermicos() {
+            NivelTermico intenso = new NivelTermico();
+            intenso.assignId(LOOK_THERMAL_ID);
+            intenso.setCodigo("INTENSO");
+            intenso.setNome("Intenso");
+            return repository(NivelTermicoRepository.class, List.of(intenso));
         }
 
         @Bean
