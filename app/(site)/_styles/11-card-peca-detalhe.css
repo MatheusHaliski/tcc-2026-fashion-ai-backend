@@ -116,8 +116,7 @@
 .piece-detail .pd-brand { margin: 0; font-size: 13px; color: var(--muted); }
 .piece-detail .pd-cta { justify-self: start; margin-top: 6px; min-width: 200px; }
 @media (max-width: 639px) { .piece-detail .pd-cta { justify-self: stretch; } }
-.piece-detail .pd-section .c-facts { padding: 12px 16px; border-top: 1px solid var(--line-soft); }
-.piece-detail .pd-h { margin: 0 0 8px; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.piece-detail .pd-section .c-facts .pd-h{ padding: 12px 16px; border-top: 1px solid var(--line-soft); }
 .piece-detail .pd-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .piece-detail .pd-tech { padding: 10px 16px 14px; border-top: 1px solid var(--line-soft); }
 .piece-detail .pd-tech > summary { cursor: pointer; font-size: 12px; color: var(--muted); min-height: 32px; display: flex; align-items: center; }
