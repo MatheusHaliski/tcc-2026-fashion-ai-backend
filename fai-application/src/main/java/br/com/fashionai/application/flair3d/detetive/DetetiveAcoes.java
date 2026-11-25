@@ -185,7 +185,7 @@ final class DetetiveAcoes {
     }
 
     private static boolean acusar(DetetiveEstado e, String arg) {
-        DetetivePartida.conferir(FashionDetectiveMundo.FINAL.equals(e.sala));
+        DetetivePartida.conferir(FashionDetectiveMundo.FINAL.equals(e.sala) && e.podeAcusar());
         int suspeito;
         try {
             suspeito = Integer.parseInt(arg);
