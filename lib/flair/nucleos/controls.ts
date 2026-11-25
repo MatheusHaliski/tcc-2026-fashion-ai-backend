@@ -40,7 +40,7 @@ const TECLAS: Record<string, Comando> = {
 };
 
 /** A posição da tecla a partir do caractere, para eventos sem `code` (teclados virtuais, testes). */
-function codigoDoCaractere(key: string): string {
+export function codigoDoCaractere(key: string): string {
   if (key === " ") return "Space";
   if (key === "Shift") return "ShiftLeft";
   if (/^[a-z]$/i.test(key)) return `Key${key.toUpperCase()}`;
@@ -83,7 +83,8 @@ interface PadLike {
 }
 
 /** Lê um gamepad: os botões que acabaram de ser apertados (borda), o analógico esquerdo (foco) e o direito (girar). */
-export function lerGamepad(pad: PadLike, antes: PadEstado, agora: number): { comandos: Comando[]; estado: PadEstado } {
+/** `andando`: o analógico esquerdo é do corpo (jogos de andar livre), não do foco do menu. */
+export function lerGamepad(pad: PadLike, antes: PadEstado, agora: number, andando = false): { comandos: Comando[]; estado: PadEstado } {
   const comandos: Comando[] = [];
   const botoes = pad.buttons.map((b) => !!b.pressed || (b.value ?? 0) > 0.5);
   botoes.forEach((apertado, i) => {
@@ -103,7 +104,7 @@ export function lerGamepad(pad: PadLike, antes: PadEstado, agora: number): { com
   let moverEm = antes.moverEm ?? 0;
   const [lx, ly] = [pad.axes[0] ?? 0, pad.axes[1] ?? 0];
   const forte = Math.max(Math.abs(lx), Math.abs(ly));
-  if (forte > LIMIAR_ANALOGICO) {
+  if (forte > LIMIAR_ANALOGICO && !andando) {
     if (agora - moverEm >= GIRO_MS) {
       comandos.push(Math.abs(lx) >= Math.abs(ly) ? { acao: "NAVEGAR", dir: lx > 0 ? 1 : -1, eixo: "x" } : { acao: "NAVEGAR", dir: ly > 0 ? 1 : -1, eixo: "y" });
       moverEm = agora;

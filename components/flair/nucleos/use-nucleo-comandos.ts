@@ -13,9 +13,12 @@ import type { Comando } from "@/lib/flair/nucleos/controls";
 import { comandoNaAcao } from "@/lib/flair/nucleos/foco-da-acao";
 import { comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
 import type { ResourceTab } from "@/lib/flair/nucleos/selection";
-import type { NucleoAcao } from "@/lib/flair/nucleos/types";
+import type { NucleoAcao, NucleoCodigo } from "@/lib/flair/nucleos/types";
+import { mapaDoJogo } from "@/lib/flair/entrada/mapa-por-jogo";
+import { useEixoDeAndar } from "@/components/flair/nucleos/use-eixo-de-andar";
 
 interface Opcoes {
+  codigo: NucleoCodigo;
   acoes: NucleoAcao[];
   momento: Momento;
   tabs: ResourceTab[];
@@ -30,7 +33,10 @@ interface Opcoes {
   limparAviso: () => void;
 }
 
-export function useNucleoComandos({ acoes, momento, tabs, pausado, ativo, acaoPropria = false, cena, dispatch, entregar, limparAviso }: Opcoes) {
+export function useNucleoComandos({ codigo, acoes, momento, tabs, pausado, ativo, acaoPropria = false, cena, dispatch, entregar, limparAviso }: Opcoes) {
+  // nos jogos de andar livre, na preparação WASD e o analógico levam a personagem pela sala
+  const andar = mapaDoJogo(codigo, acoes).movimento === "LIVRE" && momento === "PREPARACAO" && ativo && !pausado && !cena?.tocando;
+  useEixoDeAndar(andar);
   const onComando = (c: Comando) => {
     // a cutscene acaba com qualquer comando de jogo, que vale também (nenhum toque se perde); ○ e Start só pulam
     if (cena?.tocando && c.acao !== "GIRAR") {
@@ -46,5 +52,5 @@ export function useNucleoComandos({ acoes, momento, tabs, pausado, ativo, acaoPr
     if (c.acao === "ENTREGAR") entregar();
     else dispatch({ type: "comando", comando: c, tabs });
   };
-  return useNucleoControls({ acoes, onComando, ativo });
+  return useNucleoControls({ acoes, onComando, ativo, andar });
 }

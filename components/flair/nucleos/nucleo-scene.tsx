@@ -42,6 +42,9 @@ interface Props {
   zonas?: Record<string, ZonaEscolha>;
   /** a maquiagem escolhida (Road to Glory): aparece no rosto do avatar */
   maquiagem?: Record<string, MaquiagemEscolha>;
+  /** o jogo anda livre na preparação, na velocidade da agilidade do look */
+  andarLivre?: boolean;
+  agilidade?: number;
   /** a câmera escolhida no seletor do HUD e o momento da partida (scene/game-camera.tsx) */
   camera?: string | null;
   momento?: MomentoDaCamera;

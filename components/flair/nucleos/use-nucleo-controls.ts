@@ -5,7 +5,8 @@
  * controle conectado. Comandos de ações fora da lista do núcleo são ignorados.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { comandoDaTecla, comandoDoJogo, lerGamepad, PAD_INICIAL, type Comando, type PadEstado } from "@/lib/flair/nucleos/controls";
+import { TECLAS_DE_ANDAR } from "@/components/flair/nucleos/use-eixo-de-andar";
+import { codigoDoCaractere, comandoDaTecla, comandoDoJogo, lerGamepad, PAD_INICIAL, type Comando, type PadEstado } from "@/lib/flair/nucleos/controls";
 import type { NucleoAcao } from "@/lib/flair/nucleos/types";
 
 export interface NucleoControlsOptions {
@@ -13,6 +14,8 @@ export interface NucleoControlsOptions {
   onComando: (c: Comando) => void;
   /** false = pausa teclado e gamepad (ex.: resultado aberto) */
   ativo?: boolean;
+  /** o jogo anda livre agora: WASD e o analógico esquerdo são do corpo (use-eixo-de-andar), as setas do menu */
+  andar?: boolean;
 }
 
 const CAMPOS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
@@ -32,9 +35,9 @@ function padsConectados(): Gamepad[] {
   return Array.from(navigator.getGamepads() ?? []).filter((p): p is Gamepad => !!p);
 }
 
-export function useNucleoControls({ acoes, onComando, ativo = true }: NucleoControlsOptions) {
-  const ref = useRef({ acoes, onComando, ativo });
-  ref.current = { acoes, onComando, ativo };
+export function useNucleoControls({ acoes, onComando, ativo = true, andar = false }: NucleoControlsOptions) {
+  const ref = useRef({ acoes, onComando, ativo, andar });
+  ref.current = { acoes, onComando, ativo, andar };
   const [gamepad, setGamepad] = useState(false);
 
   const disparar = useCallback((c: Comando) => {
@@ -49,6 +52,7 @@ export function useNucleoControls({ acoes, onComando, ativo = true }: NucleoCont
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat && e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
       if (ignorarTecla(e)) return;
+      if (ref.current.andar && TECLAS_DE_ANDAR.has(e.code || codigoDoCaractere(e.key))) return;
       const c = comandoDaTecla(e.key, e.code);
       if (c && disparar(c)) e.preventDefault();
     };
@@ -69,7 +73,7 @@ export function useNucleoControls({ acoes, onComando, ativo = true }: NucleoCont
       }
       const proximos = new Map<number, PadEstado>();
       for (const pad of pads) {
-        const { comandos, estado } = lerGamepad(pad, estados.get(pad.index) ?? PAD_INICIAL, agora);
+        const { comandos, estado } = lerGamepad(pad, estados.get(pad.index) ?? PAD_INICIAL, agora, ref.current.andar);
         proximos.set(pad.index, estado);
         comandos.forEach(disparar);
       }

@@ -14,6 +14,7 @@ import { LuzDeEfeito, PecaPintada } from "@/components/flair/nucleos/scene/effec
 import { CameraDoJogo } from "@/components/flair/nucleos/scene/game-camera";
 import { Figurantes } from "@/components/flair/nucleos/scene/extras";
 import { CinemaCamera } from "@/components/flair/cinema/cinema-camera";
+import { Andarilho, NA_MARCA, type Jogador } from "@/components/flair/nucleos/scene/andarilho";
 import { FigurantesHumanos } from "@/components/flair/nucleos/gente/figurantes-humanos";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { QualidadeDaCena } from "@/components/flair/nucleos/scene/scene-quality";
@@ -52,6 +53,8 @@ export interface NucleoScene3DProps {
   zonasDaPeca?: string[];
   zonas?: Record<string, ZonaEscolha>;
   maquiagem?: Record<string, MaquiagemEscolha>;
+  andarLivre?: boolean;
+  agilidade?: number;
   /** a câmera escolhida no seletor do HUD ("AUTO" ou nula = a do momento) e o momento da partida */
   camera?: string | null;
   momento?: MomentoDaCamera;
@@ -68,7 +71,8 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
   return { dist, alvo: [0, altura + (sala?.zonas.avatar.altura ?? 0), 0] };
 }
 
-export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO" }: NucleoScene3DProps) {
+export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO", andarLivre = false, agilidade }: NucleoScene3DProps) {
+  const jogador = useRef<Jogador>({ pos: NA_MARCA, andando: false });
   const rosto = useMemo(() => maquiagemNoRosto(maquiagem), [maquiagem]);
   const manequim = config.personagens.find((p) => p.papel === "MANEQUIM");
   const sala = salaDe(config.codigo, variante);
@@ -95,9 +99,10 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
           limite={() => corposCheiosDaCena(config.codigo, qualidade.current)} sombraAte={() => AJUSTES[qualidade.current].sombraDeFiguranteAte} />
         <LuzDeEfeito altura={sala.zonas.avatar.altura} />
         {manequim && zonasDaPeca && zonas && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
-        <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} maquiagem={rosto} />
+        <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} maquiagem={rosto} jogador={jogador} />
+        <Andarilho sala={sala} jogador={jogador} agilidade={agilidade} livre={andarLivre && momento === "PREPARO"} />
         <QualidadeDaCena nivel={qualidade} />
-        <CameraDoJogo codigo={config.codigo} escolha={camera} momento={momento} sala={sala} zoom={avatar.zoom} reduzido={reduzido} pessoas={figurantes} />
+        <CameraDoJogo codigo={config.codigo} escolha={camera} momento={momento} sala={sala} zoom={avatar.zoom} reduzido={reduzido} pessoas={figurantes} jogador={jogador} />
       </CenaContexto.Provider>
       {temAbertura(config.codigo) && <CameraDeAbertura chave={abertura} sala={sala} fim={fim} reduzido={reduzido} />}
       <CinemaCamera sala={sala} />

@@ -21,6 +21,7 @@ import type { LookDosRecursos } from "@/components/flair/nucleos/recursos/use-lo
 import { NucleoRodaRecursos } from "@/components/flair/nucleos/recursos/nucleo-roda-recursos";
 import type { RecursosNaTela } from "@/components/flair/nucleos/recursos/use-recursos-da-partida";
 import { CinemaOverlay } from "@/components/flair/cinema/cinema-overlay";
+import { mapaDoJogo } from "@/lib/flair/entrada/mapa-por-jogo";
 import type { CinemaNaTela } from "@/components/flair/cinema/use-cinema-da-partida";
 import { NucleoCast } from "@/components/flair/nucleos/nucleo-cast";
 import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
@@ -85,7 +86,8 @@ export function NucleoStage(props: NucleoStageProps) {
     <div className="n3d-stage" data-testid="nucleo-stage">
       <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
-        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem} />
+        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem}
+        andarLivre={mapaDoJogo(definicao.codigo, definicao.acoes).movimento === "LIVRE"} agilidade={props.recursos?.look.atributos.AGILIDADE} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
       {props.recursos && <NucleoRodaAtributos recursos={props.recursos} reduzido={reduzido} efeitos={prefs.efeitos} />}

@@ -24,5 +24,12 @@ volta (`use-nucleo-comandos.ts`); na ação, o foco passa pelos botões da faixa
 (`foco-da-acao.ts`), então jogar a carta, seguir sem carta e ver o resultado têm comando. Ampliar a carta passou de I
 para Z. O Fashion Sports mantém a mão de cartas própria (`use-mao-controle.ts`), com o mesmo mapa.
 
+Etapa 15 (feita): andar livre na preparação de Passarela, Dress the Star, Personagem de Filme, Boutique 3D, Labirinto,
+Around the World e Batalha de Looks (`mapa-por-jogo.ts`, movimento LIVRE). WASD e o analógico esquerdo levam a
+personagem pela sala (`use-eixo-de-andar.ts` publica o eixo; `scene/andarilho.tsx` anda; `lib/flair/nucleos/movimento/
+andar.ts` faz a conta pura com colisão nos móveis e a área do palco ou da passarela); as setas e o direcional
+continuam no menu. A velocidade é a agilidade do look (regra peça-recurso). Fora da preparação, a personagem volta à
+marca, de onde as sequências do diretor partem.
+
 Ainda não feito: um provedor único com camadas (hoje cada tela liga o próprio `keydown`), a tela de toque com o losango
 de botões e os símbolos de cada controle na ajuda (`glifos.ts` existe, falta ligar).

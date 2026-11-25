@@ -9,6 +9,7 @@
 import { useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type * as THREE from "three";
+import type { Jogador } from "@/components/flair/nucleos/scene/andarilho";
 import { agora, useCena } from "@/components/flair/nucleos/scene/stage-context";
 import { cameraEmUso, type MomentoDaCamera } from "@/lib/flair/nucleos/camera/jogos";
 import { aproximarEmVolta, fracaoDoQuadro } from "@/lib/flair/nucleos/camera/colisao";
@@ -31,11 +32,13 @@ interface Props {
   reduzido: boolean;
   /** as pessoas de cena da sala: a lente nunca entra no corpo delas */
   pessoas?: NucleoPersonagem[];
+  /** andar livre: a câmera segue a personagem até onde a pessoa a levou */
+  jogador?: React.MutableRefObject<Jogador>;
 }
 
 const NINGUEM: NucleoPersonagem[] = [];
 
-export function CameraDoJogo({ codigo, escolha, momento, sala, zoom, reduzido, pessoas = NINGUEM }: Props) {
+export function CameraDoJogo({ codigo, escolha, momento, sala, zoom, reduzido, pessoas = NINGUEM, jogador }: Props) {
   const cena = useCena();
   const { camera, size } = useThree();
   const pose = useRef<Pose | null>(null);
@@ -53,7 +56,8 @@ export function CameraDoJogo({ codigo, escolha, momento, sala, zoom, reduzido, p
       const onde = cena.diretor.lugar(a.id, t, a.origem);
       evita[i].pos = [onde.x, pessoas[i].pos[1], onde.z];
     });
-    const assunto = { pos: [lugar.x, sala.zonas.avatar.altura, lugar.z] as [number, number, number], giro: lugar.giro, limites, evita, caixas };
+    const j = jogador?.current.pos;
+    const assunto = { pos: [lugar.x + (j?.x ?? 0), sala.zonas.avatar.altura, lugar.z + (j?.z ?? 0)] as [number, number, number], giro: lugar.giro, limites, evita, caixas };
     const pedida = poseDoRig(c, assunto, t, size.width / Math.max(1, size.height), reduzido);
     pose.current = !pose.current || reduzido ? pedida : aproximarEmVolta(pose.current, pedida, fracaoDoQuadro(dt), assunto);
     camera.position.set(...pose.current.pos);
