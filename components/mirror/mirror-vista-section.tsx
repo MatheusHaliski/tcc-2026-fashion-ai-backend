@@ -34,8 +34,10 @@ export function vistaRequest(kind: "vista-me" | "another", data: MirrorData | nu
  * Espelho › Vista-me (extraído de mirror-controls.tsx): nível térmico opcional, células de ocasião, "Outra sugestão" e o
  * resultado (mensagem, sequência, avisos e a evidência térmica da recomendação).
  */
-export function MirrorVistaSection<T extends MirrorData>({ data, busy, anchorIds, run, onVista }: {
+export function MirrorVistaSection<T extends MirrorData>({ data, busy, anchorIds, run, onVista, inPanel = false }: {
   data: T; busy: string | null; anchorIds: () => string[];
+  /** dentro do painel lateral "Vista-me": o título do painel já diz o nome, o da seção fica só para leitores de tela */
+  inPanel?: boolean;
   run: (key: string, fn: () => Promise<T | Record<string, unknown>>) => Promise<T | Record<string, unknown> | null>;
   onVista?: (r: T) => void;
 }) {
@@ -55,8 +57,8 @@ export function MirrorVistaSection<T extends MirrorData>({ data, busy, anchorIds
   const shown = extras && (extras.message || extras.fallbackMessage || extras.challengeNotice || extras.sequence?.length || extras.thermal);
   return (
     <section className="mirror-section" aria-labelledby="mirror-vista-h">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 id="mirror-vista-h" className="mirror-section-h">{t("mirror.vista_me")}</h3>
+      <div className={inPanel ? "flex justify-end" : "flex flex-wrap items-center justify-between gap-2"}>
+        <h3 id="mirror-vista-h" className={inPanel ? "sr-only" : "mirror-section-h"}>{t("mirror.vista_me")}</h3>
         <Button size="sm" disabled={data.origin !== "vista_me" || busy === "vista"} onClick={() => void vista("another")}>{t("room.outra_sugestao")}</Button>
       </div>
       <MirrorThermalLevel niveis={niveis} value={nivel} busy={busy === "vista"} onChange={setNivel} />

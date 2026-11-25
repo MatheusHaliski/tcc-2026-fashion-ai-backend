@@ -34,7 +34,7 @@ export function MirrorPage() {
             {empty && <div className="mirror-empty"><p className="type-h3">{t("mirror.emptyTitle")}</p><p className="type-body-sm mt-1 text-muted">{t("mirror.vazio_dica")}</p></div>}
           </MirrorStage>
           <MirrorSidePanel id="mirror-vista-panel" side="left" icon="OCC-11" label={t("mirror.vista_me")}>
-            <MirrorVistaSection data={data} busy={busy} anchorIds={pins.anchorIds} run={run} />
+            <MirrorVistaSection data={data} busy={busy} anchorIds={pins.anchorIds} run={run} inPanel />
           </MirrorSidePanel>
           <MirrorSidePanel id="mirror-panel" icon="NAV-14" label={t("mirror.painel.abrir")}>
             <p className="type-body-sm text-muted">{data.restriction ? t("mirror.desafio_ativo_so_as_pecas", { challenge: data.restriction.challenge }) : t("mirror.page.lead")}</p>
