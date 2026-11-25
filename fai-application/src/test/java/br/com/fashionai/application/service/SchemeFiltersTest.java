@@ -67,16 +67,16 @@ class SchemeFiltersTest {
 
     @Test
     void kindSeparatesAiManualAndRemix() {
-        assertThat(SchemeService.kindOf(scheme(SchemeOrigin.CRIAR_LOOK, CreationMode.MANUAL, SchemeStatus.DRAFT))).isEqualTo("manual");
-        assertThat(SchemeService.kindOf(scheme(SchemeOrigin.PROVADOR, CreationMode.MANUAL, SchemeStatus.DRAFT))).isEqualTo("manual");
-        assertThat(SchemeService.kindOf(scheme(SchemeOrigin.CRIAR_LOOK, CreationMode.AI_ASSISTED, SchemeStatus.DRAFT))).isEqualTo("ia");
+        assertThat(SchemeListing.kindOf(scheme(SchemeOrigin.CRIAR_LOOK, CreationMode.MANUAL, SchemeStatus.DRAFT))).isEqualTo("manual");
+        assertThat(SchemeListing.kindOf(scheme(SchemeOrigin.PROVADOR, CreationMode.MANUAL, SchemeStatus.DRAFT))).isEqualTo("manual");
+        assertThat(SchemeListing.kindOf(scheme(SchemeOrigin.CRIAR_LOOK, CreationMode.AI_ASSISTED, SchemeStatus.DRAFT))).isEqualTo("ia");
         for (SchemeOrigin o : new SchemeOrigin[]{SchemeOrigin.COPILOT, SchemeOrigin.AUTOPILOTO, SchemeOrigin.VISTA_ME, SchemeOrigin.SMART_MIRROR}) {
-            assertThat(SchemeService.kindOf(scheme(o, CreationMode.MANUAL, SchemeStatus.DRAFT))).as(o.name()).isEqualTo("ia");
+            assertThat(SchemeListing.kindOf(scheme(o, CreationMode.MANUAL, SchemeStatus.DRAFT))).as(o.name()).isEqualTo("ia");
         }
-        assertThat(SchemeService.kindOf(scheme(SchemeOrigin.REMIX, CreationMode.MANUAL, SchemeStatus.DRAFT))).isEqualTo("remix");
+        assertThat(SchemeListing.kindOf(scheme(SchemeOrigin.REMIX, CreationMode.MANUAL, SchemeStatus.DRAFT))).isEqualTo("remix");
         Scheme derived = scheme(SchemeOrigin.COPILOT, CreationMode.AI_ASSISTED, SchemeStatus.DRAFT);
         derived.setOriginalScheme(new Scheme());
-        assertThat(SchemeService.kindOf(derived)).as("derivado de outro look é remix, mesmo vindo do Copilot").isEqualTo("remix");
+        assertThat(SchemeListing.kindOf(derived)).as("derivado de outro look é remix, mesmo vindo do Copilot").isEqualTo("remix");
     }
 
     @Test
@@ -84,16 +84,16 @@ class SchemeFiltersTest {
         Scheme published = scheme(SchemeOrigin.CRIAR_LOOK, CreationMode.MANUAL, SchemeStatus.PUBLISHED);
         Scheme draft = scheme(SchemeOrigin.CRIAR_LOOK, CreationMode.MANUAL, SchemeStatus.DRAFT);
         Scheme archived = scheme(SchemeOrigin.CRIAR_LOOK, CreationMode.MANUAL, SchemeStatus.ARCHIVED);
-        assertThat(SchemeService.stateMatches(published, "publicados")).isTrue();
-        assertThat(SchemeService.stateMatches(draft, "publicados")).isFalse();
-        assertThat(SchemeService.stateMatches(draft, "rascunhos")).isTrue();
-        assertThat(SchemeService.stateMatches(published, "rascunhos")).isFalse();
-        assertThat(SchemeService.stateMatches(archived, "arquivados")).isTrue();
-        assertThat(SchemeService.stateMatches(draft, "arquivados")).isFalse();
+        assertThat(SchemeListing.stateMatches(published, "publicados")).isTrue();
+        assertThat(SchemeListing.stateMatches(draft, "publicados")).isFalse();
+        assertThat(SchemeListing.stateMatches(draft, "rascunhos")).isTrue();
+        assertThat(SchemeListing.stateMatches(published, "rascunhos")).isFalse();
+        assertThat(SchemeListing.stateMatches(archived, "arquivados")).isTrue();
+        assertThat(SchemeListing.stateMatches(draft, "arquivados")).isFalse();
         draft.setFavorite(true);
-        assertThat(SchemeService.stateMatches(draft, "favoritos")).isTrue();
-        assertThat(SchemeService.stateMatches(published, "")).isTrue();
-        assertThat(SchemeService.stateMatches(published, "todos")).isTrue();
+        assertThat(SchemeListing.stateMatches(draft, "favoritos")).isTrue();
+        assertThat(SchemeListing.stateMatches(published, "")).isTrue();
+        assertThat(SchemeListing.stateMatches(published, "todos")).isTrue();
     }
 
     // ------------------------------------------------------------------ RF53 · Lote 2 — Hype v2 em Meus looks
@@ -139,19 +139,19 @@ class SchemeFiltersTest {
 
     @Test
     void sortNamesAndLevelThresholdsFollowTheCloset() {
-        assertThat(SchemeService.lookSort(null)).isEqualTo("recent");
-        assertThat(SchemeService.lookSort("recentes")).isEqualTo("recent");
-        assertThat(SchemeService.lookSort("hype")).isEqualTo("hype_desc");
-        assertThat(SchemeService.lookSort("HYPE_DESC")).isEqualTo("hype_desc");
-        assertThat(SchemeService.lookSort("hype_asc")).isEqualTo("hype_asc");
-        assertThat(SchemeService.lookSort("growth")).isEqualTo("growth");
-        assertThat(SchemeService.lookSort("worn")).as("usos são de peça, não de look").isEqualTo("recent");
+        assertThat(SchemeListing.lookSort(null)).isEqualTo("recent");
+        assertThat(SchemeListing.lookSort("recentes")).isEqualTo("recent");
+        assertThat(SchemeListing.lookSort("hype")).isEqualTo("hype_desc");
+        assertThat(SchemeListing.lookSort("HYPE_DESC")).isEqualTo("hype_desc");
+        assertThat(SchemeListing.lookSort("hype_asc")).isEqualTo("hype_asc");
+        assertThat(SchemeListing.lookSort("growth")).isEqualTo("growth");
+        assertThat(SchemeListing.lookSort("worn")).as("usos são de peça, não de look").isEqualTo("recent");
         int[] t = HypeScoreConfig.defaults().levelThresholds();
-        assertThat(SchemeService.hypeMinimum("HOT", t)).isEqualTo(t[2]);
-        assertThat(SchemeService.hypeMinimum("viral", t)).isEqualTo(t[4]);
-        assertThat(SchemeService.hypeMinimum("LOW_SIGNAL", t)).isZero();
-        assertThat(SchemeService.hypeMinimum("", t)).as("sem faixa = sem filtro").isNull();
-        assertThat(SchemeService.hypeMinimum("QUALQUER", t)).as("faixa desconhecida é ignorada").isNull();
+        assertThat(SchemeListing.hypeMinimum("HOT", t)).isEqualTo(t[2]);
+        assertThat(SchemeListing.hypeMinimum("viral", t)).isEqualTo(t[4]);
+        assertThat(SchemeListing.hypeMinimum("LOW_SIGNAL", t)).isZero();
+        assertThat(SchemeListing.hypeMinimum("", t)).as("sem faixa = sem filtro").isNull();
+        assertThat(SchemeListing.hypeMinimum("QUALQUER", t)).as("faixa desconhecida é ignorada").isNull();
     }
 
     @Test
@@ -161,10 +161,10 @@ class SchemeFiltersTest {
         // lista chega do repositório do mais recente para o mais antigo; D não tem linha (não calculado), E é insuficiente
         Map<UUID, HypeScoreCurrent> h = byId(hype(a, 40.0, 1.0, true), hype(b, 82.0, -3.0, true), hype(c, 40.0, 9.0, true), hype(e, null, null, true));
         List<Scheme> recent = List.of(a, b, c, d, e);
-        assertThat(titles(SchemeService.byHype(recent, "hype_desc", null, h))).containsExactly("B", "A", "C", "D", "E");
-        assertThat(titles(SchemeService.byHype(recent, "hype_asc", null, h))).as("menor Hype: sem dados continua no fim").containsExactly("A", "C", "B", "D", "E");
-        assertThat(titles(SchemeService.byHype(recent, "growth", null, h))).containsExactly("C", "A", "B", "D", "E");
-        assertThat(titles(SchemeService.byHype(recent, "recent", null, h))).containsExactly("A", "B", "C", "D", "E");
+        assertThat(titles(SchemeListing.byHype(recent, "hype_desc", null, h))).containsExactly("B", "A", "C", "D", "E");
+        assertThat(titles(SchemeListing.byHype(recent, "hype_asc", null, h))).as("menor Hype: sem dados continua no fim").containsExactly("A", "C", "B", "D", "E");
+        assertThat(titles(SchemeListing.byHype(recent, "growth", null, h))).containsExactly("C", "A", "B", "D", "E");
+        assertThat(titles(SchemeListing.byHype(recent, "recent", null, h))).containsExactly("A", "B", "C", "D", "E");
     }
 
     @Test
@@ -173,8 +173,8 @@ class SchemeFiltersTest {
         Map<UUID, HypeScoreCurrent> h = byId(hype(hot, 59.6, null, true), hype(relevant, 59.4, null, true), hype(none, null, null, true));
         int[] t = HypeScoreConfig.defaults().levelThresholds();
         // 59,6 aparece como 60 e já é "Em alta"; 59,4 aparece como 59 (Relevante); sem dados nunca vira 0 nem entra
-        assertThat(titles(SchemeService.byHype(List.of(hot, relevant, none), "recent", SchemeService.hypeMinimum("HOT", t), h))).containsExactly("quase 60");
-        assertThat(titles(SchemeService.byHype(List.of(hot, relevant, none), "recent", SchemeService.hypeMinimum("RELEVANT", t), h))).containsExactly("quase 60", "59,4");
+        assertThat(titles(SchemeListing.byHype(List.of(hot, relevant, none), "recent", SchemeListing.hypeMinimum("HOT", t), h))).containsExactly("quase 60");
+        assertThat(titles(SchemeListing.byHype(List.of(hot, relevant, none), "recent", SchemeListing.hypeMinimum("RELEVANT", t), h))).containsExactly("quase 60", "59,4");
     }
 
     @Test
@@ -207,7 +207,7 @@ class SchemeFiltersTest {
         SchemeService service = service(schemes, repo);
         Scheme a = look("A", Visibility.PUBLIC, 1);
         when(schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(uid, SchemeStatus.ARCHIVED)).thenReturn(List.of(a));
-        assertThat(service.mine(me, null, null, null, 0, 20).items()).hasSize(1);
+        assertThat(service.mine(me, null, null, null, null, null, 0, 20).items()).hasSize(1);
         assertThat(service.mine(me, null, null, null, "recent", "", 0, 20).items()).hasSize(1);
         verify(repo, never()).findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), any(), any());
     }
@@ -225,7 +225,7 @@ class SchemeFiltersTest {
         assertThat(service.cardHypeLabel(hype(s, 76.4, null, true), false)).isEqualTo(owner);
         assertThat(service.cardHypeLabel(hype(s, null, null, true), true)).as("dados insuficientes: omite, nunca 0").isNull();
         assertThat(service.cardHypeLabel(null, true)).as("ainda não calculado: omite").isNull();
-        assertThat(SchemeService.cardHypeLabel(BigDecimal.valueOf(89.6), HypeLevel.VIRAL, true)).as("a faixa segue o número arredondado")
+        assertThat(SchemeCardAssembler.hypeLabel(BigDecimal.valueOf(89.6), HypeLevel.VIRAL, true)).as("a faixa segue o número arredondado")
                 .isEqualTo(Msg.t("schemeHype.card", BigDecimal.valueOf(90), Msg.t("schemeHype.level.VIRAL")));
     }
 

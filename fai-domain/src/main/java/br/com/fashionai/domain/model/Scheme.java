@@ -134,10 +134,6 @@ public class Scheme extends VersionedAuditableEntity {
     @Column(name = "card_skin", length = 20)
     private String cardSkin = "atelier";
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 10)
-    private Season season;
-
     /** Nível térmico do look (tabela niveis_termicos); opcional: look sem nível fica nulo. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nivel_termico_id")

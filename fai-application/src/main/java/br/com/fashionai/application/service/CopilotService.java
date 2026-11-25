@@ -926,7 +926,7 @@ public class CopilotService {
         LookPrompt interpreted = lookPrompt(message, req.occasion(), req.mood());
         List<String> occasions = new ArrayList<>(interpreted.occasions());
         if (occasions.isEmpty()) {
-            MirrorService.localInterpretation(message, List.of()).occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).forEach(occasions::add);
+            MirrorPromptRules.localInterpretation(message, List.of()).occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).forEach(occasions::add);
         }
         // Momentos §17: "monte um look para o Halloween…" — o Momento ativo mencionado empresta ocasiões e tema
         Map<String, Object> moment = detectMoment(user.id(), message);
