@@ -90,3 +90,20 @@ def test_ficha_recusa_pregas_que_nao_dividem_o_anel():
     from garment_blender.spec import parse
     with pytest.raises(ValueError, match="pregas"):
         parse(raw)
+
+
+def test_bolsos_tem_a_costura_de_cada_tipo():
+    def linha(sub):
+        mesh, _ = build_lower(load(specs_by_subcategory()[sub]))
+        return mesh, sum(1 for m in mesh.mats if m == "linha")
+    jeans, n_jeans = linha("jeans")
+    chino, n_chino = linha("chino_pants")
+    legging, n_legging = linha("leggings")
+    assert n_jeans > n_chino > n_legging > 0                     # o jeans tem o kit de cinco bolsos; a legging só cós e barra
+    assert "botao" in chino.mats and "furo" in chino.mats         # o bolso embutido da chino leva botão
+    assert "dentes" in jeans.mats                                 # rebites do jeans
+    from dataclasses import replace
+    short = load(specs_by_subcategory()["shorts"])
+    with_pocket = sum(1 for m in build_lower(short)[0].mats if m == "linha")
+    without = sum(1 for m in build_lower(replace(short, bolsos=()))[0].mats if m == "linha")
+    assert with_pocket > without                                  # o bolso da costura lateral tem pesponto e travetas

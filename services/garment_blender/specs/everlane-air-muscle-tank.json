@@ -13,8 +13,10 @@
  "ribana": false,
  "sem_manga": true,
  "medidas_marca": {
-  "cava": 25
+  "cava": 25,
+  "decote_frente": 9
  },
  "observacao": "regata de cava funda (25 cm). Cor: a da variante na URL (white).",
- "tamanho": "M"
+ "tamanho": "M",
+ "gola": "vies"
 }

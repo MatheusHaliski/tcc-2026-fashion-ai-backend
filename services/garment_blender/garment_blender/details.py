@@ -32,9 +32,10 @@ def surface(rows: list[Row], theta: float, y: float) -> tuple[np.ndarray, np.nda
 
 
 def patch(mesh: Mesh, rows: list[Row], corners, lift: float, mat: str, stitched=(True, True, True, True),
-          segments=(10, 8), part="detalhe") -> None:
+          segments=(10, 8), part="detalhe", point: float = 0.0) -> None:
     """Placa entre quatro cantos (theta, y) — baixo-esq., baixo-dir., cima-dir., cima-esq. — ``lift`` metros acima do
-    tronco. ``stitched``: (baixo, direita, cima, esquerda) costuradas (saia + pesponto) ou abertas."""
+    tronco. ``stitched``: (baixo, direita, cima, esquerda) costuradas (saia + pesponto) ou abertas. ``point``: a borda
+    de baixo desce em V até ``point`` m no meio (o bolso de cinco lados do jeans)."""
     nu, nv = segments
     grid = np.empty((nv + 1, nu + 1), int)
     base = np.empty((nv + 1, nu + 1, 3))
@@ -44,6 +45,7 @@ def patch(mesh: Mesh, rows: list[Row], corners, lift: float, mat: str, stitched=
             s, t = i / nu, j / nv
             th = (t0 * (1 - s) + t1 * s) * (1 - t) + (t3 * (1 - s) + t2 * s) * t
             y = (y0 * (1 - s) + y1 * s) * (1 - t) + (y3 * (1 - s) + y2 * s) * t
+            y -= point * (1 - abs(2 * s - 1)) * (1 - t)
             p, n = surface(rows, th, y)
             base[j, i] = p
             grid[j, i] = mesh.add(p + n * lift)

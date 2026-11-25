@@ -16,5 +16,8 @@
  },
  "observacao": "5 polegadas de entreperna (12,7 cm). Cor: a do nome (preto).",
  "caimento": "regular",
- "ribana": false
+ "ribana": false,
+ "bolsos": [
+  "lateral"
+ ]
 }

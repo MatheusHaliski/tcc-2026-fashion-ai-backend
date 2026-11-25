@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import numpy as np
 
-CURVE = (0.22, 0.95)   # regata: meia abertura da cava (rad a partir do lado) na axila e no alto, onde vira alça
+CURVE = (0.5, 1.0)   # regata: meia abertura da cava (rad a partir do lado) na axila e no alto, onde vira alça
 
 
 def warped_thetas(j: int, k: int, i_arm: int, i_sh: int, i_neck: int, columns: int) -> np.ndarray | None:
@@ -19,7 +19,9 @@ def warped_thetas(j: int, k: int, i_arm: int, i_sh: int, i_neck: int, columns: i
         return None
     lo, hi = CURVE
     if j <= i_sh:
-        alpha = lo + (hi - lo) * ((j - i_arm) / max(i_sh - i_arm, 1)) ** 0.5
+        # abre logo acima da axila: a raiz do braço (o deltoide) passa por ali; estreita, a cava abraçava o braço e o
+        # provador a empurrava em volta dele
+        alpha = lo + (hi - lo) * ((j - i_arm) / max(i_sh - i_arm, 1)) ** 0.35
     else:
         natural = k * 2 * np.pi / columns
         alpha = hi + (natural - hi) * (j - i_sh) / max(i_neck - i_sh, 1)

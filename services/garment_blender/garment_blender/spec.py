@@ -17,9 +17,9 @@ SUBCATEGORIES = ("sweater", "sweatshirt", "hoodie", "t_shirt", "long_sleeve", "s
                  "crop_top", "polo_shirt", "bodysuit", "cardigan", "vest", "blazer", "coat", "parka", "windbreaker", "kimono")
 PANTS = tuple(CUTS)
 FABRICS = ("malha_la", "malha_algodao", "jersey", "moletom", "sarja", "denim")
-COLLARS = ("careca", "alta", "capuz", "colarinho", "v", "lapela")   # colarinho: pé + folha virada; lapela: V + colarinho + lapelas
+COLLARS = ("careca", "alta", "capuz", "colarinho", "v", "lapela", "polo", "vies", "faixa")   # colarinho: pé + folha virada; lapela: V + colarinho + lapelas
 CLOSURES = ("nenhum", "ziper_inteiro", "botao_ziper", "cordao", "botoes", "polo", "aberto")   # polo: vista curta; aberto: frente sem fecho
-POCKETS = ("canguru", "peito", "faca", "traseiro", "cargo", "joelho_duplo")   # joelho_duplo: reforço chapado
+POCKETS = ("canguru", "peito", "faca", "traseiro", "cargo", "joelho_duplo", "vivo", "lateral")   # joelho_duplo: reforço chapado
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 

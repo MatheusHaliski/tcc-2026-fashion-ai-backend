@@ -68,3 +68,35 @@ o pano mais à frente ali é o das costas. Agora, onde há uma camada só e ela 
 (`glb-garment/cover.ts`, `ONE_LAYER`). Aceite offline: as 20 de cima e as 14 de baixo passam em P/M/GG. No V do
 blazer, do casaco e do cardigã aparece a peça de baixo padrão do laboratório (cinza), não a pele: a cena completa o
 look com ela.
+
+## Golas por peça e regatas (25/11, fim do dia)
+
+| Arquivo | O que mostra |
+|---|---|
+| `golas-previas.jpg` | top, regata e body com viés; polo com gola de malha; cardigã com ribana no V e na nuca; quimono com faixa na frente toda; camiseta com careca baixa; blusa com viés |
+| `golas-e-regatas-provador.jpg` | as mesmas no provador |
+| `regatas-cava-baixa.jpg` | top, body e colete com a alça baixa (1,5 cm) e a cava 3 cm abaixo da axila |
+
+Ainda aparecem: pequenas abas na axila do top cropped e pontinhas no alto das alças, onde a alça encontra o decote
+(top, body, colete).
+
+## Peças de baixo: forma e acabamento (25/11, noite)
+
+| Arquivo | O que mostra |
+|---|---|
+| `jeans-detalhes.jpg` | jeans de perto (frente, ¾, costas): J da braguilha, boca curva do bolso com rebites, bolsinho de moeda, cós e pala com pesponto, bolsos de trás com arcos, linha dourada (o tom ciano é da importação no render de detalhe) |
+| `baixo-provador-acabamento.jpg` | as 14 de baixo no provador, frente, ¾ e costas |
+| `shorts-barra.jpg` | short, bermuda e short jeans com a barra a 88–90 % da coxa |
+
+Forma: a seção da calça vai para trás (frente mais reta, assento mais cheio) e a curva cintura → quadril → gancho não
+tem quina — a frente deixou de parecer estufada. Acabamento em todas: pesponto no cós, barra com pesponto duplo, J da
+braguilha e boca do bolso; jeans com o kit de cinco bolsos; alfaiataria com o vinco da perna.
+
+Ainda não está bom: short e bermuda ficam folgados e com volume no quadril no corpo, e a barra amassa de um lado.
+
+## Bolsos com a costura de cada tipo
+
+| Arquivo | O que mostra |
+|---|---|
+| `bolsos-detalhe.jpg` | jeans (trás: cinco lados, pesponto duplo, arcos, travetas, pala; frente: boca curva, bolsinho, rebites), chino (trás: bolso embutido com dois lábios, travetas e botão; frente: bolso faca com espelho e travetas), cargo (lapela pespontada com pressão), short (bolso na costura lateral com travetas) — o tom ciano/verde é da importação no render de detalhe |
+| `bolsos-provador.jpg` | jeans, chino, cargo, short jeans e alfaiataria no provador, ¾ e costas |

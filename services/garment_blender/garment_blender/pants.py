@@ -16,6 +16,7 @@ from .sizes_pants import PantsMeasures
 BRIDGE = 8          # segmentos da costura do gancho (frente → costas, por baixo)
 BLEND = 0.10        # do gancho até a coxa a seção muda aos poucos (m)
 LEG_RATIO = 0.92
+SEAT_SHIFT = 0.14   # quanto a seção da calça vai para trás (fração da profundidade)
 SHORT_LEG = 0.35    # entreperna abaixo disso (m): perna de short ou bermuda
 
 
@@ -32,18 +33,21 @@ def upper_rows(m: PantsMeasures) -> tuple[list[Row], int]:
     rows, i_band = [], 0
     ys = list(np.linspace(y_c, band0, max(6, int((band0 - y_c) / 0.015)) + 1))
     for y in ys + list(np.linspace(band0, top, 4)[1:]):
+        smooth = lambda t: t * t * (3 - 2 * t)   # noqa: E731 - sem quina na linha do quadril nem no gancho
         if y <= hip_y:
             t = (y - y_c) / max(hip_y - y_c, 1e-6)
-            perim = (m.quadril * (0.9 + 0.1 * t ** 0.6)) * cm   # o assento estreita até o gancho: sem degrau na virada da perna
+            perim = (m.quadril * (0.9 + 0.1 * smooth(min(1.0, t) ** 0.7))) * cm   # o assento estreita até o gancho
         else:
             t = min(1.0, (y - hip_y) / max(band0 - hip_y, 1e-6))
-            perim = (m.quadril + (m.cintura - m.quadril) * t) * cm
+            perim = (m.quadril + (m.cintura - m.quadril) * smooth(t)) * cm
         a, b = ellipse_semi_axes(perim, 0.72)
         k = float(np.clip((y - hip_y) / (top - hip_y), 0, 1))
         mat = "cos" if y > band0 + 1e-6 else "corpo"
         if mat == "cos" and not i_band:
             i_band = len(rows) - 1
-        rows.append(Row(y, a, b, mat, front * lift * k))
+        # a seção vai para trás: frente mais reta (a barriga), costas mais cheias (o assento). Centrada no eixo do corpo
+        # a frente ficava tão funda quanto o assento e a braguilha parecia estufada
+        rows.append(Row(y, a, b, mat, front * lift * k, dz=-SEAT_SHIFT * b if y_c >= SHORT_LEG else 0.0))
     return rows, i_band
 
 
@@ -107,7 +111,10 @@ def build_leg(mesh: Mesh, loop: list[int], rows: list[Row], part: str) -> list[i
     perim0 = float(_arc(p0)[-1])
     rings, pts_rows, y_c = [list(loop)], [p0], c[1]
     for r in rows:
-        ell = np.stack([r.cx + r.a * np.cos(phi), np.full(len(phi), r.y), r.b * np.sin(phi)], 1)
+        # a perna sai de onde está o gancho (a seção do quadril foi para trás, SEAT_SHIFT) e volta ao eixo dela aos poucos;
+        # começando no eixo, a perna curta do short torcia em poucos centímetros e a barra abria em abas
+        back = c[2] * max(0.0, 1 - (y_c - r.y) / 0.3)
+        ell = np.stack([r.cx + r.a * np.cos(phi), np.full(len(phi), r.y), r.b * np.sin(phi) + back], 1)
         w = min(1.0, (y_c - r.y) / min(BLEND, max(y_c * 0.6, 1e-3))); w = w * w * (3 - 2 * w)
         if w < 1:
             k = float(_arc(ell)[-1]) / perim0
