@@ -36,14 +36,16 @@ class Flair3dRodadasZonasTest {
     }
 
     @Test
-    void clubeAuroraSegueSemPlacarEOUniformeDeEsportsTemNota() {
+    void clubeAuroraTemNotaPelasZonasEPelasCoresEOUniformeDeEsportsTambem() {
         ClubeCoracaoNucleo n = new ClubeCoracaoNucleo();
         Entrega aurora = zonas(null, "FRENTE=" + VERMELHO, "COSTAS=" + VERMELHO, "MANGAS=" + PRETO, "GOLA=" + PRETO);
         Resultado r = n.pontuar(aurora, rodada("CLUBE_AURORA"));
         assertThat(r.resultado()).isEqualTo("CONCLUIDO");
-        assertThat(r.pontos()).isZero();
-        assertThat(n.pontuar(aurora, rodada(null)).resultado()).isEqualTo("INCOMPLETO");
-        assertThat(n.definicao().naRodada("CLUBE_AURORA").objetivo().regras()).allMatch(x -> x.pontos() == 0);
+        assertThat(r.pontos()).isEqualTo(100);
+        Resultado noAtlantico = n.pontuar(aurora, rodada(null));
+        assertThat(noAtlantico.resultado()).isEqualTo("INCOMPLETO");
+        assertThat(noAtlantico.pontos()).isEqualTo(50);
+        assertThat(n.definicao().naRodada("CLUBE_AURORA").objetivo().regras()).allMatch(x -> x.pontos() == ClubeCoracaoNucleo.POR_REGRA);
 
         Entrega time = zonas(null, "FRENTE=" + ROXO, "COSTAS=" + ROXO, "MANGAS=" + PRETO, "GOLA=" + AMARELO);
         Resultado esports = n.pontuar(time, rodada("UNIFORME_ESPORTS"));

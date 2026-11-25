@@ -87,7 +87,7 @@ public final class Flair3dExecucao implements Flair3dNucleo {
         }
         Recurso recurso = recursoDo(codigo());
         int reserva = depoisDasDecisoes > 0 ? depoisDasDecisoes : Flair3dRecursoEstado.de(contexto.andamento().usos()).get(recurso);
-        Pedido pedido = new Pedido(botoes(contexto), janelaMs(agilidade(entrega, contexto)), recurso.name(), reserva, drenoDe(recurso));
+        Pedido pedido = new Pedido(botoes(contexto), janelaMs(atributoDaJanela(entrega, contexto)), recurso.name(), reserva, drenoDe(recurso));
         List<Evento> eventos = new ArrayList<>(look.eventos());
         eventos.add(new Evento("EXECUCAO_PEDIDA", pedido.paraTela()));
         Execucao feita = daExecucao(entrega, contexto);
@@ -186,17 +186,20 @@ public final class Flair3dExecucao implements Flair3dNucleo {
         return out;
     }
 
-    /** Janela de 650 ms (agilidade 0) a 1350 ms (agilidade 100): o tênis dá mais tempo que o salto. */
+    /** Janela de 650 ms (atributo 0) a 1350 ms (atributo 100): o tênis dá mais tempo que o salto. */
     public static int janelaMs(int agilidade) {
         return 650 + 7 * Math.max(0, Math.min(100, agilidade));
     }
 
-    private int agilidade(Entrega entrega, Contexto contexto) {
+    /** O atributo do look que abre a janela: o carisma no show da cantora, a força na missão do herói; nos outros, a agilidade. */
+    static final Map<String, Atributo> JANELA = Map.of("FAVORITE_SINGER", Atributo.CARISMA, "SUPER_HEROI", Atributo.FORCA);
+
+    private int atributoDaJanela(Entrega entrega, Contexto contexto) {
         Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
         if (vestidas.isEmpty()) {
             vestidas = Flair3dPecaVirtual.daZonas(codigo(), entrega.zonas());
         }
-        return vestidas.isEmpty() ? 50 : Flair3dRecursoCalculo.doLook(vestidas).valor(Atributo.AGILIDADE);
+        return vestidas.isEmpty() ? 50 : Flair3dRecursoCalculo.doLook(vestidas).valor(JANELA.getOrDefault(codigo(), Atributo.AGILIDADE));
     }
 
     /** O recurso-vida do jogo (moedas não se perdem errando: onde a vida seria moeda, o erro tira o FOCO). */
