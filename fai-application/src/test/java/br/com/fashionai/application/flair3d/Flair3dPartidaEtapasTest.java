@@ -143,14 +143,17 @@ class Flair3dPartidaEtapasTest {
         assertThat(previa.status()).isEqualTo("ABERTA");
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isEqualTo(1);
 
-        Resultado abriu = service.entregar(ana, id, vestir(sup, inf, cal));
+        // o espelho abriu: falta a execução no percurso; os três botões a tempo somam 15
+        Resultado espelho = service.entregar(ana, id, vestir(sup, inf, cal));
+        assertThat(espelho.status()).isEqualTo("EM_ACAO");
+        Resultado abriu = service.acionar(ana, id, Flair3dFixtures.perfeita(espelho));
         assertThat(abriu.status()).isEqualTo("ENTREGUE");
         assertThat(abriu.resultado()).isEqualTo("ABRE");
-        assertThat(abriu.pontos()).isEqualTo(81);
-        assertThat(abriu.estrelas()).isEqualTo(2);
+        assertThat(abriu.pontos()).isEqualTo(96);
+        assertThat(abriu.estrelas()).isEqualTo(Resultado.estrelas(96));
         assertThat(abriu.eventos()).contains(new Resultado.Evento("TENTATIVA", 2));
         assertThat(partida(id).getStatus()).isEqualTo("ENTREGUE");
-        assertThat(partida(id).getEstrelas()).isEqualTo(2);
+        assertThat(partida(id).getEstrelas()).isEqualTo(Resultado.estrelas(96));
         assertThat(erro(() -> service.entregar(ana, id, vestir(sup, inf, cal))).code()).isEqualTo("PARTIDA_JA_ENTREGUE");
 
         UUID outra = abrir("LABIRINTO", sup, inf, cal, ace);
@@ -191,7 +194,7 @@ class Flair3dPartidaEtapasTest {
         assertThat(erro(() -> service.previa(ana, id, vestir(foraDoDeck))).code()).isEqualTo("CARTA_FORA_DO_DECK");
 
         service.entregar(ana, id, vestir(sup, inf, cal));
-        Resultado entrega = service.acionar(ana, id, Acionamento.NENHUM);
+        Resultado entrega = service.acionar(ana, id, Flair3dFixtures.perfeita(service.acionar(ana, id, Acionamento.NENHUM)));
         assertThat(entrega.status()).isEqualTo("ENTREGUE");
         assertThat(entrega.cartas()).extracting(Resultado.CartaPontos::pontos).containsExactly(14.29, 14.29, 0.0);
         assertThat(erro(() -> service.previa(ana, id, vestir(sup))).status()).isEqualTo(409);

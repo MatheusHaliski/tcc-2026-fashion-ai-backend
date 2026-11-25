@@ -36,6 +36,7 @@ import { useLookDosRecursos } from "@/components/flair/nucleos/recursos/use-look
 import { useRecursosDaPartida } from "@/components/flair/nucleos/recursos/use-recursos-da-partida";
 import { NucleoRodaRecursos } from "@/components/flair/nucleos/recursos/nucleo-roda-recursos";
 import { useCinemaDaPartida } from "@/components/flair/cinema/use-cinema-da-partida";
+import { CinemaOverlay } from "@/components/flair/cinema/cinema-overlay";
 import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewport";
 import { useModoPorCartas } from "@/components/flair/nucleos/use-modo-por-cartas";
 import { useResultCards } from "@/components/flair/nucleos/use-result-cards";
@@ -46,6 +47,7 @@ import { lerRascunho, useRascunho } from "@/components/flair/nucleos/use-rascunh
 import { vagasDaRegua, type ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
+import { pecasDasZonas } from "@/lib/flair/nucleos/pecas-pintadas";
 import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
 import { classesDoQuadro, estiloDoQuadro } from "@/lib/flair/nucleos/quadro";
 import { respostaObrigatoria, vagasQueFaltam } from "@/lib/flair/nucleos/rodadas";
@@ -105,7 +107,7 @@ export function NucleoGame(props: Props) {
   const apresentacao = useNucleoBriefing(props.partida, props.tentativa);
   /** o look em cena: o da entrega com a troca do intervalo que o servidor aplicou (ou o look-alvo, enquanto está à vista) */
   const vestidas = useMemo(() => apresentacao.alvoAVista ?? lookComTroca(estado.sel.cartas, resultado), [apresentacao.alvoAVista, estado.sel.cartas, resultado]);
-  const pecas = useMemo(() => pecasDoLook(vestidas, cartas), [vestidas, cartas]);
+  const pecas = useMemo(() => (Object.keys(vestidas).length ? pecasDoLook(vestidas, cartas) : pecasDasZonas(codigo, estado.sel.zonas)), [vestidas, cartas, codigo, estado.sel.zonas]);
   /** a pessoa já acionou uma carta nesta partida (vale até o servidor confirmar ou recusar) */
   const [acionou, setAcionou] = useState(false);
   const efeitos = useNucleoEffects(codigo, cartas, definicao.recursos.includes("CARTAS"), { partida: props.partida?.id, rodada: definicao.rodada });
@@ -151,7 +153,7 @@ export function NucleoGame(props: Props) {
   /** Fashion Sports e Fashion Detective jogados por cartas: o palco e a faixa de baixo do jogo (use-modo-por-cartas) */
   const modo = useModoPorCartas({ codigo, rodada: definicao.rodada, momento, resultado, escolhida: estado.sel.resposta, acao, cartas, vestidas: estado.sel.cartas, itens: efeitos.itens,
     pecas, protagonista, semente: props.partida?.semente, ocupado: !!props.acionando, erro: props.erroAcionar ?? null, acionar,
-    extra: <NucleoRodaRecursos recursos={usoDeRecursos} reduzido={reduzido} efeitos={fx.prefs.efeitos} /> });
+    extra: <><NucleoRodaRecursos recursos={usoDeRecursos} reduzido={reduzido} efeitos={fx.prefs.efeitos} />{doEsporte && <CinemaOverlay cinema={cinema} />}</> });
   const partida = modo.esporte;
 
   const pontuadas = useResultCards({ momento, resultado, vestidas, cards: cartas, efeitos: efeitos.porCarta });
@@ -178,6 +180,7 @@ export function NucleoGame(props: Props) {
           prefs={fx.prefs}
           onPref={fx.alternar}
           entrada={entrada} recursos={recursos} usoDeRecursos={usoDeRecursos} cinema={cinema} onFimDesfile={acao.pular} entreLances={acao.aberta}
+          onExecucao={(toques) => acionar({ tipo: "EXECUCAO", execucao: { toques } })}
           reduzido={reduzido}
           passos={acao.passos}
           mostrados={acao.mostrados}

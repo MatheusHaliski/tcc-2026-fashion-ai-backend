@@ -137,12 +137,12 @@ public class PersonagemFilmeNucleo implements Flair3dNucleo {
         return rateio.lista();
     }
 
-    /** A prévia nunca diz a resposta certa: só o figurino conta nela. */
+    /**
+     * A prévia nunca diz a resposta certa, em nenhuma rodada (nem no detetive noir): só o figurino conta nela. Trocar de
+     * título e olhar o placar não revela o certo; a pessoa deduz pelas pistas da cena.
+     */
     @Override
     public Resultado previa(Entrega entrega, Contexto contexto) {
-        if (contexto.rodada() == null) {
-            return pontuar(entrega, contexto);
-        }
         Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
         Cena cena = cena(contexto);
         List<RegraResultado> regras = Flair3dPecas.porVaga(PARTES, porParte(vestidas), "FIGURINO", POR_PECA, cena.figurino());

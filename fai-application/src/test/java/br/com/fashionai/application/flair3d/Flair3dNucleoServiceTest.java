@@ -123,14 +123,16 @@ class Flair3dNucleoServiceTest {
 
         assertThat(status(() -> service.entregar(bia, id, vestir(sup)))).isEqualTo(403);
         assertThat(service.entregar(ana, id, vestir(sup, inf, cal)).status()).isEqualTo("EM_ACAO");
-        // a jogada de cena: seguir sem carta fecha a partida com a nota do look
-        Resultado r = service.acionar(ana, id, Acionamento.NENHUM);
-        // 71 do look + 1 dos atributos (regra peça-recurso: a peça na vaga SUP soma carisma, que a Passarela pede)
-        assertThat(r.pontos()).isEqualTo(72);
-        assertThat(r.estrelas()).isEqualTo(1);
+        // a jogada de cena: seguir sem carta passa à execução no percurso; os três botões perfeitos fecham a partida
+        Resultado execucao = service.acionar(ana, id, Acionamento.NENHUM);
+        assertThat(execucao.status()).isEqualTo("EM_ACAO");
+        Resultado r = service.acionar(ana, id, Flair3dFixtures.perfeita(execucao));
+        // 71 do look + 15 da execução perfeita + 1 dos atributos (a peça na vaga SUP soma carisma, que a Passarela pede)
+        assertThat(r.pontos()).isEqualTo(87);
+        assertThat(r.estrelas()).isEqualTo(Resultado.estrelas(87));
         Flair3dMatch salva = kit.dep(Flair3dMatchRepository.class).findById(id).orElseThrow();
         assertThat(salva.getStatus()).isEqualTo("ENTREGUE");
-        assertThat(salva.getPontos()).isEqualTo(72);
+        assertThat(salva.getPontos()).isEqualTo(87);
         assertThat(salva.getResultadoJson()).contains("TODAS_BR");
         assertThat(salva.getEntregaJson()).contains(sup.getId().toString());
         ApiException segunda = (ApiException) org.assertj.core.api.Assertions.catchThrowable(() -> service.entregar(ana, id, vestir(sup)));
@@ -168,7 +170,8 @@ class Flair3dNucleoServiceTest {
         Entrega e = Flair3dFixtures.comMaquiagem(vestir(sup), "LABIOS", "CORAL", "CETIM");
         // o look avaliado abre a sessão de fotos (EM_ACAO); seguir sem jogar carta fecha com a nota do look
         assertThat(service.entregar(ana, (UUID) partida.get("id"), e).status()).isEqualTo("EM_ACAO");
-        assertThat(service.acionar(ana, (UUID) partida.get("id"), Acionamento.NENHUM).pontos()).isEqualTo(100);
+        Resultado execucao = service.acionar(ana, (UUID) partida.get("id"), Acionamento.NENHUM);
+        assertThat(service.acionar(ana, (UUID) partida.get("id"), Flair3dFixtures.perfeita(execucao)).pontos()).isEqualTo(100);
     }
 
     @Test

@@ -17,6 +17,7 @@ import type { NucleoAcao, NucleoCodigo } from "@/lib/flair/nucleos/types";
 import { andaAgora } from "@/lib/flair/nucleos/movimento/quando-anda";
 import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
+import { execucaoPendente } from "@/lib/flair/nucleos/movimento/execucao-pendente";
 import { useEixoDeAndar } from "@/components/flair/nucleos/use-eixo-de-andar";
 
 interface Opcoes {
@@ -52,7 +53,13 @@ export function useNucleoComandos({ codigo, acoes, momento, tabs, pausado, ativo
     // na pausa (o objetivo aberto): ✕ entrega, ○ e Start fecham
     if (pausado && momento === "PREPARACAO" && (c.acao === "VESTIR" || c.acao === "ENTREGAR")) return entregar();
     if (pausado && c.acao === "TIRAR") return dispatch({ type: "comando", comando: { acao: "VER_OBJETIVO" }, tabs });
-    if (desfile && c.acao === "DESFILAR") return emitirFx({ tipo: "desfile-pose", nucleo: codigo });
+    // no desfile, os quatro botões vão à deixa da execução; sem deixa pendente, só □ (a pose final) vai à cena
+    const botao = c.acao === "POSAR" ? "DESFILAR" : c.acao;
+    if (desfile && (botao === "DESFILAR" || (execucaoPendente() && (botao === "VESTIR" || botao === "TIRAR" || botao === "TROCAR_ABA")))) {
+      return emitirFx({ tipo: "desfile-botao", nucleo: codigo, botao });
+    }
+    // na luta, □ é o golpe: joga a carta em foco na mão do lance (o mesmo que ✕)
+    if (codigo === "DRESS_FIGHTER" && momento === "ACAO" && botao === "DESFILAR") return void comandoNaAcao({ acao: "VESTIR" });
     if (momento !== "PREPARACAO" && !acaoPropria && c.acao !== "VER_OBJETIVO" && c.acao !== "GIRAR" && comandoNaAcao(c)) return;
     if (!comandoPermitido(momento, c.acao)) return;
     limparAviso();

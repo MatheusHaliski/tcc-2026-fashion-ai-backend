@@ -11,15 +11,16 @@ describe("desfile jogável", () => {
       expect(marcas).toHaveLength(3);
       expect(marcas[2].ponta).toBe(true);
       expect(marcas[2].z).toBeLessThanOrEqual(SALAS[codigo].zonas.avatar.z[1]);
-      expect(marcas[0].z).toBeLessThan(marcas[1].z);
+      // marcas separadas: cada uma pede um trecho de caminhada
+      expect(Math.hypot(marcas[1].x - marcas[0].x, marcas[1].z - marcas[0].z)).toBeGreaterThan(0.5);
     }
   });
 
   it("as marcas contam na ordem; pular a do meio não vale; na ponta a pose fica liberada", () => {
     const marcas = marcasDoDesfile("PASSARELA", SALAS.PASSARELA);
-    let e = noDesfile(DESFILE_INICIO, { x: 0, z: marcas[2].z, giro: 0 }, marcas);
+    let e = noDesfile(DESFILE_INICIO, { x: marcas[2].x, z: marcas[2].z, giro: 0 }, marcas);
     expect(e.alcancadas).toBe(0);
-    for (const m of marcas) e = noDesfile(e, { x: 0, z: m.z, giro: 0 }, marcas);
+    for (const m of marcas) e = noDesfile(e, { x: m.x, z: m.z, giro: 0 }, marcas);
     expect(e).toEqual({ alcancadas: 3, naPonta: true });
     expect(noDesfile(e, { x: 0, z: 0, giro: 0 }, marcas)).toEqual({ alcancadas: 3, naPonta: false });
   });
@@ -29,7 +30,9 @@ describe("desfile jogável", () => {
       const sala = SALAS[codigo];
       const area = areaDeAndar(sala, obstaculosDaSala(sala, 0));
       const marcas = marcasDoDesfile(codigo, sala);
-      expect(marcas.length, codigo).toBeGreaterThan(1);
+      expect(marcas.length, codigo).toBe(3);
+      // a primeira marca não conta parada na saída: é preciso andar até ela
+      expect(Math.hypot(marcas[0].x, marcas[0].z), codigo).toBeGreaterThan(0.5);
       for (const m of marcas) {
         expect(m.x >= area.x[0] && m.x <= area.x[1] && m.z >= area.z[0] && m.z <= area.z[1], `${codigo} ${m.x},${m.z}`).toBe(true);
         // o ponto não fica dentro de um móvel (com a folga do corpo)

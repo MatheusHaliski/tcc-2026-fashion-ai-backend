@@ -11,29 +11,35 @@ import { LABIRINTO_ESPELHO } from "@/lib/flair/nucleos/scene/salas/labirinto";
 
 type Ponto = [number, number];
 
-const ATELIE: Ponto[] = [[-0.4, -0.4], [-0.75, -0.75]];
+/** Do canto da plateia ao outro e até o manequim: as três marcas da estreia, dentro do tablado. */
+const ATELIE: Ponto[] = [[0.6, 0.5], [-0.6, 0.5], [-0.7, -0.7]];
 
-/** Os pontos de cada jogo (x, z), na ordem; o último é onde o gesto final vale. Desfile e palco vêm da sala. */
+/**
+ * Os pontos de cada jogo (x, z), na ordem; o último é onde o gesto final vale. São sempre três (o servidor pede um
+ * botão por marca, Flair3dExecucao.MARCAS), a mais de ALCANCE da marca de saída e entre si, em zigue-zague onde a sala
+ * deixa: andar até cada uma é parte da habilidade.
+ */
 const PERCURSOS: Partial<Record<NucleoCodigo, (sala: Sala) => Ponto[]>> = {
-  PASSARELA: (s) => naFrente(2.0, s),
-  DRESS_THE_STAR: (s) => naFrente(0.9, s),
-  BATALHA_LOOKS: (s) => naFrente(0.7, s),
-  LABIRINTO: () => [[LABIRINTO_ESPELHO[0] * 0.5, -1.3], [LABIRINTO_ESPELHO[0], LABIRINTO_ESPELHO[1] + 0.7]],
-  BOUTIQUE_3D: () => [[0.5, -0.3], [1.1, -0.55]],
-  PERSONAGEM_FILME: () => [[0, -0.6], [0, -1.2]],
+  PASSARELA: (s) => zigueZague(0.4, 0.8, s),
+  DRESS_THE_STAR: () => [[-0.7, -0.7], [0.7, -0.7], [0, 1.0]],
+  BATALHA_LOOKS: () => [[-0.45, -0.8], [0.45, -0.8], [0, 0.8]],
+  LABIRINTO: () => [[-0.8, -0.5], [LABIRINTO_ESPELHO[0] * 0.5, -1.3], [LABIRINTO_ESPELHO[0], LABIRINTO_ESPELHO[1] + 0.7]],
+  BOUTIQUE_3D: () => [[-0.6, 0.6], [0.5, -0.4], [1.4, -0.6]],
+  PERSONAGEM_FILME: () => [[-0.8, -0.6], [0.8, -1.2], [0, -1.6]],
   AROUND_THE_WORLD: () => [[0, 1], [0, 2], [0, 3]],
-  ROAD_TO_GLORY: () => [[0, -0.6], [0, -1.2]],
-  // jogos de zonas (ateliê): do tablado até a beira, diante do manequim com a peça pintada — a estreia do traje
+  ROAD_TO_GLORY: () => [[-0.8, -0.5], [0.8, -0.9], [0, -1.5]],
+  // jogos de zonas (ateliê): pelo tablado até a beira, diante do manequim com a peça pintada — a estreia do traje
   CLUBE_CORACAO: () => ATELIE,
   FAVORITE_SINGER: () => ATELIE,
   PILOTO_FAVORITO: () => ATELIE,
   SUPER_HEROI: () => ATELIE,
 };
 
-/** Três marcas da marca do avatar até a ponta, em linha reta para a plateia (passarela e palco). */
-function naFrente(ponta: number, sala: Sala): Ponto[] {
-  const ate = Math.min(ponta, sala.zonas.avatar.z[1] - 0.3);
-  return [1, 2, 3].map((i) => [0, (ate * i) / 3]);
+/** Três marcas da marca do avatar até a ponta da passarela, alternando os lados (x = ±lado), a partir de `inicio`. */
+function zigueZague(lado: number, inicio: number, sala: Sala): Ponto[] {
+  const ponta = sala.zonas.avatar.z[1] - 0.3;
+  const passo = (ponta - inicio) / 2;
+  return [[-lado, inicio], [lado, inicio + passo], [0, ponta]];
 }
 
 export const DESFILE_JOGAVEL = new Set<NucleoCodigo>(Object.keys(PERCURSOS) as NucleoCodigo[]);

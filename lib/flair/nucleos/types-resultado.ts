@@ -40,6 +40,8 @@ export interface NucleoAcionamento {
   troca?: { vaga: string; carta: string } | null;
   /** Fashion Detective: o que a pessoa faz no passo ("IR:meio", "ACUSAR:2"...) */
   alvo?: string | null;
+  /** os jogos de ação jogável: os botões apertados em cada marca do percurso (Flair3dExecucao) */
+  execucao?: { toques: { marca: number; botao: string; ms: number }[] } | null;
 }
 
 export interface EfeitoItem {

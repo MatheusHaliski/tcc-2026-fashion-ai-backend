@@ -24,6 +24,8 @@ import { CinemaOverlay } from "@/components/flair/cinema/cinema-overlay";
 import { andaAgora } from "@/lib/flair/nucleos/movimento/quando-anda";
 import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
 import { DesfileHud } from "@/components/flair/nucleos/desfile-hud";
+import { AnalogicoDeToque } from "@/components/flair/nucleos/analogico-de-toque";
+import type { Toque } from "@/lib/flair/nucleos/movimento/execucao";
 import type { CinemaNaTela } from "@/components/flair/cinema/use-cinema-da-partida";
 import { NucleoCast } from "@/components/flair/nucleos/nucleo-cast";
 import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
@@ -73,6 +75,8 @@ export interface NucleoStageProps {
   cinema?: CinemaNaTela;
   /** desfile jogável: a pose final na ponta revela o resultado */
   onFimDesfile?: () => void;
+  /** a execução no percurso: os toques vão ao servidor como acionamento */
+  onExecucao?: (toques: Toque[]) => void;
   /** a janela do acionamento aberta entre dois lances: no Dress Fighter, a lutadora circula pelo ringue */
   entreLances?: boolean;
   reduzido: boolean;
@@ -96,7 +100,8 @@ export function NucleoStage(props: NucleoStageProps) {
         zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem}
         andarLivre={andaAgora(definicao.codigo, definicao.acoes, momento, props.entreLances)}
         agilidade={props.recursos?.look.atributos.AGILIDADE} desfileAtivo={desfileNaAcao} />
-      {desfileNaAcao && props.onFimDesfile && <DesfileHud codigo={definicao.codigo} onFim={props.onFimDesfile} />}
+      {desfileNaAcao && props.onFimDesfile && <DesfileHud codigo={definicao.codigo} onFim={props.onFimDesfile} resultado={props.resultado} onExecucao={props.onExecucao} reduzido={reduzido} />}
+      <AnalogicoDeToque ativo={andaAgora(definicao.codigo, definicao.acoes, momento, props.entreLances) && !reduzido} rotulo={tx.t("flair3d.ui.analogico")} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
       {props.recursos && <NucleoRodaAtributos recursos={props.recursos} reduzido={reduzido} efeitos={prefs.efeitos} />}

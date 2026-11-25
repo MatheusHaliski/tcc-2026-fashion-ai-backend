@@ -60,7 +60,7 @@ export function useNucleoAction(opts: NucleoActionOptions) {
   const naAcao = acionamento?.momento === "ACAO" ? acionamento.tipo : null;
   const tipo = naAcao === "ESPECIAL" || naAcao === "TROCA" || naAcao === "MERCADO" || naAcao === "JOGADA" || naAcao === "LANCE" ? naAcao : null;
   /** a janela abre quando o servidor espera o acionamento e tudo o que ele já mandou apareceu */
-  const aberta = (!!tipo || porCartas) && momento === "ACAO" && janelaDoAcionamento(resultado?.status, passos, tocador.mostrados);
+  const aberta = (!!tipo || porCartas) && momento === "ACAO" && janelaDoAcionamento(resultado?.status, passos, tocador.mostrados) && !valorDoEvento(resultado, "EXECUCAO_PEDIDA");
   /** a carta Especial vale 1 por luta (evento ESPECIAL do servidor); a troca vale 1 por lance, até o apito */
   const usado = (tipo === "ESPECIAL" || tipo === "JOGADA") && !!resultado?.eventos.some((e) => e.codigo === (tipo === "JOGADA" ? "JOGADA_DE_CENA" : tipo));
   /** a jogada de cena: a cor que a cena pede agora (o servidor sorteia) */

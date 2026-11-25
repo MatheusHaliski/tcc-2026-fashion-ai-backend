@@ -89,8 +89,9 @@ class Flair3dPartidaRodadasTest {
         assertThat(previa1.eventos()).extracting(Resultado.Evento::codigo).isSubsetOf("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO", "PERFIL_DO_LOOK");
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isZero();
         service.entregar(ana, id, vestir(null, sup, inf, cal));
-        Resultado r = service.acionar(ana, id, Acionamento.NENHUM);
-        assertThat(r.pontos()).isEqualTo(previa1.pontos());
+        Resultado r = service.acionar(ana, id, Flair3dFixtures.perfeita(service.acionar(ana, id, Acionamento.NENHUM)));
+        // a nota da prévia mais a execução perfeita no percurso
+        assertThat(r.pontos()).isEqualTo(Math.min(100, previa1.pontos() + Flair3dExecucao.TETO));
         assertThat(r.eventos().get(0)).isEqualTo(new Resultado.Evento("TEMA", tema));
         assertThat(r.status()).isEqualTo("ENTREGUE");
 
@@ -135,11 +136,11 @@ class Flair3dPartidaRodadasTest {
         assertThat(segunda.status()).isEqualTo("ABERTA");
         assertThat(Andamento.ler(partida(id).getEstadoJson()).anteriores()).hasSize(1);
         assertThat(service.entregar(ana, id, vestir(null, sup, inf)).status()).isEqualTo("EM_ACAO");
-        Resultado fim = service.acionar(ana, id, Acionamento.NENHUM);
+        Resultado fim = service.acionar(ana, id, Flair3dFixtures.perfeita(service.acionar(ana, id, Acionamento.NENHUM)));
         assertThat(fim.status()).isEqualTo("ENTREGUE");
-        // as três regras da etapa e as duas da regra peça-recurso (o que o look e os recursos somaram)
-        assertThat(fim.regras()).hasSize(5);
-        assertThat(fim.regras()).extracting(Resultado.RegraResultado::codigo).endsWith("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO");
+        // as três regras da etapa, a da execução no percurso e as duas da regra peça-recurso
+        assertThat(fim.regras()).hasSize(6);
+        assertThat(fim.regras()).extracting(Resultado.RegraResultado::codigo).endsWith("EXECUCAO", "LOOK_ATRIBUTOS", "RECURSO_DO_JOGO");
         assertThat(partida(id).getPontos()).isEqualTo(fim.pontos());
         assertThat(erro(() -> service.entregar(ana, id, vestir(null, sup))).status()).isEqualTo(409);
     }
@@ -157,7 +158,7 @@ class Flair3dPartidaRodadasTest {
 
         UUID tenis = (UUID) service.abrir(ana, "PILOTO_FAVORITO", new Flair3dNucleoService.AbrirPartida(List.of(), null, "TENIS_DOS_SONHOS")).get("id");
         Entrega doTenis = Flair3dFixtures.zonas(null, "CABEDAL=#1E4FBF/ESPELHADO", "SOLA=#F5F4F0", "CADARCO=#F5F4F0");
-        assertThat(service.entregar(ana, tenis, doTenis).pontos()).isEqualTo(100);
+        assertThat(service.acionar(ana, tenis, Flair3dFixtures.perfeita(service.entregar(ana, tenis, doTenis))).pontos()).isEqualTo(100);
         UUID capacete = (UUID) service.abrir(ana, "PILOTO_FAVORITO", new Flair3dNucleoService.AbrirPartida(List.of(), null)).get("id");
         assertThat(erro(() -> service.entregar(ana, capacete, doTenis)).code()).isEqualTo("ENTREGA_INVALIDA");
     }

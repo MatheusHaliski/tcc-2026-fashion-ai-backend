@@ -10,8 +10,11 @@
 import type { ApiError } from "@/lib/api/client";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { useRelogioDoLance } from "@/components/flair/nucleos/use-relogio-do-lance";
+import { useReducedMotion } from "@/components/three/common";
 import { efeitoDaCor } from "@/lib/flair/nucleos/card-fx";
 import type { AcionamentoTipo } from "@/lib/flair/nucleos/moments";
+import type { AcionamentoDaPessoa } from "@/lib/flair/nucleos/acionamento";
 import type { EstadoDaLuta } from "@/lib/flair/nucleos/luta";
 import type { EfeitoItem } from "@/lib/flair/nucleos/types";
 
@@ -26,6 +29,8 @@ export interface AcionamentoPedido {
   vaga?: string;
   /** Fashion Detective: o que a pessoa faz no passo ("IR:meio", "ABRIR:MESA_DA_RECEPCAO"...) */
   alvo?: string;
+  /** a execução no percurso (jogos de ação jogável) */
+  execucao?: AcionamentoDaPessoa["execucao"];
 }
 
 interface Props {
@@ -66,6 +71,8 @@ export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, oc
   else if (tipo === "LANCE") opcoes = cartas.filter((c) => c.id !== luta?.ultimaCarta);
   else opcoes = cartas.filter((c) => vagas.includes(c.position) && vestidas[c.position] !== c.id);
   const pode = !!onAcionar && aberta && !usado && !ocupado;
+  const reduzido = useReducedMotion();
+  const resta = useRelogioDoLance(tipo === "LANCE" && pode, reduzido, () => onAcionar?.({ tipo }));
   let aviso: string;
   if (!onAcionar) aviso = tx.t("flair3d.ui.trigger.unavailable");
   else if (ocupado) aviso = tx.t("flair3d.ui.trigger.sending");
@@ -101,6 +108,7 @@ export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, oc
     <section className="n3d-trigger" aria-label={tx.t("flair3d.ui.trigger.title")} data-testid="nucleo-trigger" data-open={aberta || undefined}>
       <h3 className="type-label">{tx.t(`flair3d.ui.trigger.${tipo}.name`)}</h3>
       <p className="n3d-trigger-note" role="status">{aviso}</p>
+      {resta !== null && <p className="n3d-trigger-note tabular" data-testid="lance-relogio">{tx.t("flair3d.ui.trigger.LANCE.relogio", { n: resta })}</p>}
       {erro && (
         <p className="n3d-error" role="alert">
           {tx.ou(`flair3d.ui.trigger.error.${erro.code}`, tx.t("flair3d.ui.trigger.error.default", { msg: erro.message }))}
