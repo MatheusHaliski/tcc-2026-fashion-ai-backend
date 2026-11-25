@@ -25,7 +25,7 @@ Situação em **25/11/2026**. Produção: MySQL **9.7** no Railway (schema `fash
 | 02 | Estado de conservação | `EstadoConservacao`; `wardrobe_items.estado_de_conservacao` (`fk_wardrobe_items_estado_conservacao`, SET NULL / CASCADE) | V77 | aplicada |
 | 03 | Instrução de lavagem | `TipoLavagem`; `wardrobe_items.tipo_lavagem_id` (`fk_wardrobe_items_tipo_lavagem`, SET NULL / CASCADE) | V77 | aplicada |
 | 04 | Nível térmico do look | `niveis_termicos`; `schemes.nivel_termico_id` (`fk_schemes_nivel_termico`, RESTRICT / RESTRICT) | V110 | aplicada |
-| 05 | Origem da peça | `origem` (+ `nome`, `ativo`); `wardrobe_items.origem_id` (`fk_wardrobe_items_origem`, SET NULL / CASCADE) | V105, V106 | aplicadas |
+| 05 | Origem da peça | `origem` (+ `nome`, `ativo`); `wardrobe_items.origem_id` (`fk_wardrobe_items_origem`, SET NULL / CASCADE) | V105, V106 | aplicadas. `origem.codigo` é `ENUM('ADQUIRIDA','HERDADA','TROCADA')` no banco, e a entidade mapeia texto de até 30: uma origem nova exige migração que amplie o ENUM |
 | 06 | Estação do look | `estacoes` (chave `codigo` = texto do enum `Season`); `fk_schemes_estacao`, `fk_moments_estacao`, `fk_dna_schemes_estacao` (RESTRICT / RESTRICT) | **V111** | criada à mão no Railway; a V111 confere tudo e não recria nada |
 | 07 | Iluminação e temperatura (no acervo, porque o quarto saiu do app) | `tipos_iluminacao` (`uq_tipos_iluminacao_codigo`); `acervo_ambientes.tipo_iluminacao_id` e `temperatura_kelvin`; `fk_acervo_ambientes_tipo_iluminacao` (RESTRICT / RESTRICT); `ck_acervo_ambientes_kelvin` (2700–6500 K ou NULL) | **V112** | criada à mão no Railway; a V112 confere tudo e não recria nada |
 
@@ -85,6 +85,7 @@ repositório. Nada disso foi executado no Railway.
 | Valor legado `VERAO` em `schemes.season` | a V111 para com o erro 1452: não inventa estação nem pula a FK em silêncio |
 | Integridade depois da V111/V112 | `'Inverno'` → 1452; apagar ou renomear estação em uso → 1451; 2000 K e 6501 K → 3819; 2700 K e 6500 K aceitos; tipo de iluminação inexistente → 1452; apagar tipo em uso → 1451; desativar (`ativo = FALSE`) é aceito |
 | Reexecutar os dois scripts no mesmo banco | nenhum erro, nenhuma linha nova, schema igual; tipo desativado continua desativado |
+| A própria API (o Flyway dela e o Hibernate) num banco novo, com o código do exercício 07 | 111 migrações aplicadas e a API sobe. O script de atualização do Hibernate não pede nenhuma tabela nem coluna: tudo o que as entidades dos exercícios 01 a 07 usam está versionado. As diferenças restantes ficam fora dos exercícios: tipos (tinyint × integer, precisão de decimal) e nomes de UNIQUE gerados pelo Hibernate |
 
 O teste com o binário do MySQL 9.7 não foi feito localmente. O padrão usado é o mesmo da V110 (`IF NOT EXISTS`, guardas
 no `information_schema`, `PREPARE`), que já rodou no Railway em 9.7. As FKs apontam para chaves primárias, o que
