@@ -6,6 +6,7 @@
  * controle é lido por requestAnimationFrame só enquanto a janela está aberta e há um controle conectado.
  */
 import { useEffect, useRef } from "react";
+import { eixoDeAndar } from "@/lib/flair/entrada/eixo-de-andar";
 import { comandoDaTecla, lerGamepad, PAD_INICIAL, type Comando, type PadEstado } from "@/lib/flair/nucleos/controls";
 
 export interface MaoNoControle {
@@ -52,7 +53,8 @@ export function useMaoNoControle(opcoes: MaoNoControle): void {
       if (!pads.length) return;
       const proximos = new Map<number, PadEstado>();
       for (const pad of pads) {
-        const { comandos, estado } = lerGamepad(pad, estados.get(pad.index) ?? PAD_INICIAL, agora);
+        // com a capitã andando, o analógico é dela; o direcional continua escolhendo a carta
+        const { comandos, estado } = lerGamepad(pad, estados.get(pad.index) ?? PAD_INICIAL, agora, eixoDeAndar().ativo);
         proximos.set(pad.index, estado);
         comandos.forEach(usar);
       }

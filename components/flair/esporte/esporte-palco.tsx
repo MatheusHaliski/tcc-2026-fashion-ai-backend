@@ -21,6 +21,7 @@ import { carregando, type EtapaDaCarga } from "@/lib/flair/esporte/carga";
 import { campoDe, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
 import { quadroDoLance } from "@/lib/flair/esporte/timeline";
 import { relogioEmTexto, type Jogada } from "@/lib/flair/esporte/types";
+import { useEixoDeAndar } from "@/components/flair/nucleos/use-eixo-de-andar";
 
 const Transmissao3D = dynamic(() => import("@/components/flair/esporte/transmissao-3d"), { ssr: false, loading: () => null });
 
@@ -66,6 +67,8 @@ interface Props {
   semente?: number;
   /** o que a tela de jogo põe por cima do campo (a roda de recursos da regra peça-recurso) */
   children?: ReactNode;
+  /** a janela da jogada aberta: WASD e o analógico levam a capitã pelo campo (as setas ficam com a mão de cartas) */
+  capita?: boolean;
 }
 
 /** A câmera escolhida no seletor (vale enquanto a partida está na tela). */
@@ -73,11 +76,13 @@ function useCameraDoCampo() {
   return useState<string>(CAMERAS_DO_CAMPO[0]);
 }
 
-export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, semente, children }: Props) {
+export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, semente, children, capita = false }: Props) {
   const tx = useNucleoText();
   const webgl = useWebGL();
   const reduzido = useReducedMotion();
   const [camera, setCamera] = useCameraDoCampo();
+  const comCapita = capita && webgl === true && !reduzido;
+  useEixoDeAndar(comCapita);
   /** a carga do estádio: a cena 3D chegando, o campo sendo montado e, no primeiro quadro, pronta */
   const [etapa, setEtapa] = useState<EtapaDaCarga>("ESTADIO");
   const campo = campoDe(modalidade);
@@ -108,7 +113,7 @@ export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, seme
       {webgl === false || reduzido ? planta : webgl === null ? <div className="n3d-scene2d" role="status">{tx.t("flair3d.ui.scene.loading")}</div> : (
         <Limite reserva={planta}>
           <div className="n3d-scene3d">
-            <Transmissao3D campo={campo} anterior={anterior} atual={atual} inicio={inicio.current} duracao={duracao} reduzido={reduzido} uniforme={uniforme} rotulo={rotulo} camera={camera} semente={semente} fim={fim} onEtapa={setEtapa} />
+            <Transmissao3D campo={campo} anterior={anterior} atual={atual} inicio={inicio.current} duracao={duracao} reduzido={reduzido} uniforme={uniforme} rotulo={rotulo} camera={camera} semente={semente} fim={fim} onEtapa={setEtapa} capita={comCapita} />
           </div>
           {carregando(etapa) && <EsporteCarga etapa={etapa} modalidade={modalidade} campo={campo} uniforme={uniforme} />}
         </Limite>

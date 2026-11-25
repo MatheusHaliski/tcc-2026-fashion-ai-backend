@@ -59,7 +59,8 @@ export function useModoPorCartas(e: Entrada): ModoPorCartas {
     return {
       esporte,
       detetive: false,
-      palco: <EsportePalco modalidade={esporte.modalidade} jogadas={esporte.jogadas} duracao={LANCE_MS} uniforme={esporte.uniforme} fim={e.momento === "RESULTADO"} semente={e.semente}>{e.extra}</EsportePalco>,
+      palco: <EsportePalco modalidade={esporte.modalidade} jogadas={esporte.jogadas} duracao={LANCE_MS} uniforme={esporte.uniforme} fim={e.momento === "RESULTADO"} semente={e.semente}
+        capita={!!esporte.situacao && !e.ocupado}>{e.extra}</EsportePalco>,
       acao: <EsportePainel modalidade={esporte.modalidade} jogadas={esporte.jogadas} situacao={esporte.situacao} mao={esporte.mao} ocupado={e.ocupado} erro={e.erro}
         onJogar={(cardId) => e.acionar({ tipo: "CARTA", cardId: cardId ?? undefined })} onPular={e.acao.pular} />,
     };

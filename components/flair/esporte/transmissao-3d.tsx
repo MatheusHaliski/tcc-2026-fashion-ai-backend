@@ -22,6 +22,11 @@ import { pontoNaRede } from "@/lib/flair/esporte/rede";
 import { CHEGADA_AO_GOL, gol, naTrave } from "@/lib/flair/esporte/bola";
 import { quadroDoLance, type Quadro } from "@/lib/flair/esporte/timeline";
 import { humorDaTorcida } from "@/lib/flair/esporte/torcida";
+import { aplicarCapita, SEM_CAPITA, type Capita } from "@/lib/flair/esporte/capita";
+import { eixoDeAndar } from "@/lib/flair/entrada/eixo-de-andar";
+
+/** O ponto do chão (x, z) a 2 cm do piso: o anel da capitã. */
+const withY = ([x, z]: [number, number]): [number, number, number] => [x, 0.02, z];
 import type { HumorDaTorcida } from "@/lib/flair/nucleos/gente/torcida";
 import type { Jogada, Lado } from "@/lib/flair/esporte/types";
 
@@ -43,6 +48,8 @@ export interface Transmissao3DProps {
   onEtapa?: (etapa: "CAMPO" | "PRONTA") => void;
   /** a partida fechou: a torcida e os bancos reagem ao placar final */
   fim?: boolean;
+  /** a janela da jogada aberta: o analógico leva a capitã pelo campo (lib/flair/esporte/capita.ts) */
+  capita?: boolean;
 }
 
 interface Estado {
@@ -50,7 +57,7 @@ interface Estado {
   plano: Plano | string;
 }
 
-function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, camera: escolha, semente = 1, onEtapa, fim = false }: Omit<Transmissao3DProps, "rotulo">) {
+function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, camera: escolha, semente = 1, onEtapa, fim = false, capita = false }: Omit<Transmissao3DProps, "rotulo">) {
   /** quadros já pintados: no segundo, o primeiro já está na tela e a tela de carga pode sair */
   const quadros = useRef(0);
   /** o que a torcida e os bancos fazem agora: o ponto, a bola na trave, o apito final */
@@ -60,6 +67,9 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
   const estado = useRef<Estado>({ quadro: quadroDoLance(campo, anterior, atual, reduzido ? 1 : 0), plano: "geral" });
   const pose = useRef<Pose | null>(null);
   const bola = useRef<THREE.Mesh>(null);
+  /** a capitã que a pessoa leva com o analógico, e o anel no chão dela */
+  const capitaDaVez = useRef<Capita>(SEM_CAPITA);
+  const anel = useRef<THREE.Mesh>(null);
   const { camera, size } = useThree();
   const paraOMundo = useMemo(() => (x: number, y: number) => noMundo(campo, [x, y]), [campo]);
   const lados: Lado[] = ["NOS", "ELES"];
@@ -74,10 +84,17 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
     return quadro.figuras.map((f) => atorDoJogador(f, paraOMundo, `${f.time}-${f.n}` === vez));
   };
 
-  useFrame(() => {
+  useFrame((_, dt) => {
     if (quadros.current < 2 && ++quadros.current === 2) onEtapa?.("PRONTA");
     const k = reduzido ? 1 : Math.max(0, Math.min(1, (performance.now() - inicio) / Math.max(1, duracao)));
     const quadro = quadroDoLance(campo, anterior, atual, k);
+    const ativa = capita && !reduzido;
+    capitaDaVez.current = aplicarCapita(capitaDaVez.current, campo, quadro.figuras, quadro.bola, ativa, atual?.n ?? null, k, eixoDeAndar().mover, dt);
+    const dela = quadro.figuras.find((f) => `${f.time}:${f.n}` === capitaDaVez.current.chave);
+    if (anel.current) {
+      anel.current.visible = ativa && !!dela;
+      if (dela) anel.current.position.set(...withY(noMundo(campo, [dela.x, dela.y])));
+    }
     const novo = humorDaTorcida(atual, k, fim);
     if (novo?.chave !== humor.current?.chave || novo?.reacao !== humor.current?.reacao) humor.current = novo;
     const aspecto = size.width / Math.max(1, size.height);
@@ -127,6 +144,10 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
       )}
       <Elenco3D pessoas={elenco} atores={atores} prontos={prontos} reduzido={reduzido} limite={() => CORPOS_DA_TRANSMISSAO[qualidade.current]} />
       <QualidadeDaCena nivel={qualidade} />
+      <mesh ref={anel} name="anel-da-capita" rotation={[-Math.PI / 2, 0, 0]} visible={false}>
+        <ringGeometry args={[0.45, 0.6, 32]} />
+        <meshBasicMaterial color="#F2C230" transparent opacity={0.85} depthWrite={false} />
+      </mesh>
       {campo.bola && (
         <mesh ref={bola} name="bola" castShadow>
           <sphereGeometry args={[campo.bolaRaio, 16, 12]} />
