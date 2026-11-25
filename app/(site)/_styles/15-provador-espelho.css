@@ -191,11 +191,12 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 /* folha de uma parte do look */
 .mirror-sheet { display: grid; gap: 16px; }
 .mirror-sheet section { display: grid; gap: 8px; }
+.mirror-catalog { display: grid; gap: 8px; min-width: 0; }
 .mirror-pick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .mirror-pick { display: grid; min-width: 0; align-content: start; gap: 4px; padding: 6px; border: 1.5px solid var(--line-soft); border-radius: 12px; background: var(--surface); text-align: left; }
 .mirror-pick:disabled { opacity: .6; }
 .mirror-pick[aria-pressed="true"] { border-color: var(--thread); background: var(--thread-soft); opacity: 1; }
-.mirror-pick-art { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 8px; background: var(--surface-2); }
+.mirror-pick-art { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: 8px; background: var(--surface-2); }
 .mirror-pick-art img { width: 100%; height: 100%; object-fit: contain; }
 .mirror-pick-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-body-sm); font-weight: 600; }
 /* roupas em mãos na folha da parte: tocar veste; "Tirar da lista" logo abaixo (nunca tira do guarda-roupa) */

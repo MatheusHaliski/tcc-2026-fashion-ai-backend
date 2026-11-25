@@ -39,6 +39,8 @@ import br.com.fashionai.domain.model.*;
 import br.com.fashionai.domain.model.enums.*;
 import br.com.fashionai.domain.repository.*;
 
+import static br.com.fashionai.application.service.MirrorPieceViews.pieceView;
+
 /**
  * RF33 — Smart Mirror e "Vista-me". O espelho é mais uma interface para iniciar o Criar Look (RF5), não uma
  * cópia dele: montagem manual por slots (§2.1), completude determinística sem IA, Vista-me com interpretação,
@@ -84,6 +86,9 @@ public class MirrorService {
     /** Critério térmico do Vista-me (tabela niveis_termicos). Opcional nos testes que montam o serviço sem Spring. */
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private SchemeThermalWriter thermal;
+    /** Produtos do catálogo de marcas vestidos só para provar (MirrorCatalogPieces); opcional nos testes sem Spring. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private MirrorCatalogPieces catalogPieces;
     private final Audit audit;
     private final ApplicationEventPublisher events;
     /** P3-07 — a mesma régua de looks do Copilot e do Autopiloto (só lê o Hype gravado; nada recalcula nem vira sinal). */
@@ -113,9 +118,13 @@ public class MirrorService {
 
     // ================================================================== slots
     public static String slotOf(WardrobeItem w) {
-        String cat = w.getCategory() == null ? "" : w.getCategory();
-        return switch (cat) {
-            case "upper_piece" -> w.getSubcategory() != null && OUTERWEAR.contains(w.getSubcategory()) ? "outer_layer" : "upper";
+        return slotOf(w.getCategory(), w.getSubcategory());
+    }
+
+    /** Lugar no corpo pela categoria e subcategoria gravadas: o mesmo para a peça da pessoa e o produto do catálogo. */
+    public static String slotOf(String category, String subcategory) {
+        return switch (category == null ? "" : category) {
+            case "upper_piece" -> subcategory != null && OUTERWEAR.contains(subcategory) ? "outer_layer" : "upper";
             case "lower_piece" -> "lower";
             case "full_body_piece" -> "dress";
             case "shoes_piece" -> "shoes";
@@ -134,7 +143,7 @@ public class MirrorService {
         };
     }
 
-    MirrorState stateEntity(UUID userId) {
+    public MirrorState stateEntity(UUID userId) {
         return mirrors.findByUserId(userId).orElseGet(() -> {
             MirrorState s = new MirrorState();
             s.setUserId(userId);
@@ -145,7 +154,7 @@ public class MirrorService {
     }
 
     /** slots_json: upper/lower/dress/shoes/outer_layer → id; accessory → [ids]; origin, prompt, interpretation. */
-    Map<String, Object> slots(MirrorState s) {
+    public Map<String, Object> slots(MirrorState s) {
         return Json.map(s.getSlotsJson());
     }
 
@@ -279,37 +288,6 @@ public class MirrorService {
         return Map.of("letter", letter, "rule", thirds, "toggle", true);
     }
 
-    Map<String, Object> pieceView(WardrobeItem w, Map<UUID, AcervoLugares.Lugar> where) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", w.getId());
-        m.put("name", w.getName());
-        m.put("category", w.getCategory());
-        m.put("subcategory", w.getSubcategory());
-        m.put("color", w.getColor());
-        m.put("colorHex", Taxonomy.hex(w.getColor()));
-        m.put("imageUrl", w.getImageUrl());
-        m.put("thumbnailUrl", w.getThumbnailUrl());
-        m.put("studioImageUrl", w.getStudioImageUrl());
-        // modelagem e dimensões da taxonomia: o espelho veste com o mesmo caimento do provador (classe, comprimentos)
-        m.put("variation", w.getVariationCode());
-        Map<String, List<String>> attrs = new LinkedHashMap<>();
-        if (w.getAttributes() != null) {
-            w.getAttributes().forEach(a -> attrs.computeIfAbsent(a.getDimensionCode(), k -> new ArrayList<>()).add(a.getValueCode()));
-        }
-        m.put("attributes", attrs);
-        m.put("available", available(w));
-        m.put("slot", slotOf(w));
-        AcervoLugares.Lugar loc = where.get(w.getId());
-        m.put("address", loc == null ? null : loc.compartimentoId().toString());
-        m.put("addressLabel", loc == null ? null : loc.caminho());
-        m.put("moduleId", loc == null ? null : loc.movelId().toString());
-        // estado dos assets da peça (RF16 e foto): o espelho mostra "Modelo 3D", "Foto em processamento" etc. de verdade
-        m.put("model3dUrl", w.getModel3dUrl());
-        m.put("model3dStatus", w.getModel3dStatus() == null ? null : w.getModel3dStatus().name());
-        m.put("photoProcessingStatus", w.getPhotoProcessingStatus() == null ? null : w.getPhotoProcessingStatus().name());
-        return m;
-    }
-
     @Transactional
     public Map<String, Object> state(CurrentUser user) {
         MirrorState s = stateEntity(user.id());
@@ -327,7 +305,7 @@ public class MirrorService {
         return render(user, state, slots(state), Map.of());
     }
 
-    Map<String, Object> render(CurrentUser user, MirrorState s, Map<String, Object> slots, Map<String, Object> extra) {
+    public Map<String, Object> render(CurrentUser user, MirrorState s, Map<String, Object> slots, Map<String, Object> extra) {
         List<UUID> wantRack = rack(slots);
         List<UUID> toLoad = new ArrayList<>(allIds(slots));
         wantRack.stream().filter(id -> !toLoad.contains(id)).forEach(toLoad::add);
@@ -351,7 +329,8 @@ public class MirrorService {
             putRack(slots, rackIds);
             dirty = true;
         }
-        if (dirty) {
+        MirrorCatalogPieces.Worn catalog = catalogPieces == null ? MirrorCatalogPieces.Worn.NONE : catalogPieces.worn(slots);
+        if (dirty || catalog.changed()) {
             s.setSlotsJson(Json.write(slots));
             mirrors.save(s);
         }
@@ -360,9 +339,9 @@ public class MirrorService {
         Map<String, Object> slotViews = new LinkedHashMap<>();
         for (String slot : List.of("outer_layer", "upper", "dress", "lower", "shoes")) {
             UUID id = single(slots, slot);
-            slotViews.put(slot, id == null ? null : pieceView(loaded.get(id), where));
+            slotViews.put(slot, id == null ? catalog.view(slot) : pieceView(loaded.get(id), where));
         }
-        slotViews.put("accessory", acc.stream().map(id -> pieceView(loaded.get(id), where)).toList());
+        slotViews.put("accessory", catalog.withAccessories(acc.stream().map(id -> pieceView(loaded.get(id), where)).toList()));
         out.put("slots", slotViews);
         Set<UUID> worn = new HashSet<>(allIds(slots));
         out.put("rack", rackIds.stream().map(id -> {
@@ -483,6 +462,7 @@ public class MirrorService {
                 }
             }
         }
+        MirrorCatalogSlots.yieldToWardrobe(slots);   // o produto do catálogo que dividia o lugar sai do corpo
         addToRack(slots, pieceId);   // vestida também fica na lista do espelho (para trocar e voltar a ela)
         if ("vista_me".equals(slots.get("origin"))) {
             slots.put("origin", "smart_mirror");

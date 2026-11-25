@@ -43,7 +43,7 @@ import br.com.fashionai.domain.repository.*;
  */
 @Service
 public class CatalogService {
-    static final Set<CatalogIngestionStatus> VISIBLE = Set.of(CatalogIngestionStatus.VALIDATED, CatalogIngestionStatus.PERSISTABLE,
+    public static final Set<CatalogIngestionStatus> VISIBLE = Set.of(CatalogIngestionStatus.VALIDATED, CatalogIngestionStatus.PERSISTABLE,
             CatalogIngestionStatus.REFERENCE_ONLY);
     public static final double MIN_SCORE = 0.35;
 
