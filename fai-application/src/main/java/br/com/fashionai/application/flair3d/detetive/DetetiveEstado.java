@@ -30,6 +30,8 @@ final class DetetiveEstado {
     String ultimaCobertura;
     boolean escondido;
     int vida = VIDA;
+    /** o que o look da gala muda no corpo da detetive (DetetiveDoLook) */
+    DetetiveDoLook doLook = DetetiveDoLook.NEUTRO;
     int tempo;
     int passo;
     int penalidades;
@@ -91,7 +93,9 @@ final class DetetiveEstado {
         r.put("final", fim == null ? null : fim.name());
         r.put("mao", mao.stream().map(UUID::toString).toList());
         r.put("baralho", baralho);
-        r.put("alcance", DetetiveVigias.ALCANCE);
+        r.put("alcance", doLook.alcance());
+        r.put("vidaMaxima", doLook.vidaMaxima());
+        r.put("doLook", doLook.paraTela());
         r.put("meiaAbertura", DetetiveVigias.MEIA_ABERTURA);
         r.put("passoMaximo", DetetiveSala.PASSO);
         r.put("layout", layout(s));

@@ -217,7 +217,7 @@ class Flair3dProgressoTest {
 
         Resultado r = service.entregar(ana, id, new Entrega(look, null, null, null));
         while (!r.fecha()) {
-            r = service.acionar(ana, id, Acionamento.NENHUM);
+            r = service.acionar(ana, id, Flair3dFixtures.proximo(r));
         }
         Flair3dCampanha.Progresso p = progresso.doJogo(ana, "DRESS_THE_STAR");
         Flair3dCampanha.Etapa pop = etapa(p, "ESTRELA_POP_2000");

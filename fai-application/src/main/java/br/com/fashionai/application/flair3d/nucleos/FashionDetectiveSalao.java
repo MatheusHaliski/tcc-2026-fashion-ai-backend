@@ -36,14 +36,19 @@ final class FashionDetectiveSalao {
     private final List<Evento> medidores = new ArrayList<>();
 
     FashionDetectiveSalao(int numero, Map<String, CbcRules.Card> look, FashionDetectiveMercado bolsa) {
+        this(numero, look, bolsa, 0, 0);
+    }
+
+    /** {@code vidaDaPeca} e {@code focoDaPeca}: o que as peças usadas como recurso neste salão somam (Flair3dRecursoNoMotor). */
+    FashionDetectiveSalao(int numero, Map<String, CbcRules.Card> look, FashionDetectiveMercado bolsa, int vidaDaPeca, int focoDaPeca) {
         this.numero = numero;
         this.salao = FashionDetectiveCaso.salao(numero);
         this.look = look;
         Collection<CbcRules.Card> pecas = look.values();
         long codigo = pecas.stream().filter(c -> Flair3dPecas.temOcasiao(c, salao.ocasioes())).count();
         int defesa = Flair3dAtributos.soma(pecas).defesa() + bolsa.defesaExtra();
-        long furtividade = POR_COR * cor(pecas, "FURTIVIDADE");
-        long vida = POR_COR * cor(pecas, "VIDA");
+        long furtividade = POR_COR * cor(pecas, "FURTIVIDADE") + focoDaPeca;
+        long vida = POR_COR * cor(pecas, "VIDA") + vidaDaPeca;
         long dano = POR_COR * cor(pecas, "DANO");
         gavetas = salao.movel() ? cor(pecas, "ABRIR") : 0;
         acesso = codigo >= PECAS_DO_CODIGO;

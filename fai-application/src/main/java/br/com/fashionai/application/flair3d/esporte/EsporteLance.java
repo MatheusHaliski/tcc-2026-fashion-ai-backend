@@ -49,6 +49,11 @@ final class EsporteLance {
         sorteio = partida.contexto.sorteio("jogada" + partida.jogada);
     }
 
+    /** A sorte de um duelo da pessoa, com o ajuste da posição da capitã (EsportePosicao). */
+    private int jogo() {
+        return sorte() + p.posicionamento;
+    }
+
     private int sorte() {
         return sorteio.nextInt(2 * EsportePartida.SORTE + 1) - EsportePartida.SORTE;
     }
@@ -82,11 +87,11 @@ final class EsporteLance {
         int embalo = p.bonus;
         p.bonus = 0;
         switch (acao) {
-            case EsporteForcas.PASSE -> avancar("PASSE", p.nossa(acao, carta) + embalo - p.rival(DEFESA) + sorte(), false);
-            case EsporteForcas.CORRIDA -> avancar("CONDUCAO", p.nossa(acao, carta) + embalo - p.rival(VELOCIDADE) + sorte(), false);
-            case EsporteForcas.DRIBLE -> avancar("DRIBLE", p.nossa(acao, carta) + embalo - (p.rival(DEFESA) + p.rival(FISICO)) / 2 + sorte(), true);
+            case EsporteForcas.PASSE -> avancar("PASSE", p.nossa(acao, carta) + embalo - p.rival(DEFESA) + jogo(), false);
+            case EsporteForcas.CORRIDA -> avancar("CONDUCAO", p.nossa(acao, carta) + embalo - p.rival(VELOCIDADE) + jogo(), false);
+            case EsporteForcas.DRIBLE -> avancar("DRIBLE", p.nossa(acao, carta) + embalo - (p.rival(DEFESA) + p.rival(FISICO)) / 2 + jogo(), true);
             case EsporteForcas.CHUTE -> {
-                double margem = p.nossa(acao, carta) + embalo + DISTANCIA[p.zona] - (p.rival(DEFESA) + GOLEIRO) + sorte();
+                double margem = p.nossa(acao, carta) + embalo + DISTANCIA[p.zona] - (p.rival(DEFESA) + GOLEIRO) + jogo();
                 new EsporteFinalizacao(p, sorteio).resolver(true, carta, acao, margem);
             }
             default -> p.lance("PROTEGE", true, true, carta, acao, z, z);
@@ -130,7 +135,7 @@ final class EsporteLance {
         if (carta != null) {
             switch (acao) {
                 case EsporteForcas.DEFESA -> {
-                    boolean ok = p.nossa(acao, carta) - p.rival(TECNICA) + sorte() >= 0;
+                    boolean ok = p.nossa(acao, carta) - p.rival(TECNICA) + jogo() >= 0;
                     if (ok) {
                         p.resumo.desarme(true);
                     }
@@ -141,7 +146,7 @@ final class EsporteLance {
                     }
                 }
                 case EsporteForcas.CORRIDA -> {
-                    parou = p.nossa(acao, carta) - p.rival(VELOCIDADE) + sorte() >= 0;
+                    parou = p.nossa(acao, carta) - p.rival(VELOCIDADE) + jogo() >= 0;
                     p.lance(parou ? "RECOMPOE" : "RECOMPOE_FALHO", true, parou, carta, acao, 3 - z, 3 - z);
                 }
                 case EsporteForcas.GOLEIRO -> {
@@ -149,7 +154,7 @@ final class EsporteLance {
                     p.lance("GOLEIRO_PRONTO", true, true, carta, acao, 0, 0);
                 }
                 default -> {
-                    parou = (p.time.fisico() * p.time.folego(p.jogada) + EsporteForcas.poder(carta, acao)) / 2 - p.rival(FISICO) / 2 + sorte() >= 0;
+                    parou = (p.time.fisico() * p.time.folego(p.jogada) + EsporteForcas.poder(carta, acao)) / 2 - p.rival(FISICO) / 2 + jogo() >= 0;
                     p.lance(parou ? "PRESSAO" : "PRESSAO_FALHA", true, parou, carta, acao, 3 - z, 3 - z);
                 }
             }

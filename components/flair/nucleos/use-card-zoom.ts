@@ -71,7 +71,7 @@ export function useCardZoom(focada: FlairCollectionCard | null, ligado = true): 
       if (e.key === "Escape" && atual.ampliada) {
         setAmpliada(null);
         e.preventDefault();
-      } else if (e.key.toLowerCase() === "i" && (atual.ampliada || atual.focada)) {
+      } else if (e.key.toLowerCase() === "z" && (atual.ampliada || atual.focada)) {
         setAmpliada(atual.ampliada ? null : atual.focada);
         e.preventDefault();
       }

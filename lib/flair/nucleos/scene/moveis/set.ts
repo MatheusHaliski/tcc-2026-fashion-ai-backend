@@ -26,7 +26,7 @@ export function cenarioDeTresParedes(em: Em, pintura: string, madeira: string, l
     ...persiana,
     chanfrada(madeira, [0.7, 0.9, 0.05], [-1.3, 1.9, 0.04]),
     chanfrada(pintura, [largura, 0.12, 0.03], [0, 0.06, 0.05]),
-  ]);
+  ], { pintura, madeira, luz });
 }
 
 /** Luminária de teto comprida; `pos` é a face de baixo. */

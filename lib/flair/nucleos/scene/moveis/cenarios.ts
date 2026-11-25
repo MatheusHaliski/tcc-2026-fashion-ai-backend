@@ -50,7 +50,7 @@ export function pedestaisComCordao(em: Em, metal: string, cordao: string, n = 3,
     partes.push(cilindro(metal, [0.12, 0.14], 0.04, [x, 0.02, 0]), cilindro(metal, 0.022, 0.92, [x, 0.48, 0]), esfera(metal, 0.04, [x, 0.96, 0], 8));
     if (i < n - 1) partes.push(cilindro(cordao, 0.018, vao - 0.06, [x + vao / 2, 0.84, 0], [0, 0, 90], 6));
   }
-  return movel("pedestaisComCordao", em, partes);
+  return movel("pedestaisComCordao", em, partes, { metal, cordao });
 }
 
 /** Monitor de vídeo do set (o "video assist"): tela num carrinho com rodas. */
@@ -62,7 +62,7 @@ export function monitorDeVideo(em: Em, carcaca: string, tela: string): Movel {
     chanfrada(carcaca, [0.62, 0.42, 0.08], [0, 1.2, 0], [-8, 0, 0]),
     caixa(tela, [0.54, 0.34, 0.01], [0, 1.2, 0.045], [-8, 0, 0]),
     ...rodas,
-  ]);
+  ], { carcaca, tela });
 }
 
 /** Cabos do set no chão: três linhas longas e baixas, em leve curva (segmentos). */
@@ -102,7 +102,7 @@ export function prateleiraDeBolsas(em: Em, madeira: string, bolsa: string, sapat
     ...bolsas,
     ...sapatos,
     chanfrada(bolsa, [0.34, 0.3, 0.14], [0.3, 1.71, 0]),
-  ]);
+  ], { madeira, bolsa, sapato });
 }
 
 /** Arco do backstage no começo da passarela: dois pilares e a viga com a faixa de luz. */
@@ -126,7 +126,7 @@ export function espelhoDeParede(em: Em, moldura: string, espelho: string, larg =
   return movel("espelhoDeParede", em, [
     chanfrada(moldura, [larg, alt, 0.06], [0, 0.2 + alt / 2, 0]),
     caixa(espelho, [larg - 0.16, alt - 0.16, 0.01], [0, 0.2 + alt / 2, 0.034]),
-  ]);
+  ], { moldura, espelho });
 }
 
 /** Mesa dos jurados: tampo, saia de tecido na frente e três placas de nome acesas. */
@@ -138,5 +138,5 @@ export function mesaDosJurados(em: Em, tampo: string, saia: string, placa: strin
     chanfrada(saia, [larg, 0.7, 0.04], [0, 0.38, 0.33]),
     ...placas,
     ...cadeiras,
-  ]);
+  ], { tampo, saia, placa });
 }

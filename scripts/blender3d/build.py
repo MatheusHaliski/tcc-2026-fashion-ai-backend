@@ -78,7 +78,7 @@ def gerar(slug: str, pasta: Path) -> dict:
         raise SystemExit(f"{slug}: {triangulos} triângulos (teto {MAX_TRIANGULOS}); simplifique a receita")
     minimo, maximo = core.caixa_envolvente()
     arquivo = exportar(slug, pasta)
-    linha = {"slug": slug, "title": receita.titulo, "category": "scene", "triangles": triangulos,
+    linha = {"slug": slug, "title": receita.titulo, "category": receita.categoria, "triangles": triangulos,
              "bytes": arquivo.stat().st_size, "author": "FashionAI", "source": f"{GERADOR}/receitas", "license": "Própria",
              "size": [round(maximo.x - minimo.x, 3), round(maximo.z - minimo.z, 3), round(maximo.y - minimo.y, 3)],
              "hash": resumo_do_motor()}

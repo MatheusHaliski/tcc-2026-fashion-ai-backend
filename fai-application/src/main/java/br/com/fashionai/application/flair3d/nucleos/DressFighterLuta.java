@@ -2,11 +2,13 @@ package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Acionamento;
+import br.com.fashionai.application.flair3d.Andamento;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Flair3dCores;
 import br.com.fashionai.application.flair3d.Flair3dErros;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.nucleos.DressFighterGolpes.Lutador;
+import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoNoMotor;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -125,7 +127,12 @@ public final class DressFighterLuta {
         if (FOCO.equals(meu) && ataca(dela)) {
             causado += DressFighterGolpes.contraAtaque(voce) * (DressFighterCombos.MURALHA.equals(combo) ? 2 : 1);
         }
-        int cura = FOLEGO.equals(meu) ? Math.min(DressFighterGolpes.FOLEGO_CURA, VIDA - vidaVoce) : 0;
+        // a peça usada como recurso neste lance (Flair3dRecursoNoMotor): cura, golpe mais forte, guarda mais firme
+        List<Andamento.UsoDeRecurso> usos = contexto.andamento().usos();
+        if (causado > 0) causado += Flair3dRecursoNoMotor.noLance(usos, "ENERGIA", lances) / 5;
+        sofrido = Math.max(0, sofrido - Flair3dRecursoNoMotor.noLance(usos, "FOCO", lances) / 5);
+        int curaDoFolego = FOLEGO.equals(meu) ? DressFighterGolpes.FOLEGO_CURA : 0;
+        int cura = Math.min(curaDoFolego + Flair3dRecursoNoMotor.noLance(usos, "VIDA", lances), VIDA - vidaVoce);
         vidaOponente = Math.max(0, vidaOponente - causado);
         vidaVoce = Math.max(0, Math.min(VIDA, vidaVoce + cura) - sofrido);
         danoDoRoundVoce += causado;

@@ -14,12 +14,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { clone as clonarComOssos } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { MultidaoLeve } from "@/components/flair/nucleos/gente/corpo-leve";
+import { Humanoides } from "@/components/flair/nucleos/gente/humanoides-3d";
 import { MoldeHumano, type Molde } from "@/components/flair/nucleos/gente/molde-humano";
 import { animate, cloneRig, newMotionState, type MotionState, type Rig } from "@/lib/avatar3d/human/locomotion";
 import type { Motion } from "@/lib/avatar3d/human/locomotion-model";
 import { corposCheios, fazSombraDeLonge, nivelDeDetalhe, QUADROS_POR_NIVEL, type NivelDeDetalhe } from "@/lib/flair/nucleos/gente/detalhe";
 import type { AtorDeCena } from "@/lib/flair/nucleos/gente/ator";
 import { aplicarGesto } from "@/lib/flair/nucleos/gente/gestos";
+import { humanoidesDaCena, poseHumana } from "@/lib/flair/nucleos/gente/humanoides";
 import { poseLeveAnimada, poseLeveDoAtor } from "@/lib/flair/nucleos/gente/leve";
 import { agora as relogioDaCena } from "@/components/flair/nucleos/scene/stage-context";
 import { sorteio, type PessoaDoElenco } from "@/lib/flair/nucleos/gente/elenco";
@@ -107,18 +109,22 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
     for (const [id, p] of pessoas) m.vestir(vagas.get(id)!, p);
     return m;
   }, [pessoas, vagas]);
+  /** os humanoides prontos (humanoides-3d.ts): quem está perto e não tem o corpo inteiro é um deles, não o corpo leve */
+  const reais = useMemo(() => new Humanoides(), []);
+  const comHumanoide = useRef(new Set<string>());
   const posta = useRef(new Map<string, string>());
   const quadro = useRef(0);
   useEffect(() => {
-    grupo.add(multidao.grupo);
+    grupo.add(multidao.grupo, reais.grupo);
     const postas = posta.current;
     return () => {
-      grupo.remove(multidao.grupo);
+      grupo.remove(multidao.grupo, reais.grupo);
       multidao.descartar();
       postas.clear();
     };
   }, [grupo, multidao]);
   useEffect(() => () => {
+    reais.descartar();
     grupo.clear();
     clones.current.clear();
   }, [grupo]);
@@ -136,6 +142,9 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
       foraDoQuadro.current = new Set(lista.filter((a) => !NO_QUADRO.intersectsSphere(CORPO.set(CORPO.center.set(a.x, (a.altura ?? 0) + 0.9, a.z), 1.2))).map((a) => a.id));
       const fora = foraDoQuadro.current;
       cheios.current = corposCheios(lista.map((a) => ({ id: a.id, naJogada: a.naJogada, noQuadro: !fora.has(a.id), distancia: Math.hypot(a.x - camera.position.x, a.z - camera.position.z) })), typeof limite === "function" ? limite() : limite);
+      const teto = typeof limite === "function" ? limite() : limite;
+      const perto = lista.filter((a) => !a.oculto && !fora.has(a.id) && !cheios.current?.has(a.id)).map((a) => ({ id: a.id, d: Math.hypot(a.x - camera.position.x, a.z - camera.position.z) }));
+      comHumanoide.current = new Set(perto.sort((a, b) => a.d - b.d).slice(0, humanoidesDaCena(teto)).map((x) => x.id));
       const faltam = lista
         .map((a) => ({ p: pessoas.get(a.id), d: Math.hypot(a.x - camera.position.x, a.z - camera.position.z) }))
         .filter((x): x is { p: PessoaDoElenco; d: number } => !!x.p && !moldes.current.has(x.p.chave) && !montando.some((m) => m.chave === x.p!.chave))
@@ -152,11 +161,19 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
     const leve = (a: AtorDeCena) => {
       const i = vagas.get(a.id);
       if (i == null) return;
-      if (a.oculto) return multidao.esconder(i);
+      if (a.oculto) return reais.esconder(a.id), multidao.esconder(i);
+      const pessoa = pessoas.get(a.id);
+      const pose = poseLeveDoAtor(a, t, sorteio(1, a.id), reduzido);
+      if (pessoa && comHumanoide.current.has(a.id) && reais.posar(a.id, pessoa, { x: a.x, y: a.altura ?? 0, z: a.z, giro: a.giro }, poseHumana(a.anim, reduzido ? 0 : a.velocidade, pose, reduzido ? 0 : t, sorteio(1, a.id)))) {
+        prontos.current.add(a.id);
+        posta.current.delete(a.id);
+        return multidao.esconder(i);
+      }
+      reais.esconder(a.id);
       const chave = `${a.x.toFixed(3)}|${a.z.toFixed(3)}|${a.giro.toFixed(3)}|${a.altura ?? 0}|${a.anim}|${a.gesto ?? ""}`;
       if (multidao.visivel(i) && posta.current.get(a.id) === chave && !(repor && poseLeveAnimada(a) && !reduzido)) return;
       posta.current.set(a.id, chave);
-      multidao.posar(i, { x: a.x, y: a.altura ?? 0, z: a.z, giro: a.giro }, poseLeveDoAtor(a, t, sorteio(1, a.id), reduzido));
+      multidao.posar(i, { x: a.x, y: a.altura ?? 0, z: a.z, giro: a.giro }, pose);
       prontos.current.add(a.id);
     };
     for (const a of lista) {
@@ -202,6 +219,7 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
       }
       const vaga = vagas.get(a.id);
       if (vaga != null) multidao.esconder(vaga);
+      reais.esconder(a.id);
       c.acumulado += dt;
       // fora do quadro o esqueleto não é animado (o corpo fica onde o diretor o pôs e retoma ao voltar à tela)
       if (foraDoQuadro.current.has(a.id) && !a.naJogada && c.st.t > 0) continue;

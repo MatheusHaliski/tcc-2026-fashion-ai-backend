@@ -56,7 +56,7 @@ export function carroDeCorrida(em: Em, pintura: string, carbono: string, pneu: s
     chanfrada(pintura, [0.36, 0.4, 0.04], [1.75, 0.65, -0.5]),
     ...rodas,
     ...cubos,
-  ]);
+  ], { pintura, carbono, pneu, metal });
 }
 
 /** Porta de enrolar do box: as lâminas, os trilhos e a caixa do rolo em cima. `pos` é o centro do pé da porta. */

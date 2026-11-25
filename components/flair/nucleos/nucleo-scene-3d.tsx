@@ -5,7 +5,7 @@
  * do jogo (scene/game-camera.tsx, docs/flair/flair-3d/CAMERAS.md): a escolhida no seletor ou a do momento da partida; o
  * zoom aproxima e mira mais alto (até o rosto).
  */
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { CameraDeAbertura } from "@/components/flair/nucleos/scene/opening-camera";
 import type { Look3dPiece } from "@/components/three/common";
@@ -13,6 +13,9 @@ import { NucleoAvatar, type Protagonista } from "@/components/flair/nucleos/nucl
 import { LuzDeEfeito, PecaPintada } from "@/components/flair/nucleos/scene/effects-3d";
 import { CameraDoJogo } from "@/components/flair/nucleos/scene/game-camera";
 import { Figurantes } from "@/components/flair/nucleos/scene/extras";
+import { CinemaCamera } from "@/components/flair/cinema/cinema-camera";
+import { Andarilho, NA_MARCA, type Jogador } from "@/components/flair/nucleos/scene/andarilho";
+import { DesfileJogavel } from "@/components/flair/nucleos/scene/desfile-jogavel";
 import { FigurantesHumanos } from "@/components/flair/nucleos/gente/figurantes-humanos";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { QualidadeDaCena } from "@/components/flair/nucleos/scene/scene-quality";
@@ -30,7 +33,8 @@ import { placarDaCena } from "@/lib/flair/nucleos/scene/sequences-auto";
 import { temAbertura } from "@/lib/flair/nucleos/scene/opening";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
 import { limiteDaCamera } from "@/lib/flair/nucleos/scene/zones";
-import type { NucleoConfig, NucleoResultado, V3, ZonaEscolha } from "@/lib/flair/nucleos/types";
+import type { MaquiagemEscolha, NucleoConfig, NucleoResultado, V3, ZonaEscolha } from "@/lib/flair/nucleos/types";
+import { maquiagemNoRosto } from "@/lib/flair/make-up/rosto-maquiado";
 
 export interface NucleoScene3DProps {
   config: NucleoConfig;
@@ -49,6 +53,10 @@ export interface NucleoScene3DProps {
   /** zonas da rodada (modos do Ateliê), na ordem, e o que a pessoa já pintou em cada uma */
   zonasDaPeca?: string[];
   zonas?: Record<string, ZonaEscolha>;
+  maquiagem?: Record<string, MaquiagemEscolha>;
+  andarLivre?: boolean;
+  agilidade?: number;
+  desfileAtivo?: boolean;
   /** a câmera escolhida no seletor do HUD ("AUTO" ou nula = a do momento) e o momento da partida */
   camera?: string | null;
   momento?: MomentoDaCamera;
@@ -65,7 +73,13 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
   return { dist, alvo: [0, altura + (sala?.zonas.avatar.altura ?? 0), 0] };
 }
 
-export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, camera, momento = "PREPARO" }: NucleoScene3DProps) {
+export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO", andarLivre = false, agilidade, desfileAtivo = false }: NucleoScene3DProps) {
+  const jogador = useRef<Jogador>({ pos: NA_MARCA, andando: false });
+  // cada momento começa na marca (o desfile parte dela)
+  useEffect(() => {
+    jogador.current = { pos: NA_MARCA, andando: false };
+  }, [momento]);
+  const rosto = useMemo(() => maquiagemNoRosto(maquiagem), [maquiagem]);
   const manequim = config.personagens.find((p) => p.papel === "MANEQUIM");
   const sala = salaDe(config.codigo, variante);
   // a abertura toca no começo da partida (e a cada salão da gala); quem volta a uma partida já na ação não a revê
@@ -91,11 +105,14 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
           limite={() => corposCheiosDaCena(config.codigo, qualidade.current)} sombraAte={() => AJUSTES[qualidade.current].sombraDeFiguranteAte} />
         <LuzDeEfeito altura={sala.zonas.avatar.altura} />
         {manequim && zonasDaPeca && zonas && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
-        <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} />
+        <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} maquiagem={rosto} jogador={jogador} />
+        <Andarilho sala={sala} jogador={jogador} agilidade={agilidade} livre={andarLivre} />
+        <DesfileJogavel codigo={config.codigo} sala={sala} jogador={jogador} ativo={desfileAtivo} />
         <QualidadeDaCena nivel={qualidade} />
-        <CameraDoJogo codigo={config.codigo} escolha={camera} momento={momento} sala={sala} zoom={avatar.zoom} reduzido={reduzido} pessoas={figurantes} />
+        <CameraDoJogo codigo={config.codigo} escolha={camera} momento={momento} sala={sala} zoom={avatar.zoom} reduzido={reduzido} pessoas={figurantes} jogador={jogador} />
       </CenaContexto.Provider>
       {temAbertura(config.codigo) && <CameraDeAbertura chave={abertura} sala={sala} fim={fim} reduzido={reduzido} />}
+      <CinemaCamera sala={sala} />
     </Canvas>
   );
 }

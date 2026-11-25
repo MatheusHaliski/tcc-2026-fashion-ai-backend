@@ -138,18 +138,22 @@ class Flair3dPartidaEtapasTest {
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isEqualTo(1);
 
         Resultado previa = service.previa(ana, id, vestir(sup, inf, cal));
-        assertThat(previa.pontos()).isEqualTo(80);
+        // 80 + 1 da regra peça-recurso (o tênis da vaga CAL soma agilidade, que o Labirinto pede)
+        assertThat(previa.pontos()).isEqualTo(81);
         assertThat(previa.status()).isEqualTo("ABERTA");
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isEqualTo(1);
 
-        Resultado abriu = service.entregar(ana, id, vestir(sup, inf, cal));
+        // o espelho abriu: falta a execução no percurso; os três botões a tempo somam 15
+        Resultado espelho = service.entregar(ana, id, vestir(sup, inf, cal));
+        assertThat(espelho.status()).isEqualTo("EM_ACAO");
+        Resultado abriu = service.acionar(ana, id, Flair3dFixtures.perfeita(espelho));
         assertThat(abriu.status()).isEqualTo("ENTREGUE");
         assertThat(abriu.resultado()).isEqualTo("ABRE");
-        assertThat(abriu.pontos()).isEqualTo(80);
-        assertThat(abriu.estrelas()).isEqualTo(2);
+        assertThat(abriu.pontos()).isEqualTo(96);
+        assertThat(abriu.estrelas()).isEqualTo(Resultado.estrelas(96));
         assertThat(abriu.eventos()).contains(new Resultado.Evento("TENTATIVA", 2));
         assertThat(partida(id).getStatus()).isEqualTo("ENTREGUE");
-        assertThat(partida(id).getEstrelas()).isEqualTo(2);
+        assertThat(partida(id).getEstrelas()).isEqualTo(Resultado.estrelas(96));
         assertThat(erro(() -> service.entregar(ana, id, vestir(sup, inf, cal))).code()).isEqualTo("PARTIDA_JA_ENTREGUE");
 
         UUID outra = abrir("LABIRINTO", sup, inf, cal, ace);
@@ -171,9 +175,11 @@ class Flair3dPartidaEtapasTest {
         UUID id = abrir("PASSARELA", sup, inf, cal);
 
         Resultado previa = service.previa(ana, id, vestir(sup, inf));
-        assertThat(previa.pontos()).isEqualTo(57);
+        assertThat(previa.pontos()).isEqualTo(58);
         assertThat(previa.status()).isEqualTo("ABERTA");
         assertThat(previa.regras()).extracting(Resultado.RegraResultado::codigo).containsExactly("MARCA_BR", "TODAS_BR");
+        // na prévia, o que o look soma vai como evento (a nota já mostra)
+        assertThat(previa.eventos()).extracting(Resultado.Evento::codigo).contains("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO");
         assertThat(previa.cartas()).containsExactly(new Resultado.CartaPontos("SUP", sup.getId(), 28.57),
                 new Resultado.CartaPontos("INF", inf.getId(), 28.57));
         Flair3dMatch intacta = partida(id);
@@ -188,7 +194,7 @@ class Flair3dPartidaEtapasTest {
         assertThat(erro(() -> service.previa(ana, id, vestir(foraDoDeck))).code()).isEqualTo("CARTA_FORA_DO_DECK");
 
         service.entregar(ana, id, vestir(sup, inf, cal));
-        Resultado entrega = service.acionar(ana, id, Acionamento.NENHUM);
+        Resultado entrega = service.acionar(ana, id, Flair3dFixtures.perfeita(service.acionar(ana, id, Acionamento.NENHUM)));
         assertThat(entrega.status()).isEqualTo("ENTREGUE");
         assertThat(entrega.cartas()).extracting(Resultado.CartaPontos::pontos).containsExactly(14.29, 14.29, 0.0);
         assertThat(erro(() -> service.previa(ana, id, vestir(sup))).status()).isEqualTo(409);
@@ -207,10 +213,20 @@ class Flair3dPartidaEtapasTest {
         FlairCardInstance leve = carta(ana, "SUP", "material:linen");
         Map<String, Object> out = service.efeitos(ana, "AROUND_THE_WORLD",
                 new Flair3dNucleoService.PedidoEfeitos(List.of(neutra.getId(), leve.getId())));
-        assertThat(out.get("efeitos")).isEqualTo(List.of(
+        assertThat(semPerfil(out.get("efeitos"))).isEqualTo(List.of(
                 Map.of("cardId", neutra.getId(), "itens", List.of(Efeito.motivo("SEM_BONUS"))),
                 Map.of("cardId", leve.getId(), "itens", List.of(new Efeito("CIMA_LEVE", 25)))));
         Map<String, Object> zonas = service.efeitos(ana, "SUPER_HEROI", new Flair3dNucleoService.PedidoEfeitos(List.of(neutra.getId())));
-        assertThat(zonas.get("efeitos")).isEqualTo(List.of(Map.of("cardId", neutra.getId(), "itens", List.of())));
+        assertThat(semPerfil(zonas.get("efeitos"))).isEqualTo(List.of(Map.of("cardId", neutra.getId(), "itens", List.of())));
+    }
+
+    /** Os efeitos sem o perfil da peça (a regra peça-recurso tem teste próprio: Flair3dRecursoTabelaTest). */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> semPerfil(Object efeitos) {
+        return ((List<Map<String, Object>>) efeitos).stream().map(m -> {
+            Map<String, Object> copia = new java.util.LinkedHashMap<>(m);
+            copia.remove("perfil");
+            return copia;
+        }).toList();
     }
 }

@@ -8,9 +8,10 @@
  * cada pessoa no próprio atraso e com a própria força (lib/flair/nucleos/gente/torcida.ts).
  */
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { COR_DO_ROSTO, COR_DO_SAPATO, corpoHumanoLeve, type CorpoHumanoLeve } from "@/components/flair/nucleos/gente/corpo-humano-leve";
 import { poseDaTorcida, REACAO_DA_TORCIDA_S, type HumorDaTorcida, type PessoaDaTorcida, type PoseDaTorcida } from "@/lib/flair/nucleos/gente/torcida";
 
 /** Altura do ombro (pivô dos braços), em metros, antes da escala de cada pessoa. */
@@ -64,17 +65,20 @@ const ASSENTO = 0.43;
 /** De quantos em quantos quadros a arquibancada que reage é reposta (a animação barata de quem está longe). */
 const QUADROS_DA_REACAO = 2;
 const PARADA: PoseDaTorcida = { bracos: 0, pulo: 0, inclina: 0 };
-type Refs = Record<"tronco" | "pernas" | "cabeca" | "cabelo" | "bracos", React.RefObject<THREE.InstancedMesh | null>>;
+type Parte = "tronco" | "pernas" | "cabeca" | "cabelo" | "bracos" | "maos" | "rosto" | "pes";
+type Refs = Record<Parte, React.RefObject<THREE.InstancedMesh | null>>;
 
 /** As matrizes de uma pessoa nas cinco malhas, na pose dada. */
 function posar(refs: Refs, i: number, p: PessoaDaTorcida, pose: PoseDaTorcida, soBracos = false) {
   const desce = p.sentada ? -ASSENTO : 0;
   BASE.compose(P.set(p.x, p.y + pose.pulo, p.z), Q.setFromEuler(E.set(pose.inclina, 0, 0)), S.setScalar(p.escala));
-  refs.bracos.current?.setMatrixAt(i, M.copy(BASE).multiply(AUX.makeTranslation(0, OMBRO + desce, 0)).multiply(AUX.makeRotationX(pose.bracos)));
+  M.copy(BASE).multiply(AUX.makeTranslation(0, OMBRO + desce, 0)).multiply(AUX.makeRotationX(pose.bracos));
+  for (const k of ["bracos", "maos"] as const) refs[k].current?.setMatrixAt(i, M);
   if (soBracos) return;
   M.copy(BASE).multiply(AUX.makeTranslation(0, desce, 0));
-  for (const k of ["tronco", "cabeca", "cabelo"] as const) refs[k].current?.setMatrixAt(i, M);
-  refs.pernas.current?.setMatrixAt(i, M.copy(BASE).multiply(AUX.makeScale(1, p.sentada ? 0.5 : 1, 1)));
+  for (const k of ["tronco", "cabeca", "cabelo", "rosto"] as const) refs[k].current?.setMatrixAt(i, M);
+  M.copy(BASE).multiply(AUX.makeScale(1, p.sentada ? 0.5 : 1, 1));
+  for (const k of ["pernas", "pes"] as const) refs[k].current?.setMatrixAt(i, M);
 }
 
 interface Props {
@@ -86,17 +90,42 @@ interface Props {
 }
 
 export function Torcida3D({ pessoas, reduzido, calca = "#2A2F3A", humor }: Props) {
-  const g = useMemo(() => geometriasDaTorcida(), []);
-  const mat = useMemo(() => ({ cor: new THREE.MeshStandardMaterial({ roughness: 0.85 }), calca: new THREE.MeshStandardMaterial({ color: calca, roughness: 0.9 }) }), [calca]);
-  const refs: Refs = { tronco: useRef<THREE.InstancedMesh>(null), pernas: useRef<THREE.InstancedMesh>(null), cabeca: useRef<THREE.InstancedMesh>(null), cabelo: useRef<THREE.InstancedMesh>(null), bracos: useRef<THREE.InstancedMesh>(null) };
+  const capsulas = useMemo(() => geometriasDaTorcida(), []);
+  // o corpo humano modelado (versão simples) entra no lugar das cápsulas quando o arquivo carrega
+  const [humano, setHumano] = useState<CorpoHumanoLeve | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    void corpoHumanoLeve(true).then((corpo) => {
+      if (vivo && corpo) setHumano(corpo);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  const g = humano ?? capsulas;
+  const mat = useMemo(() => ({
+    cor: new THREE.MeshStandardMaterial({ roughness: 0.85 }),
+    calca: new THREE.MeshStandardMaterial({ color: calca, roughness: 0.9 }),
+    rosto: new THREE.MeshStandardMaterial({ color: COR_DO_ROSTO, roughness: 0.6 }),
+    sapato: new THREE.MeshStandardMaterial({ color: COR_DO_SAPATO, roughness: 0.5 }),
+  }), [calca]);
+  const refs: Refs = {
+    tronco: useRef<THREE.InstancedMesh>(null),
+    pernas: useRef<THREE.InstancedMesh>(null),
+    cabeca: useRef<THREE.InstancedMesh>(null),
+    cabelo: useRef<THREE.InstancedMesh>(null),
+    bracos: useRef<THREE.InstancedMesh>(null),
+    maos: useRef<THREE.InstancedMesh>(null),
+    rosto: useRef<THREE.InstancedMesh>(null),
+    pes: useRef<THREE.InstancedMesh>(null),
+  };
   /** a reação em curso: a chave dela, quando começou e se as matrizes do corpo ainda estão fora do repouso */
   const reacao = useRef({ chave: "", desde: 0, mexida: false, quadro: 0, t: 0 });
   const torcem = useMemo(() => pessoas.map((p, i) => (p.torce ? i : -1)).filter((i) => i >= 0), [pessoas]);
   useEffect(() => () => {
-    for (const b of Object.values(g)) b.dispose();
-    mat.cor.dispose();
-    mat.calca.dispose();
-  }, [g, mat]);
+    for (const b of Object.values(capsulas)) b.dispose();
+    for (const m of Object.values(mat)) m.dispose();
+  }, [capsulas, mat]);
   useLayoutEffect(() => {
     const c = new THREE.Color();
     pessoas.forEach((p, i) => {
@@ -104,6 +133,7 @@ export function Torcida3D({ pessoas, reduzido, calca = "#2A2F3A", humor }: Props
       refs.tronco.current?.setColorAt(i, c.set(p.roupa));
       refs.bracos.current?.setColorAt(i, c.set(p.roupa));
       refs.cabeca.current?.setColorAt(i, c.set(p.pele));
+      refs.maos.current?.setColorAt(i, c.set(p.pele));
       refs.cabelo.current?.setColorAt(i, c.set(p.cabelo));
     });
     for (const r of Object.values(refs)) {
@@ -138,15 +168,19 @@ export function Torcida3D({ pessoas, reduzido, calca = "#2A2F3A", humor }: Props
     if (reduzido) return;
     for (const i of torcem) posar(refs, i, pessoas[i], poseDaTorcida(pessoas[i], t), true);
     b.instanceMatrix.needsUpdate = true;
+    if (refs.maos.current) refs.maos.current.instanceMatrix.needsUpdate = true;
   });
   const n = pessoas.length;
   return (
     <group name="torcida">
-      <instancedMesh ref={refs.tronco} args={[g.tronco, mat.cor, n]} />
-      <instancedMesh ref={refs.bracos} args={[g.bracos, mat.cor, n]} />
-      <instancedMesh ref={refs.cabeca} args={[g.cabeca, mat.cor, n]} />
-      <instancedMesh ref={refs.cabelo} args={[g.cabelo, mat.cor, n]} />
-      <instancedMesh ref={refs.pernas} args={[g.pernas, mat.calca, n]} />
+      <instancedMesh dispose={null} ref={refs.tronco} args={[g.tronco, mat.cor, n]} />
+      <instancedMesh dispose={null} ref={refs.bracos} args={[g.bracos, mat.cor, n]} />
+      <instancedMesh dispose={null} ref={refs.cabeca} args={[g.cabeca, mat.cor, n]} />
+      <instancedMesh dispose={null} ref={refs.cabelo} args={[g.cabelo, mat.cor, n]} />
+      <instancedMesh dispose={null} ref={refs.pernas} args={[g.pernas, mat.calca, n]} />
+      {humano && <instancedMesh dispose={null} ref={refs.maos} args={[humano.maos, mat.cor, n]} />}
+      {humano && <instancedMesh dispose={null} ref={refs.rosto} args={[humano.rosto, mat.rosto, n]} />}
+      {humano && <instancedMesh dispose={null} ref={refs.pes} args={[humano.pes, mat.sapato, n]} />}
     </group>
   );
 }
