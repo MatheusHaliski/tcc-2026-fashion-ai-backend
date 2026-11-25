@@ -149,7 +149,10 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 ? <div className="pc-media" data-photo-framing={framing} style={mediaStyle}>{media}</div>
                 : <Link href={link} onClick={openModal} className="pc-media" data-photo-framing={framing} style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
               <div className="pc-id">
-                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded} infoBefore={<>{identity}<CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ? [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} /></>} infoContent={expanded ? <PieceDetailFacts piece={piece} excludeFashionMeta /> : undefined} replaceInfoRows={expanded} live={live} />
+                <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts={!expanded}
+                  infoBefore={<>{identity}<CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ?
+                [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} /></>} infoContent={expanded ? 
+                <PieceDetailFacts piece={piece} excludeFashionMeta /> : undefined} replaceInfoRows={expanded} live={live} />
                 {expanded && zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}
               </div>
             </>
