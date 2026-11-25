@@ -12908,5 +12908,7 @@
   "lookReferences.nivelTermico.loading": "Loading thermal levels…",
   "lookReferences.nivelTermico.mirrorUnavailable": "Thermal levels unavailable right now; Dress me works without this criterion.",
   "lookReferences.nivelTermico.pedido": "Requested thermal level: {nivel}",
-  "lookReferences.nivelTermico.fit": "{ok} matching piece(s), {diverge} diverging, {semDado} without declared intensity"
+  "lookReferences.nivelTermico.fit": "{ok} matching piece(s), {diverge} diverging, {semDado} without declared intensity",
+  "mirror.painel.abrir": "Mirror controls",
+  "mirror.painel.fechar": "Close controls"
 }

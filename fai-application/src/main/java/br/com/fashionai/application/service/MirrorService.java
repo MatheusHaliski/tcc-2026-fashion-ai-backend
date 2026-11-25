@@ -401,11 +401,6 @@ public class MirrorService {
         actions.add("VISTA_ME");
         out.put("actions", actions);
         out.put("silhouette", complete ? silhouette(look) : null);
-        out.put("postIt", !complete && !look.isEmpty() ? Msg.t("mirror.faltou_o_look_continua_pendurado", missing(slots).stream().map(m -> switch (String.valueOf(m.get("slot"))) {
-            case "shoes" -> "o sapato";
-            case "upper" -> Msg.t("mirror.a_peca_de_cima");
-            default -> Msg.t("mirror.a_peca_de_baixo");
-        }).collect(Collectors.joining(" e "))) : null);
         String colorSeason = dnas.findByUserId(user.id()).map(d -> d.getColorSeason()).orElse(null);
         out.put("light", Map.of("kelvin", colorSeason == null ? 4000 : switch (colorSeason.toUpperCase(Locale.ROOT)) {
             case "PRIMAVERA", "SPRING" -> 3400;

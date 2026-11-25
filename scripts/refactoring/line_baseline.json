@@ -89,7 +89,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/mirror/mirror-controls.tsx": {
-   "max": 280,
+   "max": 276,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/multi-piece-review.test.tsx": {
@@ -425,7 +425,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/MirrorService.java": {
-   "max": 1222,
+   "max": 1217,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/Model3dService.java": {
