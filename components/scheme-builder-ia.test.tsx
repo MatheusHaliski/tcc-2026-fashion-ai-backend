@@ -34,6 +34,8 @@ const pick = (name: string) => fireEvent.click(screen.getByRole("button", { name
 const choose = (field: string, option: string) => { fireEvent.click(screen.getByLabelText(field)); fireEvent.click(screen.getByRole("option", { name: option })); };
 const review = () => fireEvent.click(screen.getAllByRole("button", { name: "Revisar e salvar", exact: true }).find((b) => b.classList.contains("btn-primary"))!);
 const step = (name: string) => fireEvent.click(screen.getByRole("button", { name, exact: true }));
+/** a prévia do look no painel lateral (telas largas; no jsdom ele sempre está na página) */
+const aside = () => within(screen.getByRole("complementary", { name: "pré-visualização" }));
 
 beforeEach(() => { seals.valid = true; seals.requests = []; });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); tokenStore.clear(); nav.search = new URLSearchParams(); document.cookie = "fai_rt_h=; max-age=0; path=/"; });
@@ -69,18 +71,19 @@ describe("SchemeBuilder — modo manual", () => {
     expect(screen.queryByRole("dialog", { name: "Crie seu look" })).toBeNull();
   });
 
-  it("abre a prévia atualizada no modal e fecha com Escape", async () => {
+  it("prévia no painel lateral ao lado de todas as etapas; em tela estreita, no modal que fecha com Escape", async () => {
     setup();
     renderApp(<SchemeBuilder />);
     await screen.findByText("Modo de geração");
     fireEvent.click(within(await screen.findByRole("dialog", { name: "Crie seu look" })).getAllByRole("button", { name: "Fechar", exact: true })[0]);
-    expect(screen.queryByText(/prévia:/)).toBeNull();
+    expect(aside().getByText(/prévia:.*\(0\)/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
     expect(within(screen.getByRole("dialog")).getByText(/prévia:.*\(0\)/)).toBeTruthy();
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
     await next();
     pick("Camiseta branca lisa");
+    expect(aside().getByText(/prévia:.*\(1\)/)).toBeTruthy();                 // o painel lateral acompanha a etapa
     fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
     expect(within(screen.getByRole("dialog")).getByText(/prévia:.*\(1\)/)).toBeTruthy();
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Fechar" }));
@@ -211,26 +214,22 @@ describe("SchemeBuilder — modo manual", () => {
   it("aparência: escolher, desfazer e limpar a arte; voltar da aparência", async () => {
     setup();
     renderApp(<SchemeBuilder />);
-    const undo = () => screen.getByRole("button", { name: "Desfazer" }) as HTMLButtonElement;
-    const clear = () => screen.getByRole("button", { name: "Limpar arte" }) as HTMLButtonElement;
+    const undo = () => aside().getByRole("button", { name: "Desfazer" }) as HTMLButtonElement;
+    const clear = () => aside().getByRole("button", { name: "Limpar arte" }) as HTMLButtonElement;
     await screen.findByText("Modo de geração");
     fireEvent.click(within(await screen.findByRole("dialog", { name: "Crie seu look" })).getAllByRole("button", { name: "Fechar", exact: true })[0]);
-    fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
     expect(clear().disabled).toBe(true);
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Fechar" }));
     await next(); pick("Camiseta branca lisa"); pick("Calça jeans reta"); await next();
     await screen.findByLabelText(/^Título/);
     review();
     fireEvent.click(within(screen.getByRole("navigation", { name: "Etapas da criação" })).getByRole("button", { name: /^Aparência/ }));
     fireEvent.click(await screen.findByRole("button", { name: "Escolher aparência de teste" }));
-    fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
     expect(clear().disabled).toBe(false);
     expect(undo().disabled).toBe(false);
     fireEvent.click(clear());
     expect(clear().disabled).toBe(true);
     fireEvent.click(undo());
     expect(clear().disabled).toBe(false);
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Fechar" }));
     step("Voltar");
     expect(await screen.findByLabelText(/^Título/)).toBeTruthy();
   });

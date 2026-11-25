@@ -501,8 +501,6 @@
   "anatomy.silhouette.notDeclared": "not declared",
   "anatomy.spectrum.aria": "Palette by estimated area: {list}",
   "anatomy.spectrum.estimated": "≈ estimated area",
-  "anatomy.spectrum.how": "How it is estimated",
-  "anatomy.spectrum.howText": "The percentage estimates how much of the look each piece covers, from the typical size of each kind of piece on the body, rounded to 5%. It is not measured from the photo.",
   "anatomy.studio.ownerOnly": "only you see it",
   "anatomy.studio.seasonNeeded": "Fill in the look's season (step 3) to use the Seasonal palette and the automatic seasonal art.",
   "anatomy.studio.seasonOff": "Off: the background stays as you chose. Turn on to use the {season} art.",

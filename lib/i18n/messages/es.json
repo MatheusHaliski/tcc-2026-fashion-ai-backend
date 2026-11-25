@@ -501,8 +501,6 @@
   "anatomy.silhouette.notDeclared": "no declarada",
   "anatomy.spectrum.aria": "Paleta por área estimada: {list}",
   "anatomy.spectrum.estimated": "≈ área estimada",
-  "anatomy.spectrum.how": "Cómo se estima",
-  "anatomy.spectrum.howText": "El porcentaje estima cuánto del look ocupa cada prenda, según el tamaño típico de cada tipo de prenda en el cuerpo, redondeado al 5 %. No se mide en la foto.",
   "anatomy.studio.ownerOnly": "solo tú lo ves",
   "anatomy.studio.seasonNeeded": "Completa la estación del look (paso 3) para usar la Cartela estacional y el arte estacional automático.",
   "anatomy.studio.seasonOff": "Apagado: el fondo sigue como lo elegiste. Enciéndelo para usar el arte de {season}.",
