@@ -10,6 +10,7 @@ import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { useExecucaoDoDesfile } from "@/components/flair/nucleos/use-execucao-do-desfile";
 import { assinarFx, emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { GLIFO, restanteDepois, type Toque } from "@/lib/flair/nucleos/movimento/execucao";
+import { nomeDoRecurso } from "@/lib/flair/recursos/desgaste";
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
 
 interface Props {
@@ -48,7 +49,7 @@ export function DesfileHud({ codigo, onFim, resultado, onExecucao, reduzido = fa
           {!esperando && onExecucao && (
             <button type="button" className="n3d-desfile-seguir" onClick={() => onExecucao([])}>{tx.t("flair3d.execucao.seguir")}</button>
           )}
-          <b>{tx.t("flair3d.execucao.recurso", { recurso: tx.ou(`flair3d.ui.recurso.${pedido.recurso}`, pedido.recurso), n: restanteDepois(pedido, notas) })}</b>
+          <b>{tx.t("flair3d.execucao.recurso", { recurso: nomeDoRecurso(tx.ou, codigo, pedido.recurso), n: restanteDepois(pedido, notas) })}</b>
         </span>
       )}
       {!pedido && p.naPonta && (
