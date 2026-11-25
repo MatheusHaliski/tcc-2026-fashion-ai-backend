@@ -132,7 +132,6 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     [t("pieceDetail.usos"), mine ? t("pieceDetail.usos_valor", { count: p.wearCount, last: p.lastWornDate ? fmtDate(p.lastWornDate) : "" }) : null],
     [t("pieceDetail.situacao"), [!p.disponivel && t("common.unavailable"), p.forDonation && t("common.forDonation")].filter(Boolean).join(" · ") || null],
     [t("pieceDetail.onde_esta"), mine ? data?.location?.label ?? null : null],
-    [t('pieceReferences.tipoLavagem.label'), piece.tipoLavagem?.nome ?? null]
   ] as [string, ReactNode][]).filter(([, v]) => v !== null && v !== undefined && v !== "");
   // UMA ação principal, conforme o contexto, e a alternativa em posição secundária (texto-link logo abaixo):
   // o dono monta um look com a peça (ou experimenta no manequim 3D); quem visita experimenta (ou guarda uma cópia)
