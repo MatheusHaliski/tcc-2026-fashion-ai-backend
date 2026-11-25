@@ -188,11 +188,6 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .mirror-panel-still { display: grid; gap: 4px; margin: 0; }
 .mirror-panel-still img, .mirror-panel-still .skeleton { width: 100%; max-height: 300px; aspect-ratio: 3 / 4; object-fit: contain; border-radius: 12px; background: #EEEAE2; }
 .mirror-panel-still figcaption { font-size: var(--text-body-sm); color: var(--muted); }
-.mirror-grwm { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(140px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; }
-.mirror-grwm-card { position: relative; display: grid; gap: 6px; scroll-snap-align: start; padding: 8px; border: 1.5px solid var(--line-soft); border-radius: 12px; background: var(--surface); }
-.mirror-grwm-card img, .mirror-grwm-end { display: grid; width: 100%; aspect-ratio: 9 / 16; max-height: 220px; place-items: center; object-fit: contain; border-radius: 8px; background: var(--surface-2); font-size: 32px; }
-.mirror-grwm-n { position: absolute; top: 12px; left: 12px; display: grid; width: 22px; height: 22px; place-items: center; border-radius: 999px; background: var(--ink); color: var(--surface); font-size: 12px; font-weight: 700; }
-.mirror-grwm-card p { font-size: var(--text-body-sm); line-height: 1.35; }
 /* folha de uma parte do look */
 .mirror-sheet { display: grid; gap: 16px; }
 .mirror-sheet section { display: grid; gap: 8px; }
@@ -210,9 +205,16 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .mirror-pick-unlist:disabled { opacity: .5; }
 .mirror-pick-sub { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; font-size: var(--text-caption); color: var(--muted); }
 /* sem WebGL / aba 2.5D: a vista do espelho embutida no quarto (palco 2D + o mesmo painel) */
-.room-flat-mirror { display: grid; gap: 16px; }
-@media (min-width: 1024px) { .room-flat-mirror { grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); align-items: start; } }
-.room-flat-mirror-stage { min-width: 0; }
+/* /mirror: o espelho ocupa a área inteira; os controles abrem no painel lateral por cima do vidro */
+.mirror-fullscreen { position: relative; height: calc(100dvh - var(--header-h) - 32px); min-height: 420px; }
+.mirror-fullscreen .mirror-frame { display: flex; flex-direction: column; height: 100%; }
+.mirror-fullscreen .mirror-glass { flex: 1 1 auto; height: auto; min-height: 0; }
+.mirror-panel-toggle { position: absolute; z-index: 25; top: 28px; right: 28px; box-shadow: 0 2px 10px color-mix(in srgb, #000 18%, transparent); }
+.mirror-side-panel { position: absolute; z-index: 30; top: 0; right: 0; bottom: 0; display: grid; align-content: start; gap: 12px; width: min(420px, 100%); overflow-y: auto; overscroll-behavior: contain; padding: 0 14px 16px; border-left: 1px solid var(--line-soft); border-radius: 16px 0 0 16px; background: var(--surface); box-shadow: -12px 0 32px -16px rgba(0,0,0,.35); }
+.mirror-side-panel:focus { outline: none; }
+.mirror-side-panel[hidden] { display: none; }
+.mirror-side-panel-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 0 8px; background: var(--surface); }
+@media (max-width: 640px) { .mirror-side-panel { border-left: 0; border-radius: 0; } .mirror-panel-toggle { top: 20px; right: 20px; } }
 /* espelho sem WebGL (MirrorFlatStill): as peças vestidas em 2D sobre o vidro, sem Canvas */
 .mirror-flat { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 56px 16% 44px; }
 .mirror-flat img { flex: 0 1 auto; min-height: 0; max-width: 100%; max-height: 32%; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.18)); }

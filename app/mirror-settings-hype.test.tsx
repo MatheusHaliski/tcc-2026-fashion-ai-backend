@@ -12,7 +12,8 @@ import MirrorRoute from "@/app/(site)/(app)/mirror/page";
 import SettingsPage from "@/app/(site)/(app)/settings/page";
 
 const routes = { "GET /api/tipos-look": [], "GET /api/me/avatar3d": { exists: false } };
-const openMirror = async () => { const r = renderApp(<MirrorRoute />); await screen.findByTestId("mirror-controls"); return r; };
+// os controles ficam no painel lateral do espelho: abre o painel antes de usar
+const openMirror = async () => { const r = renderApp(<MirrorRoute />); fireEvent.click(await screen.findByRole("button", { name: "Controles do espelho" })); await screen.findByTestId("mirror-controls"); return r; };
 
 const score = (scope: HTMLElement, label: string) => within(scope).getByText(label).nextElementSibling?.textContent;
 
@@ -22,7 +23,7 @@ const SHOES = { id: "p3", name: "Tênis branco", category: "shoes_piece", subcat
 
 function mirrorState(slots: Record<string, unknown>, scores: Record<string, number | null> | null) {
   return { slots: { outer_layer: null, upper: null, dress: null, lower: null, shoes: null, accessory: [], ...slots }, complete: !!slots.shoes, missing: [], warnings: [],
-    origin: "manual", prompt: null, interpretation: null, actions: [], silhouette: null, postIt: null, light: { kelvin: 4000 }, restriction: null, shownCount: 0, scores };
+    origin: "manual", prompt: null, interpretation: null, actions: [], silhouette: null, light: { kelvin: 4000 }, restriction: null, shownCount: 0, scores };
 }
 
 const PREFS = { theme: "AUTO", language: "PT_BR", density: "COMFORTABLE", fontScale: 100, highContrast: false, reduceMotion: false, soundEnabled: false, hapticsEnabled: true, hypeCreatorOptOut: false };

@@ -14,7 +14,6 @@ import type { Illustration } from "@/lib/capture/capture-guides";
 import { MirrorVistaSection } from "@/components/mirror/mirror-vista-section";
 import { MirrorLookType } from "@/components/mirror/mirror-look-type";
 import { MirrorPartSheet } from "@/components/mirror/mirror-part-sheet";
-import { MirrorGrwmDialog, type GrwmStoryboard } from "@/components/mirror/mirror-grwm";
 
 /*
  * Espelho (RF28) — o painel da prova em /mirror (e da vista embutida no 2.5D): só botões, células e listas,
@@ -25,7 +24,7 @@ import { MirrorGrwmDialog, type GrwmStoryboard } from "@/components/mirror/mirro
  *    Tocar numa célula abre a folha da parte: vestindo agora, roupas em mãos (a lista do espelho e a peça na mão),
  *    guarda-roupa e sugestões. As roupas em mãos só aparecem aqui (a célula conta quantas há).
  *  - Vista-me (MirrorVistaSection): nível térmico opcional, células de ocasião + humor/clima; peças fixadas viram âncoras.
- *  - Ações: usar hoje, salvar (um toque), abrir no editor, provar no Provador, tira uma coisa, GRWM e limpar (desfazíveis).
+ *  - Ações: usar hoje, salvar (um toque), abrir no editor, provar no Provador, tira uma coisa e limpar (desfazíveis).
  */
 export interface MirrorPieceRef {
   id: string; name: string; imageUrl?: string | null; thumbnailUrl?: string | null; category?: string | null; subcategory?: string | null; colorHex?: string | null;
@@ -36,7 +35,7 @@ export interface MirrorSequenceStep { pieceId: string; name: string; moduleId?: 
 export interface MirrorData {
   tipoLook?: TipoLook | null; slots: Record<string, MirrorPieceRef | MirrorPieceRef[] | null>; complete: boolean;
   missing?: { slot: string; action: string; message: string }[]; warnings?: string[]; prompt?: string | null; shownCount?: number;
-  scores?: LookScoreValues | null; restriction?: { challenge: string; allowed?: number } | null; postIt?: string | null;
+  scores?: LookScoreValues | null; restriction?: { challenge: string; allowed?: number } | null;
   silhouette?: { letter?: string; rule?: string } | string | null; light?: { kelvin?: number } | null; rack?: MirrorPieceRef[];
   origin?: string | null; actions?: string[]; interpretation?: { anchors?: string[] | null; nivelTermicoId?: string | null } | null;
   /** extras da resposta do Vista-me / Outra sugestão */
@@ -263,7 +262,6 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
         {worn.length ? <Link href={`/schemes/new?pieces=${worn.map((w) => encodeURIComponent(w.p.id)).join(",")}`} className="btn">{t("mirror.abrir_no_editor")}</Link> : <Button disabled>{t("mirror.abrir_no_editor")}</Button>}
         {worn.length ? <Link href={`/try-on?provar=${provar}`} className="btn"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("mirror.provar_look_no_provador")}</Link> : <Button disabled>{t("mirror.provar_look_no_provador")}</Button>}
         <Button disabled={!canTakeOneOff(data) || busy === "one"} onClick={() => void takeOneOff()}><FaiIcon id="ACT-33" size={20} className="ico-text" decorative />{t("mirror.tira_uma_coisa")}</Button>
-        <Button disabled={worn.length === 0 || busy === "grwm"} onClick={async () => { const r = await run("grwm", () => api.get("/api/me/mirror/grwm")); if (r) setGrwm(r as typeof grwm); }}>{t("mirror.grwm")}</Button>
       </div>
 
       {part && (

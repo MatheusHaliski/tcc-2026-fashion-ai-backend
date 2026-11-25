@@ -18,7 +18,8 @@ const tipos = [
 ];
 const state = { slots: {}, missing: [], complete: false, tipoLook: null as typeof tipos[number] | null };
 const routes = { "GET /api/me/avatar3d": { exists: false } };
-const openMirror = async () => { renderApp(<MirrorRoute />); return within(await screen.findByTestId("mirror-controls")); };
+// os controles ficam no painel lateral do espelho: abre o painel antes de usar
+const openMirror = async () => { renderApp(<MirrorRoute />); fireEvent.click(await screen.findByRole("button", { name: "Controles do espelho" })); return within(await screen.findByTestId("mirror-controls")); };
 beforeEach(() => { nav.search = new URLSearchParams(); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 

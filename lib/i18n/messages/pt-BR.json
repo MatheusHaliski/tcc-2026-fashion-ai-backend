@@ -12908,5 +12908,7 @@
   "lookReferences.nivelTermico.loading": "Carregando níveis térmicos…",
   "lookReferences.nivelTermico.mirrorUnavailable": "Níveis térmicos indisponíveis no momento; o Vista-me segue sem esse critério.",
   "lookReferences.nivelTermico.pedido": "Nível térmico pedido: {nivel}",
-  "lookReferences.nivelTermico.fit": "{ok} peça(s) compatível(is), {diverge} divergente(s), {semDado} sem intensidade declarada"
+  "lookReferences.nivelTermico.fit": "{ok} peça(s) compatível(is), {diverge} divergente(s), {semDado} sem intensidade declarada",
+  "mirror.painel.abrir": "Controles do espelho",
+  "mirror.painel.fechar": "Fechar controles"
 }
