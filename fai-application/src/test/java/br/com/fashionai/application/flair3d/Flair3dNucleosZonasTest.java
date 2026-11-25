@@ -21,11 +21,11 @@ class Flair3dNucleosZonasTest {
     }
 
     @Test
-    void clubeCoracaoConcluiSoComTodasAsZonasNasCoresDoClubeESemPlacar() {
+    void clubeCoracaoConcluiSoComTodasAsZonasNasCoresDoClubeEValeCem() {
         Resultado ok = jogar(new ClubeCoracaoNucleo(), zonas(null, "FRENTE=#2A5FA8", "COSTAS=#FFFFFF", "MANGAS=#2A5FA8", "GOLA=#FFFFFF"));
         assertThat(ok.resultado()).isEqualTo("CONCLUIDO");
-        assertThat(ok.pontos()).isZero();
-        assertThat(ok.estrelas()).isZero();
+        assertThat(ok.pontos()).isEqualTo(100);
+        assertThat(ok.estrelas()).isEqualTo(3);
         Resultado vermelha = jogar(new ClubeCoracaoNucleo(), zonas(null, "FRENTE=#2A5FA8", "COSTAS=#FFFFFF", "MANGAS=#2A5FA8", "GOLA=#C62B28"));
         assertThat(vermelha.resultado()).isEqualTo("INCOMPLETO");
         Resultado faltando = jogar(new ClubeCoracaoNucleo(), zonas(null, "FRENTE=#2A5FA8", "COSTAS=#FFFFFF"));
