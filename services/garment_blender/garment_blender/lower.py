@@ -8,7 +8,7 @@ import numpy as np
 from .geometry import Mesh
 from .measure import section_perimeter
 from .pants import build_leg, build_upper, crotch_loops, leg_rows, upper_rows
-from .pants_details import (back_pockets, belt_loops, button, cargo_pockets, double_knee, drawcord, fly,
+from .pants_details import (belt_loops, button, cargo_pockets, double_knee, drawcord, fly,
                             slant_pockets)
 from .pants_finish import finish
 from .sizes_pants import skirt_shape
@@ -72,8 +72,6 @@ def build_lower(spec: GarmentSpec) -> tuple[Mesh, dict]:
         belt_loops(mesh, rows, band0, top)
     if "faca" in spec.bolsos:
         slant_pockets(mesh, grid, rows, band0)
-    if "traseiro" in spec.bolsos:
-        back_pockets(mesh, rows, band0)
     if "cargo" in spec.bolsos:
         cargo_pockets(mesh, legs, y_c * 0.45)
     if "joelho_duplo" in spec.bolsos:

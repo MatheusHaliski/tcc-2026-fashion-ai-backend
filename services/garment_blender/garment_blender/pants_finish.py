@@ -1,5 +1,5 @@
-"""Acabamento à vista da peça de baixo: pespontos do cós e da barra, o J da braguilha e a boca do bolso; no jeans, a pala
-de trás, o bolsinho de moeda, os rebites e os arcos dos bolsos de trás; na alfaiataria, o vinco da perna.
+"""Acabamento à vista da peça de baixo: pespontos do cós e da barra e o J da braguilha; os bolsos com a costura de cada
+um (pants_pockets.py); no jeans, a pala de trás, o bolsinho de moeda e os rebites; na alfaiataria, o vinco da perna.
 
 O vinco do motor (``Mesh.seams``) só afunda 0,9 mm: de longe a braguilha e o bolso sumiam e a frente parecia um pano
 liso e estufado. Aqui cada costura ganha a linha de verdade (``stitches.stitch_line``) sobre o tecido.
@@ -14,6 +14,7 @@ from .closures import box
 from .details import FRONT, patch, surface
 from .geometry import Mesh, Row
 from .pants_details import BACK, groove_line
+from .pants_pockets import back_patch, cargo_details, front_mouths, side_seam_pockets, welt_pockets
 from .stitches import ring_line, stitch_line
 
 DOUBLE = 0.006       # entre as duas agulhas do pesponto duplo (m)
@@ -64,26 +65,8 @@ def fly_stitch(mesh: Mesh, rows, band0: float) -> None:
                          (FRONT, band0 - 0.19)])
 
 
-def pocket_mouths(mesh: Mesh, rows, band0: float, jeans: bool) -> list[np.ndarray]:
-    """Boca do bolso da frente com pesponto: reta inclinada (faca) ou curva (o bolso do jeans). Devolve as pontas
-    (para os rebites)."""
-    a = rows[len(rows) // 2].a
-    corners = []
-    for sgn in (1, -1):
-        start, side = FRONT - sgn * 0.09 / a, (0.0 if sgn > 0 else math.pi) + sgn * 0.02
-        if jeans:   # boca curva: desce do cós e faz a volta até a lateral
-            mid = (FRONT - sgn * 0.13 / a, band0 - 0.07)
-            pts = [(start, band0), mid, (side, band0 - 0.09)]
-        else:
-            pts = [(start, band0), (side, band0 - 0.16)]
-        _stitch(mesh, rows, pts)
-        corners.append(surface(rows, *pts[-1])[0])
-        corners.append(surface(rows, start, band0 - 0.004)[0])
-    return corners
-
-
-def jeans_extras(mesh: Mesh, grid, rows, band0: float, corners: list[np.ndarray]) -> None:
-    """Jeans de cinco bolsos: pala de trás em V com pesponto duplo, bolsinho de moeda, rebites e arcos nos bolsos."""
+def jeans_extras(mesh: Mesh, grid, rows, band0: float, corners: list[tuple[float, float]]) -> None:
+    """Jeans de cinco bolsos: pala de trás em V com pesponto duplo, bolsinho de moeda e rebites na boca do bolso."""
     left = [(math.pi - 0.02, band0 - 0.05), (BACK, band0 - 0.09)]
     right = [(BACK, band0 - 0.09), (2 * math.pi - 0.02, band0 - 0.05)]
     for seg in (left, right):
@@ -93,15 +76,11 @@ def jeans_extras(mesh: Mesh, grid, rows, band0: float, corners: list[np.ndarray]
     c, w = FRONT - 0.13 / a, 0.035 / a                       # bolsinho de moeda no bolso direito de quem veste (+x)
     patch(mesh, rows, [(c + w, band0 - 0.085), (c - w, band0 - 0.085), (c - w, band0 - 0.02), (c + w, band0 - 0.02)],
           0.0015, "corpo", (True, True, False, True), (4, 4))
-    for p in corners:                                         # rebites de cobre nas pontas da boca do bolso
+    for th, yy in corners:                                    # rebites de cobre nas pontas da boca do bolso
+        p = surface(rows, th, yy - 0.004)[0]
         n = np.array([p[0], 0.0, p[2]]); n /= max(np.linalg.norm(n), 1e-9)
         side = np.cross(n, [0.0, 1.0, 0.0]); side /= max(np.linalg.norm(side), 1e-9)
         box(mesh, p + n * 0.0008, np.array([0.0, 1.0, 0.0]), side, n, (0.006, 0.006, 0.0022), "dentes", DETAIL)
-    for sgn in (1, -1):                                       # arcos decorativos nos bolsos de trás
-        cb, wb = BACK + sgn * 0.085 / a, 0.06 / a
-        for dy in (0.0, 0.008):
-            _stitch(mesh, rows, [(cb - wb, band0 - 0.11 - dy), (cb, band0 - 0.135 - dy), (cb + wb, band0 - 0.11 - dy)],
-                    lift=0.0035)   # por cima do bolso chapado (2,5 mm acima do tecido)
 
 
 def crease(mesh: Mesh, legs: list[list[Row]]) -> None:
@@ -121,8 +100,16 @@ def finish(mesh: Mesh, spec, grid, rows, i_band: int, legs, hem_ids, band0: floa
     hems(mesh, hem_ids, ribbed)
     if spec.fechamento == "botao_ziper":
         fly_stitch(mesh, rows, band0)
-    corners = pocket_mouths(mesh, rows, band0, jeans) if "faca" in spec.bolsos else []
+    corners = front_mouths(mesh, rows, band0, jeans) if "faca" in spec.bolsos else []
     if jeans:
         jeans_extras(mesh, grid, rows, band0, corners)
+    if "traseiro" in spec.bolsos:
+        back_patch(mesh, rows, band0, jeans)
+    if "vivo" in spec.bolsos:
+        welt_pockets(mesh, rows, band0)
+    if "lateral" in spec.bolsos:
+        side_seam_pockets(mesh, rows, band0)
+    if "cargo" in spec.bolsos:
+        cargo_details(mesh, legs, rows[0].y * 0.45)
     if spec.subcategoria == "tailored_pants":
         crease(mesh, legs)

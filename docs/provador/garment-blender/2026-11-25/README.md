@@ -93,3 +93,10 @@ tem quina — a frente deixou de parecer estufada. Acabamento em todas: pesponto
 braguilha e boca do bolso; jeans com o kit de cinco bolsos; alfaiataria com o vinco da perna.
 
 Ainda não está bom: short e bermuda ficam folgados e com volume no quadril no corpo, e a barra amassa de um lado.
+
+## Bolsos com a costura de cada tipo
+
+| Arquivo | O que mostra |
+|---|---|
+| `bolsos-detalhe.jpg` | jeans (trás: cinco lados, pesponto duplo, arcos, travetas, pala; frente: boca curva, bolsinho, rebites), chino (trás: bolso embutido com dois lábios, travetas e botão; frente: bolso faca com espelho e travetas), cargo (lapela pespontada com pressão), short (bolso na costura lateral com travetas) — o tom ciano/verde é da importação no render de detalhe |
+| `bolsos-provador.jpg` | jeans, chino, cargo, short jeans e alfaiataria no provador, ¾ e costas |

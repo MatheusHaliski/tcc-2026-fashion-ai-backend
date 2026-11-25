@@ -67,7 +67,7 @@ def fabric_materials(spec, tex_dir: Path) -> dict:
     thread = spec.cor_linha or ("#c58a3b" if kind == "denim" else
                                 "#" + "".join(f"{int(int(color[i:i + 2], 16) * 0.72):02x}" for i in (1, 3, 5)))
     mats["linha"] = solid_material("linha", _rgb(thread), 0.6)
-    if spec.fechamento in ("botoes", "polo"):
+    if spec.fechamento in ("botoes", "polo") or "vivo" in spec.bolsos:   # botão da vista ou do bolso embutido
         mats["botao"] = solid_material("botao", _rgb(spec.cor_botao), 0.35)
         mats["furo"] = solid_material("furo", tuple(c * 0.35 for c in _rgb(spec.cor_botao)), 0.8)
     return mats
