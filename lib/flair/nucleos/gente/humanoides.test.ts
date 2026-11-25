@@ -19,6 +19,7 @@ describe("humanoides das pessoas de cena", () => {
       const g = conteudo(h.slug);
       expect(h.license).toBe("CC BY 4.0");
       expect(h.author.length).toBeGreaterThan(0);
+      expect(h.obra.length).toBeGreaterThan(0);                 // crédito CC BY: nome da obra como publicado
       expect(h.source).toMatch(/^https:\/\/sketchfab\.com\/3d-models\//);
       expect(h.triangles).toBeGreaterThan(1000);
       expect(h.triangles).toBeLessThanOrEqual(12000);

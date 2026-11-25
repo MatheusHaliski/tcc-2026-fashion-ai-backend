@@ -56,6 +56,10 @@ jobs:
       - run: npm ci --no-fund
       - name: Typecheck
         run: npm run typecheck
+      # as mesmas checagens do prebuild (que a Vercel roda antes do next build): rodam antes dos testes para que um
+      # texto embutido ou estilo fora do padrão apareça aqui, e não só como deploy quebrado na Vercel
+      - name: Checagens do build da Vercel (estilos, design, i18n)
+        run: npm run -s lint:styles && node scripts/ux/check-design.cjs && node scripts/i18n/check.js --fail && node scripts/i18n/scan.js --fail
       - name: Testes (vitest)
         run: npm test
       - name: Build de produção (inclui as checagens de i18n)
