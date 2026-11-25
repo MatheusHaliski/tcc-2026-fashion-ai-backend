@@ -20,7 +20,6 @@ export function PieceArtPreview({ piece, toolbar, inDialog = false }: {
           ? <div className="pae-preview-card"><PieceCard piece={piece} href="#" /></div>
           : <div className="pae-expanded-card" aria-label={t("pieceArt.previa_ampliada")}><ExpandedPieceCard piece={piece} preview /></div>}
       </CardPreviewModeToggle>
-      <p className="type-caption text-muted">{t("pieceArt.camadas_legenda")}</p>
     </aside>
   );
   return inDialog
