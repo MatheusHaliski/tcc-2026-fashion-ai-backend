@@ -68,3 +68,14 @@ o pano mais à frente ali é o das costas. Agora, onde há uma camada só e ela 
 (`glb-garment/cover.ts`, `ONE_LAYER`). Aceite offline: as 20 de cima e as 14 de baixo passam em P/M/GG. No V do
 blazer, do casaco e do cardigã aparece a peça de baixo padrão do laboratório (cinza), não a pele: a cena completa o
 look com ela.
+
+## Golas por peça e regatas (25/11, fim do dia)
+
+| Arquivo | O que mostra |
+|---|---|
+| `golas-previas.jpg` | top, regata e body com viés; polo com gola de malha; cardigã com ribana no V e na nuca; quimono com faixa na frente toda; camiseta com careca baixa; blusa com viés |
+| `golas-e-regatas-provador.jpg` | as mesmas no provador |
+| `regatas-cava-baixa.jpg` | top, body e colete com a alça baixa (1,5 cm) e a cava 3 cm abaixo da axila |
+
+Ainda aparecem: pequenas abas na axila do top cropped e pontinhas no alto das alças, onde a alça encontra o decote
+(top, body, colete).
