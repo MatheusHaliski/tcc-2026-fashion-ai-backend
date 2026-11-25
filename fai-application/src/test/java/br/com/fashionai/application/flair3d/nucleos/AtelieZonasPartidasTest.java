@@ -1,8 +1,11 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
+import br.com.fashionai.application.flair3d.Andamento;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Entrega;
+import br.com.fashionai.application.flair3d.Flair3dExecucao;
+import br.com.fashionai.application.flair3d.Flair3dFixtures;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
 import br.com.fashionai.application.flair3d.Flair3dNucleos;
 import br.com.fashionai.application.flair3d.Flair3dZonas;
@@ -69,8 +72,15 @@ class AtelieZonasPartidasTest {
         return m;
     }
 
+    /**
+     * O núcleo de cada jogo de zonas sem a execução no percurso: aqui se audita a nota da pintura. Na partida, o núcleo
+     * registrado ({@link Flair3dNucleos}) é o {@link Flair3dExecucao} sobre este, que pede os botões depois do look.
+     */
+    static final Map<String, Flair3dNucleo> PINTURA = Map.of("CLUBE_CORACAO", new ClubeCoracaoNucleo(), "FAVORITE_SINGER",
+            new FavoriteSingerNucleo(), "PILOTO_FAVORITO", new PilotoFavoritoNucleo(), "SUPER_HEROI", new SuperHeroiNucleo());
+
     static Flair3dNucleo jogo(String chave) {
-        return Flair3dNucleos.porCodigo(chave.split("/")[0]).orElseThrow();
+        return PINTURA.get(chave.split("/")[0]);
     }
 
     static Resultado jogar(String chave, Entrega entrega) {
@@ -109,6 +119,21 @@ class AtelieZonasPartidasTest {
             assertThat(r.eventos()).as(chave).isEmpty();
             // a conta fecha: a nota é a soma das regras, sem desconto escondido
             assertThat(r.regras().stream().mapToDouble(Resultado.RegraResultado::pontos).sum()).as(chave).isEqualTo(100.0);
+        });
+    }
+
+    @Test
+    void naPartidaAPinturaComNotaPedeAExecucaoEQuemExecutaBemFicaComANotaDaPintura() {
+        JOGANDO_BEM.forEach((chave, entrega) -> {
+            Flair3dNucleo registrado = Flair3dNucleos.porCodigo(chave.split("/")[0]).orElseThrow();
+            Contexto naRodada = new Contexto(Map.of(), null, null).naRodada(chave.split("/")[1]);
+            Resultado pedido = registrado.pontuar(entrega, naRodada);
+            assertThat(pedido.status()).as(chave).isEqualTo(Resultado.EM_ACAO);
+            Andamento comToques = naRodada.andamento().com(Flair3dFixtures.perfeita(pedido));
+            Resultado fim = registrado.pontuar(entrega, naRodada.comAndamento(comToques));
+            assertThat(fim.fecha()).as(chave).isTrue();
+            assertThat(fim.pontos()).as(chave).isEqualTo(100);
+            assertThat(fim.regras()).as(chave).extracting(Resultado.RegraResultado::codigo).endsWith("EXECUCAO");
         });
     }
 
