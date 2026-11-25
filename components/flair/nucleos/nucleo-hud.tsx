@@ -46,7 +46,8 @@ interface ScoreProps {
 export function NucleoScore({ momento, resultado, previa = null, prefs, onPref }: ScoreProps) {
   const tx = useNucleoText();
   const aoVivo = momento === "PREPARACAO" ? previa : null;
-  const atributos = aoVivo?.resultado === "PREVIA" ? aoVivo.eventos : [];
+  // só números e códigos viram linha (o perfil do look, um objeto, vai para a roda de atributos)
+  const atributos = aoVivo?.resultado === "PREVIA" ? aoVivo.eventos.filter((e) => e.valor == null || typeof e.valor !== "object") : [];
   let nota: NucleoResultado | null = null;
   if (momento === "RESULTADO") nota = resultado;
   else if (aoVivo && aoVivo.resultado !== "PREVIA") nota = aoVivo;
