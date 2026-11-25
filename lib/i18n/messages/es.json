@@ -10742,6 +10742,8 @@
   "flair3d.ui.recurso.ENERGIA": "Energía",
   "flair3d.ui.recurso.FOCO": "Foco",
   "flair3d.ui.recurso.MOEDAS": "Monedas",
+  "flair3d.ui.recurso.PERSONAGEM_FILME.FOCO": "Paciencia del director",
+  "flair3d.ui.result.resultado.DIRETOR_CORTOU": "El director cortó la escena",
   "flair3d.ui.tinta.conta": "Pintura: {gasto} de {orcamento} latas (mate 1, brillante 2, metálico y espejado 3); lo que sobra es aliento para el estreno",
   "flair3d.ui.tinta.passou": "Pintura: {gasto} de {orcamento} latas. Te pasaste del presupuesto: cambia un acabado caro por mate",
   "flair3d.ui.evento.TINTA": "Pintura: {gasto} de {orcamento} latas, sobraron {sobra}",
