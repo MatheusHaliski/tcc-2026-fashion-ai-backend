@@ -20,7 +20,7 @@ Cada tamanho gera, em `saida/<tamanho>/`: o `modelo.glb` (metros, Y para cima, f
 
 | Campo | Valores | O que vira na malha |
 |---|---|---|
-| `subcategoria` | sweater, sweatshirt, hoodie, t_shirt, long_sleeve, shirt, jacket; casual_pants, chino_pants, cargo_pants, jogger_pants, sweatpants, jeans | construtor da parte de cima ou da calça |
+| `subcategoria` | sweater, sweatshirt, hoodie, t_shirt, long_sleeve, shirt, jacket; jeans, tailored_pants, casual_pants, chino_pants, cargo_pants, jogger_pants, sweatpants, leggings, culottes, shorts, bermuda_shorts, denim_shorts, skirt, skort | construtor da parte de cima ou da calça |
 | `tamanho` | PP…XG (cima), 34…50 (calça) | medidas de `sizes.py` / `sizes_pants.py`, a mesma regra de corpo do provador |
 | `caimento` | justo, regular, amplo, oversized | folga de tórax, barra e bíceps; ombro caído no amplo |
 | `tecido` | tipo (malha_la, malha_algodao, jersey, moletom, sarja, denim), cor, gramatura | textura repetível em tamanho real (5 cm por repetição), espessura das bordas dobradas |
@@ -28,6 +28,7 @@ Cada tamanho gera, em `saida/<tamanho>/`: o `modelo.glb` (metros, Y para cima, f
 | `fechamento` | nenhum, ziper_inteiro, botoes, botao_ziper, cordao | frente aberta em dois painéis com vista dobrada; zíper com cadarço, dentes alternados, cursor, puxador e batentes (`closures.py`); vista transpassada com botões de quatro furos e casas bordadas (`buttons.py`); braguilha em J; cordão do elástico |
 | `botoes`, `cor_botao`, `cor_linha` | 2–12; #rrggbb | quantos botões; cor do botão; linha do pesponto (padrão: um tom abaixo do tecido) |
 | `bolsos` | canguru, peito, faca, traseiro, cargo, joelho_duplo | placas costuradas com saia e pesponto; boca aberta sem costura |
+| `pregas` | 0 ou divisor de 96 (12, 16, 24, 32) | saia: pregas faca, fundas na barra e sumindo no quadril (`skirt.py`) |
 | `ribana`, `manga_curta`, `passantes`, `capuz_abaixado`, `angulo_manga` | | ribana na barra e no punho; manga curta com bainha; passantes no cós; capuz nas costas; queda da manga |
 | `medidas_marca` | qualquer medida da tabela | a tabela da marca vale mais que a grade padrão |
 
@@ -39,6 +40,8 @@ Cada tamanho gera, em `saida/<tamanho>/`: o `modelo.glb` (metros, Y para cima, f
   `angulo_manga` > 0 gira a manga em torno da axila depois de pronta (o tecido de baixo do braço se junta).
 - **Calça:** tubo da cintura ao gancho, as pernas separadas por uma ponte de costura no gancho, coxa → joelho → barra;
   as costas sobem acima da frente; cós dobrado por dentro (`pants.py`, `lower.py`).
+- **Short, bermuda, saia:** cada modelo de `sizes_pants.CUTS` pode ter a própria entreperna (perna curta sem joelho,
+  boca da perna pela coxa) e uma saia (comprimento e roda); a saia-short é o short com a saia por cima (`skirt.py`).
 - **Costuras:** os vértices de costura (laterais, ombro, cava, debaixo da manga, entreperna, cós, emendas de ribana,
   pespontos dos bolsos e da braguilha) afundam 0,9 mm na direção de dentro: o vinco aparece na luz.
 - **Frente aberta:** com zíper ou botões a coluna do meio da frente vira duas bordas, cada uma com a vista dobrada

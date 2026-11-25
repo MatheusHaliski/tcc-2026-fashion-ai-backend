@@ -1,0 +1,22 @@
+{
+ "produto": "Calça Le Lis Pantacourt Lydia Jeans Feminina",
+ "marca": "Le Lis Blanc",
+ "url_oficial": "https://www.lelis.com.br/calca-le-lis-pantacourt-lydia-jeans-feminina-jeans-claro-18-08-6105/p",
+ "subcategoria": "culottes",
+ "tamanho": "38",
+ "sexo": "FEMININO",
+ "tecido": {
+  "tipo": "denim",
+  "cor": "#8fa8c4",
+  "gramatura": 320
+ },
+ "fechamento": "botao_ziper",
+ "bolsos": [
+  "faca",
+  "traseiro"
+ ],
+ "passantes": true,
+ "observacao": "pantacourt (o catálogo a lista como casual_pants): perna larga até o meio da canela. Cor: a do nome (jeans claro).",
+ "caimento": "regular",
+ "ribana": false
+}

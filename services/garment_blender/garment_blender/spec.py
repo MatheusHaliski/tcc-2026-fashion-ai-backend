@@ -53,6 +53,7 @@ class GarmentSpec:
     passantes: bool = False           # calça: passantes de cinto no cós
     capuz_abaixado: bool = False      # capuz deitado nas costas (experimental: atravessa as costas no provador)
     botoes: int = 6                   # quantos botões na vista (fechamento "botoes")
+    pregas: int = 0                   # saia: pregas faca na volta (divisor de 96: 12, 16, 24, 32)
     cor_botao: str = "#2e2a26"
     cor_linha: str | None = None      # linha do pesponto; None: um tom abaixo do tecido (costura tom sobre tom)
     medidas_marca: dict[str, float] = field(default_factory=dict)
@@ -84,7 +85,7 @@ def parse(raw: dict, size: str | None = None) -> GarmentSpec:
     """Ficha a partir de um dicionário (JSON). ``size`` troca o tamanho da ficha (gerar a grade inteira)."""
     known = {"produto", "marca", "subcategoria", "tamanho", "sexo", "caimento", "tecido", "gola", "fechamento",
              "bolsos", "ribana", "manga_curta", "angulo_manga", "cor_ziper", "passantes", "capuz_abaixado", "medidas_marca", "url_oficial", "observacao",
-             "botoes", "cor_botao", "cor_linha"}
+             "botoes", "cor_botao", "cor_linha", "pregas"}
     unknown = set(raw) - known
     if unknown:
         raise ValueError(f"campos desconhecidos na ficha: {', '.join(sorted(unknown))}")
@@ -111,7 +112,7 @@ def parse(raw: dict, size: str | None = None) -> GarmentSpec:
         angulo_manga=float(raw.get("angulo_manga", 80.0)),
         cor_ziper=str(raw.get("cor_ziper", "#a7a9ac")).lower(), passantes=bool(raw.get("passantes", False)),
         capuz_abaixado=bool(raw.get("capuz_abaixado", False)),
-        botoes=int(raw.get("botoes", 6)), cor_botao=str(raw.get("cor_botao", "#2e2a26")).lower(),
+        botoes=int(raw.get("botoes", 6)), pregas=int(raw.get("pregas", 0)), cor_botao=str(raw.get("cor_botao", "#2e2a26")).lower(),
         cor_linha=str(raw["cor_linha"]).lower() if raw.get("cor_linha") else None,
         medidas_marca=measures)
     for name in ("cor_ziper", "cor_botao", "cor_linha"):
@@ -119,6 +120,8 @@ def parse(raw: dict, size: str | None = None) -> GarmentSpec:
             raise ValueError(f"{name} precisa ser #rrggbb")
     if not 2 <= spec.botoes <= 12:
         raise ValueError("botoes fora de 2–12")
+    if spec.pregas and 96 % spec.pregas:
+        raise ValueError("pregas precisa dividir 96 (12, 16, 24, 32…)")
     if not 0 <= spec.angulo_manga <= 85:
         raise ValueError("angulo_manga fora de 0–85 graus")
     problems = check_pants(spec.medidas_calca) if pants else check(spec.medidas)

@@ -51,6 +51,9 @@ export const SLOT_RULES: Record<string, SlotRule> = {
   blouse: top(PUFFED, { esticada: 2.2, furada: 0.07, espinho: 0.35 }), shirt: top(SHORT_SLEEVE, { esticada: 2.15, furada: 0.045 }),
   cargo_pants: bottom(), casual_pants: bottom(), jogger_pants: bottom(), sweatpants: bottom(),
   shorts: bottom(), bermuda_shorts: bottom(), skirt: bottom(undefined, { espinho: 0.32 }),
+  // peças de baixo que o motor Blender já gera (services/garment_blender): o mesmo encaixe das calças e das saias
+  jeans: bottom(), chino_pants: bottom(), tailored_pants: bottom(), leggings: bottom(), culottes: bottom(),
+  denim_shorts: bottom(), skort: bottom(undefined, { espinho: 0.32 }),
   ankle_boots: shoe(0.03), long_boots: shoe(0.03), basketball_shoes: shoe(0.03), casual_sneakers: shoe(0.025),
   high_top_sneakers: shoe(0.03), running_shoes: shoe(0.03), skate_shoes: shoe(0.025), training_shoes: shoe(0.03),
   derby_shoes: shoe(0.025), oxford_shoes: shoe(0.025), loafers: shoe(0.02), flats: shoe(0.012),

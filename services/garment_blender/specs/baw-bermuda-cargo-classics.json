@@ -1,0 +1,27 @@
+{
+ "produto": "BERMUDA CARGO CLASSICS",
+ "marca": "Baw Clothing",
+ "subcategoria": "bermuda_shorts",
+ "tamanho": "40",
+ "sexo": "MASCULINO",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#1b1b1e",
+  "gramatura": 240
+ },
+ "fechamento": "cordao",
+ "bolsos": [
+  "faca",
+  "cargo"
+ ],
+ "medidas_marca": {
+  "cintura": 76,
+  "quadril": 116,
+  "gancho_frente": 34,
+  "gancho_costas": 39,
+  "entreperna": 11
+ },
+ "observacao": "tabela da marca, tamanho M (medidas planas × 2): cintura 76, quadril 116, gancho 34/39, comprimento 45 cm (entreperna = 45 − 34). Poliamida: sarja no motor. Cor: PRETO (descrição).",
+ "caimento": "regular",
+ "ribana": false
+}

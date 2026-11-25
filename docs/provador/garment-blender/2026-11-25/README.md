@@ -31,3 +31,23 @@ fica larga nos ombros (a peça tem 16 cm a mais de tórax que o corpo) — é ta
 | `camisa-jaqueta-provador.jpg` | depois: camisa-jaqueta no corpo feminino (M) e masculino (G), frente e ¾ |
 
 A camisa-jaqueta é curta como na foto do catálogo; a faixa de pele entre a barra e a calça é do corte, não um furo.
+
+## Peças de baixo: uma por subcategoria (14)
+
+| Arquivo | O que mostra |
+|---|---|
+| `baixo-previas-14.jpg` | prévias do motor das 14 fichas (uma por subcategoria de `lower_piece` da taxonomia) |
+| `baixo-provador-14.jpg` | as 14 no provador, frente e ¾ (corpo do sexo da ficha). O short aparece cinza: foi recusado por 3,0 % de furos e caiu no molde |
+| `baixo-shorts-aceito.jpg` | o short depois do aceite de perna curta (4 %, como a manga curta), nos corpos F e M |
+
+Fichas (produto do catálogo, `specs/`): jeans (Abercrombie High Rise Bootcut), tailored_pants (Zara Wide Leg de
+Alfaiataria), casual_pants e cargo_pants (Carhartt WIP x Nicholas Daley), chino_pants (Everlane Straight Fit
+Performance Chino), jogger_pants (Napapijri Malis Summer Joggers), sweatpants (Champion Powerblend Oversized),
+leggings (Amaro Legging de Cós Alto), culottes (Le Lis Blanc Pantacourt Lydia Jeans), shorts (ASICS French Terry 5In),
+bermuda_shorts (Baw Bermuda Cargo Classics, tabela de medidas da marca), denim_shorts (G-Star 3301 Slim Denim Shorts),
+skirt (AllSaints Jax Pleated Midi, 24 pregas), skort (Skechers Ace 14" Pleated Skort). Cores não conferidas na foto
+estão marcadas na `observacao` de cada ficha.
+
+Aceite offline (`meshy-real.test.ts`): as 14 passam em 36/40/46. Na tela: a cintura de várias calças fica serrilhada
+onde a camiseta padrão do laboratório encontra o cós (camadas, não a calça); jeans e legging ficam um pouco folgados no
+quadril e no joelho; a costura do gancho mostra uma pequena fresta entre as pernas na prévia.

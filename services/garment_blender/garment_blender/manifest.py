@@ -16,6 +16,14 @@ from .spec import GarmentSpec
 SHORT_SLEEVE_PIERCED = 0.04
 
 
+def _short_edge(spec: GarmentSpec) -> bool:
+    """Manga curta ou perna de short/bermuda: a pele nua logo abaixo da barra conta como "furo" no provador (a coxa à
+    frente da barra do short, como o antebraço na camiseta). Conferido na tela (docs/provador/garment-blender/)."""
+    if spec.calca:
+        return 0 < spec.medidas_calca.entreperna < 35
+    return spec.manga_curta
+
+
 def fit_manifest(spec: GarmentSpec, mesh: Mesh) -> dict:
     v = np.array(mesh.verts)
     lo, hi = v.min(0), v.max(0)
@@ -24,7 +32,7 @@ def fit_manifest(spec: GarmentSpec, mesh: Mesh) -> dict:
         "versao": 1, "categoria": "lower_piece" if lower else "upper_piece", "subcategoria": spec.subcategoria,
         "slot": "lower" if lower else "upper", "attach": "wrap", "osso": "Hips" if lower else "Spine2", "giroY": 0, "centro": [round(float(c), 5) for c in (lo + hi) / 2],
         "caixa": [round(float(c), 5) for c in hi - lo], "escalaNominal": 0,
-        "dicas": {"par": False, "corteX": 0, "abertura": 0, "bracosAbertos": not lower and spec.angulo_manga < 30, "aberto": False, "sola": 0, **({"aceite": {"furada": SHORT_SLEEVE_PIERCED}} if spec.manga_curta else {})},
+        "dicas": {"par": False, "corteX": 0, "abertura": 0, "bracosAbertos": not lower and spec.angulo_manga < 30, "aberto": False, "sola": 0, **({"aceite": {"furada": SHORT_SLEEVE_PIERCED}} if _short_edge(spec) else {})},
         "tamanhos": {"grade": "numeric" if lower else "letter", "porPasso": {"largura": 0.04, "comprimento": 0.02, "manga": 0.015},
                      "limite": [-3, 4], "convencao": "RELATIVE_VISUAL_APPROXIMATION", "alegacaoDeCaimento": "NONE",
                      "medidasDoAvatarAlteradas": False},
