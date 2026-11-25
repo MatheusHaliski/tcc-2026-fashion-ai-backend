@@ -154,7 +154,6 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
   const ownPins = useMirrorPins(data);
   const { pinned, toggle: togglePin, anchorIds } = pins ?? ownPins;
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [grwm, setGrwm] = useState<GrwmStoryboard | null>(null);
   const worn = wornOf(data);
   const dressOn = asList(data.slots.dress).length > 0;
   const restore = async (ids: string[]) => { for (const id of ids) await run("restore", () => api.post("/api/me/mirror/pieces", { pieceId: id })); setNotice(null); };
@@ -274,7 +273,6 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
           takeOff={async (p) => { if (host?.takeOff) await host.takeOff(p); else await run("rm", () => api.delete(`/api/me/mirror/pieces/${encodeURIComponent(p.id)}`)); }}
           unlist={async (p) => { if (host?.unlist) await host.unlist(p); else await run("unlist", () => api.delete(`/api/me/mirror/rack/${encodeURIComponent(p.id)}`)); }} />
       )}
-      <MirrorGrwmDialog grwm={grwm} onClose={() => setGrwm(null)} />
     </div>
   );
 }
