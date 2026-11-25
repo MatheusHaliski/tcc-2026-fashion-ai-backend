@@ -5,7 +5,7 @@
  * do jogo (scene/game-camera.tsx, docs/flair/flair-3d/CAMERAS.md): a escolhida no seletor ou a do momento da partida; o
  * zoom aproxima e mira mais alto (até o rosto).
  */
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { CameraDeAbertura } from "@/components/flair/nucleos/scene/opening-camera";
 import type { Look3dPiece } from "@/components/three/common";
@@ -15,6 +15,7 @@ import { CameraDoJogo } from "@/components/flair/nucleos/scene/game-camera";
 import { Figurantes } from "@/components/flair/nucleos/scene/extras";
 import { CinemaCamera } from "@/components/flair/cinema/cinema-camera";
 import { Andarilho, NA_MARCA, type Jogador } from "@/components/flair/nucleos/scene/andarilho";
+import { DesfileJogavel } from "@/components/flair/nucleos/scene/desfile-jogavel";
 import { FigurantesHumanos } from "@/components/flair/nucleos/gente/figurantes-humanos";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { QualidadeDaCena } from "@/components/flair/nucleos/scene/scene-quality";
@@ -55,6 +56,7 @@ export interface NucleoScene3DProps {
   maquiagem?: Record<string, MaquiagemEscolha>;
   andarLivre?: boolean;
   agilidade?: number;
+  desfileAtivo?: boolean;
   /** a câmera escolhida no seletor do HUD ("AUTO" ou nula = a do momento) e o momento da partida */
   camera?: string | null;
   momento?: MomentoDaCamera;
@@ -71,8 +73,12 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
   return { dist, alvo: [0, altura + (sala?.zonas.avatar.altura ?? 0), 0] };
 }
 
-export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO", andarLivre = false, agilidade }: NucleoScene3DProps) {
+export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO", andarLivre = false, agilidade, desfileAtivo = false }: NucleoScene3DProps) {
   const jogador = useRef<Jogador>({ pos: NA_MARCA, andando: false });
+  // cada momento começa na marca (o desfile parte dela)
+  useEffect(() => {
+    jogador.current = { pos: NA_MARCA, andando: false };
+  }, [momento]);
   const rosto = useMemo(() => maquiagemNoRosto(maquiagem), [maquiagem]);
   const manequim = config.personagens.find((p) => p.papel === "MANEQUIM");
   const sala = salaDe(config.codigo, variante);
@@ -100,7 +106,8 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
         <LuzDeEfeito altura={sala.zonas.avatar.altura} />
         {manequim && zonasDaPeca && zonas && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
         <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} maquiagem={rosto} jogador={jogador} />
-        <Andarilho sala={sala} jogador={jogador} agilidade={agilidade} livre={andarLivre && momento === "PREPARO"} />
+        <Andarilho sala={sala} jogador={jogador} agilidade={agilidade} livre={andarLivre} />
+        <DesfileJogavel codigo={config.codigo} sala={sala} jogador={jogador} ativo={desfileAtivo} />
         <QualidadeDaCena nivel={qualidade} />
         <CameraDoJogo codigo={config.codigo} escolha={camera} momento={momento} sala={sala} zoom={avatar.zoom} reduzido={reduzido} pessoas={figurantes} jogador={jogador} />
       </CenaContexto.Provider>

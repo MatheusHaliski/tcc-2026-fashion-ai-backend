@@ -21,7 +21,12 @@ export type FxEvento =
   /** a pessoa acionou o que o jogo permite (carta Especial, espelho, troca no intervalo, resposta) */
   | { tipo: "acionamento"; nucleo: NucleoCodigo; acionamento: AcionamentoTipo; cardId?: string }
   /** uma cutscene começou (a câmera da cena segue as tomadas dela) ou acabou (cutscene nula: a câmera volta ao jogo) */
-  | { tipo: "cinema"; nucleo: NucleoCodigo; cutscene: Cutscene | null; reduzido: boolean };
+  | { tipo: "cinema"; nucleo: NucleoCodigo; cutscene: Cutscene | null; reduzido: boolean }
+  /** desfile jogável: quantas marcas a personagem já alcançou e se está na ponta (a pose final liberada) */
+  | { tipo: "desfile"; nucleo: NucleoCodigo; alcancadas: number; total: number; naPonta: boolean }
+  /** a pessoa apertou □ na ação do desfile; e o fim da pose final, que revela o resultado */
+  | { tipo: "desfile-pose"; nucleo: NucleoCodigo }
+  | { tipo: "desfile-fim"; nucleo: NucleoCodigo };
 
 export type FxAssinante = (evento: FxEvento) => void;
 

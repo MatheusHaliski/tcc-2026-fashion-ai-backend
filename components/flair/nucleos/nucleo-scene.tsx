@@ -45,6 +45,8 @@ interface Props {
   /** o jogo anda livre na preparação, na velocidade da agilidade do look */
   andarLivre?: boolean;
   agilidade?: number;
+  /** o desfile jogável está na ação (marcas e pose final) */
+  desfileAtivo?: boolean;
   /** a câmera escolhida no seletor do HUD e o momento da partida (scene/game-camera.tsx) */
   camera?: string | null;
   momento?: MomentoDaCamera;

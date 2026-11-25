@@ -22,6 +22,8 @@ import { NucleoRodaRecursos } from "@/components/flair/nucleos/recursos/nucleo-r
 import type { RecursosNaTela } from "@/components/flair/nucleos/recursos/use-recursos-da-partida";
 import { CinemaOverlay } from "@/components/flair/cinema/cinema-overlay";
 import { mapaDoJogo } from "@/lib/flair/entrada/mapa-por-jogo";
+import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
+import { DesfileHud } from "@/components/flair/nucleos/desfile-hud";
 import type { CinemaNaTela } from "@/components/flair/cinema/use-cinema-da-partida";
 import { NucleoCast } from "@/components/flair/nucleos/nucleo-cast";
 import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
@@ -69,6 +71,8 @@ export interface NucleoStageProps {
   usoDeRecursos?: RecursosNaTela;
   /** a cutscene na tela (faixas, legenda e pular); a câmera dela é a da cena 3D */
   cinema?: CinemaNaTela;
+  /** desfile jogável: a pose final na ponta revela o resultado */
+  onFimDesfile?: () => void;
   reduzido: boolean;
   passos: PassoAcao[];
   mostrados: number;
@@ -81,13 +85,16 @@ export function NucleoStage(props: NucleoStageProps) {
   const tx = useNucleoText();
   const voltar = tx.t("flair3d.ui.back");
   const naAcao = momento === "ACAO" || momento === "RESULTADO";
+  const desfileNaAcao = momento === "ACAO" && DESFILE_JOGAVEL.has(definicao.codigo);
   const [camera, setCamera] = useState<string>(CAMERA_AUTOMATICA);
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
       <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
         zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem}
-        andarLivre={mapaDoJogo(definicao.codigo, definicao.acoes).movimento === "LIVRE"} agilidade={props.recursos?.look.atributos.AGILIDADE} />
+        andarLivre={mapaDoJogo(definicao.codigo, definicao.acoes).movimento === "LIVRE" && (momento === "PREPARACAO" || desfileNaAcao)}
+        agilidade={props.recursos?.look.atributos.AGILIDADE} desfileAtivo={desfileNaAcao} />
+      {desfileNaAcao && props.onFimDesfile && <DesfileHud codigo={definicao.codigo} onFim={props.onFimDesfile} />}
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
       {props.recursos && <NucleoRodaAtributos recursos={props.recursos} reduzido={reduzido} efeitos={prefs.efeitos} />}

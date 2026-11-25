@@ -5,6 +5,7 @@
  * veio e abre a janela do acionamento (a carta do lance na luta, troca de peça no intervalo); a resposta do
  * acionamento traz os passos seguintes, e a ação só termina quando a partida fecha (ENTREGUE).
  */
+import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
 import { useCallback, useMemo } from "react";
 import { useActionPlayback } from "@/components/flair/nucleos/use-action-playback";
 import { LANCE_MS, PASSOS_DO_ESPORTE } from "@/components/flair/esporte/use-esporte";
@@ -53,7 +54,7 @@ export function useNucleoAction(opts: NucleoActionOptions) {
 
   // cada passo dura a sua parte da sequência da cena: a cena acaba junto com a ação
   const passoMs = useMemo(() => (porCartas ? LANCE_MS : resultado ? passoDaCena(nucleo, resultado, passos.length) : undefined), [porCartas, resultado, nucleo, passos.length]);
-  const tocador = useActionPlayback({ ativo: momento === "ACAO", passos, reduzido, continua: emAcao, onPasso, onFim: fim, passoMs });
+  const tocador = useActionPlayback({ ativo: momento === "ACAO", passos, reduzido, continua: emAcao, onPasso, onFim: fim, passoMs, segura: DESFILE_JOGAVEL.has(nucleo) && !reduzido });
   const mostrados = momento === "RESULTADO" ? passos.length : tocador.mostrados;
 
   const naAcao = acionamento?.momento === "ACAO" ? acionamento.tipo : null;

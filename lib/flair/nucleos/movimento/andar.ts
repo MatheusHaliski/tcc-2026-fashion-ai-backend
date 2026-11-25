@@ -38,7 +38,8 @@ export function velocidadeDaAgilidade(agilidade = 50): number {
  */
 export function areaDeAndar(sala: Sala, caixas: Caixa[]): Area {
   const z = sala.zonas.avatar;
-  const elevado = z.marca === "passarela" || z.marca === "tablado";
+  // passarela, tablado ou qualquer marca em cima de um palco: só em cima dele
+  const elevado = z.marca === "passarela" || z.marca === "tablado" || z.altura > 0.1;
   const meia = sala.dim.largura / 2 - 0.4;
   const pe = z.altura;
   const barra = caixas.filter((c) => c.y[0] < pe + 1.6 && c.y[1] > pe + 0.35);

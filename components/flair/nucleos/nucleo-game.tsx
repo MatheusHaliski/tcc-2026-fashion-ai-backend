@@ -177,7 +177,7 @@ export function NucleoGame(props: Props) {
           zonas={estado.sel.zonas} maquiagem={estado.sel.maquiagem}
           prefs={fx.prefs}
           onPref={fx.alternar}
-          entrada={entrada} recursos={recursos} usoDeRecursos={usoDeRecursos} cinema={cinema}
+          entrada={entrada} recursos={recursos} usoDeRecursos={usoDeRecursos} cinema={cinema} onFimDesfile={acao.pular}
           reduzido={reduzido}
           passos={acao.passos}
           mostrados={acao.mostrados}

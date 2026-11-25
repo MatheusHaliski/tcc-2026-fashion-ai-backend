@@ -18,6 +18,8 @@ export interface ActionPlaybackOptions {
   /** quanto cada passo fica na tela, em ms (padrão PASSO_MS) */
   passoMs?: number;
   onFim: () => void;
+  /** segura no último passo até a pessoa encerrar (o desfile jogável espera a pose final ou o "Ver o resultado") */
+  segura?: boolean;
 }
 
 /** Espera antes do primeiro passo, em ms (a cena troca de momento antes de a primeira peça agir). */
@@ -38,14 +40,14 @@ export function useActionPlayback(opts: ActionPlaybackOptions) {
     }
     if (reduzido) {
       setMostrados(total);
-      if (!continua) ref.current.onFim();
+      if (!continua && !ref.current.segura) ref.current.onFim();
     }
   }, [ativo, reduzido, total, continua]);
 
   useEffect(() => {
     if (!ativo || reduzido) return;
     const fim = mostrados >= total;
-    if (fim && continua) return;
+    if (fim && (continua || ref.current.segura)) return;
     const espera = mostrados === 0 ? ESPERA_INICIAL_MS : ref.current.passoMs ?? PASSO_MS;
     const timer = window.setTimeout(() => {
       if (fim) {

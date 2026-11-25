@@ -79,3 +79,37 @@
   from { transform: scaleY(0); }
   to { transform: scaleY(1); }
 }
+
+/* ── desfile jogável (components/flair/nucleos/desfile-hud.tsx): a faixa das marcas e a pose final, em cima ── */
+.n3d-desfile {
+  position: absolute;
+  z-index: 4;
+  top: 8px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 2 * var(--n3d-zona-x, 30%));
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(10 10 14 / 65%);
+  color: #fff;
+  font-size: var(--text-caption);
+  transform: translateX(-50%);
+}
+
+.n3d-desfile p {
+  margin: 0;
+}
+
+.n3d-desfile-pose {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid #e0b04d;
+  border-radius: 999px;
+  background: rgb(224 176 77 / 25%);
+  color: #fff;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  cursor: pointer;
+}

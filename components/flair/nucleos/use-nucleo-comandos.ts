@@ -15,6 +15,8 @@ import { comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
 import type { ResourceTab } from "@/lib/flair/nucleos/selection";
 import type { NucleoAcao, NucleoCodigo } from "@/lib/flair/nucleos/types";
 import { mapaDoJogo } from "@/lib/flair/entrada/mapa-por-jogo";
+import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
+import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { useEixoDeAndar } from "@/components/flair/nucleos/use-eixo-de-andar";
 
 interface Opcoes {
@@ -35,7 +37,9 @@ interface Opcoes {
 
 export function useNucleoComandos({ codigo, acoes, momento, tabs, pausado, ativo, acaoPropria = false, cena, dispatch, entregar, limparAviso }: Opcoes) {
   // nos jogos de andar livre, na preparação WASD e o analógico levam a personagem pela sala
-  const andar = mapaDoJogo(codigo, acoes).movimento === "LIVRE" && momento === "PREPARACAO" && ativo && !pausado && !cena?.tocando;
+  // e na ação do desfile jogável (Passarela, Dress the Star, Batalha), a pessoa desfila até a ponta
+  const desfile = momento === "ACAO" && DESFILE_JOGAVEL.has(codigo);
+  const andar = mapaDoJogo(codigo, acoes).movimento === "LIVRE" && (momento === "PREPARACAO" || desfile) && ativo && !pausado && !cena?.tocando;
   useEixoDeAndar(andar);
   const onComando = (c: Comando) => {
     // a cutscene acaba com qualquer comando de jogo, que vale também (nenhum toque se perde); ○ e Start só pulam
@@ -46,6 +50,7 @@ export function useNucleoComandos({ codigo, acoes, momento, tabs, pausado, ativo
     // na pausa (o objetivo aberto): ✕ entrega, ○ e Start fecham
     if (pausado && momento === "PREPARACAO" && (c.acao === "VESTIR" || c.acao === "ENTREGAR")) return entregar();
     if (pausado && c.acao === "TIRAR") return dispatch({ type: "comando", comando: { acao: "VER_OBJETIVO" }, tabs });
+    if (desfile && c.acao === "DESFILAR") return emitirFx({ tipo: "desfile-pose", nucleo: codigo });
     if (momento !== "PREPARACAO" && !acaoPropria && c.acao !== "VER_OBJETIVO" && c.acao !== "GIRAR" && comandoNaAcao(c)) return;
     if (!comandoPermitido(momento, c.acao)) return;
     limparAviso();

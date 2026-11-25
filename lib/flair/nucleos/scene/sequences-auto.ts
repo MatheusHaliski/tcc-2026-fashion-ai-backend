@@ -9,7 +9,7 @@ import { duracaoDaSequencia, type Sequencia } from "@/lib/flair/nucleos/scene/di
 import { MONTAGENS_DO_ATELIE } from "@/lib/flair/nucleos/scene/montagens-atelie";
 import { LABIRINTO_ESPELHO, LABIRINTO_PORTA } from "@/lib/flair/nucleos/scene/salas/labirinto";
 import { AVATAR, fig, luzId, movelId, Roteiro } from "@/lib/flair/nucleos/scene/script";
-import { giroPara, PONTA_DA_PASSARELA } from "@/lib/flair/nucleos/scene/sequences-manual";
+import { giroPara } from "@/lib/flair/nucleos/scene/sequences-manual";
 import { sequenciaDaLuta, sequenciaDaPartida } from "@/lib/flair/nucleos/scene/sequences-match";
 import { desfechoDe, type Desfecho } from "@/lib/flair/nucleos/narrativa";
 
@@ -22,7 +22,7 @@ export function reacaoDaPlateia(estrelas: number): string {
 type Montagem = (r: Roteiro, resultado: NucleoResultado) => void;
 
 const passarela: Montagem = (r, res) => {
-  r.depois(AVATAR, "CAMINHADA_DE_PASSARELA", { repete: 2, mover: { z: PONTA_DA_PASSARELA } });
+  // o desfile é da pessoa (desfile jogável): a personagem não anda sozinha até a ponta
   r.junto(fig("PLATEIA"), reacaoDaPlateia(res.estrelas)).junto(luzId("flash"), "L_FLASH");
   if (res.estrelas >= 2) r.junto(luzId("flash"), "L_FLASH", {}, 1.3);
   // sem estrela, os fotógrafos baixam a câmera em vez de seguir fotografando
@@ -31,7 +31,7 @@ const passarela: Montagem = (r, res) => {
 };
 
 const dressTheStar: Montagem = (r, res) => {
-  r.depois(AVATAR, "ENTRADA_NO_PALCO", { repete: 2, mover: { z: 0.9 } });
+  r.depois(AVATAR, "ENTRADA_NO_PALCO", { repete: 2 });
   r.junto(fig("ESTRELA", 0), "F_REVELA").junto(luzId("estrela"), "L_ACENDE", { mantem: true }).depois(AVATAR, "POSE_DE_ESTRELA");
   // a estrela reage ao look que vestiu: comemora, aplaude ou devolve com desânimo
   r.junto(fig("ESTRELA", 0), reacaoDaPlateia(res.estrelas)).junto(fig("PLATEIA"), reacaoDaPlateia(res.estrelas)).depois(AVATAR, "REVERENCIA");
@@ -135,7 +135,7 @@ export function plateiaDaBatalha(res: NucleoResultado): string {
 
 const batalha: Montagem = (r, res) => {
   const venceu = desfechoDaBatalha(res) === "BOM";
-  r.depois(AVATAR, "ENTRADA_NO_PALCO", { mover: { z: 0.5 } });
+  r.depois(AVATAR, "ENTRADA_NO_PALCO");
   // os jurados avaliam os dois looks de mão no queixo; depois, plateia e jurados reagem ao desfecho de verdade
   r.junto(fig("JURADO"), "F_POSE").junto(fig("ADVERSARIO", 0), "F_POSE").depois(AVATAR, "POSE_LADO_A_LADO");
   r.junto(fig("PLATEIA"), plateiaDaBatalha(res)).junto(fig("JURADO"), desfechoDaBatalha(res) === "MEDIO" ? "F_POSE" : "F_APLAUSO");
