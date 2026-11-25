@@ -133,7 +133,7 @@ export function NucleoGame(props: Props) {
     if (acionamento?.tipo === "ESPELHO") emitirFx({ tipo: "acionamento", nucleo: codigo, acionamento: "ESPELHO" });
     onEntregar(estado.sel, efetiva);
   };
-  const { disparar, gamepad } = useNucleoComandos({ codigo, acoes: definicao.acoes, momento, tabs, pausado: estado.objetivo, ativo: !entregando && !zoom.ampliada, acaoPropria: codigo === "FASHION_SPORTS", cena: { tocando: !!cinema.cutscene, pular: cinema.pular },
+  const { disparar, gamepad } = useNucleoComandos({ codigo, acoes: definicao.acoes, momento, tabs, pausado: estado.objetivo, ativo: !entregando && !zoom.ampliada, acaoPropria: codigo === "FASHION_SPORTS", cena: { tocando: !!cinema.cutscene, pular: cinema.pular }, entreLances: acao.aberta,
     dispatch, entregar, limparAviso: () => setAviso(null) });
 
   const naoCabe = (x: ItemDaFileira) => {
@@ -177,7 +177,7 @@ export function NucleoGame(props: Props) {
           zonas={estado.sel.zonas} maquiagem={estado.sel.maquiagem}
           prefs={fx.prefs}
           onPref={fx.alternar}
-          entrada={entrada} recursos={recursos} usoDeRecursos={usoDeRecursos} cinema={cinema} onFimDesfile={acao.pular}
+          entrada={entrada} recursos={recursos} usoDeRecursos={usoDeRecursos} cinema={cinema} onFimDesfile={acao.pular} entreLances={acao.aberta}
           reduzido={reduzido}
           passos={acao.passos}
           mostrados={acao.mostrados}

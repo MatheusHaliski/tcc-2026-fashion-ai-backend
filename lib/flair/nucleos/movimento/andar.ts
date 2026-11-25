@@ -38,8 +38,8 @@ export function velocidadeDaAgilidade(agilidade = 50): number {
  */
 export function areaDeAndar(sala: Sala, caixas: Caixa[]): Area {
   const z = sala.zonas.avatar;
-  // passarela, tablado ou qualquer marca em cima de um palco: só em cima dele
-  const elevado = z.marca === "passarela" || z.marca === "tablado" || z.altura > 0.1;
+  // passarela, tablado, qualquer marca em cima de um palco ou o círculo da luta: só dentro dele
+  const elevado = z.marca === "passarela" || z.marca === "tablado" || z.altura > 0.1 || !!z.cercada;
   const meia = sala.dim.largura / 2 - 0.4;
   const pe = z.altura;
   const barra = caixas.filter((c) => c.y[0] < pe + 1.6 && c.y[1] > pe + 0.35);
@@ -69,4 +69,16 @@ export function passo(atual: Posicao, mover: Vetor, dt: number, velocidade: numb
   if (livre(atual.x + dx, atual.z, area)) return { x: atual.x + dx, z: atual.z, giro };
   if (livre(atual.x, atual.z + dz, area)) return { x: atual.x, z: atual.z + dz, giro };
   return { ...atual, giro };
+}
+
+/** Velocidade da volta à marca quando o andar livre acaba (o lance da luta começa, o desfile encerra), em m/s. */
+export const VOLTA_A_MARCA = 3;
+
+/** Um passo de volta à marca (0, 0): a personagem caminha de volta em vez de sumir e reaparecer. */
+export function voltarAMarca(atual: Posicao, dt: number): Posicao {
+  const dist = Math.hypot(atual.x, atual.z);
+  const d = Math.min(dt, 0.1) * VOLTA_A_MARCA;
+  if (dist <= d || dist < 1e-3) return { x: 0, z: 0, giro: 0 };
+  const giro = (Math.atan2(-atual.x, -atual.z) * 180) / Math.PI;
+  return { x: atual.x - (atual.x / dist) * d, z: atual.z - (atual.z / dist) * d, giro };
 }

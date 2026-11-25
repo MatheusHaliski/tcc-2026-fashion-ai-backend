@@ -37,4 +37,11 @@ describe("andar livre pela sala", () => {
     expect(area.x).toEqual(sala.zonas.avatar.x);
     expect(area.caixas.every((c) => c.y[0] < sala.zonas.avatar.altura + 1.6)).toBe(true);
   });
+
+  it("na luta de rua anda só dentro do círculo, sem entrar no público", () => {
+    const sala = SALAS.DRESS_FIGHTER;
+    const area = areaDeAndar(sala, obstaculosDaSala(sala, 0));
+    expect(area.x).toEqual([-0.9, 0.9]);
+    expect(area.z).toEqual([-2.1, 2.1]);
+  });
 });

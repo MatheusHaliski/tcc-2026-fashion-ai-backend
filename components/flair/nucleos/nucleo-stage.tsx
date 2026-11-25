@@ -21,7 +21,7 @@ import type { LookDosRecursos } from "@/components/flair/nucleos/recursos/use-lo
 import { NucleoRodaRecursos } from "@/components/flair/nucleos/recursos/nucleo-roda-recursos";
 import type { RecursosNaTela } from "@/components/flair/nucleos/recursos/use-recursos-da-partida";
 import { CinemaOverlay } from "@/components/flair/cinema/cinema-overlay";
-import { mapaDoJogo } from "@/lib/flair/entrada/mapa-por-jogo";
+import { andaAgora } from "@/lib/flair/nucleos/movimento/quando-anda";
 import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
 import { DesfileHud } from "@/components/flair/nucleos/desfile-hud";
 import type { CinemaNaTela } from "@/components/flair/cinema/use-cinema-da-partida";
@@ -73,6 +73,8 @@ export interface NucleoStageProps {
   cinema?: CinemaNaTela;
   /** desfile jogável: a pose final na ponta revela o resultado */
   onFimDesfile?: () => void;
+  /** a janela do acionamento aberta entre dois lances: no Dress Fighter, a lutadora circula pelo ringue */
+  entreLances?: boolean;
   reduzido: boolean;
   passos: PassoAcao[];
   mostrados: number;
@@ -92,7 +94,7 @@ export function NucleoStage(props: NucleoStageProps) {
       <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
         zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem}
-        andarLivre={mapaDoJogo(definicao.codigo, definicao.acoes).movimento === "LIVRE" && (momento === "PREPARACAO" || desfileNaAcao)}
+        andarLivre={andaAgora(definicao.codigo, definicao.acoes, momento, props.entreLances)}
         agilidade={props.recursos?.look.atributos.AGILIDADE} desfileAtivo={desfileNaAcao} />
       {desfileNaAcao && props.onFimDesfile && <DesfileHud codigo={definicao.codigo} onFim={props.onFimDesfile} />}
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />

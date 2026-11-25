@@ -14,7 +14,7 @@ import { comandoNaAcao } from "@/lib/flair/nucleos/foco-da-acao";
 import { comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
 import type { ResourceTab } from "@/lib/flair/nucleos/selection";
 import type { NucleoAcao, NucleoCodigo } from "@/lib/flair/nucleos/types";
-import { mapaDoJogo } from "@/lib/flair/entrada/mapa-por-jogo";
+import { andaAgora } from "@/lib/flair/nucleos/movimento/quando-anda";
 import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { useEixoDeAndar } from "@/components/flair/nucleos/use-eixo-de-andar";
@@ -30,16 +30,18 @@ interface Opcoes {
   acaoPropria?: boolean;
   /** uma cutscene na tela: qualquer comando a encerra; ○ e Start só pulam, os outros também valem no jogo */
   cena?: { tocando: boolean; pular: () => void };
+  /** a janela do acionamento está aberta entre dois lances (no Dress Fighter, dá para circular pelo ringue) */
+  entreLances?: boolean;
   dispatch: Dispatch<BoardAcao>;
   entregar: () => void;
   limparAviso: () => void;
 }
 
-export function useNucleoComandos({ codigo, acoes, momento, tabs, pausado, ativo, acaoPropria = false, cena, dispatch, entregar, limparAviso }: Opcoes) {
+export function useNucleoComandos({ codigo, acoes, momento, tabs, pausado, ativo, acaoPropria = false, cena, entreLances = false, dispatch, entregar, limparAviso }: Opcoes) {
   // nos jogos de andar livre, na preparação WASD e o analógico levam a personagem pela sala
-  // e na ação do desfile jogável (Passarela, Dress the Star, Batalha), a pessoa desfila até a ponta
+  // na ação do desfile jogável a pessoa desfila até a ponta; na luta, circula pelo ringue entre os lances
   const desfile = momento === "ACAO" && DESFILE_JOGAVEL.has(codigo);
-  const andar = mapaDoJogo(codigo, acoes).movimento === "LIVRE" && (momento === "PREPARACAO" || desfile) && ativo && !pausado && !cena?.tocando;
+  const andar = andaAgora(codigo, acoes, momento, entreLances) && ativo && !pausado && !cena?.tocando;
   useEixoDeAndar(andar);
   const onComando = (c: Comando) => {
     // a cutscene acaba com qualquer comando de jogo, que vale também (nenhum toque se perde); ○ e Start só pulam
