@@ -34,10 +34,16 @@ function fieldsOf(posed: Float32Array, index: ArrayLike<number>, part: Int8Array
 }
 
 /** 1 coberta; 2 atravessando (a pele passa para fora do pano que devia cobri-la); 0 sem pano por perto. */
+/** Pano mais fino que isso entre a frente e as costas (m) é uma camada só: a peça não envolve o corpo ali. */
+const ONE_LAYER = 0.03;
+
 function stateOf(d: DepthField, x: number, y: number, z: number, facing: number): number {
   const cloth = depthAt(d, x, y);
   if (!cloth) return 0;
   const ahead = cloth.front - z, behind = z - cloth.back;
+  // uma camada só, do outro lado do corpo: é a abertura da peça (decote V, cava, frente aberta), e o pano visto por
+  // ela é o das costas (ou o da frente, para a pele das costas). A pele fica à mostra, não "atravessando" o pano.
+  if (cloth.front - cloth.back < ONE_LAYER && ((facing > 0.3 && ahead < -THROUGH) || (facing < -0.3 && behind < -THROUGH))) return 0;
   const grade = (gap: number) => (gap > NEAR ? 0 : gap >= -THROUGH ? 1 : gap >= -REACH ? 2 : 0);
   if (facing > 0.3) return grade(ahead);
   if (facing < -0.3) return grade(behind);

@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from .armhole import armhole_path, warped_thetas
 from .sizes import TopMeasures
 
 COLUMNS = 96   # vértices por anel do tronco (múltiplo de 4: lados e centro da frente/costas caem em colunas)
@@ -57,7 +58,7 @@ class Row:
     cx: float = 0.0                  # centro em x (perna da calça)
 
 
-def _torso_rows(m: TopMeasures, ribbed: bool) -> tuple[list[Row], int, int, int]:
+def _torso_rows(m: TopMeasures, ribbed: bool, v_neck: bool = False, v_cut: bool = False) -> tuple[list[Row], int, int, int]:
     """Anéis do tronco de baixo para cima; devolve também os índices da linha da axila, do ombro e do decote."""
     cm = 0.01
     H, rib = m.comprimento * cm, (m.ribana_barra * cm if ribbed else 0.0)
@@ -76,6 +77,10 @@ def _torso_rows(m: TopMeasures, ribbed: bool) -> tuple[list[Row], int, int, int]
     neck_a, neck_b = ellipse_semi_axes(m.pescoco * cm, 0.9)
     theta = np.linspace(0, 2 * np.pi, COLUMNS, endpoint=False)
     front = np.clip(np.sin(theta), 0, None) ** 1.6
+    if v_neck:   # decote V: a descida cai em linha reta dos dois lados até o centro da frente
+        front = np.clip(1 - np.abs(theta - np.pi / 2) / 0.9, 0, None)
+    if v_cut:    # V da frente aberta: quem faz o V são as bordas (v_thetas), a frente não desce
+        front = np.zeros_like(theta)
     back = np.clip(-np.sin(theta), 0, None) ** 1.6
     drop = (front * m.decote_frente + back * m.decote_costas) * cm
     # a descida do decote se espalha da axila ao pescoço: na frente cada anel fica sempre acima do anterior (com a
@@ -96,8 +101,8 @@ def _torso_rows(m: TopMeasures, ribbed: bool) -> tuple[list[Row], int, int, int]
     return rows, i_arm, i_sh, i_neck
 
 
-def _ring(row: Row) -> np.ndarray:
-    theta = np.linspace(0, 2 * np.pi, COLUMNS, endpoint=False)
+def _ring(row: Row, theta: np.ndarray | None = None) -> np.ndarray:
+    theta = np.linspace(0, 2 * np.pi, COLUMNS, endpoint=False) if theta is None else theta
     y = row.y - (row.drop if row.drop is not None else 0.0)
     return np.stack([row.a * np.cos(theta), np.broadcast_to(y, theta.shape), row.b * np.sin(theta) + row.dz], 1)
 
@@ -113,9 +118,9 @@ def _arc(points: np.ndarray, closed: bool = True) -> np.ndarray:
 ARMHOLE_HALF_ANGLE = 0.4
 
 
-def armhole_columns() -> int:
+def armhole_columns(half_angle: float = ARMHOLE_HALF_ANGLE) -> int:
     """Meia abertura da cava, em colunas do tronco."""
-    return max(2, round(ARMHOLE_HALF_ANGLE / (2 * math.pi / COLUMNS)))
+    return max(2, round(half_angle / (2 * math.pi / COLUMNS)))
 
 
 FRONT_COLUMN = COLUMNS // 4   # centro da frente (theta = 90°, +z)
@@ -129,36 +134,78 @@ class FrontOpening:
     decote como contornos abertos (da borda −x, dando a volta pelas costas, até a borda +x)."""
     plus: list
     minus: list
-    hem: list
+    hem: list | None   # None na vista curta (polo): a barra é fechada
     neck: list
 
 
-def _split_front(mesh: Mesh, grid: np.ndarray, rings: list, opening: float, lap_depth: float) -> np.ndarray:
+V_HALF = 0.9   # V da frente aberta: meia abertura (rad a partir do centro da frente) no decote
+
+
+def v_thetas(theta: np.ndarray | None, beta: float) -> np.ndarray:
+    """Ângulos do anel com o V aberto ``beta`` rad de cada lado do centro da frente: as colunas da frente se juntam
+    em direção às costas (o pano entre as bordas do V vai para o lado de cada painel, nada fica no V)."""
+    t = np.linspace(0, 2 * np.pi, COLUMNS, endpoint=False) if theta is None else theta.copy()
+    half = np.pi / 2
+    right = t <= half                                      # painel +x: de 0 (lado) a π/2 (centro) → até π/2 − β
+    left = (t > half) & (t <= np.pi)                       # painel −x: de π (lado) a π/2 → até π/2 + β
+    t[right] = t[right] * (half - beta) / half
+    t[left] = np.pi - (np.pi - t[left]) * (half - beta) / half
+    return t
+
+
+def _edge_points(row: Row, beta: float) -> tuple[np.ndarray, np.ndarray]:
+    """As duas bordas do V no anel: a do painel +x em π/2 − β e a do −x em π/2 + β."""
+    pt = lambda th: np.array([row.a * np.cos(th), row.y, row.b * np.sin(th) + row.dz])   # noqa: E731
+    return pt(np.pi / 2 - beta), pt(np.pi / 2 + beta)
+
+
+def _split_front(mesh: Mesh, grid: np.ndarray, rings: list, opening: float, lap_depth: float,
+                 split_from: int = 0, edges: list | None = None) -> np.ndarray:
     """Duplica a coluna do centro da frente: a original fica com o painel +x, a cópia com o painel −x. ``opening`` > 0:
-    vão entre as bordas (o zíper ocupa); < 0: transpasse (o painel +x passa por cima do −x, que recua ``lap_depth``)."""
-    minus = np.empty(len(grid), int)
+    vão entre as bordas (o zíper ocupa); < 0: transpasse (o painel +x passa por cima do −x, que recua ``lap_depth``).
+    ``split_from``: os anéis abaixo dele ficam fechados (a vista curta da polo começa ali, em ponta)."""
+    minus = np.array(grid[:, FRONT_COLUMN], int)
     for j, ring in enumerate(rings):
+        if j < split_from:
+            continue
         p = ring[FRONT_COLUMN].copy()
+        if edges is not None and edges[j] is not None:   # acima do fundo do V: cada borda no seu lado do V
+            mesh.verts[grid[j, FRONT_COLUMN]] = tuple(edges[j][0])
+            minus[j] = mesh.add(edges[j][1])
+            continue
         mesh.verts[grid[j, FRONT_COLUMN]] = (opening / 2, p[1], p[2])
         q = (-opening / 2, p[1], p[2] - (lap_depth if opening < 0 else 0.0))
         minus[j] = mesh.add(q)
     return minus
 
 
-def build_torso(mesh: Mesh, m: TopMeasures, ribbed: bool, opening: float = 0.0, lap_depth: float = 0.0):
+def build_torso(mesh: Mesh, m: TopMeasures, ribbed: bool, opening: float = 0.0, lap_depth: float = 0.0,
+                v_neck: bool = False, placket: float = 0.0, armhole: float = ARMHOLE_HALF_ANGLE, curved: bool = False):
     """Tronco em grade; as cavas ficam abertas. Devolve a grade de índices, os contornos das cavas (direita, esquerda),
-    os anéis, os índices (axila, ombro, decote) e a frente aberta (``FrontOpening``; None com ``opening`` = 0)."""
-    rows, i_arm, i_sh, i_neck = _torso_rows(m, ribbed)
-    grid = np.array([[mesh.add(p) for p in _ring(r)] for r in rows])
-    rings = [_ring(r) for r in rows]
-    minus = _split_front(mesh, grid, rings, opening, lap_depth) if opening else None
-    k = armhole_columns()
-    sides = {0: set(range(-k, k)), COLUMNS // 2: set(range(COLUMNS // 2 - k, COLUMNS // 2 + k))}
-    hole = {c % COLUMNS for cols in sides.values() for c in cols}
+    os anéis, os índices (axila, ombro, decote) e a frente aberta (``FrontOpening``; None com ``opening`` = 0).
+    ``placket`` > 0: só os ``placket`` metros de cima da frente abrem (vista curta da polo); a barra fica fechada."""
+    v_cut = v_neck and opening != 0
+    rows, i_arm, i_sh, i_neck = _torso_rows(m, ribbed, v_neck and not v_cut, v_cut)
+    k = armhole_columns(armhole)
+    y_v = rows[-1].y - m.decote_frente * 0.01
+    thetas = [warped_thetas(j, k, i_arm, i_sh, i_neck, COLUMNS) if curved else None for j in range(len(rows))]
+    # quanto cada borda da frente se afasta do centro (rad): o V aberto e, com vão (zíper, frente aberta), metade do vão
+    # — as colunas vizinhas vão junto com a borda; paradas, ficavam dentro do vão e o painel dobrava sobre si
+    betas = [max(V_HALF * (r.y - y_v) / (rows[-1].y - y_v) if v_cut and r.y > y_v else 0.0,
+                 np.arcsin(min(1.0, opening / 2 / r.a)) if opening > 0 else 0.0) for r in rows]
+    thetas = [v_thetas(t, b) if b else t for t, b in zip(thetas, betas)]
+    rings = [_ring(r, t) for r, t in zip(rows, thetas)]
+    edges = [_edge_points(r, b) if b else None for r, b in zip(rows, betas)] if opening else None
+    grid = np.array([[mesh.add(p) for p in ring] for ring in rings])
+    split_from = next((j for j, r in enumerate(rows) if r.y >= rows[i_neck].y - placket), 0) if placket else 0
+    minus = _split_front(mesh, grid, rings, opening, lap_depth, split_from, edges) if opening else None
+    # meia abertura da cava em cada faixa de anéis (a mesma em todas; a curva da regata vem de _warped_thetas)
+    ks = {j: k for j in range(i_arm, i_sh)}
+    hole = lambda j, i: any((i - c) % COLUMNS < ks[j] or (c - i - 1) % COLUMNS < ks[j] for c in (0, COLUMNS // 2))  # noqa: E731
     for j in range(len(rows) - 1):
         arc0, arc1 = _arc(rings[j]), _arc(rings[j + 1])
         for i in range(COLUMNS):
-            if i_arm <= j < i_sh and i in hole:
+            if i_arm <= j < i_sh and hole(j, i):
                 continue
             n = (i + 1) % COLUMNS
             first = minus[j] if minus is not None and i == FRONT_COLUMN else grid[j, i]
@@ -167,14 +214,8 @@ def build_torso(mesh: Mesh, m: TopMeasures, ribbed: bool, opening: float = 0.0, 
             uv = [(arc0[i] / TILE, y0), (arc0[i + 1] / TILE, y0), (arc1[i + 1] / TILE, y1), (arc1[i] / TILE, y1)]
             mat = "ribana" if rows[j].mat == "ribana" else "corpo"
             mesh.quad((first, grid[j, n], grid[j + 1, n], first_up), uv, mat)
-    loops = []
-    for center in (0, COLUMNS // 2):
-        lo, hi = center - k, center + k
-        loop = [grid[i_arm, c % COLUMNS] for c in range(lo, hi + 1)]
-        loop += [grid[j, hi % COLUMNS] for j in range(i_arm + 1, i_sh + 1)]
-        loop += [grid[i_sh, c % COLUMNS] for c in range(hi - 1, lo - 1, -1)]
-        loop += [grid[j, lo % COLUMNS] for j in range(i_sh - 1, i_arm, -1)]
-        loops.append(loop)
+    path = armhole_path(ks, i_arm, i_sh)
+    loops = [[grid[j, (center + o) % COLUMNS] for j, o in path] for center in (0, COLUMNS // 2)]
     seam_rows = [0, 3] if ribbed else [0]
     mesh.seams.update(int(v) for j in seam_rows for v in grid[j])
     for c in (0, COLUMNS // 2):   # costuras laterais (barra → axila) e do ombro (ponta → decote)
@@ -186,7 +227,9 @@ def build_torso(mesh: Mesh, m: TopMeasures, ribbed: bool, opening: float = 0.0, 
     if minus is not None:
         around = lambda j: [int(minus[j])] + [int(grid[j, (FRONT_COLUMN + k) % COLUMNS]) for k in range(1, COLUMNS)] \
             + [int(grid[j, FRONT_COLUMN])]   # noqa: E731
-        front = FrontOpening([int(v) for v in grid[:, FRONT_COLUMN]], [int(v) for v in minus], around(0), around(i_neck))
+        start = max(0, split_from - 1)   # a vista curta começa no ponto fechado logo abaixo dela
+        front = FrontOpening([int(v) for v in grid[start:, FRONT_COLUMN]], [int(v) for v in minus[start:]],
+                             None if split_from else around(0), around(i_neck))
     return grid, loops, rows, (i_arm, i_sh, i_neck), front
 
 

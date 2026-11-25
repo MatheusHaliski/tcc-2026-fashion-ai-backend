@@ -14,8 +14,8 @@ detalhe exige e recomenda como fazer.
 | Motor Blender (`services/garment_blender`) | provador (lab) | a peça construída pela ficha, em medidas reais | ainda não ligado ao Atelier nem ao Acervo |
 
 O motor já é, na prática, "uma base por subcategoria + parâmetros": a ficha diz o tipo, o tamanho, o tecido, a gola, o
-fechamento e os bolsos, e a malha sai em 1,5 s de CPU, custo zero (`piloto-e-decisoes.md`). Hoje cobre 14 de 14
-subcategorias de baixo e 5 de 19 de cima.
+fechamento e os bolsos, e a malha sai em 1,5 s de CPU, custo zero (`piloto-e-decisoes.md`). Hoje cobre as 14
+subcategorias de baixo e as 19 de cima (25/11).
 
 ## 2. Cada detalhe: camada em tempo real ou geometria
 
@@ -70,7 +70,7 @@ navegador o que o motor já faz no Blender, com resultado pior (a malha não ter
 
 ## 6. Fases propostas
 
-1. **Bases de cima e de baixo** (em andamento): uma ficha por subcategoria; baixo pronto (14/14, 25/11), cima 5/19.
+1. **Bases de cima e de baixo** (feito em 25/11): uma ficha por subcategoria, de baixo (14/14) e de cima (19/19).
 2. **Contrato da base**: UV de regiões (`TEXCOORD_1`), âncoras e manifesto estendido; teste que confere região e âncora
    em toda subcategoria.
 3. **Atelier usa as bases**: "Criar peça" escolhe a subcategoria (não mais 3 tornos) e carrega a base; cor e tecido

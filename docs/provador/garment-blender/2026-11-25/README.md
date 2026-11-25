@@ -51,3 +51,20 @@ estão marcadas na `observacao` de cada ficha.
 Aceite offline (`meshy-real.test.ts`): as 14 passam em 36/40/46. Na tela: a cintura de várias calças fica serrilhada
 onde a camiseta padrão do laboratório encontra o cós (camadas, não a calça); jeans e legging ficam um pouco folgados no
 quadril e no joelho; a costura do gancho mostra uma pequena fresta entre as pernas na prévia.
+
+## Partes de cima: uma por subcategoria (19)
+
+| Arquivo | O que mostra |
+|---|---|
+| `cima-previas-20.jpg` | prévias do motor das fichas de cima (as 19 subcategorias de `upper_piece` + o moletom fechado) |
+| `cima-provador.jpg` | as peças de cima no provador, frente e ¾ (corpo do sexo da ficha) |
+| `cima-v-antes-depois.jpg` | blazer, casaco, cardigã e colete: antes (dobra no V, remendo cinza) e depois (V aberto pelas bordas, lapela) |
+
+Construções novas no motor: sem manga (alça e cava curva), V aberto com lapela, vista curta da polo, frente aberta do
+quimono e body fechado no gancho. Fichas de produtos do catálogo (cores não conferidas marcadas na `observacao`).
+
+Provador: a pele vista por uma abertura da peça (decote V, cava, frente aberta) contava como "furo" e virava forro —
+o pano mais à frente ali é o das costas. Agora, onde há uma camada só e ela está atrás da pele, a pele fica à mostra
+(`glb-garment/cover.ts`, `ONE_LAYER`). Aceite offline: as 20 de cima e as 14 de baixo passam em P/M/GG. No V do
+blazer, do casaco e do cardigã aparece a peça de baixo padrão do laboratório (cinza), não a pele: a cena completa o
+look com ela.

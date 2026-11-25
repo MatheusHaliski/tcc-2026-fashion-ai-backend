@@ -1,0 +1,20 @@
+{
+ "produto": "Training Cropped Hoodie",
+ "marca": "Gymshark",
+ "url_oficial": "https://www.gymshark.com/products/gymshark-training-cropped-hoodie-light-yellow",
+ "subcategoria": "crop_top",
+ "sexo": "FEMININO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "moletom",
+  "cor": "#f0dd8f",
+  "gramatura": 280
+ },
+ "gola": "capuz",
+ "ribana": true,
+ "medidas_marca": {
+  "comprimento": 44
+ },
+ "observacao": "moletom curto com capuz (44 cm). Cor: a da variante (light yellow), não amostrada.",
+ "tamanho": "M"
+}

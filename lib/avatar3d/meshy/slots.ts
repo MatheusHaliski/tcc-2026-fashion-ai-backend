@@ -49,6 +49,9 @@ export const SLOT_RULES: Record<string, SlotRule> = {
   windbreaker: top(THIN_CHEST, { esticada: 1.9, furada: 0.06 }), sweatshirt: top(undefined, { esticada: 2.2, furada: 0.09 }),
   blazer: top(RAGGED_HEM, { esticada: 1.9, furada: 0.07 }),
   blouse: top(PUFFED, { esticada: 2.2, furada: 0.07, espinho: 0.35 }), shirt: top(SHORT_SLEEVE, { esticada: 2.15, furada: 0.045 }),
+  // partes de cima que o motor Blender já gera (services/garment_blender); o manifesto de cada peça afina o aceite
+  t_shirt: top(), tank_top: top(), top: top(), crop_top: top(), polo_shirt: top(), bodysuit: top(), cardigan: top(),
+  vest: top(), jacket: top(), coat: top(), kimono: top(),
   cargo_pants: bottom(), casual_pants: bottom(), jogger_pants: bottom(), sweatpants: bottom(),
   shorts: bottom(), bermuda_shorts: bottom(), skirt: bottom(undefined, { espinho: 0.32 }),
   // peças de baixo que o motor Blender já gera (services/garment_blender): o mesmo encaixe das calças e das saias

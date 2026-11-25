@@ -65,7 +65,7 @@ def fabric_materials(spec, tex_dir: Path) -> dict:
         mats["dentes"] = _material("dentes", write_maps("dentes", spec.cor_ziper, tex_dir), 0.35, metal=0.85)
     thread = spec.cor_linha or "#" + "".join(f"{int(int(color[i:i + 2], 16) * 0.72):02x}" for i in (1, 3, 5))
     mats["linha"] = solid_material("linha", _rgb(thread), 0.6)
-    if spec.fechamento == "botoes":
+    if spec.fechamento in ("botoes", "polo"):
         mats["botao"] = solid_material("botao", _rgb(spec.cor_botao), 0.35)
         mats["furo"] = solid_material("furo", tuple(c * 0.35 for c in _rgb(spec.cor_botao)), 0.8)
     return mats
