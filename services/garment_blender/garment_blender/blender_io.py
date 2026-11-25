@@ -15,6 +15,7 @@ from mathutils import Vector
 
 from .fabric import write_maps
 from .geometry import Mesh
+from .pattern import pattern_maps
 
 SEAM_DEPTH = 0.0009   # profundidade do vinco da costura (m)
 # Rótulo da parte em cada vértice (COLOR_0, canal R): o provador encaixa cada parte no osso certo sem adivinhar pela
@@ -53,8 +54,13 @@ def solid_material(name: str, rgb: tuple[float, float, float], roughness: float,
 def fabric_materials(spec, tex_dir: Path) -> dict:
     """Materiais da peça: tecido, ribana, cadarço do zíper (sarja um tom abaixo) e dentes (metal)."""
     kind, color = spec.tecido.tipo, spec.tecido.cor
-    rough = {"denim": 0.82, "sarja": 0.75}.get(kind, 0.9)
-    mats = {"corpo": _material("corpo", write_maps(kind, color, tex_dir), rough)}
+    rough = {"denim": 0.82, "sarja": 0.75, "tricoline": 0.7}.get(kind, 0.9)
+    if spec.listras is not None or spec.estampa_corrida is not None:   # a padronagem é a cor do corpo
+        maps, scale = pattern_maps(kind, spec, tex_dir)
+        mats = {"corpo": _material("corpo", maps, rough)}
+        mats["corpo"]["uv_scale"] = scale
+    else:
+        mats = {"corpo": _material("corpo", write_maps(kind, color, tex_dir), rough)}
     rib_kind = kind if kind.startswith("malha") or kind in ("moletom", "jersey") else "malha_algodao"
     mats["ribana"] = _material("ribana", write_maps(rib_kind, color, tex_dir, rib=spec.ribana), rough)
     if spec.calca:   # cós: elástico em ribana no jogger/moletom, o próprio tecido nas outras
@@ -70,7 +76,22 @@ def fabric_materials(spec, tex_dir: Path) -> dict:
     if spec.fechamento in ("botoes", "polo") or "vivo" in spec.bolsos:   # botão da vista ou do bolso embutido
         mats["botao"] = solid_material("botao", _rgb(spec.cor_botao), 0.35)
         mats["furo"] = solid_material("furo", tuple(c * 0.35 for c in _rgb(spec.cor_botao)), 0.8)
+    for k, decal in enumerate(spec.estampas):
+        mats[f"estampa_{k}"] = decal_material(f"estampa_{k}", Path(decal.imagem))
     return mats
+
+
+def decal_material(name: str, png: Path):
+    """Desenho com recorte: a cor da imagem e o alfa arredondado (o exportador glTF vira ``alphaMode: MASK``)."""
+    mat = _material(name, {"cor": png}, 0.65)
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    tex = next(n for n in nodes if n.type == "TEX_IMAGE")
+    cut = nodes.new("ShaderNodeMath"); cut.operation = "ROUND"
+    links.new(tex.outputs["Alpha"], cut.inputs[0])
+    links.new(cut.outputs[0], nodes["Principled BSDF"].inputs["Alpha"])
+    if hasattr(mat, "blend_method"):
+        mat.blend_method = "CLIP"
+    return mat
 
 
 def _rgb(hex_color: str) -> tuple[float, float, float]:
@@ -89,11 +110,13 @@ def to_object(mesh: Mesh, name: str, materials: dict) -> bpy.types.Object:
     for key in order:
         data.materials.append(materials[key])
     uv = data.uv_layers.new(name="UVMap")
+    scales = {k: tuple(m["uv_scale"]) if "uv_scale" in m else (1.0, 1.0) for k, m in materials.items()}
     for poly, corners, mat in zip(data.polygons, mesh.uvs, mesh.mats):
         poly.material_index = order.index(mat)
         poly.use_smooth = True
+        su, sv = scales[mat]   # a padronagem cobre mais de uma repetição do tecido (pattern.py)
         for loop_index, (u, v) in zip(poly.loop_indices, corners):
-            uv.data[loop_index].uv = (u, v)
+            uv.data[loop_index].uv = (u * su, v * sv)
     code = [0.0] * len(mesh.verts)
     torso = set()
     for face, part in zip(mesh.faces, mesh.parts):
@@ -147,7 +170,7 @@ def _islands(bm) -> list[list]:
 def export_glb(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=str(path), export_format="GLB", export_yup=True, export_apply=True,
-                              export_image_format="JPEG", export_jpeg_quality=88, export_materials="EXPORT",
+                              export_image_format="AUTO", export_jpeg_quality=88, export_materials="EXPORT",
                               export_vertex_color="ACTIVE")
 
 

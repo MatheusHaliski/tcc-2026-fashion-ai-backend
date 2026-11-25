@@ -227,3 +227,24 @@ aberturas). Motivo imediato: o Stockton Sweater importado da Meshy saía enorme 
 - **Medido no provador (corpo padrão):** calças (cargo e joelho duplo), suéter, moletom careca e camiseta vestem em
   todos os tamanhos, com a manga caída em torno da articulação do ombro; os moletons com capuz são recusados (o capuz
   precisa de encaixe próprio).
+
+## Peças de cima do catálogo em lote no motor Blender (25/11/2026)
+
+Pedido da dona: produzir em 3D o máximo de peças do catálogo, começando pelas de cima, a partir das bases do motor,
+com atenção à cor de cada peça, aos desenhos (estampa, logo e o lugar deles), aos bolsos, golas e mangas. Sugestão
+dela no meio do trabalho, adotada: **a base de cada subcategoria é sempre o modelo do motor**; da foto sai só a pintura,
+o desenho e o recorte (`services/garment_blender/README.md`, "Peças do catálogo em lote").
+
+- **Provedor/modelo novo:** fashn-ai/fashn-human-parser (SegFormer, 18 classes de pessoa e roupa, pesos do Hugging
+  Face, pacote `fashn-human-parser` no commit f2771f2f), na CPU (torch 2.15 CPU). Só separa a peça de cima, a pele e o
+  rosto na foto; a cor, as listras, a estampa e os logos são lidos por código do repositório (`catalogo/`). Nenhuma API
+  paga, nenhuma GPU. **Custo:** zero.
+- **Tempo medido** (4 vCPU, sem GPU): carga do modelo 8–9 s por processo; 2,0–2,3 s por foto no segmentador (2–3
+  núcleos, o tamanho da foto quase não muda: a rede trabalha em resolução fixa); 0,4 s de análise da foto; 1,5–3 s
+  para montar o `.glb` no M; a prévia em Cycles (só no piloto) ~8 s. Download das fotos com ritmo por site (0,5 s, dobra
+  a cada 429).
+- **Fonte:** `data/catalog/expansion/products/*.jsonl`, 8.545 peças de cima (8.401 com foto). Pulados pelo nome:
+  infantil, moda praia, parte de baixo e vestido listados como peça de cima.
+- **Saída:** bucket de produção, prefixo novo do lote (`catalog/model3d/motor-blender-2026-11-25/`, nada existente
+  sobrescrito), no formato dos lotes da Meshy; o banco não é tocado (a importação é a do `import_meshy_glbs.py`, com
+  `--generator garment-blender-1 --origin local`).
