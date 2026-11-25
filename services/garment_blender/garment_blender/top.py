@@ -7,6 +7,7 @@ import numpy as np
 
 from .buttons import LAP, buttons
 from .closures import ZIP_GAP, facing, zipper
+from .collars import point_collar
 from .details import chest_pocket, kangaroo
 from .geometry import COLUMNS, Mesh, build_torso
 from .hood import build_hood
@@ -21,11 +22,8 @@ COLLAR_HEIGHT = {"careca": None, "alta": 6.0}   # None: a altura da tabela (gola
 def _collar(mesh: Mesh, spec: GarmentSpec, neck: list[int], thick: float, closed: bool) -> None:
     neck_pts = np.array([mesh.verts[i] for i in neck])
     mesh.seams.update(neck)
-    if spec.gola == "colarinho":   # pé de 3 cm subindo reto e a folha virada para fora, descendo 2,5 cm sobre ele
-        r = float(np.linalg.norm(neck_pts - neck_pts.mean(0), axis=1).mean())
-        out = lambda d: 1 + d / r   # noqa: E731 - escala radial que afasta o contorno d metros
-        extend(mesh, neck, (0, 1, 0), [(0.015, 1.0), (0.03, 1.0), (0.034, out(thick)), (0.022, out(0.008)),
-                                       (0.006, out(0.016))], "corpo", closed=closed)
+    if spec.gola == "colarinho":   # pé e folha virada com pontas (collars.py)
+        point_collar(mesh, neck, thick, closed)
         return
     gola = (COLLAR_HEIGHT[spec.gola] or spec.medidas.gola) * 0.01
     # a gola sobe reta (estreitando para abraçar o pescoço ela batia nele e a colisão a picotava) e a dobra de dentro
@@ -78,8 +76,7 @@ def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
     if "canguru" in spec.bolsos:
         kangaroo(mesh, rows, rib_top, zipped, "corpo")
     if "peito" in spec.bolsos:
-        for side in ((1, -1) if buttoned else (1,)):   # camisa-jaqueta: um bolso de cada lado da vista
-            chest_pocket(mesh, rows, rows[i_arm].y, "corpo", side)
+        chest_pocket(mesh, rows, rows[i_arm].y, "corpo")
     # a fita métrica mede a manga ao longo do eixo x: com a manga caída, mede a mesma peça construída em pose T
     medido = measure_top(mesh, m) if not spec.angulo_manga else build_top(replace(spec, angulo_manga=0.0))[1]["medido_cm"]
     used = {k: getattr(m, k) for k in m.__dataclass_fields__}
