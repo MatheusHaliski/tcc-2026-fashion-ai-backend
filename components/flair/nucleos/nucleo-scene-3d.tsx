@@ -16,6 +16,7 @@ import { Figurantes } from "@/components/flair/nucleos/scene/extras";
 import { CinemaCamera } from "@/components/flair/cinema/cinema-camera";
 import { Andarilho, NA_MARCA, type Jogador } from "@/components/flair/nucleos/scene/andarilho";
 import { DesfileJogavel } from "@/components/flair/nucleos/scene/desfile-jogavel";
+import { DistanciaDaLuta } from "@/components/flair/nucleos/scene/distancia-da-luta";
 import { FigurantesHumanos } from "@/components/flair/nucleos/gente/figurantes-humanos";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { QualidadeDaCena } from "@/components/flair/nucleos/scene/scene-quality";
@@ -108,6 +109,7 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
         <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} maquiagem={rosto} jogador={jogador} />
         <Andarilho sala={sala} jogador={jogador} agilidade={agilidade} livre={andarLivre} />
         <DesfileJogavel codigo={config.codigo} sala={sala} jogador={jogador} ativo={desfileAtivo} />
+        {config.codigo === "DRESS_FIGHTER" && <DistanciaDaLuta jogador={jogador} />}
         <QualidadeDaCena nivel={qualidade} />
         <CameraDoJogo codigo={config.codigo} escolha={camera} momento={momento} sala={sala} zoom={avatar.zoom} reduzido={reduzido} pessoas={figurantes} jogador={jogador} />
       </CenaContexto.Provider>

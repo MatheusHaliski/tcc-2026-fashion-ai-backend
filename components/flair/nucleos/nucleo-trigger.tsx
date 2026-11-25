@@ -16,6 +16,7 @@ import { efeitoDaCor } from "@/lib/flair/nucleos/card-fx";
 import type { AcionamentoTipo } from "@/lib/flair/nucleos/moments";
 import type { AcionamentoDaPessoa } from "@/lib/flair/nucleos/acionamento";
 import type { EstadoDaLuta } from "@/lib/flair/nucleos/luta";
+import { alvoDaDistancia } from "@/lib/flair/nucleos/luta-distancia";
 import type { EfeitoItem } from "@/lib/flair/nucleos/types";
 
 /** Quanto o balcão do mercado paga pela carta, pelo nível dela (o servidor decide; aqui é só o rótulo). */
@@ -102,13 +103,18 @@ export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, oc
     const acao = acaoDe?.(c.id);
     return acao ? tx.t("flair3d.ui.trigger.TROCA.action", { troca, acao }) : troca;
   };
-  const pedido = (c: FlairCollectionCard): AcionamentoPedido => (tipo === "TROCA" ? { tipo, cardId: c.id, vaga: c.position } : { tipo, cardId: c.id });
+  // na luta, a carta leva a faixa em que a lutadora está no ringue (perto ou longe da oponente)
+  const pedido = (c: FlairCollectionCard): AcionamentoPedido => {
+    if (tipo === "TROCA") return { tipo, cardId: c.id, vaga: c.position };
+    return tipo === "LANCE" ? { tipo, cardId: c.id, alvo: alvoDaDistancia() } : { tipo, cardId: c.id };
+  };
 
   return (
     <section className="n3d-trigger" aria-label={tx.t("flair3d.ui.trigger.title")} data-testid="nucleo-trigger" data-open={aberta || undefined}>
       <h3 className="type-label">{tx.t(`flair3d.ui.trigger.${tipo}.name`)}</h3>
       <p className="n3d-trigger-note" role="status">{aviso}</p>
       {resta !== null && <p className="n3d-trigger-note tabular" data-testid="lance-relogio">{tx.t("flair3d.ui.trigger.LANCE.relogio", { n: resta })}</p>}
+      {tipo === "LANCE" && pode && <p className="n3d-trigger-note" data-testid="lance-distancia">{tx.t("flair3d.ui.trigger.LANCE.distancia")}</p>}
       {erro && (
         <p className="n3d-error" role="alert">
           {tx.ou(`flair3d.ui.trigger.error.${erro.code}`, tx.t("flair3d.ui.trigger.error.default", { msg: erro.message }))}
