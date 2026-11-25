@@ -19,10 +19,11 @@ final class EsportePosicao {
 
     /** O ajuste do duelo pela posição (0 sem posição, com posição inválida ou parada). */
     static int ajuste(String alvo, boolean comABola) {
-        if (alvo == null || !alvo.startsWith(PREFIXO)) {
+        String posicao = EsporteTempo.parte(alvo, PREFIXO);
+        if (posicao == null) {
             return 0;
         }
-        String[] xy = alvo.substring(PREFIXO.length()).split(",");
+        String[] xy = posicao.substring(PREFIXO.length()).split(",");
         double dx;
         double dy;
         try {

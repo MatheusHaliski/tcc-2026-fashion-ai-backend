@@ -19,7 +19,8 @@ import java.util.Random;
  * finalização); as outras cartas só pressionam, com metade da força. Sem carta, ou com o duelo perdido, o adversário
  * faz o que queria.</p>
  *
- * <p>Todo duelo é: força da pessoa − força do adversário + sorte de −8 a +8 (da semente). Vence com zero ou mais. A
+ * <p>Todo duelo é: força da pessoa − força do adversário + sorte de −8 a +8 (da semente; no chute e no desarme, a barra
+ * de tempo aperta para ±5 ou ±3, {@link EsporteTempo}). Vence com zero ou mais. A
  * finalização, dos dois lados, é resolvida em {@link EsporteFinalizacao}; no futebol, o passe que perde por mais de
  * {@link #LATERAL} sai pela lateral e o adversário repõe a bola dali ({@link EsporteReinicio}).</p>
  */
@@ -52,6 +53,11 @@ final class EsporteLance {
     /** A sorte de um duelo da pessoa, com o ajuste da posição da capitã (EsportePosicao). */
     private int jogo() {
         return sorte() + p.posicionamento;
+    }
+
+    /** O duelo do chute e do desarme: a barra de tempo aperta a sorte (EsporteTempo). */
+    private int jogoComTempo() {
+        return EsporteTempo.sorte(sorte(), p.tempo) + p.posicionamento;
     }
 
     private int sorte() {
@@ -91,7 +97,7 @@ final class EsporteLance {
             case EsporteForcas.CORRIDA -> avancar("CONDUCAO", p.nossa(acao, carta) + embalo - p.rival(VELOCIDADE) + jogo(), false);
             case EsporteForcas.DRIBLE -> avancar("DRIBLE", p.nossa(acao, carta) + embalo - (p.rival(DEFESA) + p.rival(FISICO)) / 2 + jogo(), true);
             case EsporteForcas.CHUTE -> {
-                double margem = p.nossa(acao, carta) + embalo + DISTANCIA[p.zona] - (p.rival(DEFESA) + GOLEIRO) + jogo();
+                double margem = p.nossa(acao, carta) + embalo + DISTANCIA[p.zona] - (p.rival(DEFESA) + GOLEIRO) + jogoComTempo();
                 new EsporteFinalizacao(p, sorteio).resolver(true, carta, acao, margem);
             }
             default -> p.lance("PROTEGE", true, true, carta, acao, z, z);
@@ -135,7 +141,7 @@ final class EsporteLance {
         if (carta != null) {
             switch (acao) {
                 case EsporteForcas.DEFESA -> {
-                    boolean ok = p.nossa(acao, carta) - p.rival(TECNICA) + jogo() >= 0;
+                    boolean ok = p.nossa(acao, carta) - p.rival(TECNICA) + jogoComTempo() >= 0;
                     if (ok) {
                         p.resumo.desarme(true);
                     }
