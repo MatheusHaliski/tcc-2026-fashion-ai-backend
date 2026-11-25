@@ -35,7 +35,7 @@ import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import type { FxPrefs } from "@/lib/flair/nucleos/fx-sound";
 import { comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
-import type { AvatarTipo, NucleoConfig, NucleoDefinicao, NucleoResultado, ZonaEscolha } from "@/lib/flair/nucleos/types";
+import type { AvatarTipo, MaquiagemEscolha, NucleoConfig, NucleoDefinicao, NucleoResultado, ZonaEscolha } from "@/lib/flair/nucleos/types";
 
 export interface NucleoStageProps {
   definicao: NucleoDefinicao;
@@ -58,6 +58,7 @@ export interface NucleoStageProps {
   semente?: number;
   /** o que a pessoa já pintou em cada zona (modos do Ateliê) */
   zonas?: Record<string, ZonaEscolha>;
+  maquiagem?: Record<string, MaquiagemEscolha>;
   prefs: FxPrefs;
   onPref: (campo: keyof FxPrefs) => void;
   entrada: EntradaNaTela | null;
@@ -84,7 +85,7 @@ export function NucleoStage(props: NucleoStageProps) {
     <div className="n3d-stage" data-testid="nucleo-stage">
       <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
-        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} />
+        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
       {props.recursos && <NucleoRodaAtributos recursos={props.recursos} reduzido={reduzido} efeitos={prefs.efeitos} />}

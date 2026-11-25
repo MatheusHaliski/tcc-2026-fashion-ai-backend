@@ -13,6 +13,7 @@ import type { HumanParts } from "@/components/three/human-avatar";
 import type { Avatar3dRef, Look3dPiece, Mannequin3d } from "@/components/three/common";
 import { applyIdle } from "@/lib/avatar3d/human/pose";
 import type { BodyParams } from "@/lib/avatar3d/body-spec";
+import type { MaquiagemNoRosto } from "@/lib/flair/make-up/rosto-maquiado";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import { aplicarNoEsqueleto } from "@/components/flair/nucleos/scene/avatar-rig";
 import { agora, aplicarNoObjeto, CenaContexto, estadoDoAtor } from "@/components/flair/nucleos/scene/stage-context";
@@ -53,9 +54,11 @@ interface AvatarProps {
   protagonista: Protagonista;
   /** altura do piso onde o avatar fica (passarela, palco, tablado) */
   altura?: number;
+  /** a maquiagem escolhida, no rosto (Road to Glory) */
+  maquiagem?: MaquiagemNoRosto | null;
 }
 
-export function NucleoAvatar({ estado, pecas, reduzido, protagonista, altura = 0 }: AvatarProps) {
+export function NucleoAvatar({ estado, pecas, reduzido, protagonista, altura = 0, maquiagem }: AvatarProps) {
   const { avatar, sexo, corpo } = protagonista;
   const manequim = useMemo<Mannequin3d>(() => ({ sex: sexo, head: avatar ? "AVATAR" : "PADRAO", avatar }), [sexo, avatar]);
   const cena = useContext(CenaContexto);
@@ -85,7 +88,7 @@ export function NucleoAvatar({ estado, pecas, reduzido, protagonista, altura = 0
     <group ref={fora} name="nucleo-avatar" position={[0, altura, 0]}>
       <group ref={raiz}>
         <Suspense fallback={<Silhueta cor="#ECE6DC" />}>
-          <Mannequin mannequin={manequim} body={corpo} pieces={pecas} still={reduzido} externalPose
+          <Mannequin mannequin={manequim} body={corpo} pieces={pecas} still={reduzido} externalPose maquiagem={maquiagem}
             onHuman={guardarHumano} fallback={<Silhueta cor="#ECE6DC" />} />
         </Suspense>
       </group>
