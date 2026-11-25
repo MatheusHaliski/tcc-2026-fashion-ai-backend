@@ -11527,6 +11527,7 @@
   "flair3d.detetive.ui.vida": "Life: {n} of 3",
   "flair3d.detetive.ui.tempo": "Match clock",
   "flair3d.detetive.ui.escondido": "Hidden",
+  "flair3d.detetive.ui.doLook": "Look: {vida} lives · guards see {cone} m · {passo} s per step",
   "flair3d.detetive.ui.acusar": "Who took the Maré collection? Point to the suspect by number.",
   "flair3d.detetive.ui.escolhaCarta": "Pick a {cor} card from your hand.",
   "flair3d.detetive.ui.semCarta": "No {cor} card in hand: wait for the hand to cycle, buy at the club market or ask for help at the door.",

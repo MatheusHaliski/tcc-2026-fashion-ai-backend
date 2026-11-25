@@ -33,7 +33,7 @@ public final class DetetiveCaso {
     }
 
     public static Resultado pontuar(Map<String, CbcRules.Card> look, Contexto contexto) {
-        DetetivePartida p = new DetetivePartida(contexto, look.values().stream().map(CbcRules.Card::id).toList())
+        DetetivePartida p = new DetetivePartida(contexto, look.values().stream().map(CbcRules.Card::id).toList(), DetetiveDoLook.de(look))
                 .jogar(contexto.andamento().acionamentos());
         List<Evento> eventos = List.of(new Evento("DETETIVE", p.retrato()));
         if (!p.encerrada()) {

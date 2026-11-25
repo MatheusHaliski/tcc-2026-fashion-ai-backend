@@ -60,7 +60,7 @@ final class DetetiveAcoes {
                 DetetivePartida.conferir(destino != null && !destino.id().equals(e.ponto) && DetetiveSala.distancia(destino, e.pontoAtual()) <= DetetiveSala.PASSO);
                 e.ponto = destino.id();
                 e.escondido = false;
-                e.tempo += DetetivePartida.SEGUNDOS_POR_PASSO;
+                e.tempo += e.doLook.segundosPorPasso();
                 return true;
             }
             case "TROCAR" -> {
@@ -69,7 +69,7 @@ final class DetetiveAcoes {
                 return true;
             }
             case "ESPERAR" -> {
-                e.tempo += DetetivePartida.SEGUNDOS_POR_PASSO;
+                e.tempo += e.doLook.segundosPorPasso();
                 return true;
             }
             case "PORTA" -> {
@@ -122,7 +122,7 @@ final class DetetiveAcoes {
                 return true;
             }
             case "VIDA" -> {
-                DetetivePartida.conferir(e.vida < DetetiveEstado.VIDA);
+                DetetivePartida.conferir(e.vida < e.doLook.vidaMaxima());
                 e.vida++;
                 return true;
             }

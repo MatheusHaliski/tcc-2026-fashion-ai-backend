@@ -30,7 +30,14 @@ public final class DetetivePartida {
     private final DetetiveMao mao;
 
     public DetetivePartida(Contexto contexto, Collection<UUID> noLook) {
+        this(contexto, noLook, DetetiveDoLook.NEUTRO);
+    }
+
+    /** Com o que o look muda no corpo da detetive: vida máxima, cone dos vigias e tempo do passo. */
+    public DetetivePartida(Contexto contexto, Collection<UUID> noLook, DetetiveDoLook doLook) {
         mao = new DetetiveMao(contexto, noLook);
+        e.doLook = doLook;
+        e.vida = doLook.vidaMaxima();
     }
 
     public DetetivePartida jogar(List<Acionamento> passos) {

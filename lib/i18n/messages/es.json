@@ -11527,6 +11527,7 @@
   "flair3d.detetive.ui.vida": "Vida: {n} de 3",
   "flair3d.detetive.ui.tempo": "Reloj de la partida",
   "flair3d.detetive.ui.escondido": "Escondido",
+  "flair3d.detetive.ui.doLook": "Look: {vida} vidas · los guardias ven {cone} m · {passo} s por paso",
   "flair3d.detetive.ui.acusar": "¿Quién se llevó la colección Maré? Señala al sospechoso por su número.",
   "flair3d.detetive.ui.escolhaCarta": "Elige una carta {cor} de tu mano.",
   "flair3d.detetive.ui.semCarta": "Sin carta {cor} en la mano: espera a que gire la mano, compra en el mercado del club o pide ayuda en la puerta.",

@@ -39,7 +39,8 @@
 .dtv-sala,
 .dtv-vida,
 .dtv-relogio,
-.dtv-escondido {
+.dtv-escondido,
+.dtv-look {
   padding: 4px 10px;
   border-radius: 999px;
   background: #000b;
@@ -58,6 +59,10 @@
 
 .dtv-escondido {
   background: #2f5e4a;
+}
+
+.dtv-look {
+  font-size: var(--text-caption);
 }
 
 .dtv-btn {

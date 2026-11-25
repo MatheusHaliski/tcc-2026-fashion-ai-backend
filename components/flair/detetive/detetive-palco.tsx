@@ -79,9 +79,10 @@ export function DetetivePalco({ r, pecas, protagonista, semente, ocupado, onAcao
       <div className="dtv-hud" role="status" aria-live="off">
         <Link href="/flair/3d" className="n3d-icon-btn" aria-label={voltar} title={voltar}><HudIcon name="voltar" /></Link>
         <span className="dtv-sala">{tx.t(`flair3d.detetive.sala.${r.sala}`)}</span>
-        <span className="dtv-vida" aria-label={tx.t("flair3d.detetive.ui.vida", { n: r.vida })}>{"●".repeat(r.vida)}<i>{"○".repeat(Math.max(0, 3 - r.vida))}</i></span>
+        <span className="dtv-vida" aria-label={tx.t("flair3d.detetive.ui.vida", { n: r.vida })}>{"●".repeat(r.vida)}<i>{"○".repeat(Math.max(0, (r.vidaMaxima ?? 3) - r.vida))}</i></span>
         <span className="dtv-relogio tabular" aria-label={tx.t("flair3d.detetive.ui.tempo")}>{relogio(r.tempo)}</span>
         {r.escondido && <span className="dtv-escondido">{tx.t("flair3d.detetive.ui.escondido")}</span>}
+        {r.doLook && <span className="dtv-look" data-testid="detetive-look">{tx.t("flair3d.detetive.ui.doLook", { vida: r.doLook.vidaMaxima, cone: r.doLook.alcance, passo: r.doLook.segundosPorPasso })}</span>}
       </div>
       <div className="dtv-hud-botoes">
         <button type="button" className="btn btn-sm dtv-btn" onClick={() => setFolha("CADERNO")} data-testid="detetive-abre-caderno">{tx.t("flair3d.detetive.ui.pistas", { n: r.pistas.length, total: r.totalDePistas })}</button>
