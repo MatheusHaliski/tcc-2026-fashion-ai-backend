@@ -40,7 +40,7 @@ def _stations(m: TopMeasures, loop_perimeter: float, ribbed: bool) -> list[tuple
 
 
 def build_sleeve(mesh: Mesh, loop: list[int], m: TopMeasures, side: int, y_shoulder: float, ribbed: bool,
-                 angle: float = 0.0) -> tuple[list[int], np.ndarray]:
+                 angle: float = 0.0, torso_half_width=None) -> tuple[list[int], np.ndarray]:
     """Manga montada na cava e caída ``angle`` graus abaixo da horizontal (0 = pose T; 80 = braço do avatar).
 
     Do bíceps ao punho, um tubo reto no eixo do braço, que sai da articulação do ombro. Da cava ao bíceps, cada ponto
@@ -67,15 +67,27 @@ def build_sleeve(mesh: Mesh, loop: list[int], m: TopMeasures, side: int, y_shoul
         return center + np.outer(ay * np.cos(phi), up) + np.outer(az * np.sin(phi), z), center
 
     bicep, _ = ring(cap, m.biceps * cm)
+    # saída da cava: em cima segue a inclinação do ombro para baixo (sem prateleira na ponta do ombro); na axila já sai
+    # na direção do braço, rente ao lado do tronco (saindo na horizontal, a axila virava uma aba no peito)
+    drop = 0.55 * np.clip(np.cos(phi), 0, None) * np.sin(a)
+    start = np.stack([np.full(len(phi), side * 1.0), -drop, np.zeros(len(phi))], 1)
+    start /= np.linalg.norm(start, axis=1, keepdims=True)
+    under = np.clip(-np.cos(phi), 0, None)[:, None]
+    start = start * (1 - under) + d * under
+    start /= np.linalg.norm(start, axis=1, keepdims=True)
     rings, rows, centers = [list(loop)], [p0], [c]
     for x, perim, _ in stations:
         if x >= cap - 1e-9:
             pts, center = ring(x, perim)
-        else:   # cabeça da manga: Bézier da cava (saindo na horizontal) ao bíceps (chegando no eixo do braço)
+        else:   # cabeça da manga: Bézier da cava ao bíceps (chegando no eixo do braço)
             t, h = x / cap, cap / 3
-            q1, q2 = p0 + np.array([side * h, 0.0, 0.0]), bicep - d * h
+            q1, q2 = p0 + start * h, bicep - d * h
             pts = (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * q1 + 3 * (1 - t) * t ** 2 * q2 + t ** 3 * bicep
             center = pts.mean(0)
+        if torso_half_width is not None and angle > 0:
+            # o lado de dentro da manga encosta no tronco, não entra nele (na peça vestida fica apertado ali)
+            wall = np.array([torso_half_width(y) for y in pts[:, 1]]) + 0.004
+            pts[:, 0] = side * np.maximum(side * pts[:, 0], wall)
         rings.append([mesh.add(p) for p in pts]); rows.append(pts); centers.append(center)
     mats = ["corpo"] + [s[2] for s in stations]
     n = len(loop)

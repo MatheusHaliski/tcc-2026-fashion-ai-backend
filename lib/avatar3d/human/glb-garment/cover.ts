@@ -95,3 +95,19 @@ export function coverOf(posed: Float32Array, index: ArrayLike<number>, part: Int
   if (under + through) closeIslands(covered, f);
   return { covered, pierced: through / Math.max(1, under + through) };
 }
+
+/**
+ * Pele coberta recuada um anel na borda: fica coberto só o vértice cujos vizinhos também estão. A profundidade do pano
+ * é medida numa grade de 1–2 cm que passa um pouco da borda real da peça; sem o recuo, a pele logo acima da gola (e
+ * de outras bordas) era trocada pelo forro na cor do pano, em degraus do tamanho dos triângulos do corpo.
+ */
+export function erodeCovered(covered: Uint8Array, f: BodyFrame): Uint8Array {
+  const out = Uint8Array.from(covered);
+  for (let t = 0; t < f.tri.length; t += 3) {
+    const a = f.tri[t], b = f.tri[t + 1], c = f.tri[t + 2];
+    if (covered[a] && covered[b] && covered[c]) continue;
+    out[a] = 0; out[b] = 0; out[c] = 0;
+  }
+  return out;
+}
+

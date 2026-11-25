@@ -13,11 +13,11 @@
 import * as THREE from "three";
 import type { GarmentSpec } from "../garments";
 import { alignGarment, classOf, groupsOf } from "./align";
-import { coverOf } from "./cover";
+import { coverOf, erodeCovered } from "./cover";
 import type { BodyFrame } from "./frame";
 import { wrapGarment, type WrapMetrics } from "./wrap";
 import type { MeshyManifest, MeshySizes } from "../../meshy/manifest";
-import { SIZE_CONVENTION, applyRegionSize, unsizedSpec } from "../../meshy/size";
+import { SIZE_CONVENTION, applyRegionSize, sizedGarment, unsizedSpec } from "../../meshy/size";
 import { partOfColor } from "../../meshy/part-codes";
 
 export { bodyFrame } from "./frame";
@@ -113,16 +113,16 @@ export function fitGlbGarment(src: GlbSource, f: BodyFrame, spec: GarmentSpec, b
   const cls = classOf(spec.kind); if (!cls) return { ok: false, reason: "SEM_CLASSE" };
   // com o tamanho por região, a folga da colisão é a da peça sem o tamanho: a sobra vem da largura da própria peça
   const base = sizes ? unsizedSpec(spec, cls === "lower") : spec, clearance = clearanceOf(base, below);
-  const aligned = alignGarment(src.position, f, cls, clearance, base.sizeFold?.length ?? 0, src.index, meshy.armsSpread ? 1.8 : 1.4, meshy.realScale === true, meshy.shoulderTop, meshy.realScale ? src.parts : null);
+  // escala real: o tamanho muda a própria peça antes do encaixe (meshy/size.ts), a partir do tamanho gerado
+  const real = meshy.realScale && sizes ? sizedGarment(src.position, meshy.sizeShift ?? 0, sizes) : null;
+  const aligned = alignGarment(real?.position ?? src.position, f, cls, clearance, base.sizeFold?.length ?? 0, src.index, meshy.armsSpread ? 1.8 : 1.4, meshy.realScale === true, meshy.shoulderTop, meshy.realScale ? src.parts : null);
   if (!aligned) return { ok: false, reason: "SEM_ANCORA" };
-  // escala real: o tamanho entra a partir do tamanho gerado, nunca do corpo (a mesma peça não muda com o avatar)
-  const sized = meshy.realScale ? { ...spec, sizeSteps: meshy.sizeShift ?? 0, sizeFold: undefined } : spec;
-  const size = sizes ? { ...SIZE_CONVENTION, ...applyRegionSize(aligned.pos, aligned.part, f, sized, sizes) } : null;
+  const size = !sizes ? null : real ? { ...SIZE_CONVENTION, ...real.used } : { ...SIZE_CONVENTION, ...applyRegionSize(aligned.pos, aligned.part, f, spec, sizes) };
   const armpitY = (f.joint("LeftArm").y + f.joint("RightArm").y) / 2 - 0.05;
   const crotchY = Math.min(f.joint("LeftUpLeg").y, f.joint("RightUpLeg").y) - 0.08;
   // peça do motor Blender com as partes rotuladas: manga e tronco já são superfícies separadas (só a cava é comum)
   if (!(meshy.realScale && src.parts)) src = splitFused(src, aligned.part, aligned.pos, armpitY, crotchY);
-  const wrapped = wrapGarment(aligned.pos, aligned.part, src.index, f, groupsOf(cls), clearance);
+  const wrapped = wrapGarment(aligned.pos, aligned.part, src.index, f, groupsOf(cls), clearance, !!(meshy.realScale && src.parts));
   const cover = coverOf(wrapped.posed, src.index, aligned.part, f);
   const metrics = { ...wrapped.metrics, scale: aligned.scale, pierced: cover.pierced };
   // `accept`: aceite afrouxado do manifesto (conferido na tela para aquele modelo); nunca aperta o padrão
@@ -142,7 +142,8 @@ export function fitGlbGarment(src: GlbSource, f: BodyFrame, spec: GarmentSpec, b
   // altura posada por vértice e a classe: a peça de cima esconde o que da de baixo fica debaixo dela (meshy/tuck.ts)
   const posedY = Float32Array.from({ length: wrapped.posed.length / 3 }, (_, v) => wrapped.posed[v * 3 + 1]);
   g.userData = { buildPath: "GLB_WRAP", metrics, part: aligned.part, size, cls, posedY, posed: wrapped.posed };
-  return { ok: true, geometry: g, metrics, covered: cover.covered };
+  // peça em escala real: a área coberta recua um anel na borda (sem forro em degraus acima da gola e das barras)
+  return { ok: true, geometry: g, metrics, covered: meshy.realScale ? erodeCovered(cover.covered, f) : cover.covered };
 }
 
 /** Materiais do .glb para vestir: frente e verso visíveis e na frente das camadas de baixo (como o molde). */

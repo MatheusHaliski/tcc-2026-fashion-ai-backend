@@ -10,6 +10,11 @@ import numpy as np
 from .geometry import Mesh
 from .spec import GarmentSpec
 
+# Manga curta: o antebraço nu passa à frente do quadril e a pele do colo fica acima da gola; a métrica de furos do
+# provador conta essa pele como "à frente do pano do tronco". Aceite um pouco mais largo só aqui (a camisa da Meshy usa
+# 4,5 %, lib/avatar3d/meshy/slots.ts), conferido na tela (docs/provador/garment-blender/).
+SHORT_SLEEVE_PIERCED = 0.04
+
 
 def fit_manifest(spec: GarmentSpec, mesh: Mesh) -> dict:
     v = np.array(mesh.verts)
@@ -19,7 +24,7 @@ def fit_manifest(spec: GarmentSpec, mesh: Mesh) -> dict:
         "versao": 1, "categoria": "lower_piece" if lower else "upper_piece", "subcategoria": spec.subcategoria,
         "slot": "lower" if lower else "upper", "attach": "wrap", "osso": "Hips" if lower else "Spine2", "giroY": 0, "centro": [round(float(c), 5) for c in (lo + hi) / 2],
         "caixa": [round(float(c), 5) for c in hi - lo], "escalaNominal": 0,
-        "dicas": {"par": False, "corteX": 0, "abertura": 0, "bracosAbertos": not lower and spec.angulo_manga < 30, "aberto": False, "sola": 0},
+        "dicas": {"par": False, "corteX": 0, "abertura": 0, "bracosAbertos": not lower and spec.angulo_manga < 30, "aberto": False, "sola": 0, **({"aceite": {"furada": SHORT_SLEEVE_PIERCED}} if spec.manga_curta else {})},
         "tamanhos": {"grade": "numeric" if lower else "letter", "porPasso": {"largura": 0.04, "comprimento": 0.02, "manga": 0.015},
                      "limite": [-3, 4], "convencao": "RELATIVE_VISUAL_APPROXIMATION", "alegacaoDeCaimento": "NONE",
                      "medidasDoAvatarAlteradas": False},

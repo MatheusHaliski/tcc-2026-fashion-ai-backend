@@ -10,7 +10,7 @@ import { manifestUrlOf, parseManifest } from "./manifest";
 import { SLOT_RULES, isAccessoryRule, slotRuleOf } from "./slots";
 import { budgetSize } from "./texture-budget";
 import { hemOf, hemProfile, tuckedBySector, tuckedIndex } from "./tuck";
-import { generatedSizeShift } from "./size";
+import { generatedSizeShift, sizedGarment } from "./size";
 import { partOfColor, partsOfColors } from "./part-codes";
 
 const positions = (g: THREE.BufferGeometry) => Float32Array.from(g.getAttribute("position").array as ArrayLike<number>);
@@ -184,5 +184,23 @@ describe("calça debaixo da peça de cima", () => {
     const low = [0.2, 0.8, 0.01, 0.21, 0.8, 0.01, 0.2, 0.81, 0.01, -0.2, 0.8, 0.01, -0.21, 0.8, 0.01, -0.2, 0.81, 0.01];
     expect(Array.from(tuckedBySector([0, 1, 2, 3, 4, 5], low, profile)!)).toEqual([3, 4, 5]);
     expect(hemProfile(top, [1, 1, 1, 1])).toBeNull();
+  });
+});
+
+describe("tamanho da peça em escala real", () => {
+  const sizes = { grade: "letter" as const, porPasso: { largura: 0.05, comprimento: 0.03, manga: 0.03 }, limite: [-2, 2] as [number, number],
+    convencao: "RELATIVE_VISUAL_APPROXIMATION" as const, alegacaoDeCaimento: "NONE" as const, medidasDoAvatarAlteradas: false as const };
+  // tronco de 0,5 m de largura e manga pendurada fora dele; o alto (gola) em y = 0,7
+  const pos = new Float32Array([-0.25, 0, -0.1, 0.25, 0, 0.1, 0.3, 0.2, 0, 0, 0.7, 0]);
+  it("muda a peça inteira, tronco e manga juntos, com o alto parado", () => {
+    const out = sizedGarment(pos, 2, sizes).position;
+    expect(out[3] - out[0]).toBeCloseTo(0.5 * 1.1, 5);       // largura +5 % por passo
+    expect(out[6]).toBeCloseTo(0.025 + 0.275 * 1.1, 5);        // a manga anda com o tronco, em volta do centro da peça
+    expect(out[10]).toBeCloseTo(0.7, 6);                      // o alto não sai do lugar
+    expect(out[1]).toBeCloseTo(0.7 - 0.7 * 1.06, 5);          // comprimento a partir do alto
+  });
+  it("no tamanho gerado e fora do limite", () => {
+    expect(sizedGarment(pos, 0, sizes).position).toBe(pos);
+    expect(sizedGarment(pos, 5, sizes).used.chest).toBeCloseTo(1.1, 6);
   });
 });

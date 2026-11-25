@@ -19,9 +19,10 @@ def _collar(mesh: Mesh, spec: GarmentSpec, neck: list[int], thick: float) -> Non
     neck_pts = np.array([mesh.verts[i] for i in neck])
     gola = (COLLAR_HEIGHT[spec.gola] or spec.medidas.gola) * 0.01
     mesh.seams.update(neck)
-    # a dobra de dentro fica dentro da altura da gola: descendo abaixo do decote, batia no pescoço e virava pontas
-    extend(mesh, neck, (0, 1, 0), [(gola * 0.5, 0.985), (gola, 0.975), (gola - 0.004, 0.975 * inset(neck_pts, thick)),
-                                   (gola * 0.35, 0.975 * inset(neck_pts, thick))], "ribana")
+    # a gola sobe reta (estreitando para abraçar o pescoço ela batia nele e a colisão a picotava) e a dobra de dentro
+    # fica dentro da altura dela (descendo abaixo do decote, também batia no pescoço)
+    extend(mesh, neck, (0, 1, 0), [(gola * 0.5, 1.0), (gola, 1.0), (gola - 0.004, inset(neck_pts, thick)),
+                                   (gola * 0.35, inset(neck_pts, thick))], "ribana")
 
 
 def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
@@ -31,7 +32,9 @@ def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
     edge_mat = "ribana" if ribbed else "corpo"
     thick = spec.tecido.espessura_mm / 1000 * (2 if ribbed else 1)   # borda dobrada: duas camadas
     grid, loops, rows, (i_arm, i_sh, i_neck) = build_torso(mesh, m, ribbed)
-    cuffs = [build_sleeve(mesh, loop, m, side, rows[i_sh].y, ribbed, spec.angulo_manga)
+    ys, half = np.array([r.y for r in rows[: i_sh + 1]]), np.array([r.a for r in rows[: i_sh + 1]])
+    torso_half = lambda y: float(np.interp(y, ys, half))   # noqa: E731 - meia largura do tronco na altura y
+    cuffs = [build_sleeve(mesh, loop, m, side, rows[i_sh].y, ribbed, spec.angulo_manga, torso_half)
              for loop, side in zip(loops, (1, -1))]
     hem = [int(v) for v in grid[0]]
     hem_pts = np.array([mesh.verts[i] for i in hem])

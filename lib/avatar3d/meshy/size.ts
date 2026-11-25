@@ -123,3 +123,27 @@ export function unsizedSpec(spec: GarmentSpec, lower: boolean): GarmentSpec {
   const common = Math.min(fold.chest, fold.waist, fold.hip), r = lower ? RADIAL.numeric : RADIAL.letter;
   return { ...spec, ease: Math.max(0.0015, spec.ease - r * common), sizeFold: { ...fold, length: 0 } };
 }
+
+/**
+ * Peça em escala real num tamanho diferente do gerado (``shift`` passos da grade), mudada na própria peça, antes do
+ * encaixe: largura e profundidade por igual em volta do centro dela, comprimento a partir do topo — tronco e mangas
+ * juntos. Por região, depois do encaixe, o tronco alargava sem a manga (a parede atravessava a cabeça da manga e virava
+ * ponta) e a manga já pendurada no braço era empurrada para fora.
+ */
+export function sizedGarment(position: Float32Array, shift: number, sizes: MeshySizes) {
+  const s = clamp(shift, sizes.limite[0], sizes.limite[1]), k = sizes.porPasso;
+  const kw = 1 + k.largura * s, kl = 1 + k.comprimento * s;
+  const used = { chest: kw, waist: kw, hip: kw, length: kl, sleeve: kl };
+  if (!s) return { position, used };
+  let top = -Infinity, x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let i = 0; i < position.length; i += 3) {
+    top = Math.max(top, position[i + 1]); x0 = Math.min(x0, position[i]); x1 = Math.max(x1, position[i]);
+    z0 = Math.min(z0, position[i + 2]); z1 = Math.max(z1, position[i + 2]);
+  }
+  const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, out = new Float32Array(position.length);
+  for (let i = 0; i < position.length; i += 3) {
+    out[i] = cx + (position[i] - cx) * kw; out[i + 2] = cz + (position[i + 2] - cz) * kw;
+    out[i + 1] = top - (top - position[i + 1]) * kl;
+  }
+  return { position: out, used };
+}

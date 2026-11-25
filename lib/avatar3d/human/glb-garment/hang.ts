@@ -15,6 +15,8 @@ const BINS = 16;
 const MIN_CLOTH = 24;
 /** Desvio máximo corrigido (m): a manga de verdade fica a poucos centímetros do braço. */
 const MAX_SHIFT = 0.05;
+/** Faixa do braço (fração ombro → mão) em que o deslocamento entra aos poucos. */
+const RAMP_FROM = 0.22, RAMP_TO = 0.45;
 /** Manga mais comprida que o braço (peça masculina num corpo menor): o que passa do punho se junta nele, a este fator. */
 const BUNCH = 0.3;
 
@@ -53,7 +55,9 @@ export function hangOnLimb(p: Float32Array, part: Int8Array, label: number, pivo
   idx.forEach((v, i) => {
     const x = Math.min(BINS - 1, Math.max(0, t[i] * BINS - 0.5)), b0 = Math.floor(x), b1 = Math.min(BINS - 1, b0 + 1);
     const d0 = off[b0], d1 = off[b1]; if (!d0 || !d1) return;
-    const w = Math.min(1, Math.max(0, (t[i] - 0.08) / 0.25)), ramp = w * w * (3 - 2 * w);
+    // a cabeça da manga fica presa à cava: o deslocamento só entra depois da axila (puxada para o braço, a parte de
+    // baixo dela entrava no tronco e a colisão a empurrava em pontas na lateral do peito)
+    const w = Math.min(1, Math.max(0, (t[i] - RAMP_FROM) / (RAMP_TO - RAMP_FROM))), ramp = w * w * (3 - 2 * w);
     const d = d0.clone().lerp(d1, x - b0).multiplyScalar(ramp);
     // além do punho (t > 1), a manga se junta: volta ao longo do braço; sem isso abria em sino sobre o quadril
     if (t[i] > 1) d.addScaledVector(axis, (t[i] - 1) * len * (1 - BUNCH));

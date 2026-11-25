@@ -72,7 +72,8 @@ def _torso_rows(m: TopMeasures, ribbed: bool) -> tuple[list[Row], int, int, int]
         t = min(1.0, (y - rib) / max(1e-6, (y_arm - 0.06) - rib))
         rows.append(Row(y, body_a + (a_chest - body_a) * t, body_b + (b_chest - body_b) * t, "corpo"))
     i_arm = len(rows) - 1
-    neck_a, neck_b = ellipse_semi_axes(m.pescoco * cm, 0.82)
+    # decote quase redondo e centrado no pescoço: achatado e recuado, as costas da gola caíam dentro da nuca
+    neck_a, neck_b = ellipse_semi_axes(m.pescoco * cm, 0.9)
     theta = np.linspace(0, 2 * np.pi, COLUMNS, endpoint=False)
     front = np.clip(np.sin(theta), 0, None) ** 1.6
     back = np.clip(-np.sin(theta), 0, None) ** 1.6
@@ -90,7 +91,7 @@ def _torso_rows(m: TopMeasures, ribbed: bool) -> tuple[list[Row], int, int, int]
     top = rows[-1]
     for t in np.linspace(0, 1, 6)[1:]:
         s, y = t ** 0.8, y_sh + (H - y_sh) * t
-        rows.append(Row(y, top.a + (neck_a - top.a) * s, depth(y), "corpo", spread(y), dz=-0.01 * t))
+        rows.append(Row(y, top.a + (neck_a - top.a) * s, depth(y), "corpo", spread(y)))
     i_neck = len(rows) - 1
     return rows, i_arm, i_sh, i_neck
 
