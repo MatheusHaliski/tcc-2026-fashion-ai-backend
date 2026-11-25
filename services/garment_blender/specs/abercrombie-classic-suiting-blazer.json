@@ -1,0 +1,23 @@
+{
+ "produto": "Classic Suiting Blazer",
+ "marca": "Abercrombie & Fitch",
+ "url_oficial": "https://www.abercrombie.com/shop/us/p/classic-suiting-blazer-56943319",
+ "subcategoria": "blazer",
+ "sexo": "FEMININO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#1f2433",
+  "gramatura": 280
+ },
+ "gola": "lapela",
+ "fechamento": "botoes",
+ "botoes": 2,
+ "ribana": false,
+ "medidas_marca": {
+  "decote_frente": 26,
+  "comprimento": 70
+ },
+ "observacao": "blazer de 2 botões com lapela. Cor não conferida (marinho escolhido).",
+ "tamanho": "M"
+}

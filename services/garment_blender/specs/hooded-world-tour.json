@@ -1,0 +1,20 @@
+{
+ "produto": "Hooded World Tour Sweatshirt",
+ "marca": "Carhartt WIP",
+ "url_oficial": "https://www.carhartt-wip.com/p/hooded-world-tour-sweat-black-663",
+ "subcategoria": "hoodie",
+ "tamanho": "M",
+ "sexo": "MASCULINO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "moletom",
+  "cor": "#1f1f22",
+  "gramatura": 380
+ },
+ "gola": "capuz",
+ "bolsos": [
+  "canguru"
+ ],
+ "ribana": true,
+ "observacao": "cor: a da variante (black), não amostrada de foto; moletom fechado (sem zíper) com bolso canguru"
+}

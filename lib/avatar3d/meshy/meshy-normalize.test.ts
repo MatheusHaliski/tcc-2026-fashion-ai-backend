@@ -10,6 +10,8 @@ import { manifestUrlOf, parseManifest } from "./manifest";
 import { SLOT_RULES, isAccessoryRule, slotRuleOf } from "./slots";
 import { budgetSize } from "./texture-budget";
 import { hemOf, hemProfile, tuckedBySector, tuckedIndex } from "./tuck";
+import { generatedSizeShift, sizedGarment } from "./size";
+import { partOfColor, partsOfColors } from "./part-codes";
 
 const positions = (g: THREE.BufferGeometry) => Float32Array.from(g.getAttribute("position").array as ArrayLike<number>);
 function merge(...gs: THREE.BufferGeometry[]): Float32Array {
@@ -39,6 +41,26 @@ function tinyGlb(translation = [1, 2, 3]): ArrayBuffer {
   v.setUint32(20 + jb.length, bin.length, true); v.setUint32(24 + jb.length, 0x004e4942, true); new Uint8Array(out, 28 + jb.length).set(bin);
   return out;
 }
+
+describe("rótulo da parte na cor do vértice (motor Blender)", () => {
+  it("vermelho 0 / 0,25 / 0,5 / 0,75 / 1 → tronco, manga +x, manga −x, perna +x, perna −x; tolera arredondamento", () => {
+    expect([0, 0.25, 0.5, 0.75, 1].map(partOfColor)).toEqual([0, 1, -1, 2, -2]);
+    expect(partOfColor(0.2504)).toBe(1); expect(partOfColor(-0.1)).toBe(0); expect(partOfColor(1.3)).toBe(-2);
+    expect(Array.from(partsOfColors([0.5, 1, 1, 1, 0.75, 1, 1, 1], 4))).toEqual([-1, 2]);
+  });
+});
+
+describe("escala real: tamanho escolhido a partir do tamanho gerado", () => {
+  it("passos da grade entre o gerado e o escolhido; sem rótulo ou fora da grade, 0", () => {
+    const m = (grade: "letter" | "numeric", tamanhoGerado?: string) => ({ tamanhoGerado, tamanhos: { grade } }) as never;
+    expect(generatedSizeShift(m("letter", "M"), "P")).toBe(-1);
+    expect(generatedSizeShift(m("letter", "M"), "GG")).toBe(2);
+    expect(generatedSizeShift(m("numeric", "40"), "46")).toBe(3);
+    expect(generatedSizeShift(m("letter", "M"), null)).toBe(0);
+    expect(generatedSizeShift(m("letter"), "GG")).toBe(0);
+    expect(generatedSizeShift(m("letter", "M"), "44")).toBe(0);
+  });
+});
 
 describe("glb-read", () => {
   it("lê posições e triângulos com a transformação do nó", () => {
@@ -114,6 +136,8 @@ describe("manifest: validação do dado do bucket", () => {
   const good = () => JSON.parse(JSON.stringify(analyzeGlb(sideShoe(), SLOT_RULES.running_shoes, "shoes_piece", "running_shoes", "shoes")));
   it("recusa versão desconhecida, osso inventado, número fora da faixa e tamanho sem fatores", () => {
     expect(parseManifest(good())).not.toBeNull();
+    expect(parseManifest({ ...good(), medidaReal: true, tamanhoGerado: "P" })).toMatchObject({ medidaReal: true, tamanhoGerado: "P" });
+    expect(parseManifest({ ...good(), medidaReal: "sim", tamanhoGerado: "<b>" })).not.toHaveProperty("medidaReal");
     expect(parseManifest({ ...good(), versao: 2 })).toBeNull();
     expect(parseManifest({ ...good(), osso: "constructor" })).toBeNull();
     expect(parseManifest({ ...good(), escalaNominal: 1e9 })).toBeNull();
@@ -160,5 +184,23 @@ describe("calça debaixo da peça de cima", () => {
     const low = [0.2, 0.8, 0.01, 0.21, 0.8, 0.01, 0.2, 0.81, 0.01, -0.2, 0.8, 0.01, -0.21, 0.8, 0.01, -0.2, 0.81, 0.01];
     expect(Array.from(tuckedBySector([0, 1, 2, 3, 4, 5], low, profile)!)).toEqual([3, 4, 5]);
     expect(hemProfile(top, [1, 1, 1, 1])).toBeNull();
+  });
+});
+
+describe("tamanho da peça em escala real", () => {
+  const sizes = { grade: "letter" as const, porPasso: { largura: 0.05, comprimento: 0.03, manga: 0.03 }, limite: [-2, 2] as [number, number],
+    convencao: "RELATIVE_VISUAL_APPROXIMATION" as const, alegacaoDeCaimento: "NONE" as const, medidasDoAvatarAlteradas: false as const };
+  // tronco de 0,5 m de largura e manga pendurada fora dele; o alto (gola) em y = 0,7
+  const pos = new Float32Array([-0.25, 0, -0.1, 0.25, 0, 0.1, 0.3, 0.2, 0, 0, 0.7, 0]);
+  it("muda a peça inteira, tronco e manga juntos, com o alto parado", () => {
+    const out = sizedGarment(pos, 2, sizes).position;
+    expect(out[3] - out[0]).toBeCloseTo(0.5 * 1.1, 5);       // largura +5 % por passo
+    expect(out[6]).toBeCloseTo(0.025 + 0.275 * 1.1, 5);        // a manga anda com o tronco, em volta do centro da peça
+    expect(out[10]).toBeCloseTo(0.7, 6);                      // o alto não sai do lugar
+    expect(out[1]).toBeCloseTo(0.7 - 0.7 * 1.06, 5);          // comprimento a partir do alto
+  });
+  it("no tamanho gerado e fora do limite", () => {
+    expect(sizedGarment(pos, 0, sizes).position).toBe(pos);
+    expect(sizedGarment(pos, 5, sizes).used.chest).toBeCloseTo(1.1, 6);
   });
 });

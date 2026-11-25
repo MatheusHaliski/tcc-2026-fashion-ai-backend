@@ -1,10 +1,12 @@
 /**
- * ACERVO — fotos das peças dentro da cena 3D. Cada foto vira uma textura pequena (128 × 128 px, recortada ao centro),
- * compartilhada por todas as formas que mostram a mesma peça e descartada quando nenhuma forma usa mais. A cena guarda
- * no máximo {@link MAX_FOTOS} fotos ao mesmo tempo (cerca de 4 MB de memória de vídeo); além disso, e quando a foto não
- * carrega, a peça continua como o bloco na cor dela.
+ * ACERVO — fotos das peças dentro da cena 3D. Cada foto vira uma textura pequena (128 × 128 px, a peça inteira no
+ * quadro) com o fundo tirado ({@link recortarFundo}): a cena desenha a silhueta da peça, não a foto num bloco. A textura é
+ * compartilhada por todas as formas que mostram a mesma peça e descartada quando nenhuma forma usa mais; o recorte fica
+ * em ``textura.userData.recorte``. A cena guarda no máximo {@link MAX_FOTOS} fotos ao mesmo tempo (cerca de 4 MB de
+ * memória de vídeo); além disso, e quando a foto não carrega, a peça fica com a silhueta da categoria na cor dela.
  */
 import * as THREE from "three";
+import { recortarFundo, type Recorte } from "./silhueta";
 
 export const LADO_DA_FOTO = 128;
 export const MAX_FOTOS = 64;
@@ -13,23 +15,32 @@ const TEMPO_LIMITE = 15000;
 /** Lê a imagem e devolve o canvas já reduzido; null quando falha. */
 export type CarregadorDeFoto = (url: string) => Promise<HTMLCanvasElement | null>;
 
-/** Faces da caixa (+x, −x, +y, −y, +z, −z) que mostram a foto: a peça pendurada pelas laterais, a dobrada por cima. */
-export function facesComFoto(forma: "pendurada" | "dobrada" | "calcado"): boolean[] {
-  if (forma === "pendurada") return [true, true, false, false, false, false];
-  if (forma === "calcado") return [true, true, true, false, false, false];
-  return [false, false, true, false, false, false];
-}
-
-/** Recorte central quadrado da imagem, já no tamanho da textura. */
+/**
+ * A imagem inteira no quadro (sem cortar a peça), com o fundo tirado; o recorte vai em ``canvas.dataset.recorte``.
+ * Sem acesso aos pixels (imagem de outra origem sem CORS) o getImageData lança, e quem chama trata.
+ */
 export function desenharFoto(imagem: CanvasImageSource & { width: number; height: number }, lado = LADO_DA_FOTO): HTMLCanvasElement | null {
   const canvas = document.createElement("canvas");
   canvas.width = lado;
   canvas.height = lado;
   const g = canvas.getContext("2d");
   if (!g || imagem.width <= 0 || imagem.height <= 0) return null;
-  const corte = Math.min(imagem.width, imagem.height);
-  g.drawImage(imagem, (imagem.width - corte) / 2, (imagem.height - corte) / 2, corte, corte, 0, 0, lado, lado);
+  const k = lado / Math.max(imagem.width, imagem.height);
+  const w = imagem.width * k, h = imagem.height * k;
+  g.drawImage(imagem, (lado - w) / 2, (lado - h) / 2, w, h);   // o que sobra do quadro fica transparente: é fundo
+  const pixels = g.getImageData(0, 0, lado, lado);
+  canvas.dataset.recorte = JSON.stringify(recortarFundo(pixels.data, lado, lado));
+  g.putImageData(pixels, 0, 0);
   return canvas;
+}
+
+/** O recorte guardado no canvas da foto; null quando não há (canvas de teste, leitura antiga). */
+export function recorteDoCanvas(canvas: HTMLCanvasElement): Recorte | null {
+  try {
+    return canvas.dataset?.recorte ? (JSON.parse(canvas.dataset.recorte) as Recorte) : null;
+  } catch {
+    return null;
+  }
 }
 
 export const carregarFoto: CarregadorDeFoto = (url) =>
@@ -77,6 +88,7 @@ export function pedirFoto(url: string, carregar: CarregadorDeFoto = carregarFoto
     textura.colorSpace = THREE.SRGBColorSpace;
     textura.generateMipmaps = false;
     textura.minFilter = THREE.LinearFilter;
+    textura.userData.recorte = recorteDoCanvas(canvas);
     return textura;
   });
   fotos.set(url, { promessa, usos: 1 });

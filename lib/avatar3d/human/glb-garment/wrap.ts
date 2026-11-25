@@ -182,14 +182,14 @@ function expand<T extends Float32Array | Uint16Array>(values: T, map: Uint32Arra
   return out;
 }
 
-export function wrapGarment(posedIn: Float32Array, partIn: Int8Array, indexIn: ArrayLike<number>, f: BodyFrame, groups: Groups, clearance: number): Wrapped {
+export function wrapGarment(posedIn: Float32Array, partIn: Int8Array, indexIn: ArrayLike<number>, f: BodyFrame, groups: Groups, clearance: number, ownSleeves = false): Wrapped {
   const w = weld(posedIn, indexIn); const posed = w.pos, index = w.index;
   const part = new Int8Array(posed.length / 3); for (let v = 0; v < w.map.length; v++) part[w.map[v]] = partIn[v];
   const n = posed.length / 3; const adj = neighbours(index, n); const before = posed.slice();
   // a peça mais estreita que o corpo alarga (width.ts) e o pano que ficou dentro do corpo sai só em z (depth.ts);
   // a colisão pela normal fica com o resto (laterais, axila)
   const inner = innerFaces(posed, index, f, groups);
-  const moved = Math.max(widen(posed, part, f, groups, clearance), pressOut(posed, part, index, f, groups, clearance, inner));
+  const moved = Math.max(widen(posed, part, f, groups, clearance, ownSleeves), pressOut(posed, part, index, f, groups, clearance, inner));
   const pushed = Math.max(moved, collide(posed, f, groups, clearance, adj, inner));
   let inside = 0, far = 0;
   // espinho: distância até a pele mais próxima, CABEÇA incluída — o capuz caído nas costas fica perto da cabeça e da

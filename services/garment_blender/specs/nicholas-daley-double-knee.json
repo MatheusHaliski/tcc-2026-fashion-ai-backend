@@ -1,0 +1,23 @@
+{
+ "produto": "Carhartt WIP x Nicholas Daley OG Double Knee Pant",
+ "marca": "Carhartt WIP",
+ "url_oficial": "https://www.carhartt-wip.com/p/carhartt-wip-x-nicholas-daley-og-double-knee-pant-nd-dark-navy-mustard-106",
+ "subcategoria": "casual_pants",
+ "tamanho": "40",
+ "sexo": "MASCULINO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#1f2130",
+  "gramatura": 400
+ },
+ "fechamento": "botao_ziper",
+ "bolsos": [
+  "faca",
+  "traseiro",
+  "joelho_duplo"
+ ],
+ "passantes": true,
+ "ribana": false,
+ "observacao": "cor: mediana da textura do produto (lote meshy-2026-11-18, #14151e) clareada pela luz da textura; joelho duplo da calça de trabalho"
+}

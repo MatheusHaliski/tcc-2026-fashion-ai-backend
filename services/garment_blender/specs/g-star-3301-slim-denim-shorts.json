@@ -1,0 +1,25 @@
+{
+ "produto": "3301 Slim Denim Shorts",
+ "marca": "G-Star RAW",
+ "url_oficial": "https://www.g-star.com/en_us/shop/men/shorts/d23615-d829-071",
+ "subcategoria": "denim_shorts",
+ "tamanho": "40",
+ "sexo": "MASCULINO",
+ "tecido": {
+  "tipo": "denim",
+  "cor": "#3d5f8c",
+  "gramatura": 340
+ },
+ "fechamento": "botao_ziper",
+ "bolsos": [
+  "faca",
+  "traseiro"
+ ],
+ "passantes": true,
+ "medidas_marca": {
+  "entreperna": 20
+ },
+ "observacao": "3301 slim cortada na altura da coxa (entreperna 20 cm, estimada da foto do pacote). Cor: medium blue (catálogo).",
+ "caimento": "regular",
+ "ribana": false
+}

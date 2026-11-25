@@ -16,10 +16,23 @@ import type { GarmentSpec } from "../human/garments";
 import type { BodyFrame } from "../human/glb-garment/frame";
 import type { FootAnchor } from "./body-anchors";
 import type { MeshyManifest, MeshySizes } from "./manifest";
+import { GRIDS } from "@/lib/tryon/sizes";
 
 export const SIZE_CONVENTION = { sizeVariants: "RELATIVE_VISUAL_APPROXIMATION", fitClaim: "NONE", avatarMeasurementsChanged: false } as const;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/**
+ * Peça em escala real (motor Blender, `medidaReal`): ela já É o tamanho gerado; o tamanho escolhido entra como a
+ * diferença para ele, em tamanhos da grade (GG escolhido de uma peça M = +2), nunca relativa ao corpo do avatar.
+ * Sem rótulo, sem tamanho gerado ou fora da grade: 0 (a peça como foi gerada).
+ */
+export function generatedSizeShift(m: Pick<MeshyManifest, "tamanhoGerado" | "tamanhos"> | null, label?: string | null): number {
+  const grid = m?.tamanhos.grade ? GRIDS[m.tamanhos.grade].map((o) => o.label) : null;
+  if (!grid || !m?.tamanhoGerado || !label) return 0;
+  const from = grid.indexOf(m.tamanhoGerado), to = grid.indexOf(label);
+  return from < 0 || to < 0 ? 0 : to - from;
+}
 
 /** Passos por região (do GarmentSpec já com o tamanho), limitados pela faixa do manifesto. */
 export function regionSteps(spec: GarmentSpec, sizes: MeshySizes) {
@@ -109,4 +122,28 @@ export function unsizedSpec(spec: GarmentSpec, lower: boolean): GarmentSpec {
   const fold = spec.sizeFold; if (!fold) return spec;
   const common = Math.min(fold.chest, fold.waist, fold.hip), r = lower ? RADIAL.numeric : RADIAL.letter;
   return { ...spec, ease: Math.max(0.0015, spec.ease - r * common), sizeFold: { ...fold, length: 0 } };
+}
+
+/**
+ * Peça em escala real num tamanho diferente do gerado (``shift`` passos da grade), mudada na própria peça, antes do
+ * encaixe: largura e profundidade por igual em volta do centro dela, comprimento a partir do topo — tronco e mangas
+ * juntos. Por região, depois do encaixe, o tronco alargava sem a manga (a parede atravessava a cabeça da manga e virava
+ * ponta) e a manga já pendurada no braço era empurrada para fora.
+ */
+export function sizedGarment(position: Float32Array, shift: number, sizes: MeshySizes) {
+  const s = clamp(shift, sizes.limite[0], sizes.limite[1]), k = sizes.porPasso;
+  const kw = 1 + k.largura * s, kl = 1 + k.comprimento * s;
+  const used = { chest: kw, waist: kw, hip: kw, length: kl, sleeve: kl };
+  if (!s) return { position, used };
+  let top = -Infinity, x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let i = 0; i < position.length; i += 3) {
+    top = Math.max(top, position[i + 1]); x0 = Math.min(x0, position[i]); x1 = Math.max(x1, position[i]);
+    z0 = Math.min(z0, position[i + 2]); z1 = Math.max(z1, position[i + 2]);
+  }
+  const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, out = new Float32Array(position.length);
+  for (let i = 0; i < position.length; i += 3) {
+    out[i] = cx + (position[i] - cx) * kw; out[i + 2] = cz + (position[i + 2] - cz) * kw;
+    out[i + 1] = top - (top - position[i + 1]) * kl;
+  }
+  return { position: out, used };
 }

@@ -18,6 +18,8 @@ public final class ReliefModelGenerator {
     public static final int GRID = 128;
     /** Passes de suavização do contorno (a grade deixaria a silhueta em degraus). */
     static final int CONTOUR_PASSES = 4;
+    /** Foto ocupada de borda a borda e com esta fração das células: a "silhueta" é o retângulo da foto, não a peça. */
+    static final double RECTANGLE = 0.97;
 
     private ReliefModelGenerator() {
     }
@@ -50,6 +52,12 @@ public final class ReliefModelGenerator {
         }
         if (inside < 12) {
             throw new IllegalArgumentException("silhueta pequena demais para gerar volume");
+        }
+        // a máscara ocupa a foto inteira (de borda a borda, sem fundo): é uma foto com fundo, não um recorte — sairia um
+        // bloco com a foto. Uma peça que enche só o próprio contorno (lenço dobrado) tem fundo em volta e passa.
+        boolean edgeToEdge = box.w() >= cutout.getWidth() - 2 && box.h() >= cutout.getHeight() - 2;
+        if (edgeToEdge && inside >= RECTANGLE * gw * gh) {
+            throw new IllegalArgumentException("silhueta retangular: a foto ainda tem fundo");
         }
         // 2) distância até a borda (chanfro 3-4) → perfil arredondado
         double[][] d = distance(in, gw, gh);
