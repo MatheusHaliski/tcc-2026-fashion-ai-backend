@@ -12923,5 +12923,12 @@
   "lookReferences.nivelTermico.pedido": "Nível térmico pedido: {nivel}",
   "lookReferences.nivelTermico.fit": "{ok} peça(s) compatível(is), {diverge} divergente(s), {semDado} sem intensidade declarada",
   "mirror.painel.abrir": "Controles do espelho",
-  "mirror.painel.fechar_nome": "Fechar {name}"
+  "mirror.painel.fechar_nome": "Fechar {name}",
+  "lookbook.season.label": "Estação",
+  "lookbook.season.all": "Todas",
+  "lookbook.season.none": "Sem estação",
+  "lookbook.season.notInformed": "Não informada",
+  "lookbook.season.empty": "Nenhum look de {season} por aqui.",
+  "lookbook.season.emptyNone": "Todos os looks já têm estação.",
+  "lookbook.season.showAll": "Ver todas as estações"
 }
