@@ -113,7 +113,7 @@ export function NucleoTrigger({ tipo, aberta, usado, cartas, vestidas, vagas, oc
           </button>
         ))}
         {aberta && onAcionar && (
-          <button type="button" className="btn btn-sm btn-primary" disabled={ocupado} onClick={() => onAcionar({ tipo })}>
+          <button type="button" className="btn btn-sm btn-primary" disabled={ocupado} onClick={() => onAcionar({ tipo })} data-n3d-seguir>
             {tx.t(tipo === "LANCE" ? "flair3d.ui.trigger.LANCE.skip" : "flair3d.ui.trigger.skip")}
           </button>
         )}

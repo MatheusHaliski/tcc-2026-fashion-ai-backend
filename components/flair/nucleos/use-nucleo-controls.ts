@@ -5,7 +5,7 @@
  * controle conectado. Comandos de ações fora da lista do núcleo são ignorados.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { comandoDaTecla, lerGamepad, PAD_INICIAL, type Comando, type PadEstado } from "@/lib/flair/nucleos/controls";
+import { comandoDaTecla, comandoDoJogo, lerGamepad, PAD_INICIAL, type Comando, type PadEstado } from "@/lib/flair/nucleos/controls";
 import type { NucleoAcao } from "@/lib/flair/nucleos/types";
 
 export interface NucleoControlsOptions {
@@ -23,6 +23,7 @@ function ignorarTecla(e: KeyboardEvent): boolean {
   if (!alvo || !alvo.tagName) return false;
   if (CAMPOS.has(alvo.tagName) || alvo.isContentEditable) return true;
   // Espaço/Enter num botão focado já disparam o clique dele: não repetir como comando
+  // Espaço/Enter num botão focado já disparam o clique dele: não repetir como comando (o botão do jogo é o ✕)
   return (e.key === " " || e.key === "Enter") && (alvo.tagName === "BUTTON" || alvo.tagName === "A");
 }
 
@@ -38,8 +39,9 @@ export function useNucleoControls({ acoes, onComando, ativo = true }: NucleoCont
 
   const disparar = useCallback((c: Comando) => {
     const atual = ref.current;
-    if (!atual.ativo || !atual.acoes.includes(c.acao)) return false;
-    atual.onComando(c);
+    const doJogo = comandoDoJogo(c, atual.acoes);
+    if (!atual.ativo || !atual.acoes.includes(doJogo.acao)) return false;
+    atual.onComando(doJogo);
     return true;
   }, []);
 
@@ -47,7 +49,7 @@ export function useNucleoControls({ acoes, onComando, ativo = true }: NucleoCont
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat && e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
       if (ignorarTecla(e)) return;
-      const c = comandoDaTecla(e.key);
+      const c = comandoDaTecla(e.key, e.code);
       if (c && disparar(c)) e.preventDefault();
     };
     window.addEventListener("keydown", onKey);

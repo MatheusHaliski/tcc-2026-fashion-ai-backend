@@ -16,6 +16,13 @@ Decisão:
   sem mudar o contrato.
 - **Glifos** (`glifos.ts`) pelo último aparelho usado: símbolos do PlayStation, letras do Xbox, tecla do teclado.
 
-Próximos passos (etapa 4 do plano): um provedor único por tela (um `keydown` e um laço do controle, com camadas
-jogo, inventário, pausa e diálogo — **Observer** e **State**), o menu de pausa e a migração das telas. Até lá,
-`lib/flair/nucleos/controls.ts` continua valendo; nada do comportamento atual mudou nesta etapa.
+Etapa 4 (feita): as telas dos 15 jogos já usam o padrão. `lib/flair/nucleos/controls.ts` traduz teclado e controle
+para os comandos da tela — setas/WASD e analógico esquerdo movem o foco, ✕ (Espaço/E) veste, ○ (Shift/Backspace) tira,
+□ (F) é o gesto do jogo (desfilar, ou posar onde não há desfile), △ (I) troca a aba das roupas, Start (Esc) abre a pausa
+com o objetivo. Saíram zoom, girar e posar em tecla própria, LB/RB, gatilhos e Select. Na pausa, ✕ entrega o look e ○
+volta (`use-nucleo-comandos.ts`); na ação, o foco passa pelos botões da faixa de baixo e ✕ aperta o que está em foco
+(`foco-da-acao.ts`), então jogar a carta, seguir sem carta e ver o resultado têm comando. Ampliar a carta passou de I
+para Z. O Fashion Sports mantém a mão de cartas própria (`use-mao-controle.ts`), com o mesmo mapa.
+
+Ainda não feito: um provedor único com camadas (hoje cada tela liga o próprio `keydown`), a tela de toque com o losango
+de botões e os símbolos de cada controle na ajuda (`glifos.ts` existe, falta ligar).

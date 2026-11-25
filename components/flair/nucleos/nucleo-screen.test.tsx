@@ -115,7 +115,7 @@ describe("núcleo de zonas (CLUBE_CORACAO)", () => {
 });
 
 describe("núcleo de maquiagem (ROAD_TO_GLORY)", () => {
-  it("cartas do guarda-roupa sem deck e abas de maquiagem com famílias e acabamentos; O abre o objetivo", async () => {
+  it("cartas do guarda-roupa sem deck e abas de maquiagem com famílias e acabamentos; Esc (Start) abre o objetivo", async () => {
     loggedAs(ME, {
       "GET /api/flair/3d/nucleos/ROAD_TO_GLORY": def("ROAD_TO_GLORY", 5, { recursos: ["CARTAS", "MAQUIAGEM"], vagas: ["SUP", "INF"], areas: ["LABIOS", "OLHOS", "BOCHECHAS"], deck: { tamanhoMax: 0, obrigatorias: [], semDeck: true }, objetivo: { codigo: "ENSAIO_VERAO", regras: [{ codigo: "OCASIAO", pontos: 25 }] } }),
       "GET /api/me/flair/cards": CARDS,
@@ -129,7 +129,7 @@ describe("núcleo de maquiagem (ROAD_TO_GLORY)", () => {
     expect(within(janela).getByRole("button", { name: "Gloss" })).toBeTruthy();
     fireEvent.click(within(janela).getByRole("button", { name: "Coral" }));
     await waitFor(() => expect(within(janela).getByRole("button", { name: "Coral" }).getAttribute("aria-pressed")).toBe("true"));
-    fireEvent.keyDown(window, { key: "o" });
+    fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.getByTestId("nucleo-objective-details").textContent).toContain("Todas as peças na ocasião do brief");
     expect(screen.getByTestId("nucleo-objective-details").textContent).toContain("25 pts");
   });

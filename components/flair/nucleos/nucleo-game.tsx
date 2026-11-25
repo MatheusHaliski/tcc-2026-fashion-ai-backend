@@ -28,7 +28,7 @@ import { useCardZoom } from "@/components/flair/nucleos/use-card-zoom";
 import { useFxPrefs } from "@/components/flair/nucleos/use-fx-prefs";
 import { useNucleoAction } from "@/components/flair/nucleos/use-nucleo-action";
 import { useNucleoBriefing } from "@/components/flair/nucleos/use-nucleo-briefing";
-import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-controls";
+import { useNucleoComandos } from "@/components/flair/nucleos/use-nucleo-comandos";
 import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects";
 import { useNucleoSinais } from "@/components/flair/nucleos/use-nucleo-sinais";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
@@ -41,11 +41,10 @@ import { lookComTroca } from "@/lib/flair/nucleos/action-fx";
 import { protagonistaEfetiva } from "@/lib/flair/nucleos/avatares";
 import { boardComLook, boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
 import { lerRascunho, useRascunho } from "@/components/flair/nucleos/use-rascunho";
-import type { Comando } from "@/lib/flair/nucleos/controls";
 import { vagasDaRegua, type ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
-import { acionamentoDe, comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
+import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
 import { classesDoQuadro, estiloDoQuadro } from "@/lib/flair/nucleos/quadro";
 import { respostaObrigatoria, vagasQueFaltam } from "@/lib/flair/nucleos/rodadas";
 import { semPlacar, varianteDaCena } from "@/lib/flair/nucleos/variante";
@@ -131,13 +130,8 @@ export function NucleoGame(props: Props) {
     if (acionamento?.tipo === "ESPELHO") emitirFx({ tipo: "acionamento", nucleo: codigo, acionamento: "ESPELHO" });
     onEntregar(estado.sel, efetiva);
   };
-  const onComando = (c: Comando) => {
-    if (!comandoPermitido(momento, c.acao)) return;
-    setAviso(null);
-    if (c.acao === "ENTREGAR") entregar();
-    else dispatch({ type: "comando", comando: c, tabs });
-  };
-  const { disparar, gamepad } = useNucleoControls({ acoes: definicao.acoes, onComando, ativo: !entregando && !zoom.ampliada });
+  const { disparar, gamepad } = useNucleoComandos({ acoes: definicao.acoes, momento, tabs, pausado: estado.objetivo, ativo: !entregando && !zoom.ampliada, acaoPropria: codigo === "FASHION_SPORTS",
+    dispatch, entregar, limparAviso: () => setAviso(null) });
 
   const naoCabe = (x: ItemDaFileira) => {
     dispatch({ type: "foco", aba: x.aba, item: x.item });

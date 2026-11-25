@@ -40,7 +40,8 @@ async function vestirEEntregar() {
   fireEvent.click(within(deck).getByRole("button", { name: "Entrar na partida" }));
   await screen.findByTestId("nucleo-game");
   // o uniforme inteiro: parte de cima, de baixo e calçado (uma aba por vaga)
-  for (const tecla of [" ", "e", " ", "e", " ", "Enter"]) fireEvent.keyDown(window, { key: tecla });
+  // ✕ veste, △ (I) passa à aba seguinte, Enter entrega
+  for (const tecla of [" ", "i", " ", "i", " ", "Enter"]) fireEvent.keyDown(window, { key: tecla });
 }
 
 describe("partida jogada por cartas", () => {
