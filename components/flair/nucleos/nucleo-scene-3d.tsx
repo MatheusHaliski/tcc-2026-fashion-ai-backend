@@ -13,6 +13,7 @@ import { NucleoAvatar, type Protagonista } from "@/components/flair/nucleos/nucl
 import { LuzDeEfeito, PecaPintada } from "@/components/flair/nucleos/scene/effects-3d";
 import { CameraDoJogo } from "@/components/flair/nucleos/scene/game-camera";
 import { Figurantes } from "@/components/flair/nucleos/scene/extras";
+import { CinemaCamera } from "@/components/flair/cinema/cinema-camera";
 import { FigurantesHumanos } from "@/components/flair/nucleos/gente/figurantes-humanos";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { QualidadeDaCena } from "@/components/flair/nucleos/scene/scene-quality";
@@ -96,6 +97,7 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
         <CameraDoJogo codigo={config.codigo} escolha={camera} momento={momento} sala={sala} zoom={avatar.zoom} reduzido={reduzido} pessoas={figurantes} />
       </CenaContexto.Provider>
       {temAbertura(config.codigo) && <CameraDeAbertura chave={abertura} sala={sala} fim={fim} reduzido={reduzido} />}
+      <CinemaCamera sala={sala} />
     </Canvas>
   );
 }

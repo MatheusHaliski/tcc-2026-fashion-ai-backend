@@ -7,6 +7,7 @@ import type { EntradaFx } from "@/lib/flair/nucleos/card-fx";
 import type { PassoAcao } from "@/lib/flair/nucleos/action-fx";
 import type { AcionamentoTipo, Momento } from "@/lib/flair/nucleos/moments";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
+import type { Cutscene } from "@/lib/flair/cinema/types";
 
 export type FxEvento =
   /** a partida mudou de momento (deck, preparação, ação, resultado) */
@@ -18,7 +19,9 @@ export type FxEvento =
   /** a ação terminou: resultado e estrelas do servidor */
   | { tipo: "acao-fim"; nucleo: NucleoCodigo; resultado: string; estrelas: number }
   /** a pessoa acionou o que o jogo permite (carta Especial, espelho, troca no intervalo, resposta) */
-  | { tipo: "acionamento"; nucleo: NucleoCodigo; acionamento: AcionamentoTipo; cardId?: string };
+  | { tipo: "acionamento"; nucleo: NucleoCodigo; acionamento: AcionamentoTipo; cardId?: string }
+  /** uma cutscene começou (a câmera da cena segue as tomadas dela) ou acabou (cutscene nula: a câmera volta ao jogo) */
+  | { tipo: "cinema"; nucleo: NucleoCodigo; cutscene: Cutscene | null; reduzido: boolean };
 
 export type FxAssinante = (evento: FxEvento) => void;
 

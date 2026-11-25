@@ -20,6 +20,8 @@ import { NucleoRodaAtributos } from "@/components/flair/nucleos/recursos/nucleo-
 import type { LookDosRecursos } from "@/components/flair/nucleos/recursos/use-look-dos-recursos";
 import { NucleoRodaRecursos } from "@/components/flair/nucleos/recursos/nucleo-roda-recursos";
 import type { RecursosNaTela } from "@/components/flair/nucleos/recursos/use-recursos-da-partida";
+import { CinemaOverlay } from "@/components/flair/cinema/cinema-overlay";
+import type { CinemaNaTela } from "@/components/flair/cinema/use-cinema-da-partida";
 import { NucleoCast } from "@/components/flair/nucleos/nucleo-cast";
 import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoHud, NucleoScore } from "@/components/flair/nucleos/nucleo-hud";
@@ -63,6 +65,8 @@ export interface NucleoStageProps {
   recursos?: LookDosRecursos;
   /** vida, energia, foco e moedas da partida, e as peças que dá para usar como recurso */
   usoDeRecursos?: RecursosNaTela;
+  /** a cutscene na tela (faixas, legenda e pular); a câmera dela é a da cena 3D */
+  cinema?: CinemaNaTela;
   reduzido: boolean;
   passos: PassoAcao[];
   mostrados: number;
@@ -85,6 +89,7 @@ export function NucleoStage(props: NucleoStageProps) {
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
       {props.recursos && <NucleoRodaAtributos recursos={props.recursos} reduzido={reduzido} efeitos={prefs.efeitos} />}
       {props.usoDeRecursos && <NucleoRodaRecursos recursos={props.usoDeRecursos} reduzido={reduzido} efeitos={prefs.efeitos} />}
+      {props.cinema && <CinemaOverlay cinema={props.cinema} />}
       {naAcao && definicao.codigo === "DRESS_FIGHTER" && <NucleoBarrasDeVida resultado={props.resultado} />}
       {naAcao && <NucleoActionFx nucleo={definicao.codigo} variante={props.variante} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}
       <NucleoHud

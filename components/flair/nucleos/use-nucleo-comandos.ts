@@ -23,13 +23,20 @@ interface Opcoes {
   ativo: boolean;
   /** a ação tem controle próprio (a mão de cartas do Fashion Sports): o foco genérico não entra */
   acaoPropria?: boolean;
+  /** uma cutscene na tela: qualquer comando a encerra; ○ e Start só pulam, os outros também valem no jogo */
+  cena?: { tocando: boolean; pular: () => void };
   dispatch: Dispatch<BoardAcao>;
   entregar: () => void;
   limparAviso: () => void;
 }
 
-export function useNucleoComandos({ acoes, momento, tabs, pausado, ativo, acaoPropria = false, dispatch, entregar, limparAviso }: Opcoes) {
+export function useNucleoComandos({ acoes, momento, tabs, pausado, ativo, acaoPropria = false, cena, dispatch, entregar, limparAviso }: Opcoes) {
   const onComando = (c: Comando) => {
+    // a cutscene acaba com qualquer comando de jogo, que vale também (nenhum toque se perde); ○ e Start só pulam
+    if (cena?.tocando && c.acao !== "GIRAR") {
+      cena.pular();
+      if (c.acao === "TIRAR" || c.acao === "VER_OBJETIVO") return;
+    }
     // na pausa (o objetivo aberto): ✕ entrega, ○ e Start fecham
     if (pausado && momento === "PREPARACAO" && (c.acao === "VESTIR" || c.acao === "ENTREGAR")) return entregar();
     if (pausado && c.acao === "TIRAR") return dispatch({ type: "comando", comando: { acao: "VER_OBJETIVO" }, tabs });
