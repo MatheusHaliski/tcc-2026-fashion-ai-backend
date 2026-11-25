@@ -18,6 +18,8 @@ import { NucleoCameraSelector } from "@/components/flair/nucleos/nucleo-camera-s
 import { NucleoCardFx } from "@/components/flair/nucleos/nucleo-card-fx";
 import { NucleoRodaAtributos } from "@/components/flair/nucleos/recursos/nucleo-roda-atributos";
 import type { LookDosRecursos } from "@/components/flair/nucleos/recursos/use-look-dos-recursos";
+import { NucleoRodaRecursos } from "@/components/flair/nucleos/recursos/nucleo-roda-recursos";
+import type { RecursosNaTela } from "@/components/flair/nucleos/recursos/use-recursos-da-partida";
 import { NucleoCast } from "@/components/flair/nucleos/nucleo-cast";
 import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoHud, NucleoScore } from "@/components/flair/nucleos/nucleo-hud";
@@ -59,6 +61,8 @@ export interface NucleoStageProps {
   entrada: EntradaNaTela | null;
   /** a roda de atributos da regra peça-recurso (some sem perfil, como no servidor antigo) */
   recursos?: LookDosRecursos;
+  /** vida, energia, foco e moedas da partida, e as peças que dá para usar como recurso */
+  usoDeRecursos?: RecursosNaTela;
   reduzido: boolean;
   passos: PassoAcao[];
   mostrados: number;
@@ -80,6 +84,7 @@ export function NucleoStage(props: NucleoStageProps) {
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
       {props.recursos && <NucleoRodaAtributos recursos={props.recursos} reduzido={reduzido} efeitos={prefs.efeitos} />}
+      {props.usoDeRecursos && <NucleoRodaRecursos recursos={props.usoDeRecursos} reduzido={reduzido} efeitos={prefs.efeitos} />}
       {naAcao && definicao.codigo === "DRESS_FIGHTER" && <NucleoBarrasDeVida resultado={props.resultado} />}
       {naAcao && <NucleoActionFx nucleo={definicao.codigo} variante={props.variante} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}
       <NucleoHud

@@ -36,3 +36,16 @@ export const COR_DO_ATRIBUTO: Record<Atributo, string> = {
   RESISTENCIA: "#4A6FA5",
   FORCA: "#C62B28",
 };
+
+/** O que o servidor devolve em GET .../recursos e POST .../usar (Flair3dRecursoUso). */
+export interface RecursosDaPartida {
+  recursos: Record<Recurso, number>;
+  /** quantas vezes cada carta do deck já foi usada nesta partida */
+  usados: Record<string, number>;
+  /** o uso que esta resposta registrou (só no POST .../usar) */
+  uso?: { carta: string; recurso: Recurso; quantidade: number; antes: number; depois: number };
+}
+
+/** Vida, energia e foco vão de 0 a 100; moedas não têm teto. */
+export const COM_TETO: readonly Recurso[] = ["VIDA", "ENERGIA", "FOCO"];
+export const COR_DO_RECURSO: Record<Recurso, string> = { VIDA: "#E5484D", ENERGIA: "#F2C230", FOCO: "#5B8DEF", MOEDAS: "#E0B04D" };

@@ -33,6 +33,7 @@ import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects"
 import { useNucleoSinais } from "@/components/flair/nucleos/use-nucleo-sinais";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { useLookDosRecursos } from "@/components/flair/nucleos/recursos/use-look-dos-recursos";
+import { useRecursosDaPartida } from "@/components/flair/nucleos/recursos/use-recursos-da-partida";
 import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewport";
 import { useModoPorCartas } from "@/components/flair/nucleos/use-modo-por-cartas";
 import { useResultCards } from "@/components/flair/nucleos/use-result-cards";
@@ -120,6 +121,7 @@ export function NucleoGame(props: Props) {
   useNucleoSinais({ codigo, sel: estado.sel, acionamento, preparando, efetiva, onPrevia });
   /** a regra peça-recurso: os atributos do look e o que a última peça vestida mudou (a roda no palco) */
   const recursos = useLookDosRecursos(vestidas, efeitos.perfil, preparando);
+  const usoDeRecursos = useRecursosDaPartida(props.partida?.id, cartas, efeitos.perfil, momento !== "RESULTADO");
   useEffect(() => {
     setAcionou(false);
   }, [props.erroAcionar, resultado]);
@@ -177,7 +179,7 @@ export function NucleoGame(props: Props) {
           zonas={estado.sel.zonas}
           prefs={fx.prefs}
           onPref={fx.alternar}
-          entrada={entrada} recursos={recursos}
+          entrada={entrada} recursos={recursos} usoDeRecursos={usoDeRecursos}
           reduzido={reduzido}
           passos={acao.passos}
           mostrados={acao.mostrados}

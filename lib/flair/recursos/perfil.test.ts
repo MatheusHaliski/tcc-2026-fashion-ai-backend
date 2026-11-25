@@ -52,3 +52,24 @@ describe("peça-recurso na tela", () => {
     expect(atributoEmAlta(m)).toBe("CARISMA");
   });
 });
+
+describe("uso da peça como recurso na tela", async () => {
+  const { somar, usoOtimista, usosRestantes } = await import("@/lib/flair/recursos/uso");
+  const inicio = { recursos: { VIDA: 60, ENERGIA: 40, FOCO: 40, MOEDAS: 0 }, usados: {} };
+  const blazer = de("c2")!;
+
+  it("o medidor sobe na hora com a quantidade do perfil do servidor e a carta gasta um uso", () => {
+    const depois = usoOtimista(inicio, "c2", blazer);
+    expect(depois.recursos.VIDA).toBe(85);
+    expect(depois.uso).toEqual({ carta: "c2", recurso: "VIDA", quantidade: 25, antes: 60, depois: 85 });
+    expect(usosRestantes(inicio, "c2", blazer)).toBe(1);
+    expect(usosRestantes(depois, "c2", blazer)).toBe(0);
+    expect(inicio.recursos.VIDA).toBe(60);
+  });
+
+  it("vida, energia e foco param em 100; moedas não têm teto", () => {
+    expect(somar("VIDA", 90, 25)).toBe(100);
+    expect(somar("MOEDAS", 90, 25)).toBe(115);
+    expect(somar("FOCO", 0, -5)).toBe(0);
+  });
+});
