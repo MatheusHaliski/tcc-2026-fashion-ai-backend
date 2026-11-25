@@ -7,7 +7,8 @@ import type { AcaoEntrada } from "@/lib/flair/entrada/acoes";
 import type { NucleoAcao, NucleoCodigo } from "@/lib/flair/nucleos/types";
 
 /**
- * LIVRE: o analógico anda pela sala; PONTOS: escolhe o ponto vizinho para onde ir (Fashion Detective); FOCO: move o
+ * LIVRE: o analógico anda pela sala; PONTOS: anda livre só pelos corredores até os pontos vizinhos, e a chegada vira o
+ * passo do servidor (Fashion Detective, lib/flair/detetive/andar-livre.ts); FOCO: move o
  * foco entre cartas, vagas ou zonas (o personagem não anda).
  */
 export type Movimento = "LIVRE" | "PONTOS" | "FOCO";

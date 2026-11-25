@@ -17,6 +17,7 @@ import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { DetetiveCutscene } from "@/components/flair/detetive/detetive-cutscene";
 import { DetetiveFolha, type Folha } from "@/components/flair/detetive/detetive-folhas";
 import { DetetivePlanta } from "@/components/flair/detetive/detetive-planta";
+import { useEixoDeAndar } from "@/components/flair/nucleos/use-eixo-de-andar";
 import { vizinhos as vizinhosDe } from "@/lib/flair/detetive/acoes";
 import { relogio, type Retrato } from "@/lib/flair/detetive/types";
 
@@ -62,6 +63,9 @@ export function DetetivePalco({ r, pecas, protagonista, semente, ocupado, onAcao
     if (!ocupado && !r.final) onAcao(`IR:${ponto}`);
   };
   const aviso = useAviso(r);
+  // WASD e o analógico levam a detetive pela sala (as setas ficam com as ações da faixa de baixo)
+  const andar = webgl === true && !reduzido && !ocupado && !r.final && !cena && !folha;
+  useEixoDeAndar(andar);
   const planta = <DetetivePlanta r={r} vizinhos={vizinhos} onIr={ir} />;
   const rotulo = tx.t("flair3d.detetive.ui.cena3d", { sala: tx.t(`flair3d.detetive.sala.${r.sala}`) });
   const voltar = tx.t("flair3d.ui.back");
@@ -69,7 +73,7 @@ export function DetetivePalco({ r, pecas, protagonista, semente, ocupado, onAcao
     <div className="n3d-stage dtv-palco" data-testid="detetive-palco" data-sala={r.sala} data-ponto={r.ponto}>
       {webgl === false || reduzido ? planta : webgl === null ? <div className="n3d-scene2d" role="status">{tx.t("flair3d.ui.scene.loading")}</div> : (
         <div className="n3d-scene3d">
-          <Cena3D r={r} vizinhos={vizinhos} onIr={ir} pecas={pecas} protagonista={protagonista} reduzido={reduzido} camera={camera} semente={semente} rotulo={rotulo} cutscene={cena} />
+          <Cena3D r={r} vizinhos={vizinhos} onIr={ir} pecas={pecas} protagonista={protagonista} reduzido={reduzido} camera={camera} semente={semente} rotulo={rotulo} cutscene={cena} andar={andar} />
         </div>
       )}
       <div className="dtv-hud" role="status" aria-live="off">
