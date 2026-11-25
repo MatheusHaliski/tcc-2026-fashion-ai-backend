@@ -125,11 +125,12 @@ class Flair3dNucleoServiceTest {
         assertThat(service.entregar(ana, id, vestir(sup, inf, cal)).status()).isEqualTo("EM_ACAO");
         // a jogada de cena: seguir sem carta fecha a partida com a nota do look
         Resultado r = service.acionar(ana, id, Acionamento.NENHUM);
-        assertThat(r.pontos()).isEqualTo(71);
+        // 71 do look + 1 dos atributos (regra peça-recurso: a peça na vaga SUP soma carisma, que a Passarela pede)
+        assertThat(r.pontos()).isEqualTo(72);
         assertThat(r.estrelas()).isEqualTo(1);
         Flair3dMatch salva = kit.dep(Flair3dMatchRepository.class).findById(id).orElseThrow();
         assertThat(salva.getStatus()).isEqualTo("ENTREGUE");
-        assertThat(salva.getPontos()).isEqualTo(71);
+        assertThat(salva.getPontos()).isEqualTo(72);
         assertThat(salva.getResultadoJson()).contains("TODAS_BR");
         assertThat(salva.getEntregaJson()).contains(sup.getId().toString());
         ApiException segunda = (ApiException) org.assertj.core.api.Assertions.catchThrowable(() -> service.entregar(ana, id, vestir(sup)));

@@ -12099,6 +12099,8 @@
   "flair3d.ui.trigger.JOGADA.use": "Jogar {nome}: {acao}",
   "flair3d.ui.trigger.JOGADA.semCor": "Jogar {nome} (sem ação de cor)",
   "flair3d.regra.JOGADA_DE_CENA": "Jogada de cena na cor pedida: 10",
+  "flair3d.regra.LOOK_ATRIBUTOS": "Atributos do look (até +10)",
+  "flair3d.regra.RECURSO_DO_JOGO": "Recurso usado na partida (até +5)",
   "flair3d.ui.evento.PEDIDO_DE_CENA": "A cena pede uma carta {familia}",
   "flair3d.ui.evento.JOGADA_DE_CENA": "Jogada de cena: {acao}",
   "flair3d.ui.trigger.error.CARTA_NO_LOOK": "Essa carta está no look: jogue uma do deck que ficou de fora.",

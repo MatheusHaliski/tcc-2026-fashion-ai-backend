@@ -138,14 +138,15 @@ class Flair3dPartidaEtapasTest {
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isEqualTo(1);
 
         Resultado previa = service.previa(ana, id, vestir(sup, inf, cal));
-        assertThat(previa.pontos()).isEqualTo(80);
+        // 80 + 1 da regra peça-recurso (o tênis da vaga CAL soma agilidade, que o Labirinto pede)
+        assertThat(previa.pontos()).isEqualTo(81);
         assertThat(previa.status()).isEqualTo("ABERTA");
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isEqualTo(1);
 
         Resultado abriu = service.entregar(ana, id, vestir(sup, inf, cal));
         assertThat(abriu.status()).isEqualTo("ENTREGUE");
         assertThat(abriu.resultado()).isEqualTo("ABRE");
-        assertThat(abriu.pontos()).isEqualTo(80);
+        assertThat(abriu.pontos()).isEqualTo(81);
         assertThat(abriu.estrelas()).isEqualTo(2);
         assertThat(abriu.eventos()).contains(new Resultado.Evento("TENTATIVA", 2));
         assertThat(partida(id).getStatus()).isEqualTo("ENTREGUE");
@@ -171,9 +172,11 @@ class Flair3dPartidaEtapasTest {
         UUID id = abrir("PASSARELA", sup, inf, cal);
 
         Resultado previa = service.previa(ana, id, vestir(sup, inf));
-        assertThat(previa.pontos()).isEqualTo(57);
+        assertThat(previa.pontos()).isEqualTo(58);
         assertThat(previa.status()).isEqualTo("ABERTA");
         assertThat(previa.regras()).extracting(Resultado.RegraResultado::codigo).containsExactly("MARCA_BR", "TODAS_BR");
+        // na prévia, o que o look soma vai como evento (a nota já mostra)
+        assertThat(previa.eventos()).extracting(Resultado.Evento::codigo).contains("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO");
         assertThat(previa.cartas()).containsExactly(new Resultado.CartaPontos("SUP", sup.getId(), 28.57),
                 new Resultado.CartaPontos("INF", inf.getId(), 28.57));
         Flair3dMatch intacta = partida(id);

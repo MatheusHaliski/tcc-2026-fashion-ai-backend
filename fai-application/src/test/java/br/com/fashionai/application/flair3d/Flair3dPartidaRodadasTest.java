@@ -85,7 +85,8 @@ class Flair3dPartidaRodadasTest {
         Resultado previa1 = service.previa(ana, id, vestir(null, sup, inf, cal));
         Resultado previa2 = service.previa(ana, id, vestir(null, sup, inf, cal));
         assertThat(previa2).isEqualTo(previa1);
-        assertThat(previa1.eventos()).isEmpty();
+        // a prévia não revela a sala do tema: no máximo o que o look soma (regra peça-recurso; tema sorteado sem ponto, nada)
+        assertThat(previa1.eventos()).extracting(Resultado.Evento::codigo).isSubsetOf("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO");
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isZero();
         service.entregar(ana, id, vestir(null, sup, inf, cal));
         Resultado r = service.acionar(ana, id, Acionamento.NENHUM);
@@ -136,7 +137,9 @@ class Flair3dPartidaRodadasTest {
         assertThat(service.entregar(ana, id, vestir(null, sup, inf)).status()).isEqualTo("EM_ACAO");
         Resultado fim = service.acionar(ana, id, Acionamento.NENHUM);
         assertThat(fim.status()).isEqualTo("ENTREGUE");
-        assertThat(fim.regras()).hasSize(3);
+        // as três regras da etapa e as duas da regra peça-recurso (o que o look e os recursos somaram)
+        assertThat(fim.regras()).hasSize(5);
+        assertThat(fim.regras()).extracting(Resultado.RegraResultado::codigo).endsWith("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO");
         assertThat(partida(id).getPontos()).isEqualTo(fim.pontos());
         assertThat(erro(() -> service.entregar(ana, id, vestir(null, sup))).status()).isEqualTo(409);
     }

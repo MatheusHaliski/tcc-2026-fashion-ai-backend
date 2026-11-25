@@ -12105,6 +12105,8 @@
   "flair3d.ui.trigger.JOGADA.use": "Play {nome}: {acao}",
   "flair3d.ui.trigger.JOGADA.semCor": "Play {nome} (no colour action)",
   "flair3d.regra.JOGADA_DE_CENA": "Scene play in the requested colour: 10",
+  "flair3d.regra.LOOK_ATRIBUTOS": "Look attributes (up to +10)",
+  "flair3d.regra.RECURSO_DO_JOGO": "Resource used in the match (up to +5)",
   "flair3d.ui.evento.PEDIDO_DE_CENA": "The scene asks for a {familia} card",
   "flair3d.ui.evento.JOGADA_DE_CENA": "Scene play: {acao}",
   "flair3d.ui.trigger.error.CARTA_NO_LOOK": "That card is in the look: play one from the deck that was left out.",

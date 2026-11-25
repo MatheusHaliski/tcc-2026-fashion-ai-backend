@@ -4,6 +4,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoBonus;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.Flair3dMatch;
 import br.com.fashionai.domain.repository.Flair3dMatchRepository;
@@ -134,7 +135,7 @@ public class Flair3dNucleoService {
         Flair3dNucleo n = nucleo(m.getNucleo());
         Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
         Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa(Json.read(m.getEntregaJson(), Entrega.class));
-        return gravar(m, e, a, n.pontuar(e, contexto(user, m, n, e, a)));
+        return gravar(m, e, a, comLook(n, e, a, contexto(user, m, n, e, a)));
     }
 
     /**
@@ -147,7 +148,7 @@ public class Flair3dNucleoService {
         Flair3dNucleo n = nucleo(m.getNucleo());
         Entrega e = Json.read(m.getEntregaJson(), Entrega.class);
         Andamento a = Andamento.ler(m.getEstadoJson()).com(acionamento == null ? Acionamento.NENHUM : acionamento);
-        return gravar(m, e, a, n.pontuar(e, contexto(user, m, n, e, a)));
+        return gravar(m, e, a, comLook(n, e, a, contexto(user, m, n, e, a)));
     }
 
     /** Prévia da entrega numa partida ABERTA: pontos e regras de agora, sem gravar nada nem contar tentativa. */
@@ -157,7 +158,8 @@ public class Flair3dNucleoService {
         Flair3dNucleo n = nucleo(m.getNucleo());
         Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
         Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa(Json.read(m.getEntregaJson(), Entrega.class));
-        return n.previa(e, contexto(user, m, n, e, a)).comStatus(m.getStatus());
+        Contexto ctx = contexto(user, m, n, e, a);
+        return Flair3dRecursoBonus.naPrevia(n.codigo(), n.previa(e, ctx), ctx.vestidas(e), a.usos()).comStatus(m.getStatus());
     }
 
     /** A rodada pedida, quando o jogo a tem (422 RODADA_INVALIDA); sem pedido, nula: vale o objetivo mais simples. */
@@ -206,6 +208,11 @@ public class Flair3dNucleoService {
         List<UUID> deck = Flair3dDeck.ids(m.getDeckJson());
         Flair3dEntregas.conferir(n.definicao().naRodada(a.rodada()), e, minhas, deck, a.cartas());
         return cartas.contexto(minhas, m.getSemente()).comAndamento(a).comDeck(deck.isEmpty() ? minhas : cartas.daPessoa(user.id(), deck));
+    }
+
+    /** A nota do jogo com o que o look e os recursos somam (regra peça-recurso, Flair3dRecursoBonus). */
+    private static Resultado comLook(Flair3dNucleo n, Entrega e, Andamento a, Contexto ctx) {
+        return Flair3dRecursoBonus.aplicar(n.codigo(), n.pontuar(e, ctx), ctx.vestidas(e), a.usos());
     }
 
     /** Grava a etapa: entrega, andamento e status; resultado, pontos e estrelas só quando a partida fecha. */
