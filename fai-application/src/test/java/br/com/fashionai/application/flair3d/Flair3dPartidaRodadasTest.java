@@ -67,7 +67,9 @@ class Flair3dPartidaRodadasTest {
 
     @Test
     void partidaGuardaARodadaRevelaOTemaERecusaRodadaQueOJogoNaoTem() {
-        FlairCardInstance sup = carta("SUP", "style:classic", "occasion:party");
+        // no tema dos três que a surpresa sorteia (clássico, noite e, pela cor, monocromático): o look sempre tem nota, e
+        // a execução no percurso só é pedida a look com nota (Flair3dExecucao); antes, o monocromático dava zero
+        FlairCardInstance sup = carta("SUP", "style:classic", "occasion:party", "color:black");
         FlairCardInstance inf = carta("INF");
         FlairCardInstance cal = carta("CAL");
         ApiException invalida = erro(() -> abrir("PASSARELA", "TEMA_QUE_NAO_EXISTE", sup, inf, cal));
@@ -117,7 +119,9 @@ class Flair3dPartidaRodadasTest {
 
     @Test
     void rodadaEmEtapasSegueAbertaAteAUltimaEAPreviaNaoAvanca() {
-        FlairCardInstance sup = carta("SUP", "occasion:work", "color:blue", "style:classic");
+        // um estilo de cada cliente da clientela: as 3 clientes sorteadas (semente ao acaso) sempre dão nota ao look, e a
+        // execução no percurso só é pedida a look com nota (Flair3dExecucao); antes, 1 semente em 5 não pedia
+        FlairCardInstance sup = carta("SUP", "occasion:work", "color:blue", "style:classic", "style:chic", "style:boho", "style:sporty");
         FlairCardInstance inf = carta("INF", "occasion:work");
         Map<String, Object> aberta = abrir("BOUTIQUE_3D", "PERSONAL_STYLIST", sup, inf);
         UUID id = (UUID) aberta.get("id");
