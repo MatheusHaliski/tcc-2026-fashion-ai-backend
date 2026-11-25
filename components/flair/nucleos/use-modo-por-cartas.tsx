@@ -11,6 +11,7 @@ import type { Look3dPiece } from "@/components/three/common";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { EsportePainel } from "@/components/flair/esporte/esporte-painel";
 import { EsportePalco } from "@/components/flair/esporte/esporte-palco";
+import { alvoDaCapita } from "@/lib/flair/esporte/capita-posicao";
 import { LANCE_MS, useEsporte, type EsporteNaTela } from "@/components/flair/esporte/use-esporte";
 import { cartasDoDetetive, DetetivePainel } from "@/components/flair/detetive/detetive-painel";
 import { DetetivePalco } from "@/components/flair/detetive/detetive-palco";
@@ -62,7 +63,7 @@ export function useModoPorCartas(e: Entrada): ModoPorCartas {
       palco: <EsportePalco modalidade={esporte.modalidade} jogadas={esporte.jogadas} duracao={LANCE_MS} uniforme={esporte.uniforme} fim={e.momento === "RESULTADO"} semente={e.semente}
         capita={!!esporte.situacao && !e.ocupado}>{e.extra}</EsportePalco>,
       acao: <EsportePainel modalidade={esporte.modalidade} jogadas={esporte.jogadas} situacao={esporte.situacao} mao={esporte.mao} ocupado={e.ocupado} erro={e.erro}
-        onJogar={(cardId) => e.acionar({ tipo: "CARTA", cardId: cardId ?? undefined })} onPular={e.acao.pular} />,
+        onJogar={(cardId) => e.acionar({ tipo: "CARTA", cardId: cardId ?? undefined, alvo: alvoDaCapita() })} onPular={e.acao.pular} />,
     };
   }
   if (retrato && !preparando) {

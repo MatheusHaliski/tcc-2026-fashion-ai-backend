@@ -45,6 +45,8 @@ public final class EsportePartida {
     int zona = 1;
     int jogada;
     int bonus;
+    /** o ajuste do duelo da jogada pela posição da capitã (EsportePosicao) */
+    int posicionamento;
     boolean goleiroPronto;
     int lances;
     /** O reinício que o último lance deixou para depois (saída de bola, tiro de meta, escanteio, lateral). */
@@ -156,7 +158,12 @@ public final class EsportePartida {
                 mao.jogar(id);
                 carta = contexto.deck().get(id);
             }
+            posicionamento = EsportePosicao.ajuste(a == null ? null : a.alvo(), nossa);
+            if (posicionamento != 0) {
+                eventos.add(new Evento("POSICIONAMENTO", posicionamento));
+            }
             new EsporteLance(this, carta).resolver();
+            posicionamento = 0;
             jogada++;
             Runnable pendente = reinicio;
             reinicio = null;

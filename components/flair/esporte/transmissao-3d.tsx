@@ -24,6 +24,7 @@ import { quadroDoLance, type Quadro } from "@/lib/flair/esporte/timeline";
 import { humorDaTorcida } from "@/lib/flair/esporte/torcida";
 import { aplicarCapita, SEM_CAPITA, type Capita } from "@/lib/flair/esporte/capita";
 import { eixoDeAndar } from "@/lib/flair/entrada/eixo-de-andar";
+import { definirDesvioDaCapita } from "@/lib/flair/esporte/capita-posicao";
 
 /** O ponto do chão (x, z) a 2 cm do piso: o anel da capitã. */
 const withY = ([x, z]: [number, number]): [number, number, number] => [x, 0.02, z];
@@ -91,6 +92,7 @@ function Cena({ campo, anterior, atual, inicio, duracao, reduzido, uniforme, cam
     const ativa = capita && !reduzido;
     capitaDaVez.current = aplicarCapita(capitaDaVez.current, campo, quadro.figuras, quadro.bola, ativa, atual?.n ?? null, k, eixoDeAndar().mover, dt);
     const dela = quadro.figuras.find((f) => `${f.time}:${f.n}` === capitaDaVez.current.chave);
+    definirDesvioDaCapita(ativa ? capitaDaVez.current.desvio : null);
     if (anel.current) {
       anel.current.visible = ativa && !!dela;
       if (dela) anel.current.position.set(...withY(noMundo(campo, [dela.x, dela.y])));

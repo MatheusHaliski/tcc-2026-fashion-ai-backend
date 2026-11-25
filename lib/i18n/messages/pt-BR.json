@@ -11142,7 +11142,7 @@
   "flair3d.esporte.painel": "Sua mão de cartas e a jogada da vez",
   "flair3d.esporte.jogada": "Jogada {n} de {total}.",
   "flair3d.esporte.janela": "Escolha a carta em {n} s",
-  "flair3d.esporte.capita": "WASD ou o analógico levam a capitã pelo campo; as setas escolhem a carta.",
+  "flair3d.esporte.capita": "WASD ou o analógico levam a capitã: com a bola, avance para infiltrar; sem ela, recue para recompor (soma no duelo). As setas escolhem a carta.",
   "flair3d.esporte.semMao": "Não há carta na mão: o deck só tinha o uniforme. Siga sem carta.",
   "flair3d.esporte.mao": "Sua mão. Cartas no baralho: {n}",
   "flair3d.esporte.carta": "Jogar {nome}: {acao}, poder {poder}",
