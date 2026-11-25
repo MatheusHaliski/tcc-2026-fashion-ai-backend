@@ -266,7 +266,7 @@ describe("acionamentos", () => {
     // a carta do lance anterior não entra no seguinte
     expect(within(acionamento).queryByRole("button", { name: /Camisa verde/ })).toBeNull();
     fireEvent.click(especial);
-    expect(onAcionar).toHaveBeenCalledWith({ tipo: "LANCE", cardId: "c3" });
+    expect(onAcionar).toHaveBeenCalledWith({ tipo: "LANCE", cardId: "c3", alvo: "DISTANCIA:PERTO" });
     expect(eventos.some((e) => e.tipo === "acionamento" && e.acionamento === "LANCE" && e.cardId === "c3")).toBe(true);
     expect(within(acionamento).getByRole("button", { name: "Guarda sem carta" })).toBeTruthy();
   }, 10000);
