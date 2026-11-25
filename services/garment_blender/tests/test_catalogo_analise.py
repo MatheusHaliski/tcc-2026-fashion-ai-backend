@@ -85,3 +85,10 @@ def test_cor_lab_ida_e_volta():
     rgb = np.array([[12, 200, 90], [250, 250, 250], [0, 0, 0]])
     assert np.abs(lab_to_rgb(rgb_to_lab(rgb)) - rgb).max() <= 1
     assert to_hex([255, 0, 16]) == "#ff0010"
+
+
+def test_foto_pequena_com_a_peca_encostada_na_borda_nao_quebra():
+    rgb, labels = garment()
+    small_rgb, small_labels = rgb[:, 100:292], labels[:, 100:292]           # 192 px de largura, peça cortada à direita
+    r = analyze(np.ascontiguousarray(small_rgb), np.ascontiguousarray(small_labels), 0.70, 0.21)
+    assert r["ok"]

@@ -139,12 +139,14 @@ def groups(cand: np.ndarray, frame, mask_area: float, dist: np.ndarray, limit: i
 
 def spread(cand: np.ndarray, mask: np.ndarray, frame) -> float:
     """Em quantas das 9 casas (3 × 3) do tronco há desenho (> 4 % da casa): estampa corrida ocupa quase todas."""
-    width = frame.right - frame.left
-    x0, x1 = int(frame.center - 0.3 * width), int(frame.center + 0.3 * width)
-    y0, y1 = int(frame.top + 0.15 * frame.height), int(frame.hem - 0.05 * frame.height)
+    width, (h, w) = frame.right - frame.left, mask.shape
+    x0, x1 = max(0, int(frame.center - 0.3 * width)), min(w, int(frame.center + 0.3 * width))
+    y0, y1 = max(0, int(frame.top + 0.15 * frame.height)), min(h, int(frame.hem - 0.05 * frame.height))
+    if x1 - x0 < 3 or y1 - y0 < 3:
+        return 0.0
     hits = 0
-    for ys in np.array_split(np.arange(max(0, y0), max(y0 + 3, y1)), 3):
-        for xs in np.array_split(np.arange(max(0, x0), max(x0 + 3, x1)), 3):
+    for ys in np.array_split(np.arange(y0, y1), 3):
+        for xs in np.array_split(np.arange(x0, x1), 3):
             cell_m = mask[np.ix_(ys, xs)]
             if cell_m.sum() > 0 and (cand[np.ix_(ys, xs)] & cell_m).sum() > 0.04 * cell_m.sum():
                 hits += 1

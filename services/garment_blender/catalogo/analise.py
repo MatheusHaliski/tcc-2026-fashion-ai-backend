@@ -98,10 +98,8 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
         stripes["periodo"] = round(stripes.pop("periodo_px") / ppm, 4)
         out.update(padrao="listras", listras=stripes)
         return out
-    # estampa corrida de traço fino (letras vazadas, desenho a nanquim): o filtro de "fino" apaga o traço; na peça
-    # sozinha (sem dobra de corpo) vale a cobertura antes dele
-    thin_all_over = not frame.worn and raw.sum() / mask.sum() > 0.1 and estampa.spread(raw, mask, frame) >= 0.78
-    if (coverage > ALL_OVER and estampa.spread(cand, mask, frame) >= 0.67) or thin_all_over:
+    found = estampa.groups(cand, frame, mask.sum(), dist, limit=6)
+    if _all_over(cand, raw, mask, frame, coverage, found):
         piece = padrao.tile(rgb, lab, mask, frame, avoid_center)
         if piece is not None:
             img, side = piece
@@ -110,11 +108,35 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
     if coverage <= SOLID or frame.symmetry < 0.72:   # de lado, o desenho cairia no lugar errado: só a cor
         return out
     rgb_big = np.clip(rgb_full * gains, 0, 255).astype(np.uint8) if f > 1 else rgb
-    for g in estampa.groups(cand, frame, mask.sum(), dist):
+    for g in found[:4]:
         where = _placement(g, frame, ppm, chest_a)
-        if where is None or (avoid_center and frame.worn and abs(where["x"]) < where["largura"] / 2):
-            continue   # frente aberta vestida: o que cruza o meio é a roupa de baixo aparecendo
+        if where is None or not _keep(where, frame, avoid_center):
+            continue
         where["imagem"] = estampa.decal_rgba(rgb_big, lab, shade, base, g, f)
         out["padrao"] = "localizada"
         out["decalques"].append(where)
     return out
+
+
+def _all_over(cand, raw, mask, frame, coverage: float, found: list) -> bool:
+    """Estampa corrida: desenho espalhado pelo tronco todo. A de traço fino (letras vazadas, nanquim) o filtro de
+    "fino" apaga: na peça sozinha (sem dobra de corpo) vale a cobertura antes dele. Poucos desenhos grandes (o "AX"
+    gigante no peito) são estampa localizada grande, não corrida."""
+    thin = not frame.worn and raw.sum() / mask.sum() > 0.05 and estampa.spread(raw, mask, frame) >= 0.89
+    wide = coverage > ALL_OVER and estampa.spread(cand, mask, frame) >= 0.67
+    if not (thin or wide):
+        return False
+    torso = 0.6 * (frame.right - frame.left) * 0.8 * frame.height
+    biggest = max(((g.box[1] - g.box[0]) * (g.box[3] - g.box[2]) for g in found), default=0) / max(torso, 1.0)
+    return not (len(found) <= 3 and biggest < 0.6)
+
+
+def _keep(where: dict, frame, avoid_center: bool) -> bool:
+    """Desenho que é mesmo desenho e está no pano: nem lasca, nem cordão do capuz ou cadarço do zíper no meio, nem o
+    que aparece pela frente aberta vestida (o meio e o V mostram a roupa de baixo)."""
+    w, h, x = where["largura"], where["altura"], where["x"]
+    if min(w, h) < 0.008 or w * h < 0.0002:
+        return False
+    if h > 2.5 * w and abs(x) < 0.08:
+        return False
+    return not (avoid_center and frame.worn and (abs(x) < w / 2 or (abs(x) < 0.08 and where["abaixo_do_ombro"] < 0.35)))

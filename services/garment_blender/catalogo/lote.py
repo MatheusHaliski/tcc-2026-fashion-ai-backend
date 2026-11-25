@@ -43,6 +43,30 @@ def _open(path: Path) -> Image.Image | None:
         return None
 
 
+class LazySegmenter:
+    """O segmentador só carrega (8–9 s, 1 GB) na primeira foto sem rótulos guardados."""
+
+    def __init__(self, threads: int):
+        self.threads, self.model = threads, None
+
+    def labels(self, img: Image.Image) -> np.ndarray:
+        if self.model is None:
+            from .segmentador import Segmentador
+            self.model = Segmentador(self.threads)
+        return self.model.labels(img)
+
+
+def _labels(seg, img: Image.Image, path: Path) -> np.ndarray:
+    """Rótulos do segmentador, guardados ao lado da foto baixada: refazer a análise (outra regra de estampa, de cor)
+    não roda a rede de novo."""
+    cached = path.with_name(path.name + ".rotulos.png")
+    if cached.is_file():
+        return np.asarray(Image.open(cached))
+    labels = seg.labels(img)
+    Image.fromarray(labels).save(cached, optimize=True)
+    return labels
+
+
 def _measures(spec: dict) -> tuple[float, float]:
     """(comprimento do ombro à barra, meia largura do tronco no peito), em metros, da base no M."""
     m = top_measures("M", spec["sexo"], spec["caimento"], spec.get("medidas_marca"))
@@ -100,7 +124,7 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
         if img is None:
             continue
         rgb = np.asarray(img)
-        result = analyze(rgb, seg.labels(img), length, chest_a, avoid)
+        result = analyze(rgb, _labels(seg, img, path), length, chest_a, avoid)
         if result["ok"] and (best is None or result["nota_foto"] > best["nota_foto"]):
             best, best_url, photo = result, url, img
         if best is not None and best["nota_foto"] >= 0.6:
@@ -157,7 +181,6 @@ def main(argv=None) -> int:
     ap.add_argument("--threads", type=int, default=3, help="núcleos do segmentador")
     ap.add_argument("--parte", default="0/1", help="i/n: só a parte i de n (vários processos em paralelo)")
     args = ap.parse_args(argv)
-    from .segmentador import Segmentador
     everything = produtos.read_all()
     prior = produtos.brand_prior(everything)
     part, parts = (int(v) for v in args.parte.split("/"))
@@ -166,7 +189,7 @@ def main(argv=None) -> int:
             and not any((args.saida / produtos.ident(p) / f).exists() for f in ("ficha.json", "pulado.json"))]
     print(json.dumps({"produtos": len(todo)}), flush=True)
     args.saida.mkdir(parents=True, exist_ok=True)
-    seg, cache = Segmentador(args.threads), args.saida / "_cache"
+    seg, cache = LazySegmenter(args.threads), args.saida / "_cache"
     report = (args.saida / f"relatorio-{part}.jsonl").open("a", encoding="utf-8")
 
     def download(p):

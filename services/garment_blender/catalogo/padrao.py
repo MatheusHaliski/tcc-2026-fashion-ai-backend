@@ -93,6 +93,9 @@ def tile(rgb: np.ndarray, lab: np.ndarray, mask: np.ndarray, frame, avoid_center
         return None
     ya, xa = int((y0 + y1) / 2 - side / 2), int((x0 + x1) / 2 - side / 2)
     crop = lab[ya:ya + side, xa:xa + side].copy()
+    gy, gx = np.gradient(ndimage.gaussian_filter(crop[..., 0], 1.0))
+    if (np.hypot(gx, gy) > 6).mean() < 0.04:   # quase sem traço: blocos de cor (o recorte pega uma emenda), não estampa
+        return None
     broad = ndimage.gaussian_filter(crop[..., 0], side / 6)
     crop[..., 0] = np.clip(crop[..., 0] - (broad - broad.mean()), 0, 100)   # tira a sombra larga, deixa o desenho
     piece = lab_to_rgb(crop).astype(np.uint8)
