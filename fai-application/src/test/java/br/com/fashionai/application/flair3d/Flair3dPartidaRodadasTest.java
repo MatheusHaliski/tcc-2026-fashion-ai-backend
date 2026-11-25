@@ -86,7 +86,7 @@ class Flair3dPartidaRodadasTest {
         Resultado previa2 = service.previa(ana, id, vestir(null, sup, inf, cal));
         assertThat(previa2).isEqualTo(previa1);
         // a prévia não revela a sala do tema: no máximo o que o look soma (regra peça-recurso; tema sorteado sem ponto, nada)
-        assertThat(previa1.eventos()).extracting(Resultado.Evento::codigo).isSubsetOf("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO");
+        assertThat(previa1.eventos()).extracting(Resultado.Evento::codigo).isSubsetOf("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO", "PERFIL_DO_LOOK");
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isZero();
         service.entregar(ana, id, vestir(null, sup, inf, cal));
         Resultado r = service.acionar(ana, id, Acionamento.NENHUM);

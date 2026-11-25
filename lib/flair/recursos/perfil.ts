@@ -32,6 +32,18 @@ export interface MudancaDeAtributo {
   delta: number;
 }
 
+/**
+ * O look dos jogos de zonas: o servidor manda o perfil das zonas pintadas na prévia (evento PERFIL_DO_LOOK); nulo
+ * quando a prévia não traz.
+ */
+export function lookDaPrevia(eventos: { codigo: string; valor?: unknown }[] | undefined): LookNaTela | null {
+  const v = eventos?.find((e) => e.codigo === "PERFIL_DO_LOOK")?.valor as { atributos?: Partial<AtributosDoLook>; acoes?: string[] } | undefined;
+  if (!v?.atributos) return null;
+  const atributos = { ...LOOK_NEUTRO.atributos, ...v.atributos } as AtributosDoLook;
+  const acoes = ACOES_DESTRAVADAS.filter((a) => (v.acoes ?? []).includes(a));
+  return { atributos, acoes, pecas: 1 };
+}
+
 /** O que mudou de um look para o outro: no máximo `limite` atributos, os de maior mudança primeiro. */
 export function mudancas(antes: LookNaTela, depois: LookNaTela, limite = 2): MudancaDeAtributo[] {
   return ATRIBUTOS.map((atributo) => ({ atributo, delta: depois.atributos[atributo] - antes.atributos[atributo] }))

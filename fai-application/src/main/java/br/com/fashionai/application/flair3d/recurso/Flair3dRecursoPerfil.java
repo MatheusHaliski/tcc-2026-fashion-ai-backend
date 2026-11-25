@@ -9,8 +9,8 @@ import java.util.Optional;
 /**
  * Como cada jogo lê a regra peça-recurso: os atributos do look que pesam na nota (com o peso de cada um) e o recurso
  * que é a "vida" do jogo. Fora desta tabela ficam a Batalha de Looks (a nota é comparada com a do adversário), os jogos
- * com motor próprio de atributos (Dress Fighter, Fashion Detective, Fashion Sports: etapa 14 do plano) e os de zonas,
- * que não têm cartas. Puro.
+ * com motor próprio de atributos (Dress Fighter, Fashion Detective, Fashion Sports: o uso age dentro do motor);
+ * e os de zonas leem as zonas pintadas como peças virtuais (Flair3dPecaVirtual). Puro.
  */
 public final class Flair3dRecursoPerfil {
     private Flair3dRecursoPerfil() {
@@ -23,14 +23,19 @@ public final class Flair3dRecursoPerfil {
     public record PerfilDoJogo(Map<Atributo, Integer> pesos, Recurso vida) {
     }
 
-    static final Map<String, PerfilDoJogo> JOGOS = Map.of(
-            "PASSARELA", new PerfilDoJogo(Map.of(Atributo.CARISMA, 2, Atributo.AGILIDADE, 1), Recurso.FOCO),
-            "DRESS_THE_STAR", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1), Recurso.FOCO),
-            "PERSONAGEM_FILME", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1, Atributo.FURTIVIDADE, 1, Atributo.AGILIDADE, 1, Atributo.FORCA, 1), Recurso.FOCO),
-            "BOUTIQUE_3D", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1), Recurso.MOEDAS),
-            "AROUND_THE_WORLD", new PerfilDoJogo(Map.of(Atributo.RESISTENCIA, 1, Atributo.AGILIDADE, 1), Recurso.ENERGIA),
-            "LABIRINTO", new PerfilDoJogo(Map.of(Atributo.AGILIDADE, 1, Atributo.FURTIVIDADE, 1), Recurso.ENERGIA),
-            "ROAD_TO_GLORY", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1, Atributo.RESISTENCIA, 1), Recurso.ENERGIA));
+    static final Map<String, PerfilDoJogo> JOGOS = Map.ofEntries(
+            Map.entry("PASSARELA", new PerfilDoJogo(Map.of(Atributo.CARISMA, 2, Atributo.AGILIDADE, 1), Recurso.FOCO)),
+            Map.entry("DRESS_THE_STAR", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1), Recurso.FOCO)),
+            Map.entry("PERSONAGEM_FILME", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1, Atributo.FURTIVIDADE, 1, Atributo.AGILIDADE, 1, Atributo.FORCA, 1), Recurso.FOCO)),
+            Map.entry("BOUTIQUE_3D", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1), Recurso.MOEDAS)),
+            Map.entry("AROUND_THE_WORLD", new PerfilDoJogo(Map.of(Atributo.RESISTENCIA, 1, Atributo.AGILIDADE, 1), Recurso.ENERGIA)),
+            Map.entry("LABIRINTO", new PerfilDoJogo(Map.of(Atributo.AGILIDADE, 1, Atributo.FURTIVIDADE, 1), Recurso.ENERGIA)),
+            Map.entry("ROAD_TO_GLORY", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1, Atributo.RESISTENCIA, 1), Recurso.ENERGIA)),
+            // os jogos de zonas: cada zona pintada é uma peça virtual (Flair3dPecaVirtual)
+            Map.entry("CLUBE_CORACAO", new PerfilDoJogo(Map.of(Atributo.RESISTENCIA, 1, Atributo.CARISMA, 1), Recurso.ENERGIA)),
+            Map.entry("FAVORITE_SINGER", new PerfilDoJogo(Map.of(Atributo.CARISMA, 1), Recurso.FOCO)),
+            Map.entry("PILOTO_FAVORITO", new PerfilDoJogo(Map.of(Atributo.AGILIDADE, 1, Atributo.RESISTENCIA, 1), Recurso.ENERGIA)),
+            Map.entry("SUPER_HEROI", new PerfilDoJogo(Map.of(Atributo.FORCA, 1, Atributo.AGILIDADE, 1), Recurso.VIDA)));
 
     public static Optional<PerfilDoJogo> doJogo(String codigo) {
         return Optional.ofNullable(JOGOS.get(codigo));

@@ -4,6 +4,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.recurso.Flair3dPecaVirtual;
 import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoBonus;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.Flair3dMatch;
@@ -159,7 +160,7 @@ public class Flair3dNucleoService {
         Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
         Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa(Json.read(m.getEntregaJson(), Entrega.class));
         Contexto ctx = contexto(user, m, n, e, a);
-        return Flair3dRecursoBonus.naPrevia(n.codigo(), n.previa(e, ctx), ctx.vestidas(e), a.usos()).comStatus(m.getStatus());
+        return Flair3dRecursoBonus.naPrevia(n.codigo(), n.previa(e, ctx), vestidasOuZonas(n, e, ctx), a.usos()).comStatus(m.getStatus());
     }
 
     /** A rodada pedida, quando o jogo a tem (422 RODADA_INVALIDA); sem pedido, nula: vale o objetivo mais simples. */
@@ -212,7 +213,13 @@ public class Flair3dNucleoService {
 
     /** A nota do jogo com o que o look e os recursos somam (regra peça-recurso, Flair3dRecursoBonus). */
     private static Resultado comLook(Flair3dNucleo n, Entrega e, Andamento a, Contexto ctx) {
-        return Flair3dRecursoBonus.aplicar(n.codigo(), n.pontuar(e, ctx), ctx.vestidas(e), a.usos());
+        return Flair3dRecursoBonus.aplicar(n.codigo(), n.pontuar(e, ctx), vestidasOuZonas(n, e, ctx), a.usos());
+    }
+
+    /** As cartas vestidas; nos jogos de zonas, as zonas pintadas como peças virtuais. */
+    private static Map<String, CbcRules.Card> vestidasOuZonas(Flair3dNucleo n, Entrega e, Contexto ctx) {
+        Map<String, CbcRules.Card> vestidas = ctx.vestidas(e);
+        return vestidas.isEmpty() ? Flair3dPecaVirtual.daZonas(n.codigo(), e.zonas()) : vestidas;
     }
 
     /** Grava a etapa: entrega, andamento e status; resultado, pontos e estrelas só quando a partida fecha. */

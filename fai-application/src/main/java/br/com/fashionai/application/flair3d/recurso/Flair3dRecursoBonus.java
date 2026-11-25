@@ -44,10 +44,15 @@ public final class Flair3dRecursoBonus {
         // vale na prévia e no resultado que fecha a partida; nota zero do jogo (a penalidade do Labirinto, o look que
         // não cumpriu nada) fica zero, e o meio da ação e a etapa que segue aberta ainda não têm nota
         boolean comNota = r.pontos() > 0 && (previa || (r.fecha() && !Resultado.ABERTA.equals(r.status())));
-        if (perfil == null || !comNota || vestidas.isEmpty()) {
+        if (perfil == null || vestidas.isEmpty()) {
             return r;
         }
-        int look = pelosAtributos(perfil, Flair3dRecursoCalculo.doLook(vestidas));
+        PerfilDoLook doLook = Flair3dRecursoCalculo.doLook(vestidas);
+        if (!comNota) {
+            // sem nota ainda, a prévia leva só o perfil do look, para a roda de atributos da tela (jogos de zonas)
+            return previa ? comPerfil(r, doLook, r.eventos()) : r;
+        }
+        int look = pelosAtributos(perfil, doLook);
         int recurso = peloRecurso(perfil.vida(), Flair3dRecursoEstado.de(usos));
         List<RegraResultado> regras = new ArrayList<>(r.regras());
         List<Evento> eventos = new ArrayList<>(r.eventos());
@@ -55,6 +60,7 @@ public final class Flair3dRecursoBonus {
             // na prévia as regras são as do pedido (iguais às da entrega da etapa); o bônus vai como evento
             eventos.add(new Evento(REGRA_LOOK, look));
             eventos.add(new Evento(REGRA_RECURSO, recurso));
+            eventos.add(perfilDoLook(doLook));
         } else {
             regras.add(RegraResultado.de(REGRA_LOOK, look > 0, look));
             regras.add(RegraResultado.de(REGRA_RECURSO, recurso > 0, recurso));
@@ -65,6 +71,24 @@ public final class Flair3dRecursoBonus {
             default -> r.resultado();
         };
         return new Resultado(pontos, Resultado.estrelas(pontos), codigo, regras, eventos, r.cartas(), r.status());
+    }
+
+    public static final String PERFIL_DO_LOOK = "PERFIL_DO_LOOK";
+
+    /** {atributos:{AGILIDADE: 62...}, acoes:[CORRER...]}: o look para a roda de atributos da tela. */
+    static Evento perfilDoLook(PerfilDoLook look) {
+        Map<String, Object> m = new java.util.LinkedHashMap<>();
+        Map<String, Integer> atributos = new java.util.LinkedHashMap<>();
+        look.atributos().forEach((a, v) -> atributos.put(a.name(), v));
+        m.put("atributos", atributos);
+        m.put("acoes", look.acoes().stream().map(Enum::name).sorted().toList());
+        return new Evento(PERFIL_DO_LOOK, m);
+    }
+
+    private static Resultado comPerfil(Resultado r, PerfilDoLook look, List<Evento> eventos) {
+        List<Evento> out = new ArrayList<>(eventos);
+        out.add(perfilDoLook(look));
+        return new Resultado(r.pontos(), r.estrelas(), r.resultado(), r.regras(), out, r.cartas(), r.status());
     }
 
     /** O quanto os atributos pedidos passam do neutro (média ponderada), em até TETO_DOS_ATRIBUTOS pontos. */

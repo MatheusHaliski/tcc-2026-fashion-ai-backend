@@ -73,3 +73,15 @@ describe("uso da peça como recurso na tela", async () => {
     expect(somar("FOCO", 0, -5)).toBe(0);
   });
 });
+
+describe("jogos de zonas: o perfil vem na prévia", async () => {
+  const { lookDaPrevia } = await import("@/lib/flair/recursos/perfil");
+  it("lê o PERFIL_DO_LOOK da prévia; sem ele, nada", () => {
+    const look = lookDaPrevia([{ codigo: "PERFIL_DO_LOOK", valor: { atributos: { FORCA: 58, AGILIDADE: 50 }, acoes: ["REFLETIR", "VOAR"] } }]);
+    expect(look?.atributos.FORCA).toBe(58);
+    expect(look?.atributos.CARISMA).toBe(50);
+    expect(look?.acoes).toEqual(["REFLETIR"]);
+    expect(lookDaPrevia([{ codigo: "TENTATIVA", valor: 1 }])).toBeNull();
+    expect(lookDaPrevia(undefined)).toBeNull();
+  });
+});
