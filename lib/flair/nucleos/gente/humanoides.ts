@@ -13,7 +13,8 @@ import type { PoseLeve } from "@/lib/flair/nucleos/gente/leve";
 export interface Humanoide {
   slug: string;
   sexo: Sex;
-  title: string;
+  /** nome da obra como publicada no Sketchfab, reproduzido sem tradução no crédito CC BY (não é texto de interface) */
+  obra: string;
   author: string;
   license: "CC BY 4.0";
   source: string;
@@ -24,10 +25,10 @@ export interface Humanoide {
 
 const SKETCHFAB = "https://sketchfab.com/3d-models/";
 export const HUMANOIDES: readonly Humanoide[] = [
-  { slug: "eric", sexo: "MASCULINO", title: "Eric Rigged 001 - Rigged 3D Business Man", author: "Renderpeople", license: "CC BY 4.0", source: `${SKETCHFAB}eric-rigged-001-rigged-3d-business-man-a46bc9f67aaa415bb4f3241eef900e7f`, triangles: 10270 },
-  { slug: "carla", sexo: "FEMININO", title: "Carla Rigged 001 - Rigged 3D Business Women", author: "Renderpeople", license: "CC BY 4.0", source: `${SKETCHFAB}carla-rigged-001-rigged-3d-business-women-acf520f450d14dd799f98a6fede3edf5`, triangles: 9993 },
-  { slug: "claudia", sexo: "FEMININO", title: "Claudia Rigged 002 - 3D Rigged Business Women", author: "Renderpeople", license: "CC BY 4.0", source: `${SKETCHFAB}claudia-rigged-002-3d-rigged-business-women-c659bd0accab47c6bbe390cf822a2b92`, triangles: 10745 },
-  { slug: "seguranca", sexo: "MASCULINO", so: /seguran|vigia|guard|porteiro/i, title: "Security Guard – Rigged 3D Model", author: "Q.SARDOR", license: "CC BY 4.0", source: `${SKETCHFAB}security-guard-rigged-3d-model-1e3307732bbf4453b30f021bfec5bcaf`, triangles: 10222 },
+  { slug: "eric", sexo: "MASCULINO", obra: "Eric Rigged 001 - Rigged 3D Business Man", author: "Renderpeople", license: "CC BY 4.0", source: `${SKETCHFAB}eric-rigged-001-rigged-3d-business-man-a46bc9f67aaa415bb4f3241eef900e7f`, triangles: 10270 },
+  { slug: "carla", sexo: "FEMININO", obra: "Carla Rigged 001 - Rigged 3D Business Women", author: "Renderpeople", license: "CC BY 4.0", source: `${SKETCHFAB}carla-rigged-001-rigged-3d-business-women-acf520f450d14dd799f98a6fede3edf5`, triangles: 9993 },
+  { slug: "claudia", sexo: "FEMININO", obra: "Claudia Rigged 002 - 3D Rigged Business Women", author: "Renderpeople", license: "CC BY 4.0", source: `${SKETCHFAB}claudia-rigged-002-3d-rigged-business-women-c659bd0accab47c6bbe390cf822a2b92`, triangles: 10745 },
+  { slug: "seguranca", sexo: "MASCULINO", so: /seguran|vigia|guard|porteiro/i, obra: "Security Guard – Rigged 3D Model", author: "Q.SARDOR", license: "CC BY 4.0", source: `${SKETCHFAB}security-guard-rigged-3d-model-1e3307732bbf4453b30f021bfec5bcaf`, triangles: 10222 },
 ];
 
 export const urlDoHumanoide = (slug: string): string => `/flair/3d/gente/${slug}.glb`;
