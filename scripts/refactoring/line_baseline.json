@@ -85,7 +85,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/lookbook-tabs.tsx": {
-   "max": 379,
+   "max": 352,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/mirror/mirror-controls.tsx": {

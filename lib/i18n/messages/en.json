@@ -12908,5 +12908,12 @@
   "lookReferences.nivelTermico.pedido": "Requested thermal level: {nivel}",
   "lookReferences.nivelTermico.fit": "{ok} matching piece(s), {diverge} diverging, {semDado} without declared intensity",
   "mirror.painel.abrir": "Mirror controls",
-  "mirror.painel.fechar_nome": "Close {name}"
+  "mirror.painel.fechar_nome": "Close {name}",
+  "lookbook.season.label": "Season",
+  "lookbook.season.all": "All",
+  "lookbook.season.none": "No season",
+  "lookbook.season.notInformed": "Not specified",
+  "lookbook.season.empty": "No {season} looks here.",
+  "lookbook.season.emptyNone": "Every look already has a season.",
+  "lookbook.season.showAll": "Show all seasons"
 }
