@@ -12898,5 +12898,15 @@
   "flair3d.ui.viabilidade.regras": "None of your cards meets: {regras}. Those points are out of reach.",
   "settings.autoLookType": "Automatic look type",
   "settings.autoLookTypeHint": "When on, the chosen type is applied to new pieces and looks, and the creator no longer asks for it.",
-  "settings.autoLookTypeChoose": "Applied type"
+  "settings.autoLookTypeChoose": "Applied type",
+  "lookReferences.nivelTermico.label": "Look thermal level",
+  "lookReferences.nivelTermico.unselected": "Not specified",
+  "lookReferences.nivelTermico.unavailable": "Saved level unavailable",
+  "lookReferences.nivelTermico.loadError": "Could not load the thermal levels.",
+  "lookReferences.nivelTermico.empty": "No thermal levels registered.",
+  "lookReferences.nivelTermico.hint": "How warm the look is: light, moderate or intense.",
+  "lookReferences.nivelTermico.loading": "Loading thermal levels…",
+  "lookReferences.nivelTermico.mirrorUnavailable": "Thermal levels unavailable right now; Dress me works without this criterion.",
+  "lookReferences.nivelTermico.pedido": "Requested thermal level: {nivel}",
+  "lookReferences.nivelTermico.fit": "{ok} matching piece(s), {diverge} diverging, {semDado} without declared intensity"
 }

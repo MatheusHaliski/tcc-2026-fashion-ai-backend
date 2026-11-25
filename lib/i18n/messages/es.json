@@ -12898,5 +12898,15 @@
   "flair3d.ui.viabilidade.regras": "Ninguna carta tuya cumple: {regras}. Esos puntos quedan fuera.",
   "settings.autoLookType": "Tipo de look automático",
   "settings.autoLookTypeHint": "Activado, el tipo elegido se aplica a las nuevas prendas y looks, y el creador ya no lo pide.",
-  "settings.autoLookTypeChoose": "Tipo aplicado"
+  "settings.autoLookTypeChoose": "Tipo aplicado",
+  "lookReferences.nivelTermico.label": "Nivel térmico del look",
+  "lookReferences.nivelTermico.unselected": "No informado",
+  "lookReferences.nivelTermico.unavailable": "Nivel guardado no disponible",
+  "lookReferences.nivelTermico.loadError": "No se pudieron cargar los niveles térmicos.",
+  "lookReferences.nivelTermico.empty": "No hay niveles térmicos registrados.",
+  "lookReferences.nivelTermico.hint": "Cuánto abriga el look: leve, moderado o intenso.",
+  "lookReferences.nivelTermico.loading": "Cargando niveles térmicos…",
+  "lookReferences.nivelTermico.mirrorUnavailable": "Niveles térmicos no disponibles por ahora; Vísteme sigue sin este criterio.",
+  "lookReferences.nivelTermico.pedido": "Nivel térmico pedido: {nivel}",
+  "lookReferences.nivelTermico.fit": "{ok} prenda(s) compatible(s), {diverge} divergente(s), {semDado} sin intensidad declarada"
 }
