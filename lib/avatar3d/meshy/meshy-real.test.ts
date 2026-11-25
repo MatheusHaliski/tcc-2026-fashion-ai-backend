@@ -47,13 +47,13 @@ describe.skipIf(!DIR || !existsSync(DIR))("Meshy real no corpo padrão", () => {
       const g = readGlbGeometry(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
       if (m.attach === "wrap") {
         garments++;
-        const src = { position: g.position, uv: null, index: g.index, groups: [], materials: [] };
+        const src = { position: g.position, uv: null, index: g.index, groups: [], materials: [], parts: g.parts };
         const sizes = m.slot === "lower" && m.tamanhos.grade === "numeric" ? ["36", "40", "46"] : ["P", "M", "GG"];
         const fits = sizes.map((label, k) => {
           const steps = sizes.length === 3 && sizes[0] === "36" ? [-2, 0, 3][k] : [-1, 0, 2][k];
           const spec = specFor({ id: sub, name: sub, slot: m.slot, category: m.categoria, subcategory: sub, sizeLabel: label, sizeSteps: steps } as never)!;
           const below = m.slot === "upper" ? [UNDER, SHOE] : [SHOE];
-          return fitGlbGarment(src, frameFor([...below, spec]), spec, below, { sizes: process.env.MESHY_SEM_TAMANHO ? null : m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos, realScale: m.medidaReal === true });
+          return fitGlbGarment(src, frameFor([...below, spec]), spec, below, { sizes: process.env.MESHY_SEM_TAMANHO ? null : m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos, realScale: m.medidaReal === true, shoulderTop: m.pontoAlto });
         });
         if (fits[1].ok) accepted++;
         rows.push(`${sub.padEnd(18)} ${fits.map((x, k) => `${sizes[k]}:${x.ok ? "ok" : x.reason}${x.metrics ? ` e${x.metrics.stretch.toFixed(2)} d${(100 * x.metrics.inside).toFixed(1)}% f${(100 * x.metrics.pierced).toFixed(1)}% l${x.metrics.far.toFixed(2)}` : ""}`).join("  ")}`);

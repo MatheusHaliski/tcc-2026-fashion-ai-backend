@@ -24,5 +24,6 @@ def fit_manifest(spec: GarmentSpec, mesh: Mesh) -> dict:
                      "limite": [-3, 4], "convencao": "RELATIVE_VISUAL_APPROXIMATION", "alegacaoDeCaimento": "NONE",
                      "medidasDoAvatarAlteradas": False},
         "estado": "veste", "medidaReal": True, "tamanhoGerado": spec.tamanho,
+        **({} if lower else {"pontoAlto": round(spec.medidas.comprimento * 0.01, 4)}),   # a barra está em y = 0
         "motivo": f"FAI Garment Blender: {spec.subcategoria} {spec.tamanho}, {spec.tecido.tipo}",
     }

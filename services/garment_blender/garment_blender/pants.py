@@ -10,7 +10,7 @@ import math
 
 import numpy as np
 
-from .geometry import COLUMNS, TILE, Mesh, Row, _arc, _ring, ellipse_semi_axes
+from .geometry import COLUMNS, TILE, Mesh, Row, _arc, _ring, densify, ellipse_semi_axes
 from .sizes_pants import PantsMeasures
 
 BRIDGE = 8          # segmentos da costura do gancho (frente → costas, por baixo)
@@ -88,7 +88,7 @@ def leg_rows(m: PantsMeasures, side: int, hip_a: float) -> list[Row]:
     else:
         st.append((0.0, m.barra * cm, "corpo"))
     rows = []
-    for y, perim, mat in st:
+    for y, perim, mat in densify(st):
         a, b = ellipse_semi_axes(perim or m.coxa * cm, LEG_RATIO)
         rows.append(Row(y, a, b, mat, cx=cx - side * 0.012 * (1 - y / y_c)))   # a perna fecha um pouco até a barra
     return rows

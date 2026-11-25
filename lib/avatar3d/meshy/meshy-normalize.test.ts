@@ -11,6 +11,7 @@ import { SLOT_RULES, isAccessoryRule, slotRuleOf } from "./slots";
 import { budgetSize } from "./texture-budget";
 import { hemOf, hemProfile, tuckedBySector, tuckedIndex } from "./tuck";
 import { generatedSizeShift } from "./size";
+import { partOfColor, partsOfColors } from "./part-codes";
 
 const positions = (g: THREE.BufferGeometry) => Float32Array.from(g.getAttribute("position").array as ArrayLike<number>);
 function merge(...gs: THREE.BufferGeometry[]): Float32Array {
@@ -40,6 +41,14 @@ function tinyGlb(translation = [1, 2, 3]): ArrayBuffer {
   v.setUint32(20 + jb.length, bin.length, true); v.setUint32(24 + jb.length, 0x004e4942, true); new Uint8Array(out, 28 + jb.length).set(bin);
   return out;
 }
+
+describe("rótulo da parte na cor do vértice (motor Blender)", () => {
+  it("vermelho 0 / 0,25 / 0,5 / 0,75 / 1 → tronco, manga +x, manga −x, perna +x, perna −x; tolera arredondamento", () => {
+    expect([0, 0.25, 0.5, 0.75, 1].map(partOfColor)).toEqual([0, 1, -1, 2, -2]);
+    expect(partOfColor(0.2504)).toBe(1); expect(partOfColor(-0.1)).toBe(0); expect(partOfColor(1.3)).toBe(-2);
+    expect(Array.from(partsOfColors([0.5, 1, 1, 1, 0.75, 1, 1, 1], 4))).toEqual([-1, 2]);
+  });
+});
 
 describe("escala real: tamanho escolhido a partir do tamanho gerado", () => {
   it("passos da grade entre o gerado e o escolhido; sem rótulo ou fora da grade, 0", () => {

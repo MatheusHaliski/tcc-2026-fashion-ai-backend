@@ -72,20 +72,25 @@ def _torso_rows(m: TopMeasures, ribbed: bool) -> tuple[list[Row], int, int, int]
         t = min(1.0, (y - rib) / max(1e-6, (y_arm - 0.06) - rib))
         rows.append(Row(y, body_a + (a_chest - body_a) * t, body_b + (b_chest - body_b) * t, "corpo"))
     i_arm = len(rows) - 1
-    for y in np.linspace(y_arm, y_sh, 7)[1:]:
-        t = (y - y_arm) / (y_sh - y_arm)
-        rows.append(Row(y, a_chest + (m.ombro * cm / 2 - a_chest) * t, b_chest * (1 - 0.18 * t), "corpo"))
-    i_sh = len(rows) - 1
     neck_a, neck_b = ellipse_semi_axes(m.pescoco * cm, 0.82)
     theta = np.linspace(0, 2 * np.pi, COLUMNS, endpoint=False)
     front = np.clip(np.sin(theta), 0, None) ** 1.6
     back = np.clip(-np.sin(theta), 0, None) ** 1.6
     drop = (front * m.decote_frente + back * m.decote_costas) * cm
+    # a descida do decote se espalha da axila ao pescoço: na frente cada anel fica sempre acima do anterior (com a
+    # descida toda só nos anéis de cima, a frente deles caía abaixo do anel do ombro e o pano dobrava no peito)
+    spread = lambda y: drop * (y - y_arm) / (H - y_arm)   # noqa: E731
+    # profundidade numa curva só da axila ao pescoço (a frente fica reta até perto do alto): com uma quina na axila e
+    # outra na linha do ombro, a luz marcava dois vincos atravessando o peito
+    depth = lambda y: b_chest + (neck_b - b_chest) * ((y - y_arm) / (H - y_arm)) ** 2.2   # noqa: E731
+    for y in np.linspace(y_arm, y_sh, 7)[1:]:
+        t = (y - y_arm) / (y_sh - y_arm)
+        rows.append(Row(y, a_chest + (m.ombro * cm / 2 - a_chest) * t, depth(y), "corpo", spread(y)))
+    i_sh = len(rows) - 1
     top = rows[-1]
     for t in np.linspace(0, 1, 6)[1:]:
-        s = t ** 0.8
-        rows.append(Row(y_sh + (H - y_sh) * t, top.a + (neck_a - top.a) * s, top.b + (neck_b - top.b) * s, "corpo",
-                        drop * t, dz=-0.01 * t))
+        s, y = t ** 0.8, y_sh + (H - y_sh) * t
+        rows.append(Row(y, top.a + (neck_a - top.a) * s, depth(y), "corpo", spread(y), dz=-0.01 * t))
     i_neck = len(rows) - 1
     return rows, i_arm, i_sh, i_neck
 
@@ -146,3 +151,19 @@ def build_torso(mesh: Mesh, m: TopMeasures, ribbed: bool):
     for loop in loops:
         mesh.seams.update(int(v) for v in loop)
     return grid, loops, rows, (i_arm, i_sh, i_neck)
+
+
+def densify(stations: list, step: float = 0.03) -> list:
+    """Estações (posição ao longo da peça, perímetro, material) com anéis intermediários a cada ``step`` metros, o
+    perímetro interpolado em linha reta. O provador dobra e encaixa a peça vértice a vértice: com 20–30 cm numa face só,
+    a manga não acompanhava o cotovelo e a colisão via fatias. Perímetro None (transição) é copiado da estação vizinha."""
+    out = [stations[0]]
+    for (p0, c0, m0), (p1, c1, m1) in zip(stations, stations[1:]):
+        k = int(abs(p1 - p0) // step)
+        a, b = (c0 if c0 is not None else c1), (c1 if c1 is not None else c0)
+        for i in range(1, k + 1):
+            t = i / (k + 1)
+            out.append((p0 + (p1 - p0) * t, None if a is None else a + (b - a) * t, m1 if m0 == m1 else "corpo"))
+        out.append((p1, c1, m1))
+    return out
+

@@ -95,7 +95,9 @@ describe("glb-garment: peça estática vestida no avatar", () => {
     expect(fitted.scale).not.toBeCloseTo(1, 2);
     expect(real.scale).toBe(1);
     const width = (p: Float32Array) => { let lo = Infinity, hi = -Infinity; for (let i = 0; i < p.length; i += 3) { lo = Math.min(lo, p[i]); hi = Math.max(hi, p[i]); } return hi - lo; };
-    expect(width(real.pos)).toBeCloseTo(width(src.position), 1);   // a envergadura fica a da peça (o giro da manga só a reduz)
+    // a envergadura não cresce (sem reescala); só encolhe o quanto a manga é puxada até o braço (até 5 cm de cada lado)
+    expect(width(real.pos)).toBeLessThanOrEqual(width(src.position) + 1e-3);
+    expect(width(real.pos)).toBeGreaterThan(width(src.position) - 0.12);
     // a profundidade também é a da peça: a camisa rasa de teste não é esticada por faixa (o tronco não estufa)
     const depth = (p: Float32Array) => { let lo = Infinity, hi = -Infinity; for (let i = 2; i < p.length; i += 3) { lo = Math.min(lo, p[i]); hi = Math.max(hi, p[i]); } return hi - lo; };
     const grown = (al: { pos: Float32Array; scale: number }) => depth(al.pos) / (al.scale * depth(src.position));
