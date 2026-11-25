@@ -79,3 +79,17 @@ look com ela.
 
 Ainda aparecem: pequenas abas na axila do top cropped e pontinhas no alto das alças, onde a alça encontra o decote
 (top, body, colete).
+
+## Peças de baixo: forma e acabamento (25/11, noite)
+
+| Arquivo | O que mostra |
+|---|---|
+| `jeans-detalhes.jpg` | jeans de perto (frente, ¾, costas): J da braguilha, boca curva do bolso com rebites, bolsinho de moeda, cós e pala com pesponto, bolsos de trás com arcos, linha dourada (o tom ciano é da importação no render de detalhe) |
+| `baixo-provador-acabamento.jpg` | as 14 de baixo no provador, frente, ¾ e costas |
+| `shorts-barra.jpg` | short, bermuda e short jeans com a barra a 88–90 % da coxa |
+
+Forma: a seção da calça vai para trás (frente mais reta, assento mais cheio) e a curva cintura → quadril → gancho não
+tem quina — a frente deixou de parecer estufada. Acabamento em todas: pesponto no cós, barra com pesponto duplo, J da
+braguilha e boca do bolso; jeans com o kit de cinco bolsos; alfaiataria com o vinco da perna.
+
+Ainda não está bom: short e bermuda ficam folgados e com volume no quadril no corpo, e a barra amassa de um lado.

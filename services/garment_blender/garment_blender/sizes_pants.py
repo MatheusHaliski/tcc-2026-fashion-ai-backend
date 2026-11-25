@@ -12,7 +12,7 @@ NUMBERS = tuple(str(n) for n in range(34, 52, 2))
 
 # folga (cm) de cintura, quadril, coxa, joelho e barra por modelo, e barra: "reta" ou "ribana". Opcionais:
 # ``entreperna`` (masc., fem.) em cm, quando não é a calça inteira; ``barra_coxa``: a boca da perna como fração da coxa
-# (short, bermuda: a perna não estreita até o joelho); ``saia``: (comprimento do cós à barra em cm, roda = barra ÷ quadril).
+# (short, bermuda: um pouco menor que a coxa do gancho — a coxa afina até a barra; igual, a barra abria em sino); ``saia``: (comprimento do cós à barra em cm, roda = barra ÷ quadril).
 CUTS = {
     "casual_pants": dict(cintura=2, quadril=8, coxa=8, joelho=6, barra=40, punho="reta"),
     "chino_pants": dict(cintura=2, quadril=6, coxa=6, joelho=4, barra=36, punho="reta"),
@@ -23,11 +23,11 @@ CUTS = {
     "tailored_pants": dict(cintura=2, quadril=8, coxa=10, joelho=14, barra=52, punho="reta"),
     "leggings": dict(cintura=-4, quadril=-8, coxa=-6, joelho=-4, barra=20, punho="reta"),
     "culottes": dict(cintura=2, quadril=12, coxa=10, joelho=20, barra=60, punho="reta", entreperna=(54, 50)),
-    "shorts": dict(cintura=0, quadril=10, coxa=5, joelho=0, barra=0, punho="reta", entreperna=(14, 12), barra_coxa=1.0),
+    "shorts": dict(cintura=0, quadril=10, coxa=5, joelho=0, barra=0, punho="reta", entreperna=(14, 12), barra_coxa=0.88),
     "bermuda_shorts": dict(cintura=2, quadril=12, coxa=7, joelho=0, barra=0, punho="reta", entreperna=(26, 24),
-                           barra_coxa=0.98),
-    "denim_shorts": dict(cintura=1, quadril=4, coxa=3, joelho=0, barra=0, punho="reta", entreperna=(10, 8), barra_coxa=1.0),
-    "skort": dict(cintura=1, quadril=8, coxa=3, joelho=0, barra=0, punho="reta", entreperna=(8, 8), barra_coxa=1.0,
+                           barra_coxa=0.9),
+    "denim_shorts": dict(cintura=1, quadril=4, coxa=3, joelho=0, barra=0, punho="reta", entreperna=(10, 8), barra_coxa=0.9),
+    "skort": dict(cintura=1, quadril=8, coxa=3, joelho=0, barra=0, punho="reta", entreperna=(8, 8), barra_coxa=0.9,
                   saia=(36, 1.35)),
     "skirt": dict(cintura=1, quadril=6, coxa=0, joelho=0, barra=0, punho="reta", entreperna=(0, 0), saia=(75, 1.6)),
 }
