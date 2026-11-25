@@ -41,7 +41,7 @@ import java.util.List;
 public class SecurityConfig {
     private static final String[] PUBLIC_GET = {
             "/actuator/health", "/actuator/info", "/media/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-            "/api/usernames/*/availability", "/api/preferences/options", "/api/exchange-rates", "/api/client/config", "/api/taxonomy", "/api/assets/**",
+            "/api/usernames/*/availability", "/api/preferences/options","/api/opcoes/niveis-termicos", "/api/exchange-rates", "/api/client/config", "/api/taxonomy", "/api/assets/**",
             "/api/backgrounds/catalog", "/api/backgrounds/combination", "/api/backgrounds/recommendations",
             // catálogos de opções: /api/opcoes/** é público por convenção (só GET, sem dado de usuário — OpcoesConvencaoTest);
             // os campos dos criadores mandam a sessão, então um GET novo fora daqui também carrega sem mexer nesta lista
