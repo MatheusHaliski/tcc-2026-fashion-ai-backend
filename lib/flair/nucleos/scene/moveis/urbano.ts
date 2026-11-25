@@ -164,7 +164,7 @@ export function capaceteNoSuporte(em: Em, casco: string, viseira: string, metal:
     cilindro(metal, 0.02, 1.05, [0, 0.55, 0], undefined, 8),
     esfera(casco, [0.15, 0.16, 0.17], [0, 1.2, 0], 14),
     esfera(viseira, [0.125, 0.07, 0.1], [0, 1.21, 0.09], 12),
-  ]);
+  ], { casco, viseira, metal });
 }
 
 /** Parapeito de terraço com corrimão de metal. */

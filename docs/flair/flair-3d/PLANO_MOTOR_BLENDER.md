@@ -117,11 +117,10 @@ Em três lotes, do que mais aparece para o que menos aparece.
 
 Aceite: nenhuma das 18 salas tem móvel de objeto ou de arquitetura desenhado só com caixas e cilindros.
 
-**Estado do lote 1: 9 de 22 tipos entregues** (os que aparecem em mais salas): arara, espelho, bancoEstofado,
-armarioFerramentas, lustre, luminariaDeTeto, trilhoSpots, bancada e rolosDeTecido, em 23 arquivos por causa das
-medidas. Faltam os 13 de uma sala só: mesaDosJurados, balcao, prateleiraDeBolsas, pedestaisComCordao, bastao,
-tabelaDeBasquete, bancoReservas, espelhoDeParede, bracoClaquete, claquete, monitorDeVideo, capaceteNoSuporte e
-carroDeCorrida.
+**Estado do lote 1: 19 de 22 tipos entregues.** Os 9 que aparecem em mais salas (arara, espelho, bancoEstofado,
+armarioFerramentas, lustre, luminariaDeTeto, trilhoSpots, bancada, rolosDeTecido) e 10 de uma sala só (mesaDosJurados,
+balcao, prateleiraDeBolsas, carroDeCorrida, capaceteNoSuporte, espelhoDeParede, pedestaisComCordao, monitorDeVideo,
+bancoReservas, tabelaDeBasquete). Faltam bastao, claquete e bracoClaquete (pequenos e animados pelo diretor).
 
 ### Fase 2: Detetive e Esporte
 

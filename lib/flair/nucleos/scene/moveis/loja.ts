@@ -30,7 +30,7 @@ export function balcao(em: Em, madeira: string, tampo: string, vidro: string, la
     chanfrada(tampo, [largura + 0.08, 0.05, 0.68], [0, 0.885, 0]),
     chanfrada(vidro, [largura * 0.45, 0.26, 0.4], [-largura * 0.22, 1.04, 0]),
     caixa(tampo, [largura - 0.2, 0.03, 0.02], [0, 0.2, 0.31]),
-  ]);
+  ], { madeira, tampo, vidro });
 }
 
 /** Espelho alto com moldura; `lampadas` > 0 põe lâmpadas de camarim em volta. `pos` é o pé do espelho. */

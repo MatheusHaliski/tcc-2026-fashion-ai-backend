@@ -82,7 +82,7 @@ export function bancoReservas(em: Em, metal: string, assento: string, cobertura:
     ...postes,
     chanfrada(cobertura, [largura + 0.1, 0.03, 1.15], [0, 2.14, 0.05], [-20, 0, 0]),
     caixa(cobertura, [largura, 1.9, 0.02], [0, 1.0, -0.47]),
-  ]);
+  ], { metal, assento, cobertura });
 }
 
 /** Arquibancada de degraus de concreto, com uma fileira de assentos em cada degrau. */
