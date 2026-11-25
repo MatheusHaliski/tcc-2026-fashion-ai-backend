@@ -1,0 +1,20 @@
+{
+ "produto": "Calça Wide Leg de Alfaiataria",
+ "marca": "Zara",
+ "subcategoria": "tailored_pants",
+ "tamanho": "38",
+ "sexo": "FEMININO",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#1d1d20",
+  "gramatura": 260
+ },
+ "fechamento": "botao_ziper",
+ "bolsos": [
+  "faca"
+ ],
+ "passantes": true,
+ "observacao": "alfaiataria de perna larga. Cor não conferida (preto escolhido); o catálogo não traz a URL do produto.",
+ "caimento": "regular",
+ "ribana": false
+}

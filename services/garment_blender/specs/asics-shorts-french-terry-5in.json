@@ -1,0 +1,20 @@
+{
+ "produto": "Shorts ASICS French Terry 5In - Feminino - Preto",
+ "marca": "ASICS",
+ "url_oficial": "https://www.asics.com.br/2032c956-001/p",
+ "subcategoria": "shorts",
+ "tamanho": "38",
+ "sexo": "FEMININO",
+ "tecido": {
+  "tipo": "moletom",
+  "cor": "#18181b",
+  "gramatura": 280
+ },
+ "fechamento": "cordao",
+ "medidas_marca": {
+  "entreperna": 12.7
+ },
+ "observacao": "5 polegadas de entreperna (12,7 cm). Cor: a do nome (preto).",
+ "caimento": "regular",
+ "ribana": false
+}

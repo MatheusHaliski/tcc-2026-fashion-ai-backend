@@ -13,11 +13,12 @@ from pathlib import Path
 from .sizes import EASE, LETTERS, TopMeasures, check, top_measures
 from .sizes_pants import CUTS, NUMBERS, PantsMeasures, check_pants, pants_measures
 
-SUBCATEGORIES = ("sweater", "sweatshirt", "hoodie", "t_shirt", "long_sleeve")
+SUBCATEGORIES = ("sweater", "sweatshirt", "hoodie", "t_shirt", "long_sleeve", "shirt", "jacket", "blouse", "tank_top", "top",
+                 "crop_top", "polo_shirt", "bodysuit", "cardigan", "vest", "blazer", "coat", "parka", "windbreaker", "kimono")
 PANTS = tuple(CUTS)
 FABRICS = ("malha_la", "malha_algodao", "jersey", "moletom", "sarja", "denim")
-COLLARS = ("careca", "alta", "capuz")
-CLOSURES = ("nenhum", "ziper_inteiro", "botao_ziper", "cordao")
+COLLARS = ("careca", "alta", "capuz", "colarinho", "v", "lapela")   # colarinho: pé + folha virada; lapela: V + colarinho + lapelas
+CLOSURES = ("nenhum", "ziper_inteiro", "botao_ziper", "cordao", "botoes", "polo", "aberto")   # polo: vista curta; aberto: frente sem fecho
 POCKETS = ("canguru", "peito", "faca", "traseiro", "cargo", "joelho_duplo")   # joelho_duplo: reforço chapado
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
@@ -52,6 +53,11 @@ class GarmentSpec:
     angulo_manga: float = 80.0        # graus abaixo da horizontal: 80 = braço do avatar na pose de exibição; 0 = pose T
     passantes: bool = False           # calça: passantes de cinto no cós
     capuz_abaixado: bool = False      # capuz deitado nas costas (experimental: atravessa as costas no provador)
+    botoes: int = 6                   # quantos botões na vista (fechamento "botoes")
+    pregas: int = 0                   # saia: pregas faca na volta (divisor de 96: 12, 16, 24, 32)
+    sem_manga: bool = False           # regata, top, colete: cava acabada, sem manga
+    cor_botao: str = "#2e2a26"
+    cor_linha: str | None = None      # linha do pesponto; None: um tom abaixo do tecido (costura tom sobre tom)
     medidas_marca: dict[str, float] = field(default_factory=dict)
 
     @property
@@ -80,7 +86,8 @@ def _pick(value, allowed, name):
 def parse(raw: dict, size: str | None = None) -> GarmentSpec:
     """Ficha a partir de um dicionário (JSON). ``size`` troca o tamanho da ficha (gerar a grade inteira)."""
     known = {"produto", "marca", "subcategoria", "tamanho", "sexo", "caimento", "tecido", "gola", "fechamento",
-             "bolsos", "ribana", "manga_curta", "angulo_manga", "cor_ziper", "passantes", "capuz_abaixado", "medidas_marca", "url_oficial", "observacao"}
+             "bolsos", "ribana", "manga_curta", "angulo_manga", "cor_ziper", "passantes", "capuz_abaixado", "medidas_marca", "url_oficial", "observacao",
+             "botoes", "cor_botao", "cor_linha", "pregas", "sem_manga"}
     unknown = set(raw) - known
     if unknown:
         raise ValueError(f"campos desconhecidos na ficha: {', '.join(sorted(unknown))}")
@@ -107,9 +114,16 @@ def parse(raw: dict, size: str | None = None) -> GarmentSpec:
         angulo_manga=float(raw.get("angulo_manga", 80.0)),
         cor_ziper=str(raw.get("cor_ziper", "#a7a9ac")).lower(), passantes=bool(raw.get("passantes", False)),
         capuz_abaixado=bool(raw.get("capuz_abaixado", False)),
+        botoes=int(raw.get("botoes", 6)), pregas=int(raw.get("pregas", 0)), sem_manga=bool(raw.get("sem_manga", False)), cor_botao=str(raw.get("cor_botao", "#2e2a26")).lower(),
+        cor_linha=str(raw["cor_linha"]).lower() if raw.get("cor_linha") else None,
         medidas_marca=measures)
-    if not HEX.match(spec.cor_ziper):
-        raise ValueError("cor_ziper precisa ser #rrggbb")
+    for name in ("cor_ziper", "cor_botao", "cor_linha"):
+        if getattr(spec, name) is not None and not HEX.match(getattr(spec, name)):
+            raise ValueError(f"{name} precisa ser #rrggbb")
+    if not 2 <= spec.botoes <= 12:
+        raise ValueError("botoes fora de 2–12")
+    if spec.pregas and 96 % spec.pregas:
+        raise ValueError("pregas precisa dividir 96 (12, 16, 24, 32…)")
     if not 0 <= spec.angulo_manga <= 85:
         raise ValueError("angulo_manga fora de 0–85 graus")
     problems = check_pants(spec.medidas_calca) if pants else check(spec.medidas)

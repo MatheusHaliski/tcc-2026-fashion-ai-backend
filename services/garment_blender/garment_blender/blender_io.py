@@ -17,6 +17,9 @@ from .fabric import write_maps
 from .geometry import Mesh
 
 SEAM_DEPTH = 0.0009   # profundidade do vinco da costura (m)
+# Rótulo da parte em cada vértice (COLOR_0, canal R): o provador encaixa cada parte no osso certo sem adivinhar pela
+# posição (lib/avatar3d/meshy/part-codes.ts). Tronco, capuz e detalhes do tronco = 0; vértice da cava = tronco.
+PART_CODE = {"manga_d": 0.25, "manga_e": 0.5, "perna_d": 0.75, "perna_e": 1.0}
 
 
 def reset() -> None:
@@ -60,7 +63,18 @@ def fabric_materials(spec, tex_dir: Path) -> dict:
         darker = "#" + "".join(f"{int(int(color[i:i + 2], 16) * 0.8):02x}" for i in (1, 3, 5))
         mats["cadarco"] = _material("cadarco", write_maps("sarja", darker, tex_dir), 0.7)
         mats["dentes"] = _material("dentes", write_maps("dentes", spec.cor_ziper, tex_dir), 0.35, metal=0.85)
+    thread = spec.cor_linha or "#" + "".join(f"{int(int(color[i:i + 2], 16) * 0.72):02x}" for i in (1, 3, 5))
+    mats["linha"] = solid_material("linha", _rgb(thread), 0.6)
+    if spec.fechamento in ("botoes", "polo"):
+        mats["botao"] = solid_material("botao", _rgb(spec.cor_botao), 0.35)
+        mats["furo"] = solid_material("furo", tuple(c * 0.35 for c in _rgb(spec.cor_botao)), 0.8)
     return mats
+
+
+def _rgb(hex_color: str) -> tuple[float, float, float]:
+    """#rrggbb → cor linear do Blender (o Base Color é linear; a ficha está em sRGB)."""
+    srgb = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    return tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in srgb)
 
 
 def to_object(mesh: Mesh, name: str, materials: dict) -> bpy.types.Object:
@@ -78,6 +92,19 @@ def to_object(mesh: Mesh, name: str, materials: dict) -> bpy.types.Object:
         poly.use_smooth = True
         for loop_index, (u, v) in zip(poly.loop_indices, corners):
             uv.data[loop_index].uv = (u, v)
+    code = [0.0] * len(mesh.verts)
+    torso = set()
+    for face, part in zip(mesh.faces, mesh.parts):
+        part = part.split("@")[-1]   # "detalhe@perna_d": o bolso da perna anda com a perna
+        if part in PART_CODE:
+            for v in face:
+                code[v] = max(code[v], PART_CODE[part])
+        else:
+            torso.update(face)
+    colors = data.color_attributes.new(name="parte", type="FLOAT_COLOR", domain="POINT")
+    for v, item in enumerate(colors.data):
+        item.color = (0.0 if v in torso else code[v], 1.0, 1.0, 1.0)
+    data.color_attributes.active_color = colors
     bm = bmesh.new(); bm.from_mesh(data)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     for island in _islands(bm):   # cada pedaço (tronco, bolso, zíper) com a normal para fora do eixo do corpo
@@ -118,7 +145,8 @@ def _islands(bm) -> list[list]:
 def export_glb(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=str(path), export_format="GLB", export_yup=True, export_apply=True,
-                              export_image_format="JPEG", export_jpeg_quality=88, export_materials="EXPORT")
+                              export_image_format="JPEG", export_jpeg_quality=88, export_materials="EXPORT",
+                              export_vertex_color="ACTIVE")
 
 
 def render_preview(path: Path, views=((0, "frente"), (35, "tres-quartos"))) -> list[Path]:

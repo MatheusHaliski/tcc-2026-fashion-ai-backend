@@ -52,17 +52,17 @@ def back_pockets(mesh: Mesh, rows: list[Row], band0: float) -> None:
 
 def cargo_pockets(mesh: Mesh, legs: list[list[Row]], knee: float) -> None:
     """Bolso cargo na lateral de cada coxa (18 × 20 cm) com a lapela por cima (só a costura de cima)."""
-    for rows, outer in zip(legs, (0.0, math.pi)):
-        a = rows[4].a
+    for rows, outer, part in zip(legs, (0.0, math.pi), ("detalhe@perna_d", "detalhe@perna_e")):
+        a = min(rows, key=lambda r: abs(r.y - (knee + 0.16))).a   # largura da perna no meio do bolso
         w = 0.09 / a
         yb, yt = knee + 0.06, knee + 0.26
         body = [(outer - w, yb), (outer + w, yb), (outer + w, yt), (outer - w, yt)]
         if outer:   # perna esquerda: o lado de fora é theta = pi; a ordem dos cantos inverte
             body = [(outer + w, yb), (outer - w, yb), (outer - w, yt), (outer + w, yt)]
         stack = sorted(rows, key=lambda r: r.y)
-        patch(mesh, stack, body, 0.004, "corpo", (True, True, False, True), (6, 7))
+        patch(mesh, stack, body, 0.004, "corpo", (True, True, False, True), (6, 7), part)
         flap = [(c[0], y) for c, y in zip(body, (yt - 0.065, yt - 0.065, yt + 0.012, yt + 0.012))]
-        patch(mesh, stack, flap, 0.0075, "corpo", (False, False, True, False), (6, 3))
+        patch(mesh, stack, flap, 0.0075, "corpo", (False, False, True, False), (6, 3), part)
 
 
 def belt_loops(mesh: Mesh, rows: list[Row], band0: float, top: float) -> None:
@@ -114,7 +114,7 @@ def double_knee(mesh: Mesh, legs: list[list[Row]], knee: float) -> None:
     """Joelho duplo (calça de trabalho): reforço chapado na frente de cada perna, do meio da canela ao meio da coxa,
     costurado nos quatro lados."""
     w = 0.65   # rad para cada lado da frente: o reforço cobre a frente da perna
-    for rows in legs:
+    for rows, part in zip(legs, ("detalhe@perna_d", "detalhe@perna_e")):
         stack = sorted(rows, key=lambda r: r.y)
         c = [(FRONT + w, knee - 0.12), (FRONT - w, knee - 0.12), (FRONT - w, knee + 0.22), (FRONT + w, knee + 0.22)]
-        patch(mesh, stack, c, 0.003, "corpo", (True, True, True, True), (8, 8))
+        patch(mesh, stack, c, 0.003, "corpo", (True, True, True, True), (8, 8), part)

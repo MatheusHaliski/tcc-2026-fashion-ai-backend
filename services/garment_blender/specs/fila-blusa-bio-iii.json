@@ -1,0 +1,16 @@
+{
+ "produto": "Blusa Bio III",
+ "marca": "Fila",
+ "url_oficial": "https://www.fila.com.br/blusa-fila-bio-iii-feminina-1198892/p",
+ "subcategoria": "blouse",
+ "sexo": "FEMININO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "jersey",
+  "cor": "#e9e4dc",
+  "gramatura": 160
+ },
+ "ribana": false,
+ "observacao": "blusa de manga longa sem gola nem fecho. Cor não conferida (off-white escolhido).",
+ "tamanho": "M"
+}

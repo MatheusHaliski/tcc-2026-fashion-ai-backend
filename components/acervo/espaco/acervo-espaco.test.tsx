@@ -5,6 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { useThree } from "@react-three/fiber";
 import { I18nProvider } from "@/lib/i18n/i18n";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor, within } from "@/test-utils/render";
@@ -231,20 +232,44 @@ describe("ACERVO · cena 3D (renderizador de teste)", () => {
     expect(vista.controles?.enabled).toBe(true);
   });
 
-  it("a peça com foto mostra a foto nas faces grandes; sem foto, segue o bloco na cor", async () => {
-    FOTO.textura = new THREE.Texture();
+  it("a peça com foto tem a silhueta da foto (não um bloco com a foto); dobrada sem foto é um bloco macio na cor", async () => {
+    const foto = new THREE.Texture();
+    foto.userData.recorte = { removido: 0.45, caixa: [0.2, 0.05, 0.8, 0.95] };
+    FOTO.textura = foto;
     const cena = await mount3d(<CenaConteudo {...base} moveis={[ARMARIO_1]} rotulos={false} gavetasAbertas
       itensDe={(id) => base.itensDe(id).map((item) => (item.id === "p1" || item.id === "p2" ? { ...item, foto: `/fotos/${item.id}.webp` } : item))} />);
     await frames(cena);
-    const malha = (nome: string) => meshes(cena).find((m) => m.instance.name === nome)!.instance as THREE.Mesh;
-    const pendurada = malha("roupa-p1").material as THREE.MeshStandardMaterial[];
-    expect(pendurada.map((m) => m.map === FOTO.textura)).toEqual([true, true, false, false, false, false]);
-    expect(pendurada[4].color.getHexString()).toBe("335577");
-    const dobrada = malha("roupa-p2").material as THREE.MeshStandardMaterial[];
-    expect(dobrada.map((m) => m.map === FOTO.textura)).toEqual([false, false, true, false, false, false]);
-    const semFoto = malha("roupa-p3").material as THREE.MeshStandardMaterial;
-    expect(Array.isArray(semFoto)).toBe(false);
-    expect(semFoto.map).toBeNull();
+    const malha = (nome: string) => meshes(cena).find((m) => m.instance.name === nome)?.instance as THREE.Mesh;
+    // pendurada: um painel recortado (alphaTest) com só o trecho da peça na textura, no cabide — não uma caixa
+    const pendurada = malha("roupa-p1");
+    const mat = pendurada.material as THREE.MeshStandardMaterial;
+    expect(mat.map).toBe(foto);
+    expect(mat.alphaTest).toBeCloseTo(0.5);
+    expect(pendurada.geometry).toBeInstanceOf(THREE.PlaneGeometry);
+    expect(Array.from(pendurada.geometry.getAttribute("uv").array).map((v) => +v.toFixed(2))).toEqual([0.2, 0.95, 0.8, 0.95, 0.2, 0.05, 0.8, 0.05]);
+    expect(meshes(cena).some((m) => m.instance.parent?.name === "cabide-p1")).toBe(true);
+    // dobrada: bloco macio na cor, com o miolo da peça (o tecido) por cima
+    expect((malha("roupa-p2").material as THREE.MeshStandardMaterial).map).toBeNull();
+    expect((malha("tecido-p2").material as THREE.MeshStandardMaterial).map?.source).toBe(foto.source);
+    // dobrada sem foto (p3, na gaveta): o bloco macio de bordas arredondadas, só na cor e sem tecido por cima
+    const semFoto = malha("roupa-p3");
+    expect(semFoto.geometry).toBeInstanceOf(RoundedBoxGeometry);
+    expect(malha("tecido-p3")).toBeUndefined();
+    expect((semFoto.material as THREE.MeshStandardMaterial).map).toBeNull();
+    expect((semFoto.material as THREE.MeshStandardMaterial).color.getHexString()).toBe("335577");
+    FOTO.textura = null;
+  });
+
+  it("foto cujo fundo não saiu não vira bloco nem painel: a peça fica com a silhueta da categoria", async () => {
+    const foto = new THREE.Texture();
+    foto.userData.recorte = { removido: 0.01, caixa: [0, 0, 1, 1] };
+    FOTO.textura = foto;
+    const cena = await mount3d(<CenaConteudo {...base} moveis={[ARMARIO_1]} rotulos={false}
+      itensDe={(id) => base.itensDe(id).map((item) => ({ ...item, foto: `/fotos/${item.id}.webp` }))} />);
+    await frames(cena);
+    const p1 = meshes(cena).find((m) => m.instance.name === "roupa-p1")!.instance as THREE.Mesh;
+    expect(p1.geometry).toBeInstanceOf(THREE.ExtrudeGeometry);
+    expect((p1.material as THREE.MeshStandardMaterial).map).toBeNull();
     FOTO.textura = null;
   });
 });

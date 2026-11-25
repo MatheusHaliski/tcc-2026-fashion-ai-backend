@@ -1,0 +1,18 @@
+{
+ "produto": "Jax Pleated Midi Skirt",
+ "marca": "AllSaints",
+ "url_oficial": "https://www.allsaints.com/us/womenswear/jax-pleated-midi-skirt/USW065RD-5.html",
+ "subcategoria": "skirt",
+ "tamanho": "38",
+ "sexo": "FEMININO",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#3a3f4a",
+  "gramatura": 200
+ },
+ "fechamento": "nenhum",
+ "pregas": 24,
+ "observacao": "midi plissada (24 pregas faca), 75 cm. Cor não conferida (grafite escolhido).",
+ "caimento": "regular",
+ "ribana": false
+}

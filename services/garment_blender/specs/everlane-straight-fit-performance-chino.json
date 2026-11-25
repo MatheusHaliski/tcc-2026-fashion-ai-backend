@@ -1,0 +1,22 @@
+{
+ "produto": "The Straight Fit Performance Chino",
+ "marca": "Everlane",
+ "url_oficial": "https://www.everlane.com/products/mens-straight-fit-performance-chino-trench",
+ "subcategoria": "chino_pants",
+ "tamanho": "40",
+ "sexo": "MASCULINO",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#b49a74",
+  "gramatura": 280
+ },
+ "fechamento": "botao_ziper",
+ "bolsos": [
+  "faca",
+  "traseiro"
+ ],
+ "passantes": true,
+ "observacao": "cor: a da variante na URL (trench), não amostrada da foto.",
+ "caimento": "regular",
+ "ribana": false
+}

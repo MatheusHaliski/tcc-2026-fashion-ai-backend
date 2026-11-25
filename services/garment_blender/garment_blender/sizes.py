@@ -27,7 +27,7 @@ class TopMeasures:
     biceps: float           # perímetro do braço da manga 2,5 cm abaixo da cava
     punho: float            # perímetro do punho pronto (ribana relaxada)
     pescoco: float          # perímetro do decote (onde a gola é costurada)
-    decote_frente: float    # descida do decote na frente, a partir do HPS
+    decote_frente: float    # descida VERTICAL do decote na frente, a partir do HPS, já vestida (a de molde é maior)
     decote_costas: float    # descida do decote nas costas
     caimento_ombro: float   # quanto a ponta do ombro desce em relação ao HPS
     ribana_barra: float     # altura da ribana da barra
@@ -37,13 +37,13 @@ class TopMeasures:
 
 # tamanho M de referência (masculino, caimento regular) e o passo por tamanho
 _M_MASC = TopMeasures(torax=110, barra=104, comprimento=70, ombro=47, cava=24, manga=63, biceps=40, punho=21,
-                      pescoco=48, decote_frente=8.5, decote_costas=2.0, caimento_ombro=4.5, ribana_barra=6.5,
+                      pescoco=48, decote_frente=4.0, decote_costas=2.0, caimento_ombro=4.5, ribana_barra=6.5,
                       ribana_punho=6.5, gola=2.5)
 _M_FEM = TopMeasures(torax=102, barra=98, comprimento=63, ombro=40, cava=21, manga=59, biceps=34, punho=19,
-                     pescoco=46, decote_frente=8.0, decote_costas=2.0, caimento_ombro=4.0, ribana_barra=6.0,
+                     pescoco=46, decote_frente=3.8, decote_costas=2.0, caimento_ombro=4.0, ribana_barra=6.0,
                      ribana_punho=6.0, gola=2.5)
 _STEP = {"torax": 6.0, "barra": 6.0, "comprimento": 2.0, "ombro": 1.2, "cava": 1.0, "manga": 1.0, "biceps": 2.0,
-         "punho": 1.0, "pescoco": 1.0, "decote_frente": 0.3, "decote_costas": 0.0, "caimento_ombro": 0.1}
+         "punho": 1.0, "pescoco": 1.0, "decote_frente": 0.15, "decote_costas": 0.0, "caimento_ombro": 0.1}
 
 
 def top_measures(size: str, sex: str = "MASCULINO", fit: str = "regular",

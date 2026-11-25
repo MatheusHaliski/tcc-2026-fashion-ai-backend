@@ -34,10 +34,16 @@ function fieldsOf(posed: Float32Array, index: ArrayLike<number>, part: Int8Array
 }
 
 /** 1 coberta; 2 atravessando (a pele passa para fora do pano que devia cobri-la); 0 sem pano por perto. */
+/** Pano mais fino que isso entre a frente e as costas (m) é uma camada só: a peça não envolve o corpo ali. */
+const ONE_LAYER = 0.03;
+
 function stateOf(d: DepthField, x: number, y: number, z: number, facing: number): number {
   const cloth = depthAt(d, x, y);
   if (!cloth) return 0;
   const ahead = cloth.front - z, behind = z - cloth.back;
+  // uma camada só, do outro lado do corpo: é a abertura da peça (decote V, cava, frente aberta), e o pano visto por
+  // ela é o das costas (ou o da frente, para a pele das costas). A pele fica à mostra, não "atravessando" o pano.
+  if (cloth.front - cloth.back < ONE_LAYER && ((facing > 0.3 && ahead < -THROUGH) || (facing < -0.3 && behind < -THROUGH))) return 0;
   const grade = (gap: number) => (gap > NEAR ? 0 : gap >= -THROUGH ? 1 : gap >= -REACH ? 2 : 0);
   if (facing > 0.3) return grade(ahead);
   if (facing < -0.3) return grade(behind);
@@ -95,3 +101,19 @@ export function coverOf(posed: Float32Array, index: ArrayLike<number>, part: Int
   if (under + through) closeIslands(covered, f);
   return { covered, pierced: through / Math.max(1, under + through) };
 }
+
+/**
+ * Pele coberta recuada um anel na borda: fica coberto só o vértice cujos vizinhos também estão. A profundidade do pano
+ * é medida numa grade de 1–2 cm que passa um pouco da borda real da peça; sem o recuo, a pele logo acima da gola (e
+ * de outras bordas) era trocada pelo forro na cor do pano, em degraus do tamanho dos triângulos do corpo.
+ */
+export function erodeCovered(covered: Uint8Array, f: BodyFrame): Uint8Array {
+  const out = Uint8Array.from(covered);
+  for (let t = 0; t < f.tri.length; t += 3) {
+    const a = f.tri[t], b = f.tri[t + 1], c = f.tri[t + 2];
+    if (covered[a] && covered[b] && covered[c]) continue;
+    out[a] = 0; out[b] = 0; out[c] = 0;
+  }
+  return out;
+}
+
