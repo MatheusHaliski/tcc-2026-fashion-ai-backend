@@ -67,10 +67,14 @@ def _labels(seg, img: Image.Image, path: Path) -> np.ndarray:
     return labels
 
 
-def _measures(spec: dict) -> tuple[float, float]:
-    """(comprimento do ombro à barra, meia largura do tronco no peito), em metros, da base no M."""
+def _measures(spec: dict) -> tuple[float, float, dict | None, float]:
+    """(comprimento do ombro à barra, meia largura do tronco no peito, a manga, a descida do decote na frente), em
+    metros, da base no M."""
     m = top_measures("M", spec["sexo"], spec["caimento"], spec.get("medidas_marca"))
-    return m.comprimento / 100, ellipse_semi_axes(m.torax / 100, 0.68)[0]
+    sleeve = None if spec["sem_manga"] else {
+        "meia_ombro": m.ombro / 200, "queda": m.caimento_ombro / 100,
+        "comprimento": (m.ombro * 0.45 if spec["manga_curta"] else m.manga) / 100}
+    return m.comprimento / 100, ellipse_semi_axes(m.torax / 100, 0.68)[0], sleeve, m.decote_frente / 100
 
 
 def _stripes_from_text(spec: dict, name: str, result: dict) -> None:
@@ -96,7 +100,7 @@ def _write_prints(spec: dict, result: dict, folder: Path) -> None:
         Image.fromarray(d["imagem"], "RGBA").save(folder / f"estampa-{k}.png", optimize=True)
         spec.setdefault("estampas", []).append({"imagem": f"estampa-{k}.png", "x": float(d["x"]),
                                                 "abaixo_do_ombro": float(d["abaixo_do_ombro"]),
-                                                "largura": float(d["largura"])})
+                                                "largura": float(d["largura"]), "lado": d["lado"]})
 
 
 def _validate(spec: dict, folder: Path) -> None:
@@ -112,11 +116,12 @@ def _validate(spec: dict, folder: Path) -> None:
 
 def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict, folder: Path) -> dict:
     """Um produto: devolve a linha do relatório e grava a ficha (ou ``pulado.json``)."""
-    reason = texto.skip_reason(p.get("product_name"))
+    reason = texto.skip_reason(p.get("product_name"), p.get("official_product_url") or "", p.get("brand") or "",
+                               p.get("subcategory") or "")
     if reason:
         return {"situacao": "pulado", "motivo": reason}
     spec = spec_for(p, "#808080", prior)
-    length, chest_a = _measures(spec)
+    length, chest_a, sleeve, neck = _measures(spec)
     avoid = spec["fechamento"] in ("botoes", "ziper_inteiro", "aberto")
     best, best_url, photo = None, None, None
     for url, path, status in files:
@@ -124,7 +129,8 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
         if img is None:
             continue
         rgb = np.asarray(img)
-        result = analyze(rgb, _labels(seg, img, path), length, chest_a, avoid)
+        result = analyze(rgb, _labels(seg, img, path), length, chest_a, avoid, sleeve,
+                         hooded=spec["gola"] == "capuz", neck=neck)
         if result["ok"] and (best is None or result["nota_foto"] > best["nota_foto"]):
             best, best_url, photo = result, url, img
         if best is not None and best["nota_foto"] >= 0.6:

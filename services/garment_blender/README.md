@@ -32,7 +32,7 @@ Cada tamanho gera, em `saida/<tamanho>/`: o `modelo.glb` (metros, Y para cima, f
 | `pregas` | 0 ou divisor de 96 (12, 16, 24, 32) | saia: pregas faca, fundas na barra e sumindo no quadril (`skirt.py`) |
 | `ribana`, `manga_curta`, `passantes`, `capuz_abaixado`, `angulo_manga` | | ribana na barra e no punho; manga curta com bainha; passantes no cós; capuz nas costas; queda da manga |
 | `medidas_marca` | qualquer medida da tabela | a tabela da marca vale mais que a grade padrão |
-| `estampas` | lista de {`imagem` PNG com alfa, `x`, `abaixo_do_ombro`, `largura`} (m) | desenho colado na frente do tronco, 0,7 mm acima do pano, largura medida ao longo do pano; fora do decote e do vão de uma frente que abre (`decals.py`); material com recorte (`alphaMode: MASK`) |
+| `estampas` | lista de {`imagem` PNG com alfa, `x`, `abaixo_do_ombro`, `largura`, `lado`} (m) | `lado` frente: desenho colado no tronco, 0,7 mm acima do pano, largura medida ao longo do pano, fora do decote e do vão de uma frente que abre (`decals.py`); `lado` manga_esquerda/manga_direita (de quem veste): no lado de fora e frente da manga, a distância contada da ponta do ombro (`sleeve_decals.py`); material com recorte (`alphaMode: MASK`) |
 | `listras` | {`direcao` horizontal/vertical, `fundo`, `listra`, `periodo` (m), `fracao`} | a cor do corpo vira as listras, nítidas, com o relevo do tecido por cima; o período fecha num número inteiro de repetições (`pattern.py`) |
 | `estampa_corrida` | {`imagem`, `lado` (m)} | um pedaço da estampa repetido no corpo todo, espelhado para não ter emenda |
 | `origem` | livre | de onde a ficha veio (produto, foto, o que a análise leu); não muda a malha |
@@ -96,8 +96,10 @@ caimento, tecido, cropped). Da foto do produto saem só a pintura e o desenho (`
 - **Desenho e logo:** o pixel que foge da cor do tecido *com a sombra do lugar* (a dobra muda devagar, a estampa de
   repente); saem o fino e comprido (costura, vinco, zíper), a sombra rente à borda, a dobra, a gola por dentro e a
   fila de botões; o resto é juntado letra com letra e recortado em RGBA com a sombra tirada, com o lugar em metros a
-  partir do ombro e do centro da frente (`estampa.py`). Na foto em modelo de frente aberta, o que cruza o meio é a
-  roupa de baixo e fica de fora.
+  partir do ombro e do centro da frente (`estampa.py`); fora da frente do tronco, é desenho de manga, com o lado e a
+  distância da ponta do ombro. Ficam de fora o fundo da gola aparecendo pelo decote, o cordão do capuz e o cadarço
+  do zíper no meio, e, na foto em modelo de frente aberta, a roupa de baixo aparecendo. Na peça com capuz, a linha do
+  ombro é o alto da peça ao lado do capuz.
 - **Padronagem:** listras pelo período do perfil de cor (redesenhadas nítidas) e estampa corrida (um pedaço espelhado)
   (`padrao.py`); nome "listrada" sem listra visível vira listra fina.
 - **Recorte:** em modelo, o comprimento medido pela altura do rosto encurta a base só quando a barriga aparece logo

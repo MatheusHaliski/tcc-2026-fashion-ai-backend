@@ -17,7 +17,7 @@ from .cores import lab_to_rgb
 LIKE_AB, LIKE_L = 10.0, 22.0   # pixel "liso": até 10 de croma e 22 de luminosidade longe da cor do tecido
 SHADE_RANGE = 35.0             # a sombra das dobras escurece (ou a luz clareia) até isso
 THRESHOLD = 15.0               # distância (Lab, com a sombra tirada) a partir da qual o pixel é estampa
-MIN_GROUP = 0.0008             # menor desenho aceito, em fração da área da peça (um logo de peito tem ~0,1–0,3 %)
+MIN_GROUP = 0.0003             # menor desenho aceito, em fração da área da peça (logo de peito ~0,1–0,3 %)
 
 
 def shading(lab: np.ndarray, mask: np.ndarray, base: np.ndarray, sigma: float) -> np.ndarray:

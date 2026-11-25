@@ -92,3 +92,33 @@ def test_foto_pequena_com_a_peca_encostada_na_borda_nao_quebra():
     small_rgb, small_labels = rgb[:, 100:292], labels[:, 100:292]           # 192 px de largura, peça cortada à direita
     r = analyze(np.ascontiguousarray(small_rgb), np.ascontiguousarray(small_labels), 0.70, 0.21)
     assert r["ok"]
+
+
+def _logo(rgb, y0, x0, letters=5):
+    for k in range(letters):
+        rgb[y0:y0 + 40, x0 + k * 15:x0 + k * 15 + 9] = (240, 240, 240)
+
+
+def test_com_capuz_o_lugar_do_logo_conta_da_linha_do_ombro_nao_do_alto_do_capuz():
+    rgb, labels = garment()
+    labels[TOP - 150:TOP, 250:350] = 3                                   # o capuz em pé acima do decote
+    rgb[TOP - 150:TOP, 250:350] = NAVY
+    _logo(rgb, TOP + 150, 330)
+    d = analyze(rgb, labels, 0.70, 0.21, hooded=True)["decalques"][0]
+    assert d["abaixo_do_ombro"] == pytest.approx(170 / (500 / 0.70), abs=0.012)   # do ombro, não do capuz
+
+
+def test_logo_na_manga_sai_com_o_lado_de_quem_veste_e_a_distancia_do_ombro():
+    rgb, labels = garment()
+    _logo(rgb, TOP + 40, RIGHT + 20, letters=3)                          # na manga à direita da foto
+    sleeve = {"meia_ombro": 0.2, "queda": 0.045, "comprimento": 0.21}
+    found = [d for d in analyze(rgb, labels, 0.70, 0.21, False, sleeve)["decalques"] if d["lado"] != "frente"]
+    assert len(found) == 1 and found[0]["lado"] == "manga_esquerda"      # à direita na foto: a esquerda de quem veste
+    assert 0.04 < found[0]["abaixo_do_ombro"] < 0.18
+    assert analyze(rgb, labels, 0.70, 0.21, False, None)["decalques"] == []   # sem manga na base: fica de fora
+
+
+def test_fundo_da_gola_v_aparecendo_nao_e_desenho():
+    rgb, labels = garment()
+    rgb[TOP + 10:TOP + 70, 290:310] = (200, 200, 200)                    # o forro claro da gola, no meio, no alto
+    assert analyze(rgb, labels, 0.70, 0.21, neck=0.12)["decalques"] == []

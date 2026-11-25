@@ -248,3 +248,11 @@ o desenho e o recorte (`services/garment_blender/README.md`, "Peças do catálog
 - **Saída:** bucket de produção, prefixo novo do lote (`catalog/model3d/motor-blender-2026-11-25/`, nada existente
   sobrescrito), no formato dos lotes da Meshy; o banco não é tocado (a importação é a do `import_meshy_glbs.py`, com
   `--generator garment-blender-1 --origin local`).
+- **Piloto (93 peças, 5 por subcategoria, 25/11):** 85 fichas, 7 puladas (infantil, parte de baixo, sem foto) e 1
+  erro (foto de 192 px, corrigido). Pintura lida: 56 lisas, 20 com desenho ou logo, 5 estampas corridas, 4 listradas;
+  comprimento ajustado pela foto em 8 (cropped de verdade, casaco longo). Todas montaram no motor (0 falhas) e as
+  amostras conferidas no `glb_quality.py` saíram BOM. A revisão visual (foto × prévia) levou às regras que estão no
+  código: V fundo e comprimento por subcategoria (blazer, casaco, colete, cardigã, quimono, parka), jaqueta jeans com
+  botões e colarinho, "jeans" na descrição não faz a peça de jeans, a roupa de baixo aparecendo pela frente aberta, o
+  cordão do capuz, o cadarço do zíper e o fundo da gola não viram desenho, blocos de cor não viram estampa corrida,
+  capuz não conta como alto da peça, logo de manga, infantil pelo endereço.

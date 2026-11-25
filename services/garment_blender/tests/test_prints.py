@@ -125,3 +125,16 @@ def test_listras_e_estampa_corrida_viram_a_textura_do_corpo(tmp_path):
     assert scale == (0.25, 0.25) and color.shape[:2] == (2048, 2048)
     assert color[:, -100:, 0].mean() > 2 * color[:, :100, 0].mean()       # espelhada: o u corre de +x para −x
     assert math.isclose(scale[0], 1 / 4)
+
+
+def test_desenho_de_manga_vai_para_fora_e_frente_da_manga_do_lado_de_quem_veste(tmp_path, logo):
+    spec = tee(tmp_path, logo, lado="manga_esquerda", abaixo_do_ombro=0.08, largura=0.05)
+    mesh, info = build_top(spec)
+    faces = [k for k, m in enumerate(mesh.mats) if m == "estampa_0"]
+    assert faces and all(mesh.parts[k] == "detalhe@manga_d" for k in faces)    # anda com a manga no provador
+    v = decal_verts(mesh)
+    shoulder = info["medidas_cm"]["ombro"] / 200
+    assert (v[:, 0] > shoulder - 0.03).all()                                   # na manga +x (esquerda de quem veste)
+    assert v[:, 2].mean() > 0                                                  # virado para a frente
+    sleeveless = replace(spec, sem_manga=True)
+    assert "estampa_0" not in build_top(sleeveless)[0].mats                    # sem manga: não tem onde ir

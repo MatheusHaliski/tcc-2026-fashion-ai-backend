@@ -56,14 +56,16 @@ class Frame:
         return self.hem - self.top
 
 
-def frame_of(labels: np.ndarray, mask: np.ndarray) -> Frame | None:
-    """Referências da peça; None sem peça."""
+def frame_of(labels: np.ndarray, mask: np.ndarray, hooded: bool = False) -> Frame | None:
+    """Referências da peça; None sem peça. ``hooded``: peça com capuz (o alto da máscara é o capuz, não o ombro)."""
     rows, cols = np.nonzero(mask)
     if len(rows) < 200:
         return None
     h, w = mask.shape
     top, hem = int(rows.min()), int(rows.max())
     center = _center(mask, top, hem)
+    if hooded:   # o alto da foto é o capuz: a linha do ombro é o alto da peça ao lado dele
+        top = _shoulder_top(mask, center, int(cols.max()) - int(cols.min()), top)
     face = labels == FACE
     face_rows = np.nonzero(face.any(1))[0]
     face_h = float(face_rows.max() - face_rows.min() + 1) if face.sum() > 0.0015 * mask.size and len(face_rows) else None
@@ -73,6 +75,17 @@ def frame_of(labels: np.ndarray, mask: np.ndarray) -> Frame | None:
                  top_cut=top <= 1, hem_cut=hem >= h - 2, face_h=face_h,
                  back_view=bool(hair and face_h is None and person), symmetry=_symmetry(mask, center),
                  area=float(mask.mean()))
+
+
+def _shoulder_top(mask: np.ndarray, center: float, width: int, fallback: int) -> int:
+    """Alto da peça nas faixas dos ombros (de 18 % a 30 % da largura para cada lado do eixo), onde o capuz não
+    chega: a mediana das primeiras linhas de peça de cada coluna."""
+    tops = []
+    for sign in (-1, 1):
+        for x in range(int(center + sign * 0.18 * width), int(center + sign * 0.30 * width), sign):
+            if 0 <= x < mask.shape[1] and mask[:, x].any():
+                tops.append(int(np.argmax(mask[:, x])))
+    return int(np.median(tops)) if tops else fallback
 
 
 def _center(mask: np.ndarray, top: int, hem: int) -> float:
