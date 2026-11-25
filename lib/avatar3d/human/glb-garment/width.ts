@@ -53,9 +53,9 @@ function bandsOf(p: Float32Array, idx: number[], label: number, f: BodyFrame, gr
     // faixa que não atravessa o meio do corpo, ou que já passa da pele de um lado (a barra ao lado do punho na peça
     // da Meshy): alargar em volta do centro dela jogaria o pano longe do corpo; a colisão cuida do lado que falta
     if (label === 0 && (g0 > 0 || g1 < 0 || g0 < b0 - 0.02 || g1 > b1 + 0.02)) continue;
-    // peça do motor: faixa com menos da metade da largura do corpo não é um anel do tronco (só um detalhe no peito,
-    // entre dois anéis): alargá-la puxava os anéis vizinhos para fora
-    if (label === 0 && ownSleeves && have < (b1 - b0) / 2) continue;
+    // peça do motor: faixa que não chega à metade do corpo de cada lado não é um anel do tronco (só detalhes entre dois
+    // anéis: bolso, vista, botões, pesponto): alargá-la puxava os anéis vizinhos para fora
+    if (label === 0 && ownSleeves && (g0 > b0 / 2 || g1 < b1 / 2)) continue;
     const scale = Math.min(MAX_WIDEN, Math.max(1, (b1 - b0) / have));
     const half = (have * scale) / 2, centre = (g0 + g1) / 2;
     // o centro só anda o que falta para cobrir os dois lados (peça já larga o bastante: não anda)

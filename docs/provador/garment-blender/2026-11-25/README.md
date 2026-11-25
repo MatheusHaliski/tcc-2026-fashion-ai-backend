@@ -19,3 +19,15 @@ Causas e correções:
 Aceite offline (`meshy-real.test.ts`): camiseta, suéter, moletom, cargo e calça passam em P/M/GG (36/40/46); o
 esticamento caiu de 1,30–1,52 para 1,10–1,33. Limite conhecido: a camiseta de corte masculino em P num corpo feminino
 fica larga nos ombros (a peça tem 16 cm a mais de tórax que o corpo) — é tamanho, não defeito de malha.
+
+## Frente aberta, zíper, botões, pesponto e colarinho
+
+| Arquivo | O que mostra |
+|---|---|
+| `previas-blender.jpg` | prévias do motor (Cycles): camisa-jaqueta Chambray (Alexander McQueen) e moletom sacai com zíper |
+| `ziper-botao-closeup.jpg` | detalhe: dentes alternados encaixados, cadarço, vista dobrada e pesponto dos dois lados; botão de quatro furos com linha em X e as pontas da casa (o tom ciano é só da importação no render de detalhe, que lê o rótulo de parte como cor; o provador ignora) |
+| `colarinho-pontas.jpg` | colarinho final: pé, folha virada por fora e pontas retas que abrem de cada lado da vista |
+| `antes-aba-na-barra-e-moletom-ziper.jpg` | antes: aba horizontal na barra da camisa-jaqueta (faixa só com vista e botões alargada 1,6×); moletom com zíper vestido |
+| `camisa-jaqueta-provador.jpg` | depois: camisa-jaqueta no corpo feminino (M) e masculino (G), frente e ¾ |
+
+A camisa-jaqueta é curta como na foto do catálogo; a faixa de pele entre a barra e a calça é do corte, não um furo.
