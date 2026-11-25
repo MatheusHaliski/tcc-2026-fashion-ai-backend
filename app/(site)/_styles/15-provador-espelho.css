@@ -219,7 +219,7 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 @media (max-width: 640px) {
   .mirror-side-panel, .mirror-side-panel[data-side="left"] { border-left: 0; border-right: 0; border-radius: 0; }
   .mirror-panel-toggle { top: 20px; right: 20px; }
-  .mirror-panel-toggle[data-side="left"] { left: 20px; }
+  .mirror-panel-toggle[data-side="left"] { left: 20px; top: 72px; }
 }
 /* espelho sem WebGL (MirrorFlatStill): as peças vestidas em 2D sobre o vidro, sem Canvas */
 .mirror-flat { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 56px 16% 44px; }
@@ -227,4 +227,9 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .mirror-flat-acc { display: flex; justify-content: center; gap: 6px; flex: 0 1 auto; min-height: 0; max-height: 14%; }
 .mirror-flat-acc img { max-height: 100%; max-width: 64px; }
 .mirror-flat-silhouette { height: 72%; fill: #3b3328; opacity: .16; }
+/* o reflexo dentro da cabine do Provador: sem WebGL (e por baixo da foto enquanto ela não chega), a mesma cabine em CSS —
+   parede em dois tons com meia-cana e rodapé, piso, tapete com a sombra dos pés e o véu do spot (cores de boothStyle) */
+.mirror-glass.is-booth { background-color: var(--booth-wall); background-image: radial-gradient(ellipse 16% 3.5% at 50% 90%, rgb(38 30 22 / .34), transparent 75%), radial-gradient(ellipse 26% 7% at 50% 90%, var(--booth-rug) 55%, transparent 100%), radial-gradient(ellipse 50% 46% at 50% 0%, color-mix(in srgb, var(--booth-light) 70%, transparent), transparent 75%), linear-gradient(to bottom, var(--booth-wall) 0 52%, var(--booth-trim) 52% 53.5%, var(--booth-wainscot) 53.5% 79%, var(--booth-trim) 79% 81%, var(--booth-floor) 81% 100%); }
+.mirror-glass.is-booth .mirror-still { object-fit: cover; }
+.mirror-glass.is-booth .mirror-flat { padding-bottom: 9%; justify-content: flex-end; }
 .fitting-stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
