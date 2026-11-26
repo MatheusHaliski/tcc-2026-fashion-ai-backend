@@ -78,9 +78,6 @@ export function PointsSection({ section }: { section: PointsSectionId }) {
               <p className="type-caption text-muted">{t("points.pontos_por_usar_o_que")}</p>
             </div>
           )}
-          {section === "loja" && <div className="grid gap-4">
-            <Card><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><FlairHubIcon id="store" size={20} /><h2 className="type-h3">{t("physicalStore.title")}</h2></div><Link href="/points/physical-store" className="btn btn-sm btn-primary">{t("physicalStore.browse")}</Link></div><p className="type-body-sm text-muted">{t("physicalStore.lead")}</p></Card>
-          </div>}
         </>
       )}
     </>

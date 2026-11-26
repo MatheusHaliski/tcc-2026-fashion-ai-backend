@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ControllerDelegacaoTest {
     static final List<Class<?>> CONTROLLERS = List.of(
             AdminController.class, br.com.fashionai.web.atelierproject.AtelierProjectController.class,
-            PhysicalStoreController.class, br.com.fashionai.web.passport.GarmentPassportController.class,
+            BrandCatalogProductsController.class, br.com.fashionai.web.passport.GarmentPassportController.class,
             SealHypeOffersController.class, EraStudioController.class, ProfileController.class, SealController.class,
             MultiplatformController.class, MeController.class, ShowcaseController.class,
             PhotoController.class, NotificationController.class, PreferencesController.class,
@@ -46,7 +46,7 @@ class ControllerDelegacaoTest {
             AutopilotController.class, FlairController.class,
             FlairCollectionController.class, Avatar3dController.class, TryOnController.class, GuideController.class,
             MomentController.class, BackgroundController.class, TryOnPersonPhotoController.class,
-            AdminPhysicalStoreController.class, AnatomicalTryOnController.class, HypeController.class,
+            AnatomicalTryOnController.class, HypeController.class,
             HighlightsController.class, AuthController.class, LensController.class, CatalogController.class,
             IssuerReviewController.class, AccountController.class, CouponController.class, DiscoveryController.class,
             ChallengeController.class, MomentAdminController.class, AuraMotionController.class,

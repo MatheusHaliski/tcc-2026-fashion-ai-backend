@@ -3359,69 +3359,14 @@ final class ServiceFakes {
         }
     }
 
-    static final class FakePhysicalStoreService extends br.com.fashionai.application.service.PhysicalStoreService {
-        FakePhysicalStoreService() {
-            super((br.com.fashionai.domain.repository.PhysicalStoreListingRepository) Fk.arg(br.com.fashionai.domain.repository.PhysicalStoreListingRepository.class), (br.com.fashionai.domain.repository.PhysicalStoreOrderRepository) Fk.arg(br.com.fashionai.domain.repository.PhysicalStoreOrderRepository.class), (br.com.fashionai.domain.repository.PhysicalStoreVariantRepository) Fk.arg(br.com.fashionai.domain.repository.PhysicalStoreVariantRepository.class), (br.com.fashionai.domain.repository.CatalogProductRepository) Fk.arg(br.com.fashionai.domain.repository.CatalogProductRepository.class), (br.com.fashionai.domain.repository.BrandRepository) Fk.arg(br.com.fashionai.domain.repository.BrandRepository.class), (br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository) Fk.arg(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.catalog.CatalogService) Fk.arg(br.com.fashionai.application.catalog.CatalogService.class), (br.com.fashionai.application.physicalstore.SellerIdentity) Fk.arg(br.com.fashionai.application.physicalstore.SellerIdentity.class));
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> adminListings(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "adminListings", java.util.List.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> adminOrders(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "adminOrders", java.util.List.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> buy(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PhysicalStoreService.OrderForm a2, java.lang.String a3) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "buy", java.util.Map.class, new Object[]{a0, a1, a2, a3});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> buy(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PhysicalStoreService.OrderForm a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "buy", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public void delete(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
-            Fk.call(this, "delete", void.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> mine(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "mine", java.util.List.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> myOrders(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "myOrders", java.util.List.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> save(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PhysicalStoreService.ListingForm a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "save", java.util.Map.class, new Object[]{a0, a1, a2});
+    static final class FakeBrandCatalogProductsService extends br.com.fashionai.application.catalog.BrandCatalogProductsService {
+        FakeBrandCatalogProductsService() {
+            super((br.com.fashionai.domain.repository.CatalogProductRepository) Fk.arg(br.com.fashionai.domain.repository.CatalogProductRepository.class), (br.com.fashionai.domain.repository.BrandRepository) Fk.arg(br.com.fashionai.domain.repository.BrandRepository.class), (br.com.fashionai.application.catalog.CatalogService) Fk.arg(br.com.fashionai.application.catalog.CatalogService.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class));
         }
 
         @Override
         public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> sellerProducts(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
             return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "sellerProducts", java.util.List.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> store(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "store", java.util.List.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> updateShipment(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PhysicalStoreService.ShipmentForm a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "updateShipment", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> updateStock(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PhysicalStoreService.StockForm a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "updateStock", java.util.Map.class, new Object[]{a0, a1, a2});
         }
     }
 
