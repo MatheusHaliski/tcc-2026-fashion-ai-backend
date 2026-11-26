@@ -292,10 +292,27 @@ estava importada (o painel saía como a faixa comum, por cima da personagem); o 
 lugar do elenco do ateliê. **Não visto:** a roda mudando durante a pintura (testes da tela); a roda não acompanha a
 execução marca a marca (o painel dos lances acompanha), só o começo e o fim.
 
+### Item 5, parte 1 (feito): carta cansada na Batalha de Looks
+
+A reauditoria: "as cartas não se gastam entre rodadas". Na batalha de 3 rodadas, a peça que desfilou numa rodada chega
+cansada à seguinte: vestida de novo, não pontua (a peça proibida continua contando no look inteiro). Com um deck de até
+8 cartas para 3 rodadas de 4 vagas, é preciso dosar o que se veste em cada uma; na terceira rodada, as da primeira já
+descansaram. Regra em `BatalhaLooksRodadas.descansadas`, com o evento `CARTAS_CANSADAS` na entrega e também na prévia
+(`Flair3dPercurso.previa` passa a levar só esse aviso; o placar e a nota do adversário continuam saindo na entrega). A
+tela avisa na prévia ("2 peças cansadas: desfilaram na rodada anterior e não pontuam nesta") e o objetivo da rodada diz
+a regra. A reauditoria pedia recusar a entrega com `CARTA_CANSADA`; ficou "não pontua" porque o look da rodada anterior
+continua vestido quando a seguinte abre, e a recusa travaria a prévia.
+
+**Não visto na tela** (a Batalha pede deck e cartas, que a prova com a API simulada ainda não monta): está nos testes do
+servidor (`Flair3dRodadasEtapasTest`) e da tela (`nucleo-cansadas.test.tsx`). **Falta do item 5:** a Batalha no perfil
+peça-recurso (o bônus do look entrando na comparação com o adversário, rodada a rodada) e o adversário vestido no 3D com
+as peças que o servidor já manda (`LOOK_DO_ADVERSARIO`).
+
 ### Nota projetada depois desta rodada
 
 Projeção de quem implementou, a conferir por auditor independente. Mudam os quatro jogos de zonas e o Around the
-World; os outros dez ficam com a projeção anterior (ganharam as marcas desenhadas no piso, sem mudança de nota).
+World e a Batalha de Looks; os outros nove ficam com a projeção anterior (ganharam as marcas desenhadas no piso, sem
+mudança de nota).
 
 | Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Final | Projeção anterior | Reauditoria |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -304,8 +321,32 @@ World; os outros dez ficam com a projeção anterior (ganharam as marcas desenha
 | PILOTO_FAVORITO | 4,6 | 4,7 | 5,4 | 4,8 | 3,5 | 5,3 | 5 | **4,8** | 4,2 | 3,9 |
 | SUPER_HEROI | 4,6 | 4,7 | 5,4 | 4,5 | 3,6 | 5,3 | 5 | **4,8** | 4,1 | 3,8 |
 | AROUND_THE_WORLD | 3,9 | 5,3 | 6,6 | 5,2 | 5 | 6,5 | 5,5 | **5,4** | 5,2 | 5,0 |
+| BATALHA_LOOKS | 4,6 | 3,8 | 6 | 5 | 4 | 6,5 | 5,5 | **5,1** | 4,9 | 4,6 |
 
 Média projetada dos 15: 5,2 (anterior: 5,1; reauditoria: 4,7). Nenhum jogo chega a 8 em nenhum critério.
+
+### O que ainda separa cada jogo de 8 (depois desta rodada)
+
+A meta da dona é 8 em todo critério de todo jogo. A distância ainda é grande: a maior nota projetada é 6,1 e nenhum
+critério de nenhum jogo chega a 8. Em ordem do que mais pesa:
+
+- **Todos (jogabilidade e recursos, hoje entre 3,9 e 6,2):** a habilidade conta, mas é sempre a mesma: andar até a
+  marca e apertar um botão na janela. Para 8 falta o que cada gênero tem de próprio: adversário que reage, física,
+  decisão espacial que muda o resultado, dificuldade que sobe.
+- **Todos (gráficos, entre 4 e 6):** as salas são procedurais; o teto realista no navegador é 7 a 7,5, e chegar perto
+  pede cenário e personagens modelados, não só troca de material.
+- **Jogos de zonas (4,8 a 5,1):** a fase de uso existe, mas o cone não é driblado, o drone não atira e o piloto não tem
+  volta com tempo de pista; o avatar veste só a cor dominante (sem emblema, capa nem capacete pintados), o que segura
+  "roupas" em 3,5 a 4,5.
+- **Batalha de Looks (5,1):** falta o perfil peça-recurso na comparação com o adversário e vê-lo vestido no 3D.
+- **Road to Glory e Fashion Sports (5,0):** a sessão de fotos ainda é a execução comum; fôlego, embalo e goleiro pronto
+  não aparecem na tela; não há cutscene de gol.
+- **Boutique, Personagem de Filme, Dress the Star (5,1 a 5,7):** loja, set e camarim sem interagíveis (arara, provador,
+  balcão, monitor, claquete, penteadeira).
+- **Labirinto e Around the World (5,2 e 5,4):** sem corredores nem caminho com ramos; a viagem tem lugares, mas o
+  caminho é uma reta.
+- **Fashion Detective (5,4):** o culpado é fixo (a história e as cutscenes nomeiam o Bento) e não há ✕ contextual.
+- **Dress Fighter e Passarela (6,1 e 5,7):** vida por look, fôlego por golpe e descarte da carta; desfile curto de decisão.
 
 ## Resumo
 

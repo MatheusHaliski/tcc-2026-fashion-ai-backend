@@ -58,6 +58,9 @@ final class BatalhaLooksRodadas {
 
     static final List<List<Desafio>> TIPOS = List.of(MONOCROMATICOS, CONVITES, CLIMAS);
 
+    /** Evento da rodada em que alguma peça repetida da rodada anterior não pontuou: quantas e em quais vagas. */
+    static final String CARTAS_CANSADAS = "CARTAS_CANSADAS";
+
     private BatalhaLooksRodadas() {
     }
 
@@ -73,9 +76,28 @@ final class BatalhaLooksRodadas {
 
     /** As regras de um desafio sobre o look: 25 por vaga na regra e −25 se há peça proibida. */
     static List<RegraResultado> regras(Desafio d, Map<String, CbcRules.Card> look) {
-        List<RegraResultado> out = new ArrayList<>(Flair3dPecas.porVaga(VAGAS, look, "NA_REGRA", POR_PECA, d.naRegra()));
+        return regras(d, look, look);
+    }
+
+    /** As regras quando nem toda peça vestida pontua (a cansada veste, mas não vale); a proibida conta no look inteiro. */
+    static List<RegraResultado> regras(Desafio d, Map<String, CbcRules.Card> pontuam, Map<String, CbcRules.Card> look) {
+        List<RegraResultado> out = new ArrayList<>(Flair3dPecas.porVaga(VAGAS, pontuam, "NA_REGRA", POR_PECA, d.naRegra()));
         boolean tem = look.values().stream().anyMatch(d.proibida());
         out.add(new RegraResultado("SEM_PECA_PROIBIDA", !tem, tem ? PROIBIDA : 0));
+        return out;
+    }
+
+    /**
+     * As peças descansadas do look (reauditoria de 25/11/2026: "as cartas não se gastam entre as rodadas"): a peça que
+     * desfilou na rodada anterior chega cansada a esta e, se for vestida de novo na mesma vaga ou em outra, não pontua.
+     * Com um deck de até 8 cartas para 3 rodadas, é preciso dosar o que se veste em cada uma.
+     */
+    static Map<String, CbcRules.Card> descansadas(Flair3dPercurso.Look look) {
+        if (look.anterior() == null) {
+            return look.pecas();
+        }
+        Map<String, CbcRules.Card> out = new LinkedHashMap<>(look.pecas());
+        out.values().removeIf(c -> look.anterior().values().stream().anyMatch(a -> a.id().equals(c.id())));
         return out;
     }
 
@@ -128,7 +150,9 @@ final class BatalhaLooksRodadas {
             @Override
             public Avaliacao avaliar(Look look) {
                 Desafio desafio = desafios.get(look.etapa() - 1);
-                List<RegraResultado> regras = regras(desafio, look.pecas());
+                Map<String, CbcRules.Card> descansadas = descansadas(look);
+                List<String> cansadas = look.pecas().keySet().stream().filter(v -> !descansadas.containsKey(v)).toList();
+                List<RegraResultado> regras = regras(desafio, descansadas, look.pecas());
                 Map<String, Object> adversario = adversarioNaTela(contexto, look.etapa(), desafio);
                 Map<String, Object> placar = new LinkedHashMap<>();
                 placar.put("rodada", look.etapa());
@@ -136,7 +160,12 @@ final class BatalhaLooksRodadas {
                 placar.put("adversario", adversario.get("nota"));
                 placar.put("familia", adversario.get("familia"));
                 placar.put("look", adversario.get("look"));
-                return new Avaliacao(true, pontos(regras), regras, List.of(new Evento("RODADA_DA_BATALHA", placar)));
+                List<Evento> eventos = new ArrayList<>();
+                if (!cansadas.isEmpty()) {
+                    eventos.add(new Evento(CARTAS_CANSADAS, Map.of("quantas", cansadas.size(), "vagas", cansadas)));
+                }
+                eventos.add(new Evento("RODADA_DA_BATALHA", placar));
+                return new Avaliacao(true, pontos(regras), regras, eventos);
             }
 
             private int soma(List<Passo> passos) {
