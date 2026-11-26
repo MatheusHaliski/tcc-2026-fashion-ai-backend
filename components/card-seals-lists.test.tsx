@@ -56,6 +56,8 @@ it.each(["BENTO", "PASSARELA"] as const)("profile publications retain the social
  expect(card.classList.contains("is-compact")).toBe(false);
  const meta=card.querySelector(".card-fashion-meta")!;
  expect([...meta.querySelectorAll("dt")].map(e=>e.textContent)).toEqual(["Marca","Cor","Ocasião","Estilo"]);
- expect(meta.textContent).toContain("Nike");expect(meta.textContent).toContain("Trabalho");
+ expect(meta.textContent).toContain("Nike");
+ // a ocasião conhecida virou ícone FAI: o nome continua no rótulo acessível, não no texto visível
+ expect(meta.querySelector('.card-occasion-icons img[alt="Trabalho"]')).toBeTruthy();expect(meta.textContent).not.toContain("Trabalho");
  expect(card.querySelector('.card-seals .seal-medallion[title="Look aprovado · @marca · LOOK"]')).toBeTruthy();
 });

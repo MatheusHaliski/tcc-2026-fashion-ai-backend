@@ -1,5 +1,7 @@
 "use client";
 import { CardFashionMeta } from "@/components/card-fashion-meta";
+import { CardPieceIcons, SeasonGlyph } from "@/components/card-meta-icons";
+import { isSeason } from "@/lib/cards/card-icons";
 import { CardBorder } from "@/components/card-border";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
@@ -67,6 +69,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const { src: cover, srcSet: coverSet } = lookCover(scheme);
   const link = href ?? `/schemes/${scheme.id}`;
   const pieces = items.map((it) => ({ id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: lookItemImage(it, 320), brand: it.piece?.brandName, price: lookPiecePrice(it.piece?.price), size: it.piece?.size, color: it.piece?.color, slot: it.slot }));
+  const pieceIcons = items.map((it) => ({ name: it.piece?.name ?? (it.name as string) ?? it.slot, category: it.piece?.category, subcategory: it.piece?.subcategory, colorHex: it.piece?.colorHex, color: it.piece?.color }));
   const total = lookTotal(scheme.totalPrice, pieces.map((p) => p.price));
   // Posição do selo segue a anatomia escolhida na etapa 4 (SEAL_PLACEMENT); o espaço fica reservado mesmo sem selo.
   const placement = sealPlacement(anatomy === "LISTA_VERTICAL" && l !== "lista" ? (l === "grade" ? "GRADE_PECAS" : "HERO_LISTA") : anatomy);
@@ -126,7 +129,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       </div>
     ));
   const fashionMeta = <CardFashionMeta brands={items.flatMap(it=>it.piece?.brandName?[{name:it.piece.brandName,logoUrl:it.piece.brandLogoUrl}]:[])} colors={items.flatMap(it=>it.piece?.color?[{name:it.piece.color,hex:it.piece.colorHex}]:[])} styles={scheme.style} occasions={scheme.occasion}/>;
-  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} live={live} selectedSeals={selectedLookSeals(scheme.background)} infoBefore={social ? <>{titleBlock}{fashionMeta}</> : expanded ? fashionMeta : undefined} infoContent={expanded ? <div className="scheme-info-pieces">{pieceList}</div> : undefined} replaceInfoRows={expanded} infoRows={social?[[t("common.pecas"),pieces.map((piece) => piece.name).join(" · ") || String(items.length)],[t("common.season"),scheme.season?label(scheme.season.toLowerCase()):t("lookbook.season.notInformed")] as [string,ReactNode]]:[]}/>;
+  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} live={live} selectedSeals={selectedLookSeals(scheme.background)} infoBefore={social ? <>{titleBlock}{fashionMeta}</> : expanded ? fashionMeta : undefined} infoContent={expanded ? <div className="scheme-info-pieces">{pieceList}</div> : undefined} replaceInfoRows={expanded} infoRows={social?[[t("common.pecas"),pieceIcons.length?<CardPieceIcons pieces={pieceIcons}/>:String(items.length)],[t("common.season"),isSeason(scheme.season)?<span className="card-season">{<SeasonGlyph season={scheme.season}/>}{label(scheme.season.toLowerCase())}</span>:t("lookbook.season.notInformed")] as [string,ReactNode]]:[]}/>;
   const gridCells = pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtPriceShort(p.price) : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>);
   const card = (
     <article data-card-mode={expanded?"expanded":social?"feed":"compact"} className={`fai-card scheme-card ${social?"scheme-card-social":""} ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>

@@ -11,6 +11,7 @@ import type { HypeLive } from "@/lib/hype/hype-signal-store";
 import { HypeGuideIcon } from "@/components/hype/hype-guide";
 import { BrandLogo } from "@/components/brand-logo";
 import { hypePreset } from "@/lib/hype/aura-hype-presets";
+import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
 import { conservationLabel } from "@/lib/api/piece-references";
 import { SelectedSealLabels } from "@/components/selected-seal-labels";
 import { selectedPieceSeals, type SelectedSealRef } from "@/lib/seals/selected-seals";
@@ -38,9 +39,10 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
   useEffect(() => { if (!touched.current) setTab(initial); }, [initial]);
   const id = useId();
   const list = (values?: string[] | null) => (values ?? []).filter(Boolean).map((v) => label(v)).join(" · ");
+  const categoryName = subcategoryLabel(piece.subcategory) || (piece.category ? CATEGORY_LABEL[piece.category] : null);
   const rows: [string, ReactNode][] = ([
     [t("common.brand"), piece.brandName ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={18} withName /> : null],
-    [t("common.category"), subcategoryLabel(piece.subcategory) || (piece.category ? CATEGORY_LABEL[piece.category] : null)],
+    [t("common.category"), categoryName ? <span className="card-category">{piece.category && <img src={defaultGarmentUrl(piece.category, piece.subcategory, piece.colorHex, piece.color)} alt="" width={22} height={22} loading="lazy" decoding="async" />}{categoryName}</span> : null],
     [t("common.color"), piece.color ? <span className="pc-info-color">{piece.colorHex && <i style={{ background: piece.colorHex }} aria-hidden />}{label(piece.color)}</span> : null],
     [t("common.style"), list(piece.style)],
     [t("common.occasion"), list(piece.occasion)],
@@ -50,7 +52,8 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
     if(piece.size) rows.push([t("common.size"),label(piece.size)]);
   }
   const condition = conservationLabel(piece, t);
-  if (condition) rows.push([t("pieceReferences.condition.label"), condition]);
+  // estado de conservação é da peça: no card de look a célula só repetia "Não informado"
+  if (condition && type !== "SCHEME") rows.push([t("pieceReferences.condition.label"), condition]);
   rows.push(...infoRows);
   const tabs: { key: Tab; icon: ReactNode; text: string }[] = [
     { key: "info", icon: <InfoIcon />, text: t("pieceCard.tab_info") },
