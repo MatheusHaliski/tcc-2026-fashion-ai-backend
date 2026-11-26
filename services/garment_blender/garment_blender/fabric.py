@@ -2,7 +2,11 @@
 
 Cada imagem cobre ``TILE`` (5 cm) do tecido real, então a contagem de pontos é a do tecido: tricô de lã com ~2,2
 colunas e ~3 carreiras por cm, ribana 2×2, malha de moletom/jersey bem mais fina e sarja/denim em diagonal de 45°.
-Nada de foto nem de IA: o mesmo tecido sai igual em qualquer máquina (semente fixa).
+Nada de foto nem de IA: o mesmo tecido sai igual em qualquer máquina (semente fixa). Couro, nylon, acolchoado, veludo,
+cetim e lã plana estão em ``tramas.py``.
+
+A sombra do relevo e o ruído do fio têm média 1 em luz linear e não estouram o branco (``shade``): a cor média da
+textura é a da ficha, e a calibração da prévia acerta o resto.
 """
 from __future__ import annotations
 
@@ -11,11 +15,16 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+from .tramas import REPEAT, SHELLS, shell_height
+
 SIZE = 512
 # colunas e carreiras de ponto por repetição de 5 cm e força do relevo; na sarja, diagonais por repetição
 KNITS = {"malha_la": (11, 15, 5.0), "malha_algodao": (16, 22, 3.5), "moletom": (30, 40, 1.6), "jersey": (34, 46, 1.4)}
-TWILLS = {"sarja": (70, 2.0), "denim": (60, 2.6)}
+TWILLS = {"sarja": (70, 2.0), "denim": (60, 2.2)}
 WEAVES = {"tricoline": (110, 1.1)}   # tela (um fio por cima, um por baixo): fios por repetição (par) e força
+# Inclinação do normal map por unidade de relevo × força. Era 8 (ponto de malha a 70° da superfície): o relevo tão
+# íngreme escurecia o tecido em 8 de L contra o mesmo tecido liso, e a prévia não acertava a cor dos dois ao mesmo tempo.
+SLOPE = 2.4
 
 
 def _grid():
@@ -52,6 +61,8 @@ def _stitch(cols: int, rows: int) -> np.ndarray:
 def height_map(kind: str, rib: bool = False) -> tuple[np.ndarray, float]:
     """(relevo 0–1, força do normal map) do tecido (ou dos dentes do zíper: ``kind == "dentes"``)."""
     x, y = _grid()
+    if kind in SHELLS:
+        return shell_height(kind, _grid, _noise)
     if kind == "dentes":   # 20 dentes por 5 cm (passo de 2,5 mm), cada um um bloco arredondado
         f = (y * 20) % 1
         return np.clip(1 - ((f - 0.5) / 0.32) ** 2, 0, 1) ** 0.5, 6.0
@@ -77,11 +88,43 @@ def _rgb(hex_color: str) -> np.ndarray:
     return np.array([int(hex_color[i:i + 2], 16) for i in (1, 3, 5)], float) / 255
 
 
+def to_linear(c: np.ndarray) -> np.ndarray:
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+def to_srgb(c: np.ndarray) -> np.ndarray:
+    c = np.clip(c, 0, 1)
+    return np.where(c <= 0.0031308, c * 12.92, 1.055 * c ** (1 / 2.4) - 0.055)
+
+
+def repeat(kind: str) -> int:
+    """Quantas repetições de 5 cm a imagem do tecido cobre em cada direção (o UV do corpo é dividido por isso)."""
+    return REPEAT.get(kind, 1)
+
+
+def shade(base: np.ndarray, h: np.ndarray, grain: bool = True, target: np.ndarray | None = None) -> np.ndarray:
+    """Cor sRGB (0–1) do tecido: ``base`` (cor sRGB, uma só ou uma imagem do tamanho de ``h``) com a sombra do relevo
+    e o ruído do fio, em luz linear. O fator tem média 1 e encolhe quando o pico passaria de 1 (o branco não corta), e
+    a média linear de cada canal sai igual à de ``target`` (padrão: a da própria ``base``)."""
+    f = (0.78 + 0.3 * h) ** 2.2
+    if grain:
+        f = f * (0.94 + 0.12 * np.tile(_noise(11, 128), (h.shape[0] // SIZE, h.shape[1] // SIZE))) ** 2.2
+    f = f / f.mean()
+    lin = to_linear(np.broadcast_to(np.asarray(base, float), h.shape + (3,)))
+    peak = float(np.percentile(lin.max(-1), 99.5))
+    if peak * f.max() > 1:   # branco: a sombra só escurece até onde o pico cabe em 1
+        f = 1 + (f - 1) * np.clip((1 / max(peak, 1e-6) - 1) / (f.max() - 1), 0, 1)
+    out = lin * f[..., None]
+    want = to_linear(np.asarray(target, float)) if target is not None else lin.reshape(-1, 3).mean(0)
+    out = out * (want / np.maximum(out.reshape(-1, 3).mean(0), 1e-9))
+    return to_srgb(out)
+
+
 def _normal(h: np.ndarray, strength: float) -> np.ndarray:
     hs = h * strength   # derivada circular: o relevo fecha na borda da repetição, sem emenda
     gx = (np.roll(hs, -1, 1) - np.roll(hs, 1, 1)) / 2
     gy = (np.roll(hs, -1, 0) - np.roll(hs, 1, 0)) / 2
-    n = np.stack([-gx * SIZE / 64, gy * SIZE / 64, np.ones_like(h)], -1)   # +Y para cima (convenção do glTF)
+    n = np.stack([-gx * SLOPE, gy * SLOPE, np.ones_like(h)], -1)   # +Y para cima (convenção do glTF)
     return n / np.linalg.norm(n, axis=-1, keepdims=True)
 
 
@@ -89,20 +132,19 @@ def _save(rgb: np.ndarray, normal: np.ndarray, out: Path, tag: str) -> dict[str,
     """Cor e normal map em JPEG (o .glb leva JPEG; o PNG fica para o que tem alfa, o decalque)."""
     out.mkdir(parents=True, exist_ok=True)
     paths = {"cor": out / f"{tag}-cor.jpg", "normal": out / f"{tag}-normal.jpg"}
-    Image.fromarray((np.clip(rgb, 0, 1) * 255).astype(np.uint8)).save(paths["cor"], quality=90)
-    Image.fromarray(((normal * 0.5 + 0.5) * 255).astype(np.uint8)).save(paths["normal"], quality=92)
+    Image.fromarray(np.round(np.clip(rgb, 0, 1) * 255).astype(np.uint8)).save(paths["cor"], quality=90)
+    Image.fromarray(np.round((normal * 0.5 + 0.5) * 255).astype(np.uint8)).save(paths["normal"], quality=92)
     return paths
 
 
 def write_maps(kind: str, color: str, out: Path, rib: bool = False) -> dict[str, Path]:
-    """Grava a cor e o normal map e devolve os caminhos; a rugosidade vai como valor no material."""
+    """Grava a cor e o normal map e devolve os caminhos; a rugosidade e o resto do acabamento vão no material."""
     h, strength = height_map(kind, rib)
     base = _rgb(color)
-    shade = 0.78 + 0.3 * h[..., None]
-    rgb = base * shade
-    if kind == "denim":   # trama branca aparecendo entre os fios de índigo
-        rgb = rgb * 0.85 + 0.15 * (1 - h[..., None]) * np.array([0.92, 0.93, 0.95])
-    if kind != "dentes":
-        rgb = rgb * (0.94 + 0.12 * _noise(11, 128)[..., None])
+    if kind == "denim":   # trama branca aparecendo entre os fios de índigo (a média continua a da ficha)
+        weft = to_srgb(0.15 * (1 - h[..., None]) * to_linear(np.array([0.92, 0.93, 0.95])) + 0.85 * to_linear(base))
+        rgb = shade(weft, h, target=base)
+    else:
+        rgb = shade(base, h, grain=kind != "dentes")
     # a cor no nome: o cadarço do zíper (sarja um tom abaixo) não sobrescreve o corpo de sarja
     return _save(rgb, _normal(h, strength), out, f"{kind}{'-ribana' if rib else ''}-{color.lstrip('#')}")

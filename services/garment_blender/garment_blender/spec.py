@@ -17,7 +17,9 @@ from .sizes_pants import CUTS, NUMBERS, PantsMeasures, check_pants, pants_measur
 SUBCATEGORIES = ("sweater", "sweatshirt", "hoodie", "t_shirt", "long_sleeve", "shirt", "jacket", "blouse", "tank_top", "top",
                  "crop_top", "polo_shirt", "bodysuit", "cardigan", "vest", "blazer", "coat", "parka", "windbreaker", "kimono")
 PANTS = tuple(CUTS)
-FABRICS = ("malha_la", "malha_algodao", "jersey", "moletom", "sarja", "denim", "tricoline")   # tricoline: tecido plano
+# tricoline: tecido plano; la_plana: lã de alfaiataria (tecida, não tricô); nylon: casca técnica lisa; acolchoado: gomos
+FABRICS = ("malha_la", "malha_algodao", "jersey", "moletom", "sarja", "denim", "tricoline", "la_plana", "couro",
+           "camurca", "nylon", "acolchoado", "veludo", "cetim")
 COLLARS = ("careca", "alta", "capuz", "colarinho", "v", "lapela", "polo", "vies", "faixa")   # colarinho: pé + folha virada; lapela: V + colarinho + lapelas
 CLOSURES = ("nenhum", "ziper_inteiro", "botao_ziper", "cordao", "botoes", "polo", "aberto")   # polo: vista curta; aberto: frente sem fecho
 NECKLINES = ("redondo", "quadrado", "reto", "v")   # decote da peça sem manga (reto = quadrado)

@@ -1,7 +1,8 @@
 """O que o nome e a descrição do produto dizem da construção da peça (português e inglês, sem acento, minúsculo).
 
 Cada regra devolve um valor da ficha do motor ou None (o texto não diz: vale a base da subcategoria). O nome manda
-mais que a descrição — a descrição às vezes fala de outra peça ("combine com a calça…").
+mais que a descrição — a descrição às vezes fala de outra peça ("combine com a calça…"). O tecido tem regras próprias,
+em ``tecido.py``.
 """
 from __future__ import annotations
 
@@ -68,24 +69,7 @@ FITS = (
     ("justo", _rx(r"\bslim\b", r"\bjust[ao]\b", r"\bfitted\b", r"skinny", r"ajustad", r"segunda pele",
                   r"second skin", r"compress", r"\bmuscle\b", r"modelador")),
 )
-DENIM_SELF = _rx(r"(jaqueta|camisa|colete|blusa|jacket|shirt|vest)( de)? (jeans|denim)", r"(jeans|denim) (jacket|shirt|vest)",
-                 r"chambray", r"trucker")   # a peça é de jeans (na descrição, "jeans" sozinho é a calça do look)
 STRIPED = _rx(r"listrad", r"\blistras?\b", r"striped", r"\bstripes?\b", r"breton", r"marinier")
-FABRICS = (
-    ("denim", _rx(r"\bjeans\b", r"denim", r"chambray")),
-    ("moletom", _rx(r"moletom", r"moleton", r"fleece", r"french terry", r"\bsweat\b", r"felpad", r"peluciad")),
-    ("malha_la", _rx(r"\bla\b", r"\bwool", r"cashmere", r"merino", r"alpaca", r"mohair", r"\btricot", r"\btrico\b",
-                     r"cable[- ]knit", r"chunky knit", r"\bknit sweater")),
-    ("malha_algodao", _rx(r"piquet", r"\bpique\b", r"waffle", r"canelad", r"ribbed", r"rib knit")),
-    ("tricoline", _rx(r"tricoline", r"popeline", r"poplin", r"oxford", r"\blinho\b", r"\blinen", r"\bseda\b",
-                      r"\bsilk", r"cetim", r"satin", r"\bcrepe\b", r"viscose", r"chiffon", r"musseline", r"voil",
-                      r"cambraia", r"georgette", r"broderie", r"laise")),
-    ("sarja", _rx(r"\bsarja", r"twill", r"gabardin", r"canvas", r"\blona\b", r"nylon", r"poliamida", r"softshell",
-                  r"corta[- ]?vento", r"windbreaker", r"impermeavel", r"waterproof", r"puffer", r"acolchoad",
-                  r"matelass", r"quilted", r"\bdown\b", r"plumas?\b", r"trench")),
-    ("jersey", _rx(r"meia malha", r"\bjersey", r"\bmalha\b", r"\bpima\b", r"supima", r"modal", r"dry ?fit",
-                   r"dri-fit", r"\btee\b")),
-)
 POCKET_KANGAROO = _rx(r"canguru", r"kangaroo")
 POCKET_CHEST = _rx(r"bolso (no |de )?peito", r"chest pocket", r"bolso chapado", r"com bolso", r"\bpocket\b",
                    r"patch pocket", r"utility", r"bolsos? frontal")

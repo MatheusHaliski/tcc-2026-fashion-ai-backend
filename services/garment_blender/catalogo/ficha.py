@@ -6,7 +6,7 @@ capuz com botões…) é acertada para a mais próxima que ele monta.
 """
 from __future__ import annotations
 
-from . import forma, texto
+from . import forma, tecido, texto
 
 # subcategoria → (gola, fechamento, tecido, gramatura, manga, ribana, caimento, bolsos, botões)
 BASES = {
@@ -24,14 +24,17 @@ BASES = {
     "bodysuit": ("vies", "nenhum", "jersey", 180, "sem", False, "justo", (), 6),
     "vest": ("v", "botoes", "sarja", 240, "sem", False, "regular", (), 4),
     "jacket": ("alta", "ziper_inteiro", "sarja", 240, "longa", False, "regular", (), 6),
-    "blazer": ("lapela", "botoes", "sarja", 260, "longa", False, "regular", (), 2),
-    "coat": ("lapela", "botoes", "malha_la", 450, "longa", False, "amplo", (), 4),
-    "parka": ("capuz", "ziper_inteiro", "sarja", 260, "longa", False, "amplo", ("peito",), 6),
-    "windbreaker": ("capuz", "ziper_inteiro", "sarja", 120, "longa", False, "regular", (), 6),
+    "blazer": ("lapela", "botoes", "la_plana", 280, "longa", False, "regular", (), 2),
+    "coat": ("lapela", "botoes", "la_plana", 450, "longa", False, "amplo", (), 4),
+    "parka": ("capuz", "ziper_inteiro", "nylon", 200, "longa", False, "amplo", ("peito",), 6),
+    "windbreaker": ("capuz", "ziper_inteiro", "nylon", 110, "longa", False, "regular", (), 6),
     "kimono": ("faixa", "aberto", "tricoline", 140, "longa", False, "amplo", (), 6),
 }
+# gramatura de cada tecido quando o texto troca o da base. No motor ela só dá a espessura aparente da casca
+# (``spec.Fabric.espessura_mm``): couro e acolchoado levam o valor que dá a espessura certa, não o peso real do couro.
 WEIGHT = {"jersey": 160, "malha_algodao": 220, "moletom": 320, "malha_la": 300, "sarja": 240, "denim": 380,
-          "tricoline": 120}
+          "tricoline": 120, "la_plana": 280, "couro": 300, "camurca": 300, "nylon": 130, "acolchoado": 380,
+          "veludo": 280, "cetim": 110}
 FEMALE_ONLY = ("blouse", "top", "crop_top", "bodysuit", "kimono")
 PLACKET_ONLY = ("t_shirt", "polo_shirt", "sweater", "sweatshirt", "crop_top", "bodysuit", "tank_top", "top")
 
@@ -99,10 +102,8 @@ def spec_for(product: dict, color: str, brand_prior: dict[str, str]) -> dict:
     sleeve = texto.first(texto.SLEEVES, name, desc) if sub not in ("tank_top",) else "sem"
     sleeve = sleeve or BASES[sub][4]
     fit = texto.first(texto.FITS, name, desc) or fit
-    found = texto.first(texto.FABRICS, name) or texto.first(texto.FABRICS, desc)
-    if found == "denim" and not texto.first(texto.FABRICS[:1], name) and not texto.DENIM_SELF.search(desc):
-        found = texto.first(texto.FABRICS[1:], desc)   # "use com jeans" na descrição não faz a peça de jeans
-    if found and not (sub == "shirt" and found == "jersey"):
+    found = tecido.fabric_of(product.get("product_name"), product.get("description"), sub)
+    if found:
         kind, weight = found, WEIGHT[found] if found != kind else weight
     if sub == "jacket" and (kind == "denim" or texto.SHIRT_JACKET.search(name)) and not texto.first(texto.CLOSURES, name):
         collar, closure, pockets = "colarinho", "botoes", ("peito",)   # jaqueta jeans, camisa-jaqueta: botões
