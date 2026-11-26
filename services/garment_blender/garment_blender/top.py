@@ -10,49 +10,55 @@ from .buttons import LAP, buttons
 from .closures import ZIP_GAP, facing, zipper
 from .collars import neck_finish
 from .decals import add_decal
+from .edge_frame import edge_frame
 from .sleeve_decals import add_sleeve_decal
 from .details import chest_pocket, kangaroo
-from .geometry import ARMHOLE_HALF_ANGLE, COLUMNS, Mesh, build_torso, ellipse_semi_axes
+from .geometry import ARMHOLE_HALF_ANGLE, COLUMNS, Mesh, build_torso
 from .hood import build_hood
 from .measure import measure_top
 from .sleeves import build_sleeve, extend, fold_edge, inset
 from .spec import GarmentSpec
+from .bands import paint_hem, paint_sleeves
 from .stitches import ring_line, stitch_line
+from .strap_cut import SLEEVELESS_ARMHOLE, STRAP_GOLAS, legacy_sleeveless, resolve
+from .tank import build_sleeveless_torso
 
 OPEN_GAP = 0.10      # frente aberta (quimono, cardigã sem botão): vão entre as bordas (m)
 POLO_PLACKET = 0.14  # vista curta da polo (m abaixo do decote)
-STRAP = 0.045       # largura da alça da regata (m)
-STRAP_DROP = 1.5     # quanto a alça desce do decote até a ponta dela (cm)
-SLEEVELESS_DROP = 3.0   # quanto a cava sem manga desce além da de manga (cm)
-SLEEVELESS_ARMHOLE = 0.75   # cava da regata: entra pela frente e pelas costas até a alça (rad a partir do lado)
 
 
 def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
     """Malha da peça e as medidas usadas (cm) para o relatório."""
-    m, mesh = spec.medidas, Mesh()
-    if spec.sem_manga and "ombro" not in spec.medidas_marca:   # sem manga: a alça é o decote + 4,5 cm de cada lado
-        neck_a, _ = ellipse_semi_axes(m.pescoco * 0.01, 0.9)
-        # e a alça desce só o que o trapézio desce em 4,5 cm (1,5 cm): com a queda de um ombro de manga (4 cm) ela subia
-        # reta do ombro até o decote e ficava em pé, solta do corpo
-        m = replace(m, ombro=round(2 * (neck_a + STRAP) * 100, 1), caimento_ombro=STRAP_DROP)
-    if spec.sem_manga and "cava" not in spec.medidas_marca:   # a cava sem manga desce abaixo da axila: o braço caído
-        m = replace(m, cava=m.cava + SLEEVELESS_DROP)              # não prensa o pano contra o tronco
+    m, mesh, cut = spec.medidas, Mesh(), None
+    # sem manga com viés, careca, alta ou V: alça de verdade (strap_cut, tank); com colarinho, polo, lapela, faixa ou
+    # capuz a gola precisa do anel inteiro do decote e fica o recorte antigo
+    if spec.sem_manga and spec.gola in STRAP_GOLAS and spec.fechamento != "polo":
+        cut, m = resolve(spec, m)
+    elif spec.sem_manga:
+        m = legacy_sleeveless(m, spec)
     ribbed = spec.ribana
     edge_mat = "ribana" if ribbed else "corpo"
     thick = spec.tecido.espessura_mm / 1000 * (2 if ribbed else 1)   # borda dobrada: duas camadas
     zipped, buttoned = spec.fechamento == "ziper_inteiro", spec.fechamento in ("botoes", "polo")
     opening = ZIP_GAP if zipped else -LAP if buttoned else OPEN_GAP if spec.fechamento == "aberto" else 0.0
-    grid, loops, rows, (i_arm, i_sh, i_neck), front = build_torso(
-        mesh, m, ribbed, opening, thick * 1.5, v_neck=spec.gola in ("v", "lapela"),
-        placket=POLO_PLACKET if spec.fechamento == "polo" else 0.0, armhole=SLEEVELESS_ARMHOLE if spec.sem_manga else ARMHOLE_HALF_ANGLE,
-        curved=spec.sem_manga)
+    neck = frames = None
+    if cut:
+        grid, loops, neck, rows, (i_arm, i_sh, i_neck), front = build_sleeveless_torso(mesh, m, cut, ribbed, opening,
+                                                                                       thick * 1.5)
+        neck = front.neck if front else neck
+        frames = [edge_frame(mesh, loop) for loop in loops] + [edge_frame(mesh, neck, closed=front is None)]
+    else:
+        grid, loops, rows, (i_arm, i_sh, i_neck), front = build_torso(
+            mesh, m, ribbed, opening, thick * 1.5, v_neck=spec.gola in ("v", "lapela"),
+            placket=POLO_PLACKET if spec.fechamento == "polo" else 0.0, armhole=SLEEVELESS_ARMHOLE if spec.sem_manga else ARMHOLE_HALF_ANGLE,
+            curved=spec.sem_manga)
     open_hem = front is not None and front.hem is not None
     ys, half = np.array([r.y for r in rows[: i_sh + 1]]), np.array([r.a for r in rows[: i_sh + 1]])
     torso_half = lambda y: float(np.interp(y, ys, half))   # noqa: E731 - meia largura do tronco na altura y
     if spec.sem_manga:   # regata, top, colete: a cava é acabada com um viés dobrado para dentro
         cuffs = []
-        for loop in loops:
-            fold_edge(mesh, loop, 0.01, thick * 1.5, edge_mat)
+        for k, loop in enumerate(loops):
+            fold_edge(mesh, loop, 0.01, thick * 1.5, edge_mat, frame=frames[k] if frames else None)
     else:
         cuffs = [build_sleeve(mesh, loop, m, side, rows[i_sh].y, ribbed, spec.angulo_manga, torso_half)
                  for loop, side in zip(loops, (1, -1))]
@@ -71,13 +77,13 @@ def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
             stitch_line(mesh, line, radial / np.maximum(np.linalg.norm(radial, axis=1, keepdims=True), 1e-9), part=part)
     if not ribbed and not body:   # barra dobrada: pesponto a 1,2 cm da borda
         stitch_line(mesh, *ring_line(mesh, hem, 0.012, closed=not open_hem))
-    neck = front.neck if front else [int(v) for v in grid[i_neck]]
+    neck = neck or (front.neck if front else [int(v) for v in grid[i_neck]])
     if spec.gola == "capuz":
         build_hood(mesh, neck, 0.02 if spec.caimento in ("amplo", "oversized") else 0.012, "corpo", thick,
                    down=spec.capuz_abaixado, order=neck if front else None)
     else:
         y_v = rows[-1].y - m.decote_frente * 0.01
-        neck_finish(mesh, spec, neck, front, y_v, thick, ribbed)
+        neck_finish(mesh, spec, neck, front, y_v, thick, ribbed, frames[-1] if frames else None)
     rib_top = (m.ribana_barra if ribbed else 0.0) * 0.01
     closure = {}
     if front:            # bordas da frente com espessura e a vista por dentro
@@ -106,11 +112,17 @@ def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
     for k, decal in enumerate(spec.estampas):
         if decal.lado == "frente":
             add_decal(mesh, rows, decal, f"estampa_{k}", rows[-1].y - m.decote_frente * 0.01, rib_top + 0.015,
-                      gap + 0.004 if gap else 0.0, gap_from)
+                      gap + 0.004 if gap else 0.0, gap_from, (lambda y: cut.armhole_x(y, 1)) if cut else None)
         elif decal.lado in sleeve_of:   # peça sem manga: o desenho de manga não tem onde ir
             add_sleeve_decal(mesh, sleeve_of[decal.lado], decal, f"estampa_{k}")
+    if spec.faixa_barra is not None:   # o tronco abaixo da altura da faixa (barra dobrada incluída) na cor dela
+        paint_hem(mesh, spec.faixa_barra.altura)
+    paint_sleeves(mesh, spec.faixas_manga)
     used = {k: getattr(m, k) for k in m.__dataclass_fields__}
     if body:             # medido antes: as medidas da blusa contam a partir da barra, que agora sobe
         used |= add_brief(mesh, hem, m.barra * 0.01, thick)
-    return mesh, {"medidas_cm": used, "colunas": COLUMNS, "angulo_manga": spec.angulo_manga, "medido_cm": medido,
-                  "fechamento": closure}
+    report = {"medidas_cm": used, "colunas": COLUMNS, "angulo_manga": spec.angulo_manga, "medido_cm": medido,
+              "fechamento": closure}
+    if cut:
+        report["alca"] = cut.cm_report
+    return mesh, report

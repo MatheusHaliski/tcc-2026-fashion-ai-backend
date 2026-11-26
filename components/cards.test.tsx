@@ -216,7 +216,7 @@ describe("ações sociais do card (RF8)", () => {
 describe("card da peça (RF7)", () => {
   it("a peça ampliada (ExpandedPieceCard) mostra os detalhes numa seção própria, fora das abas", () => {
     mockApi({});
-    const { container } = renderApp(<ExpandedPieceCard piece={PIECE} preview />);
+    const { container } = renderApp(<ExpandedPieceCard piece={PIECE} context="preview" />);
     expect(container.querySelector('[role="tabpanel"] .c-facts')).toBeNull();
     expect(container.querySelector(".pd-section .c-facts")).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: /^Hype/ }));
@@ -227,12 +227,12 @@ describe("card da peça (RF7)", () => {
   it("reduz a altura da foto no feed e na prévia", () => {
     mockApi({});
     const pants = { ...PIECE, category: "lower_piece", studioFeedUrl: "/pants.feed.jpg", flatLayMetadata: { studio: { feed: { aspect: "2:1" } } } };
-    const { container } = renderApp(<><PieceCard piece={pants} href="#" /><PieceCard piece={pants} selectable onSelect={vi.fn()} /></>);
+    const { container } = renderApp(<><PieceCard piece={pants} mode="preview" /><PieceCard piece={pants} mode="selection" onSelect={vi.fn()} /></>);
     for (const frame of container.querySelectorAll<HTMLElement>(".pc-media")) expect(frame.style.aspectRatio).toBe("4 / 3");
   });
   it("mostra nome, marca, preço à venda, favorita, indisponível e o selo de IA", () => {
     mockApi({});
-    renderApp(<><PieceCard piece={PIECE} /><PieceCard piece={PIECE_2} href="#" /><PieceCard piece={PIECE} selectable selected onSelect={vi.fn()} /></>);
+    renderApp(<><PieceCard piece={PIECE} /><PieceCard piece={PIECE_2} mode="preview" /><PieceCard piece={PIECE} mode="selection" selected onSelect={vi.fn()} /></>);
     expect(screen.getAllByText("Camiseta branca lisa").length).toBeGreaterThan(0);
     expect(screen.getAllByTitle(/gerada por IA/i).length).toBeGreaterThan(0);
     fireEvent.click(screen.getAllByRole("button", { pressed: true })[0]);

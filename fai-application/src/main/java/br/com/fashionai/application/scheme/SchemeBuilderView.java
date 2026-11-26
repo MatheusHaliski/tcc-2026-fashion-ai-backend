@@ -1,4 +1,8 @@
-package br.com.fashionai.application.service;
+package br.com.fashionai.application.scheme;
+
+import br.com.fashionai.application.service.SchemeService;
+import br.com.fashionai.application.service.BackgroundStudioService;
+import br.com.fashionai.application.service.AccountService;
 
 import java.util.LinkedHashMap;
 import java.util.List;

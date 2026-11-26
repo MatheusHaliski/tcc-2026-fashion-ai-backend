@@ -1,4 +1,6 @@
-package br.com.fashionai.application.service;
+package br.com.fashionai.application.scheme;
+
+import br.com.fashionai.application.service.SchemeService;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -98,7 +100,7 @@ final class SchemeComposePrompt {
             if (chosen.size() < 2) {
                 continue;
             }
-            String key = SchemeService.combinationKey(chosen.stream().map(WardrobeItem::getId).toList());
+            String key = SchemeComposition.combinationKey(chosen.stream().map(WardrobeItem::getId).toList());
             if (!seen.add(key)) {
                 continue;
             }

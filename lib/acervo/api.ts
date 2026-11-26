@@ -9,6 +9,7 @@ import type {
   AcervoFinanceiro,
   AcervoIluminacao,
   AcervoLook,
+  AcervoLugarDaPeca,
   AcervoLuzForm,
   AcervoMedidas,
   AcervoMovel,
@@ -42,7 +43,7 @@ export const acervoApi = {
   mover: (pieceIds: string[], compartimentoId: string | null) =>
     api.post<{ movidas: number; compartimentoId: string | null }>(`${BASE}/pecas/mover`, { pieceIds, compartimentoId }),
   medidas: (pieceId: string, medidas: AcervoMedidas) => api.put<AcervoMedidas>(`${BASE}/pecas/${part(pieceId)}/medidas`, medidas),
-  lugar: (pieceId: string, signal?: AbortSignal) => api.get<AcervoLugar>(`${BASE}/pecas/${part(pieceId)}/lugar`, { signal }),
+  lugar: (pieceId: string, signal?: AbortSignal) => api.get<AcervoLugarDaPeca>(`${BASE}/pecas/${part(pieceId)}/lugar`, { signal }),
   looks: (pieceId: string, signal?: AbortSignal) => api.get<AcervoLook[]>(`${BASE}/pecas/${part(pieceId)}/looks`, { signal }),
   previa: (escopo: "SEM_LUGAR" | "TUDO") => api.post<AcervoPrevia>(`${BASE}/arrumacao/previa`, { escopo }),
   confirmar: (movimentos: { pieceId: string; compartimentoId: string | null }[]) =>

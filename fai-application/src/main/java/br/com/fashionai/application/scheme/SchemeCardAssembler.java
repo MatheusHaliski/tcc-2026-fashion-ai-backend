@@ -1,4 +1,8 @@
-package br.com.fashionai.application.service;
+package br.com.fashionai.application.scheme;
+
+import br.com.fashionai.application.service.SchemeService;
+import br.com.fashionai.application.service.MediaService;
+import br.com.fashionai.application.service.BackgroundStudioService;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -27,7 +31,7 @@ import br.com.fashionai.domain.model.enums.HypeLevel;
  * preço em reais e o rótulo do Hype. Lê as fotos e o fundo do estúdio; a autorização e a busca do look ficam no
  * {@link SchemeService}. Extraído do SchemeService.
  */
-final class SchemeCardAssembler {
+public final class SchemeCardAssembler {
     private final MediaService media;
     private final BackgroundStudioService studio;
 
@@ -37,7 +41,7 @@ final class SchemeCardAssembler {
     }
 
     /** "HypeScore 72 · Em alta"; sem dados ou sem permissão de ver, nada (nunca "0"). */
-    static String hypeLabel(BigDecimal score, HypeLevel level, boolean visible) {
+    public static String hypeLabel(BigDecimal score, HypeLevel level, boolean visible) {
         if (!visible || score == null || level == null) {
             return null;
         }
@@ -73,7 +77,7 @@ final class SchemeCardAssembler {
     }
 
     /** Peça sem foto legível (ex.: imagem padrão SVG): bloco com a cor da peça e a subcategoria. */
-    static BufferedImage placeholder(WardrobeItem w) {
+    public static BufferedImage placeholder(WardrobeItem w) {
         BufferedImage img = new BufferedImage(420, 420, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = img.createGraphics();
         ImageOps.quality(g);

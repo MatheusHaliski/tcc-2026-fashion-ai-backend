@@ -23,7 +23,7 @@ const api = () => mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backg
 
 function Editor({ onBg, initial = {}, previewInDialog = false }: { onBg: (b: Record<string, unknown>) => void; initial?: Record<string, unknown>; previewInDialog?: boolean }) {
   const [bg, setBg] = useState<Record<string, unknown>>(initial);
-  return <PieceArtEditor value={bg} onChange={(b) => { setBg(b); onBg(b); }} piece={PIECE} styles={["basic"]} occasions={["casual"]} previewInDialog={previewInDialog} />;
+  return <PieceArtEditor background={bg} onBackgroundChange={(b) => { setBg(b); onBg(b); }} piece={PIECE} styles={["basic"]} occasions={["casual"]} previewPlacement={previewInDialog ? "dialog" : "inline"} />;
 }
 const openLayout = async () => fireEvent.click(await screen.findByRole("radio", { name: "Layout & Estilo" }));
 

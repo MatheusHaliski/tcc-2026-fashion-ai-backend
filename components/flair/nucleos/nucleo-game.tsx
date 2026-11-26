@@ -129,7 +129,7 @@ export function NucleoGame(props: Props) {
   useEffect(() => {
     setAcionou(false);
   }, [props.erroAcionar, resultado]);
-  const variante = varianteDaCena(codigo, estado.sel.resposta, props.tentativa);
+  const variante = varianteDaCena(codigo, estado.sel.resposta, props.tentativa, props.partida);
   const entregar = () => {
     if (!preparando || !pronto || entregando) return;
     if (acionamento?.tipo === "ESPELHO") emitirFx({ tipo: "acionamento", nucleo: codigo, acionamento: "ESPELHO" });

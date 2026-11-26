@@ -3,7 +3,7 @@
 // Os modelos (face_landmarker.task, hair_segmenter.tflite) já ficam versionados em public/mediapipe.
 // Também copia o modelo de idade/sexo do rosto (@vladmandic/face-api, MIT) para public/mediapipe/face-api: o sexo do
 // corpo base do avatar é estimado no aparelho, a partir do mesmo rosto (lib/avatar3d/sex-detect.ts).
-import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { createRequire } from "node:module";
 
@@ -11,10 +11,14 @@ const require = createRequire(import.meta.url);
 const pkg = dirname(require.resolve("@mediapipe/tasks-vision"));   // o pacote não exporta package.json
 const out = join(process.cwd(), "public", "mediapipe", "wasm");
 mkdirSync(out, { recursive: true });
-for (const f of ["vision_wasm_internal.js", "vision_wasm_internal.wasm", "vision_wasm_nosimd_internal.js", "vision_wasm_nosimd_internal.wasm"]) {
+// Os dois arquivos principais são obrigatórios; as variantes mudam com a versão do pacote (a 1.2.x trocou o "nosimd"
+// pelo "module"), então copiamos todas as que o pacote instalado trouxer em vez de fixar a lista.
+for (const f of ["vision_wasm_internal.js", "vision_wasm_internal.wasm"]) {
   const src = join(pkg, "wasm", f);
   if (!existsSync(src)) { console.error(`copy-mediapipe: ${src} não existe`); process.exit(1); }
-  cpSync(src, join(out, f));
+}
+for (const f of readdirSync(join(pkg, "wasm")).filter((name) => /^vision_wasm_.*\.(js|wasm)$/.test(name))) {
+  cpSync(join(pkg, "wasm", f), join(out, f));
 }
 console.log(`copy-mediapipe: WASM em ${out}`);
 

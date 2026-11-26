@@ -143,17 +143,21 @@ def inset(loop_pts: np.ndarray, thickness: float) -> float:
 
 
 def fold_edge(mesh: Mesh, loop: list[int], depth: float, thick: float, mat: str, part: str = "tronco",
-              closed: bool = True) -> list[int]:
+              closed: bool = True, frame=None) -> list[int]:
     """Viés de borda: a borda dobra para dentro da peça e a dobra vai para o lado do pano (para longe do centro da
     abertura), ``depth`` m. Na cava sem manga e no decote, dobrar para o centro da abertura punha o viés dentro do
-    braço ou do pescoço — no provador ele saía em abas e abria buraco."""
+    braço ou do pescoço — no provador ele saía em abas e abria buraco. ``frame``: (normal, para dentro do pano) por
+    vértice (``edge_frame``), para a borda que passa por cima do ombro."""
     pts = np.array([mesh.verts[i] for i in loop])
-    c = pts.mean(0)
-    normal = pts.copy(); normal[:, 1] = 0.0                       # para fora do eixo do corpo
-    normal /= np.maximum(np.linalg.norm(normal, axis=1, keepdims=True), 1e-9)
-    away = pts - c
-    away -= normal * (away * normal).sum(1, keepdims=True)        # na superfície, para longe da abertura
-    away /= np.maximum(np.linalg.norm(away, axis=1, keepdims=True), 1e-9)
+    if frame is not None:
+        normal, away = frame
+    else:
+        c = pts.mean(0)
+        normal = pts.copy(); normal[:, 1] = 0.0                       # para fora do eixo do corpo
+        normal /= np.maximum(np.linalg.norm(normal, axis=1, keepdims=True), 1e-9)
+        away = pts - c
+        away -= normal * (away * normal).sum(1, keepdims=True)        # na superfície, para longe da abertura
+        away /= np.maximum(np.linalg.norm(away, axis=1, keepdims=True), 1e-9)
     inner = pts - normal * thick
     deep = inner + away * depth
     rings = [list(loop), [mesh.add(p) for p in inner], [mesh.add(p) for p in deep]]

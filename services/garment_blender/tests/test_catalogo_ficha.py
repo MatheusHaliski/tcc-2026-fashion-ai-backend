@@ -60,7 +60,7 @@ def test_combinacao_que_o_motor_nao_monta_vira_a_mais_proxima():
 
 
 def test_jeans_na_descricao_e_a_calca_do_look_nao_o_tecido_da_peca():
-    assert spec("blazer", "Oversized Blazer", "Use com jeans e tênis.")["tecido"]["tipo"] == "sarja"
+    assert spec("blazer", "Oversized Blazer", "Use com jeans e tênis.")["tecido"]["tipo"] == "la_plana"
     assert spec("jacket", "Dakota Jacket", "Jaqueta jeans com lavagem escura.")["tecido"]["tipo"] == "denim"
 
 
@@ -68,6 +68,14 @@ def test_base_da_subcategoria_traz_o_v_da_lapela_e_o_comprimento():
     assert spec("blazer", "Blazer")["medidas_marca"]["decote_frente"] == 26
     assert spec("coat", "Casaco", gender="FEMININO")["medidas_marca"]["comprimento"] == pytest.approx(63 * 1.45, abs=0.1)
     assert spec("t_shirt", "Camiseta Gola V")["medidas_marca"]["decote_frente"] == 12
+
+
+def test_decote_reto_da_regata_vira_recorte_quadrado():
+    raw = spec("tank_top", "Top De Tricot Decote Reto")
+    assert raw["sem_manga"] and raw["decote"] == "quadrado" and raw["gola"] == "vies"
+    assert parse(raw).decote == "quadrado"
+    assert spec("tank_top", "Regata Decote U")["decote"] == "redondo"
+    assert "decote" not in spec("t_shirt", "Camiseta Decote Reto")   # com manga o recorte é o de sempre
 
 
 def test_cropped_encurta_a_base():
@@ -129,6 +137,6 @@ def test_recorte_pela_foto_encurta_so_com_a_barriga_aparecendo_e_manga_pelo_brac
     tucked = spec("shirt", "Camisa Social")                  # para dentro da calça: a barra some, não é cropped
     assert forma.from_photo(tucked, {"comprimento_foto": 0.45, "pele_abaixo": 0.0, "em_modelo": True}, True) == []
     blouse = spec("blouse", "Blusa Básica")                  # o texto não diz a manga; o braço à mostra diz
-    assert forma.from_photo(blouse, {"bracos": 0.12, "em_modelo": True}, False) == ["manga"] and blouse["manga_curta"]
+    assert forma.from_photo(blouse, {"braco_alto": 0.0, "braco_baixo": 0.12, "em_modelo": True}, False) == ["manga"] and blouse["manga_curta"]
     told = spec("blouse", "Blusa Manga Longa")
-    assert forma.from_photo(told, {"bracos": 0.12, "em_modelo": True}, True) == []
+    assert forma.from_photo(told, {"braco_alto": 0.0, "braco_baixo": 0.12, "em_modelo": True}, True) == []

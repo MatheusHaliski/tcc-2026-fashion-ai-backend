@@ -10870,7 +10870,7 @@
   "flair3d.ui.recurso.MOEDAS": "Coins",
   "flair3d.ui.recurso.PERSONAGEM_FILME.FOCO": "Director's patience",
   "flair3d.ui.result.resultado.DIRETOR_CORTOU": "The director cut the scene",
-  "flair3d.ui.tinta.conta": "Paint: {gasto} of {orcamento} cans (matte 1, glossy 2, metallic and mirrored 3); what is left becomes stamina for the debut",
+  "flair3d.ui.tinta.conta": "Paint: {gasto} of {orcamento} cans (matte 1, glossy 2, metallic and mirrored 3); what is left pays for the bold moves of the use phase (12 each)",
   "flair3d.ui.tinta.passou": "Paint: {gasto} of {orcamento} cans. Over budget: swap an expensive finish for matte",
   "flair3d.ui.evento.TINTA": "Paint: {gasto} of {orcamento} cans, {sobra} left",
   "flair3d.ui.result.resultado.SEM_TINTA": "Out of paint",

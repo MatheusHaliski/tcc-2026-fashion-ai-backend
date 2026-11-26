@@ -277,7 +277,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
             </Card>
           )}
           {step === "more" && <PieceMoreStep value={value} onChange={editValue} onDetails={setValue} fieldErrors={fieldErrors} hint={mode === "photos" ? photoPick?.hint : null} problem={stepProblem} nav={nav} autoSex={autoSex} />}
-          {step === "art" && <Card><PieceArtEditor value={background} onChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} previewInDialog={!wide} />{nav}</Card>}
+          {step === "art" && <Card><PieceArtEditor background={background} onBackgroundChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} previewPlacement={wide ? "inline" : "dialog"} />{nav}</Card>}
           {step === "review" && (
             <Card>
               <PieceReviewStep value={value} origin={origin} image={officialImg ?? asset} shareToFeed={shareToFeed} onShareToFeed={setShareToFeed}

@@ -1,4 +1,6 @@
-package br.com.fashionai.application.service;
+package br.com.fashionai.application.scheme;
+
+import br.com.fashionai.application.service.SchemeService;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,7 +24,7 @@ import br.com.fashionai.domain.model.enums.Visibility;
  * e a aplicação de cada campo aceito. Puro; a chamada à IA, a autorização e a transação ficam no
  * {@link SchemeService#improve} e no {@link SchemeService#applyDiff}. Extraído do SchemeService.
  */
-final class SchemeEditDiff {
+public final class SchemeEditDiff {
     private SchemeEditDiff() {
     }
 
@@ -50,7 +52,7 @@ final class SchemeEditDiff {
     }
 
     /** As alterações que a IA propôs, só nos campos que existem e com valor válido; nulo se a resposta não tiver a lista. */
-    static List<LocalAdvisors.FieldChange> parse(String text, Map<String, Object> current) {
+    public static List<LocalAdvisors.FieldChange> parse(String text, Map<String, Object> current) {
         Map<String, Object> m = AiResponseJson.extractJson(text);
         if (!(m.get("changes") instanceof List<?> list)) {
             return null;

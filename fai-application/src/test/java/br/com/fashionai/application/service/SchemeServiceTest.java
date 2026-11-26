@@ -1,5 +1,8 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.scheme.SchemeCardAssembler;
+import br.com.fashionai.application.scheme.SchemeEditDiff;
+import br.com.fashionai.application.scheme.SchemeListing;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.imaging.SchemeCardRenderer;

@@ -21,7 +21,7 @@ it("mostra as peças do look ampliado dentro de Info e alterna para Hype", () =>
 });
 
 it.each([
-  ["peça", <PieceCard key="piece" piece={PIECE} href="#" />],
+  ["peça", <PieceCard key="piece" piece={PIECE} mode="preview" />],
   ["look", <SchemeCard key="scheme" scheme={SCHEME} href="#" />],
 ])("mostra a grade mínima de informações na aba Info do card de %s", (_kind, card) => {
   mockApi({});
@@ -41,7 +41,7 @@ it.each([
 
 it("a grade segue a escolha do Background Studio: campos, colunas, estilo da célula e rótulos", () => {
   mockApi({});
-  renderApp(<PieceCard piece={{ ...PIECE, background: { infoGrid: { fields: ["color", "size", "material"], columns: 3, cells: "pill", labels: false, align: "center", density: "compact" } } }} href="#" />);
+  renderApp(<PieceCard piece={{ ...PIECE, background: { infoGrid: { fields: ["color", "size", "material"], columns: 3, cells: "pill", labels: false, align: "center", density: "compact" } } }} mode="preview" />);
   const grade = screen.getByRole("tabpanel").querySelector(".card-info-grid")!;
   expect([...grade.querySelectorAll("[data-field]")].map((d) => d.getAttribute("data-field")).every((f) => ["color", "size", "material"].includes(f!))).toBe(true);
   expect(grade.querySelector('[data-field="brand"]')).toBeNull();
@@ -50,8 +50,8 @@ it("a grade segue a escolha do Background Studio: campos, colunas, estilo da cé
 });
 
 it.each([
-  ["peça", <PieceCard key="piece" piece={{ ...PIECE, seals: ["BRAND:Marca teste"] }} href="#" />],
-  ["peça ampliada", <ExpandedPieceCard key="piece-expanded" piece={{ ...PIECE, seals: ["CELEBRITY:Artista teste"] }} preview />],
+  ["peça", <PieceCard key="piece" piece={{ ...PIECE, seals: ["BRAND:Marca teste"] }} mode="preview" />],
+  ["peça ampliada", <ExpandedPieceCard key="piece-expanded" piece={{ ...PIECE, seals: ["CELEBRITY:Artista teste"] }} context="preview" />],
   ["look", <SchemeCard key="scheme" scheme={{ ...SCHEME, background: { selectedSeals: [{ targetOwnerId: "b1", kind: "BRAND", name: "Marca teste" }] } }} href="#" />],
 ])("mostra selo selecionado e não verificado em Info e Hype no card de %s", (_kind, card) => {
   mockApi({});

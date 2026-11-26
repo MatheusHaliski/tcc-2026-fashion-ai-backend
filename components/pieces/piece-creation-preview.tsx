@@ -18,7 +18,7 @@ export function PieceCreationPreview({ piece, framing, onFramingChange, showPost
   const body = (
     <div className="card-preview">
       <PhotoFramingToggle className="mb-3" value={framing} onChange={onFramingChange} />
-      <PieceCard piece={piece} href="#" extra={sharedBy ? <span className="caption">{t("feed.shared_by", { username: sharedBy })}</span> : undefined} />
+      <PieceCard piece={piece} mode="preview" extra={sharedBy ? <span className="caption">{t("feed.shared_by", { username: sharedBy })}</span> : undefined} />
     </div>
   );
   if (aside) return <aside className="piece-create-aside" aria-label={title}><p className="label">{title}</p>{body}</aside>;

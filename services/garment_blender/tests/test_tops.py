@@ -50,7 +50,7 @@ def test_sem_manga_tem_alca_estreita_e_cava_acabada():
     spec = spec_of("tank_top")
     mesh, report = build_top(spec)
     assert "manga_d" not in mesh.parts and "manga_e" not in mesh.parts
-    assert report["medidas_cm"]["ombro"] < 30                    # a alça, não o ombro de uma manga
+    assert report["alca"]["largura_cm"] <= 9                     # a alça, não o ombro de uma manga
     assert "biceps" not in report["medido_cm"]
 
 

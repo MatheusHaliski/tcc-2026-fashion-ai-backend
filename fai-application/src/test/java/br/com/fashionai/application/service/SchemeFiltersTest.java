@@ -1,5 +1,7 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.scheme.SchemeCardAssembler;
+import br.com.fashionai.application.scheme.SchemeListing;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.common.Msg;

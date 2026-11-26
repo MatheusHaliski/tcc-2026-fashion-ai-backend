@@ -18,21 +18,55 @@ PERSON = (1, 2, 12, 13, 14, 15, 16)   # rosto, cabelo, braços, mãos, pernas, p
 FACE_M = 0.185                    # altura do rosto (queixo à linha do cabelo) de um adulto, em metros
 
 
-def garment_mask(labels: np.ndarray) -> np.ndarray:
+def garment_mask(labels: np.ndarray, lab: np.ndarray | None = None) -> np.ndarray:
     """Máscara da peça de cima: rótulos de blusa ∪ vestido, buracos fechados (a estampa às vezes sai com outro rótulo)
-    — menos onde há pessoa por cima (cabelo e mão sobre a peça não são estampa) — e só os pedaços grandes."""
+    — menos onde há pessoa por cima (cabelo e mão sobre a peça não são estampa) e menos o vão entre o braço e o tronco
+    (``lab``: a foto em Lab, para reconhecer o fundo que aparece pelo vão) — e só os pedaços grandes."""
     m = np.isin(labels, (TOP, DRESS))
     if not m.any():
         return m
     person = np.isin(labels, PERSON)
-    m = (ndimage.binary_fill_holes(m) & ~person) | m
-    m = ndimage.binary_opening(m, iterations=2)
-    lab, n = ndimage.label(m)
+    holes = ndimage.binary_fill_holes(m) & ~person & ~m
+    if lab is not None:
+        holes &= ~_gaps(holes, labels, m, lab)
+    m = ndimage.binary_opening(m | holes, iterations=2)
+    comps, n = ndimage.label(m)
     if n == 0:
         return m
-    sizes = ndimage.sum(m, lab, range(1, n + 1))
+    sizes = ndimage.sum(m, comps, range(1, n + 1))
     keep = np.flatnonzero(sizes >= sizes.max() * 0.15) + 1
-    return np.isin(lab, keep)
+    return np.isin(comps, keep)
+
+
+def background(labels: np.ndarray, lab: np.ndarray) -> np.ndarray | None:
+    """Cor (Lab) do fundo da foto: a mediana do que o segmentador deixou como fundo na borda; None sem fundo à vista."""
+    border = np.zeros(labels.shape, bool)
+    k = max(2, int(0.05 * min(labels.shape)))
+    border[:k], border[-k:], border[:, :k], border[:, -k:] = True, True, True, True
+    px = lab[border & (labels == 0)]
+    return np.median(px, 0) if len(px) >= 200 else None
+
+
+def _gaps(holes: np.ndarray, labels: np.ndarray, m: np.ndarray, lab: np.ndarray) -> np.ndarray:
+    """Buracos da máscara que são o fundo da foto aparecendo (entre o braço e o tronco, pela alça): rotulados como
+    fundo, da cor do fundo da borda da foto e fora do meio do peito (ali o buraco de fundo claro pode ser a estampa
+    branca que o segmentador não rotulou como peça)."""
+    out = np.zeros_like(holes)
+    bg = background(labels, lab)
+    if bg is None:
+        return out
+    cols = np.flatnonzero(m.any(0))
+    center, width = (cols[0] + cols[-1]) / 2, cols[-1] - cols[0] + 1
+    comps, n = ndimage.label(holes & (labels == 0))
+    for i, sl in enumerate(ndimage.find_objects(comps), start=1):
+        comp = comps[sl] == i
+        cx = (sl[1].start + sl[1].stop) / 2
+        if abs(cx - center) < 0.15 * width:
+            continue
+        near = np.abs(lab[sl][comp] - bg).max(-1) < 12
+        if near.mean() > 0.8:
+            out[sl] |= comp
+    return out
 
 
 @dataclass(frozen=True)
@@ -135,7 +169,10 @@ SKIN, ARMS = 16, 12
 def body_hints(labels: np.ndarray, mask: np.ndarray, frame: Frame) -> dict:
     """O que a pessoa na foto diz da peça: o comprimento dela (pela altura do rosto), se a barriga aparece logo abaixo
     da barra (cropped de verdade, não para dentro da calça) e quanto braço aparece (manga curta ou longa)."""
-    out = {"bracos": round(float((labels == ARMS).sum() / max(1, mask.sum())), 4)}
+    arms, area = labels == ARMS, max(1, mask.sum())
+    split = frame.top + int(0.3 * frame.height)   # alto do braço (ombro até um pouco abaixo da axila) e o resto
+    out = {"bracos": round(float(arms.sum() / area), 4), "braco_alto": round(float(arms[:split].sum() / area), 4),
+           "braco_baixo": round(float(arms[split:].sum() / area), 4)}
     if not frame.worn or not frame.face_h or frame.hem_cut or frame.top_cut or frame.back_view:
         return out
     out["comprimento_foto"] = round(frame.height / (frame.face_h / FACE_M), 3)

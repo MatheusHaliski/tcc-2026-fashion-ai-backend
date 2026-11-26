@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
+import styles from "./scheme-builder.module.css";
 import { Button } from "@/components/ui";
 import { PiecePreviewDialog } from "@/components/pieces/piece-preview-dialog";
-import { CardPreviewModeToggle } from "@/components/card-preview-mode-toggle";
+import { CardPreviewModeToggle, type CardPreviewMode } from "@/components/card-preview-mode-toggle";
 import { SchemeCard } from "@/components/scheme-card";
 import { LookHypePreview } from "@/components/hype/look-hype-preview";
 import { InsightStrip } from "@/components/insights/insight-strip";
@@ -24,7 +25,7 @@ export function SchemeBuilderPreview({ draft, canClear, undo, onClear, schemeId,
   inDialog?: boolean;
 }) {
   const { t } = useI18n();
-  const [expanded, setExpanded] = useState(false);
+  const [mode, setMode] = useState<CardPreviewMode>("feed");
   const pieceIds = draft.items.map((item) => item.wardrobeItemId);
   const body = (
     <>
@@ -35,8 +36,8 @@ export function SchemeBuilderPreview({ draft, canClear, undo, onClear, schemeId,
           <Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={!canClear} onClick={onClear}>{t("backgroundStudio.limpar_arte")}</Button>
         </span>
       </div>
-      <CardPreviewModeToggle expanded={expanded} onToggle={() => setExpanded((current) => !current)} feedLabel={t("pieceArt.previa_feed")} expandedLabel={t("pieceArt.previa_ampliado")}>
-        <SchemeCard scheme={draft} href="#" expanded={expanded} />
+      <CardPreviewModeToggle mode={mode} onModeChange={setMode} feedLabel={t("pieceArt.previa_feed")} expandedLabel={t("pieceArt.previa_ampliado")}>
+        <SchemeCard scheme={draft} href="#" expanded={mode === "expanded"} />
       </CardPreviewModeToggle>
       <LookHypePreview pieceIds={pieceIds} occasion={draft.occasion} style={draft.style} schemeId={schemeId} />
       <InsightStrip context="LOOK_EDITOR" params={{ pieces: [...pieceIds].sort().join(",") }} collapsible className="mt-3" />
@@ -45,5 +46,5 @@ export function SchemeBuilderPreview({ draft, canClear, undo, onClear, schemeId,
   if (inDialog) {
     return <PiecePreviewDialog title={t("scheme.card")}><div aria-label={t("common.pre_visualizacao")} className="card-preview">{body}</div></PiecePreviewDialog>;
   }
-  return <aside aria-label={t("common.pre_visualizacao")} className="card-preview scheme-builder-aside hidden lg:block">{body}</aside>;
+  return <aside aria-label={t("common.pre_visualizacao")} className={`card-preview ${styles.desktopPreview}`}>{body}</aside>;
 }

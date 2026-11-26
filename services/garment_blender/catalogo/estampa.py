@@ -18,6 +18,9 @@ LIKE_AB, LIKE_L = 10.0, 22.0   # pixel "liso": até 10 de croma e 22 de luminosi
 SHADE_RANGE = 35.0             # a sombra das dobras escurece (ou a luz clareia) até isso
 THRESHOLD = 15.0               # distância (Lab, com a sombra tirada) a partir da qual o pixel é estampa
 MIN_GROUP = 0.0003             # menor desenho aceito, em fração da área da peça (logo de peito ~0,1–0,3 %)
+FOLD_DL = 40.0                 # o vinco mais fundo escurece ~30 de L; daí para cima é traço de tinta
+FILL_MIN = 4.5                 # dentro do contorno forte, o preenchimento claro (bege no branco) a partir disso
+FILL_FROM = 35.0               # contraste do contorno que deixa procurar o preenchimento dentro dele
 
 
 def shading(lab: np.ndarray, mask: np.ndarray, base: np.ndarray, sigma: float) -> np.ndarray:
@@ -49,11 +52,15 @@ def _thin(sl, comp: np.ndarray) -> bool:
 
 
 def _fold(comp: np.ndarray, lab: np.ndarray, shade: np.ndarray, base: np.ndarray, h: int, w: int) -> bool:
-    """Dobra: risco comprido da mesma cor do tecido, só mais escuro (o vinco) ou mais claro (a luz na crista)."""
+    """Dobra: risco comprido da mesma cor do tecido, só mais escuro (o vinco) ou mais claro (a luz na crista). O vinco
+    escurece pouco (até ~30 de L, já na foto em modelo); traço preto no branco (ou branco no preto) foge muito mais da
+    sombra e é tinta: o "9" e o "1" de contorno preto da camiseta branca não são dobra."""
     px = lab[comp]
-    darker = float((px[:, 0] - shade[comp]).mean()) < 0
+    d_l = px[:, 0] - shade[comp]
+    if float(np.abs(d_l).mean()) >= FOLD_DL:
+        return False
     hue = float(np.hypot(px[:, 1] - base[1], px[:, 2] - base[2]).mean())
-    return hue < 8 and max(h, w) > (2.2 if darker else 2.5) * min(h, w)
+    return hue < 8 and max(h, w) > (2.2 if float(d_l.mean()) < 0 else 2.5) * min(h, w)
 
 
 def clean(cand: np.ndarray, mask: np.ndarray, frame, lab: np.ndarray, shade: np.ndarray, base: np.ndarray) -> np.ndarray:
@@ -107,6 +114,7 @@ class Group:
     area: int                        # pixels de desenho
     alpha: np.ndarray                # máscara do desenho no recorte
     contrast: float = 0.0            # distância média (Lab, sem a sombra) do desenho ao tecido
+    fill: np.ndarray | None = None   # preenchimento claro achado dentro do contorno (fora do ``alpha``)
 
     def sure(self) -> bool:
         """Desenho de verdade: contraste alto, ou médio num desenho compacto. Dobra e sombra que escaparam do filtro
@@ -115,9 +123,12 @@ class Group:
         return self.contrast >= 26 or (self.contrast >= 19 and max(h, w) <= 2.5 * min(h, w))
 
 
-def groups(cand: np.ndarray, frame, mask_area: float, dist: np.ndarray, limit: int = 4) -> list[Group]:
+def groups(cand: np.ndarray, frame, mask_area: float, dist: np.ndarray, limit: int = 4,
+           fill: tuple[np.ndarray, np.ndarray] | None = None) -> list[Group]:
     """Desenhos: candidatos juntados (letra com letra, peça com peça) pela dilatação de ~1,2 % da largura da peça.
-    ``dist``: a distância de cada pixel ao tecido (Lab, sem a sombra), para o contraste de cada desenho."""
+    ``dist``: a distância de cada pixel ao tecido (Lab, sem a sombra), para o contraste de cada desenho;
+    ``fill``: para o miolo claro (``fill_inside``), a distância que vale e o mapa de onde o pano tem outra cor de
+    verdade; sem ele vale ``dist``."""
     r = max(2, int(0.012 * (frame.right - frame.left)))
     joined = ndimage.binary_dilation(cand, iterations=r)
     lab, n = ndimage.label(joined)
@@ -133,8 +144,37 @@ def groups(cand: np.ndarray, frame, mask_area: float, dist: np.ndarray, limit: i
         alpha = cand[y0:y1, x0:x1] & (lab[y0:y1, x0:x1] == i)
         g = Group((y0, y1, x0, x1), area, alpha, float(dist[y0:y1, x0:x1][alpha].mean()))
         if g.sure() and alpha.mean() >= 0.08:   # só contorno ralo (o pesponto do bolso) não é desenho
+            if g.contrast >= FILL_FROM:
+                weak, real = (dist, None) if fill is None else fill
+                g.fill = fill_inside(alpha, weak[y0:y1, x0:x1], max(1, r // 2), touching=not frame.worn,
+                                     real=None if real is None else real[y0:y1, x0:x1])
             out.append(g)
     return sorted(out, key=lambda g: -g.area)[:limit]
+
+
+def fill_inside(alpha: np.ndarray, dist: np.ndarray, close: int, touching: bool = False,
+                real: np.ndarray | None = None) -> np.ndarray:
+    """O miolo de pouco contraste dentro de um contorno forte (o "91" bege de contorno preto na camiseta branca): os
+    pixels que fogem um pouco do tecido (``FILL_MIN``) e ficam presos no contorno fechado. O miolo da cor do próprio
+    tecido (o vão do "A", do "9") continua vazado; pontinho solto de ruído não entra. ``touching`` (foto da peça
+    sozinha, sem dobra de corpo): vale também o miolo que só encosta no traço forte, dentro da caixa do desenho — o
+    contorno de um pixel do lado de lá some na análise e não fecha o "9". ``real``: onde o pano tem outra cor de
+    verdade; o pedaço de miolo que não é quase todo assim (o pano do próprio tecido dentro da letra vazada) sai."""
+    pad = close + 1
+    hull = np.pad(alpha, pad)
+    hull = ndimage.binary_fill_holes(ndimage.binary_closing(hull, iterations=close))[pad:-pad, pad:-pad]
+    weak = ~alpha & (dist > FILL_MIN)
+    comps, n = ndimage.label(weak if touching else weak & hull)
+    if n == 0:
+        return weak & hull
+    idx = range(1, n + 1)
+    keep = ndimage.sum(weak, comps, idx) >= 12
+    if touching:   # preso no contorno, ou encostado no traço forte
+        near = ndimage.binary_dilation(alpha, iterations=2)
+        keep &= (ndimage.maximum(near, comps, idx) > 0) | (ndimage.mean(hull, comps, idx) > 0.9)
+    if real is not None:
+        keep &= ndimage.mean(real, comps, idx) >= 0.8
+    return np.isin(comps, np.flatnonzero(keep) + 1)
 
 
 def spread(cand: np.ndarray, mask: np.ndarray, frame) -> float:
@@ -151,26 +191,3 @@ def spread(cand: np.ndarray, mask: np.ndarray, frame) -> float:
             if cell_m.sum() > 0 and (cand[np.ix_(ys, xs)] & cell_m).sum() > 0.04 * cell_m.sum():
                 hits += 1
     return hits / 9
-
-
-def decal_rgba(rgb: np.ndarray, lab: np.ndarray, shade: np.ndarray, base: np.ndarray, group: Group,
-               scale: float = 1.0) -> np.ndarray:
-    """Recorte RGBA do desenho: a sombra das dobras tirada da luminosidade (o 3D faz a sombra dele) e o alfa do
-    desenho. ``scale`` > 1: recorte da foto original, maior que a de análise (o alfa é ampliado)."""
-    y0, y1, x0, x1 = group.box
-    fix = lab[y0:y1, x0:x1].copy()
-    fix[..., 0] = np.clip(fix[..., 0] + (base[0] - shade[y0:y1, x0:x1]), 0, 100)
-    out = np.dstack([lab_to_rgb(fix), group.alpha * 255]).astype(np.uint8)
-    if scale == 1.0:
-        return out
-    from PIL import Image
-    big = rgb[int(y0 * scale):int(y1 * scale), int(x0 * scale):int(x1 * scale)]
-    size = (big.shape[1], big.shape[0])
-    a = Image.fromarray(out[..., 3]).resize(size, Image.Resampling.BILINEAR)
-    l_fix = Image.fromarray(((base[0] - shade[y0:y1, x0:x1]) * 2 + 128).clip(0, 255).astype(np.uint8)).resize(
-        size, Image.Resampling.BILINEAR)
-    from .cores import rgb_to_lab
-    lab_big = rgb_to_lab(big)
-    lab_big[..., 0] = np.clip(lab_big[..., 0] + (np.asarray(l_fix, float) - 128) / 2, 0, 100)
-    alpha = (np.asarray(a) > 127) * 255
-    return np.dstack([lab_to_rgb(lab_big), alpha]).astype(np.uint8)

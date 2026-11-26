@@ -6,6 +6,8 @@ comprimento como fração do comprimento padrão do sexo (``sizes.py``: 63 cm no
 """
 from __future__ import annotations
 
+import re
+
 SHAPE = {
     "blazer": {"decote_frente": 26, "comprimento": 1.1},
     "coat": {"decote_frente": 24, "comprimento": 1.45},
@@ -39,6 +41,23 @@ def measures(sub: str, sex: str, collar: str, cropped: bool) -> dict[str, float]
     return out
 
 
+AMBIGUOUS = ("blouse", "top", "bodysuit", "crop_top", "shirt", "t_shirt")   # subcategorias em que a manga varia
+ARM_HIGH, ARM_LOW = 0.004, 0.01   # pele de braço (fração da peça) que conta no alto do braço / no resto dele
+
+
+def _sleeve_from_photo(photo: dict) -> str | None:
+    """Manga pela pele do braço na foto em modelo: braço à mostra no alto (ombro, axila) é peça sem manga; só no
+    antebraço, manga curta; nenhum braço à mostra, manga longa. None sem a medida (foto antiga ou sem pessoa)."""
+    high, low = photo.get("braco_alto"), photo.get("braco_baixo")
+    if high is None or low is None:
+        return None
+    if high > ARM_HIGH:
+        return "sem"
+    if low > ARM_LOW:
+        return "curta"
+    return "longa" if high + low < 0.002 else None
+
+
 def from_photo(spec: dict, photo: dict, sleeves_from_text: bool) -> list[str]:
     """Ajusta a ficha ao que a foto em modelo mostra; devolve o que mudou. Comprimento: medido pela altura do rosto,
     só quando difere muito da base (a peça para dentro da calça não encurta: precisa da barriga aparecendo). Manga:
@@ -54,15 +73,39 @@ def from_photo(spec: dict, photo: dict, sleeves_from_text: bool) -> list[str]:
         elif cm > LONG * current and spec["subcategoria"] not in ("bodysuit", "crop_top"):
             spec.setdefault("medidas_marca", {})["comprimento"] = round(min(cm, 1.6 * current), 1)
             changed.append("comprimento")
-    arms = photo.get("bracos")
-    if not sleeves_from_text and arms is not None and photo.get("em_modelo") and \
-            spec["subcategoria"] in ("blouse", "top", "bodysuit", "crop_top", "shirt", "t_shirt"):
-        if not spec["manga_curta"] and not spec["sem_manga"] and arms > 0.06:
-            spec["manga_curta"] = True
-            changed.append("manga")
-        elif (spec["manga_curta"] or spec["sem_manga"]) and arms < 0.01:
-            spec["manga_curta"] = spec["sem_manga"] = False
-            changed.append("manga")
+    sleeve = _sleeve_from_photo(photo) if not sleeves_from_text and photo.get("em_modelo") and \
+        spec["subcategoria"] in AMBIGUOUS else None
+    current = "sem" if spec["sem_manga"] else "curta" if spec["manga_curta"] else "longa"
+    if sleeve and sleeve != current:
+        spec["sem_manga"], spec["manga_curta"] = sleeve == "sem", sleeve == "curta"
+        changed.append("manga")
     if "comprimento" in spec.get("medidas_marca", {}) and spec["medidas_marca"].get("cava"):
         spec["medidas_marca"]["cava"] = min(spec["medidas_marca"]["cava"], spec["medidas_marca"]["comprimento"] * 0.6)
     return changed
+
+
+STRAPS = (   # (regra no nome/descrição, alça em cm, decote, fundo do decote em cm): a primeira que casar vale
+    (r"tomara que caia|strapless|bandeau|faixa no busto", 0.9, "quadrado", 14.0),
+    (r"alcinha|alcas? finas?|alca fina|spaghetti|\bcami\b|camisole|thin straps?|strappy|alca de cordao", 1.0, "quadrado", 13.0),
+    (r"alcas? largas?|wide straps?|alca larga", 5.5, None, None),
+)
+NECKS = ((r"decote reto|square neck|decote quadrado|reta no busto", "quadrado"), (r"decote u\b|scoop", "redondo"))
+
+
+def straps(text: str, sub: str) -> dict:
+    """Alça e decote da peça sem manga pelo texto (minúsculo, sem acento): ``alca`` (cm), ``decote`` e o fundo dele
+    em ``medidas_marca``. Vazio quando o texto não diz — vale a base da subcategoria (``strap_cut.DEFAULTS``)."""
+    out: dict = {}
+    for rule, width, neck, depth in STRAPS:
+        if re.search(rule, text):
+            out["alca"] = width
+            if neck:
+                out["decote"] = neck
+            if depth:
+                out["decote_frente"] = depth
+            break
+    for rule, neck in NECKS:
+        if re.search(rule, text):
+            out["decote"] = neck
+            break
+    return out

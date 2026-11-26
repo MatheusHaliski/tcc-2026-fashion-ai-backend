@@ -4,6 +4,7 @@
  */
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 import { SALA_AROUND_THE_WORLD } from "@/lib/flair/nucleos/scene/salas/around-the-world";
+import { LUGARES_DA_VIAGEM } from "@/lib/flair/nucleos/scene/salas/around-the-world-regioes";
 import { SALA_BATALHA_LOOKS } from "@/lib/flair/nucleos/scene/salas/batalha-looks";
 import { SALA_BOUTIQUE_3D } from "@/lib/flair/nucleos/scene/salas/boutique-3d";
 import { SALA_CLUBE_CORACAO } from "@/lib/flair/nucleos/scene/salas/clube-coracao";
@@ -43,12 +44,13 @@ export const SALAS: Record<NucleoCodigo, Sala> = {
 };
 
 /**
- * Salas que mudam dentro do mesmo jogo, pelo código que a partida dá: o salão da vez no FASHION_DETECTIVE e a
- * modalidade no FASHION_SPORTS. Todas dividem as zonas e os objetos com id da sala do registro.
+ * Salas que mudam dentro do mesmo jogo, pelo código que a partida dá: o salão da vez no FASHION_DETECTIVE, a
+ * modalidade no FASHION_SPORTS e o lugar da etapa (a região, o andar, a estação) no AROUND_THE_WORLD. Todas dividem as zonas e os objetos com id da sala do registro.
  */
 export const VARIANTES: Partial<Record<NucleoCodigo, Record<string, Sala>>> = {
   FASHION_DETECTIVE: SALOES_DO_DETETIVE,
   FASHION_SPORTS: QUADRAS,
+  AROUND_THE_WORLD: LUGARES_DA_VIAGEM,
 };
 
 /**

@@ -13,10 +13,10 @@ import br.com.fashionai.domain.model.enums.SchemeOrigin;
 import java.util.Map;
 
 /** Inicialização das entidades novas; edição e registros existentes conservam o tipo escolhido. */
-final class CreationLookDefaults {
+public final class CreationLookDefaults {
     private CreationLookDefaults() { }
 
-    static Scheme scheme(User owner, SchemeService.SchemeForm form, LookTypePreferencesService preferences) {
+    public static Scheme scheme(User owner, SchemeService.SchemeForm form, LookTypePreferencesService preferences) {
         Scheme scheme = new Scheme();
         scheme.setUser(owner);
         scheme.setCreationMode(form.creationMode() == null ? CreationMode.MANUAL : form.creationMode());
