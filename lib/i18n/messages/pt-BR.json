@@ -12959,5 +12959,14 @@
   "institutionalReference.areaArtistica.legacy": "Áreas informadas no cadastro: {value}",
   "institutionalReference.areaArtistica.save": "Salvar área principal",
   "institutionalReference.areaArtistica.saved": "Área artística principal salva.",
-  "institutionalReference.areaArtistica.profileError": "Não foi possível ler o perfil da celebridade."
+  "institutionalReference.areaArtistica.profileError": "Não foi possível ler o perfil da celebridade.",
+  "sealAvailability.state.SCHEDULED": "Agendado",
+  "sealAvailability.state.OPEN": "Aberto para resgate",
+  "sealAvailability.state.ENDED": "Encerrado",
+  "sealAvailability.state.SOLD_OUT": "Esgotado",
+  "sealAvailability.state.INACTIVE": "Inativo",
+  "sealAvailability.window": "Resgate: {from} → {until}",
+  "sealAvailability.immediate": "imediato",
+  "sealAvailability.noEnd": "sem data de fim",
+  "sealAvailability.inverted": "O fim do resgate precisa ser depois do início."
 }

@@ -12959,5 +12959,14 @@
   "institutionalReference.areaArtistica.legacy": "Fields given at sign-up: {value}",
   "institutionalReference.areaArtistica.save": "Save main field",
   "institutionalReference.areaArtistica.saved": "Main artistic field saved.",
-  "institutionalReference.areaArtistica.profileError": "Could not read the celebrity profile."
+  "institutionalReference.areaArtistica.profileError": "Could not read the celebrity profile.",
+  "sealAvailability.state.SCHEDULED": "Scheduled",
+  "sealAvailability.state.OPEN": "Open for redemption",
+  "sealAvailability.state.ENDED": "Ended",
+  "sealAvailability.state.SOLD_OUT": "Sold out",
+  "sealAvailability.state.INACTIVE": "Inactive",
+  "sealAvailability.window": "Redemption: {from} → {until}",
+  "sealAvailability.immediate": "immediate",
+  "sealAvailability.noEnd": "no end date",
+  "sealAvailability.inverted": "The end of redemption must be after the start."
 }
