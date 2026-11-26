@@ -17,6 +17,7 @@ import { SealAvailability } from "@/components/seal-availability";
 import { isoToLocalInput, localInputToIso, type SealAvailabilityState } from "@/lib/seals/availability";
 import { EMPTY_POLICY, cleanPolicy, type SealPolicy, type SealTierId } from "@/components/seal-policy-editor";
 import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/seal-medallion";
+import { SealPolicyBrands } from "@/components/seal-policy-brands";
 import { SealHypeStat, type SealHypeAggregate } from "@/components/hype/hype-seals";
 import { PieceCard } from "@/components/piece-card";
 import { BrandFlairTab } from "@/components/flair/brand-flair-tab";
@@ -160,6 +161,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
             <Card key={s.id} className={s.premium ? "bg-gradient-to-br from-surface to-surface-3" : ""}>
               <div className="flex items-start gap-3"><SealMedallion design={s.design ?? DEFAULT_DESIGN} size={56} premium={s.premium} title={s.name} /><div className="min-w-0 flex-1"><p className="type-h3">{s.name}</p><p className="type-caption text-muted">{label(s.tier.toLowerCase())} · {s.available ? t("brands.slug.disponivel") : s.unavailableReason ?? label(s.status.toLowerCase())}</p></div></div>
               {s.policyText && <p className="mt-2 type-body-sm">{s.policyText}</p>}
+              <SealPolicyBrands policy={s.policy} />
               {s.tier !== "PERFIL" && <SealHypeStat hype={s.hype} tier={s.tier} />}
               <p className="mt-2 type-data text-faint tabular">{s.tier !== "PERFIL" && t("brands.slug.emissoes", { value: s.usageCount ?? 0, value2: s.usageLimit ? t("brands.slug.emissoes_limite", { limit: s.usageLimit }) : "" })}<SealAvailability seal={s} /></p>
               {admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => setSealForm({ open: true, id: s.id, name: s.name, tier: s.tier === "PERFIL" ? "PERFIL" : s.tier === "PECA" ? "PECA" : "LOOK", policyText: s.policy ? "" : s.policyText ?? "", usageLimit: s.usageLimit?.toString() ?? "", grantValidityDays: s.grantValidityDays?.toString() ?? "", status: s.status, availableFrom: isoToLocalInput(s.availableFrom), availableUntil: isoToLocalInput(s.availableUntil), design: s.design ?? DEFAULT_DESIGN, policy: s.policy ? { ...EMPTY_POLICY, ...s.policy } : EMPTY_POLICY })}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={async () => { try { await api.put(`/api/seals/${s.id}`, { name: s.name, tier: s.tier, policy: s.policy, design: s.design, policyText: s.policyText, usageLimit: s.usageLimit, availableFrom: s.availableFrom, availableUntil: s.availableUntil, status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); seals.reload(); } catch (e) { toast.fromError(e); } }}>{s.status === "ACTIVE" ? t("common.desativar") : t("brands.slug.ativar")}</Button></div>}

@@ -35,6 +35,7 @@ public final class SealFormWriter {
     private final SealIssuers issuers;
     private final SealViews views;
     private final Supplier<AiInferenceLogRepository> inferenceLogs;
+    private final SealPolicyBrandResolver brandReferences;
 
     public SealFormWriter(SealRepository seals, UserRepository users, Guard guard, Audit audit, OwnMedia ownMedia, SealIssuers issuers, SealViews views, Supplier<AiInferenceLogRepository> inferenceLogs) {
         this.seals = seals;
@@ -45,6 +46,7 @@ public final class SealFormWriter {
         this.issuers = issuers;
         this.views = views;
         this.inferenceLogs = inferenceLogs;
+        this.brandReferences = views.brandReferences();
     }
 
     public Map<String, Object> createSeal(CurrentUser user, SealForm form) {
@@ -73,10 +75,11 @@ public final class SealFormWriter {
         // RF25 — política padronizada (regras avaliadas pelo sistema); o texto do card é gerado a partir delas. Sem regras,
         // vale o texto antigo (selos criados antes das regras continuam com a descrição que tinham).
         Map<String, Object> policy = SealPolicies.normalize(f.policy());
+        Object oldPolicy = Json.map(s.getBackgroundConfigJson()).get("policy");
+        brandReferences.resolve(policy, oldPolicy);   // exercício 13: marca por ID precisa existir; grava o nome do banco
         boolean hypeMode = policy != null && "HYPE".equals(policy.get("mode"));
         if (hypeMode && (s.getTier() == SealTier.PERFIL || !issuers.hypeIssuerAvailable(owner)))
             throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealHype.invalid_policy"));
-        Object oldPolicy = Json.map(s.getBackgroundConfigJson()).get("policy");
         boolean manual = policy != null && "MANUAL".equals(policy.get("generationMode"));
         boolean hasReference = policy != null && policy.get("referenceModel") instanceof Map<?, ?>;
         if (!hypeMode && !manual && (s.getId() == null || oldPolicy instanceof Map<?, ?> op && op.containsKey("referenceModel")) && !hasReference) {

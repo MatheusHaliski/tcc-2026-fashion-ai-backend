@@ -29,8 +29,11 @@ public final class SealViews {
     private final UserRepository users;
     private final BrandProfileRepository brandProfiles;
     private final SealHypeAverages averages;
+    private final SealPolicyBrandResolver brandReferences;
 
-    public SealViews(SealRepository seals, UserRepository users, BrandProfileRepository brandProfiles, SealHypeAverages averages) {
+    public SealViews(SealRepository seals, UserRepository users, BrandProfileRepository brandProfiles, SealHypeAverages averages,
+                     java.util.function.Supplier<br.com.fashionai.domain.repository.BrandRepository> brands) {
+        this.brandReferences = new SealPolicyBrandResolver(brands, brandProfiles);
         this.seals = seals;
         this.users = users;
         this.brandProfiles = brandProfiles;
@@ -111,6 +114,11 @@ public final class SealViews {
         return null;
     }
 
+    /** Exercício 13: o mesmo conferidor de marca por ID da leitura é usado na gravação do selo. */
+    SealPolicyBrandResolver brandReferences() {
+        return brandReferences;
+    }
+
     public Map<String, Object> sealView(Seal s) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", s.getId());
@@ -126,7 +134,7 @@ public final class SealViews {
         Map<String, Object> cfg = Json.map(s.getBackgroundConfigJson());
         Object design = cfg.remove("design");
         m.put("design", design instanceof Map<?, ?> dm ? dm : SealDesigns.defaultDesign(s.isPremium(), s.getTier()));
-        m.put("policy", cfg.remove("policy"));
+        m.put("policy", brandReferences.refresh(cfg.remove("policy")));   // exercício 13: nome atual e marca que sumiu
         m.put("background", cfg);
         m.put("status", s.getStatus());
         m.put("availableFrom", s.getAvailableFrom());

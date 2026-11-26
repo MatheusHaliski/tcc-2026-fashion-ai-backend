@@ -91,6 +91,12 @@ public class FlairService {
     private final HypeScoreCurrentRepository hypeScores;
     private final HypeScoreConfig hypeConfig;
     private final AtelierRewardSystem atelier;
+    private final br.com.fashionai.application.flair.FlairCouponWriter coupons;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setCouponChannels(CanalCupomRepository canais) {
+        coupons.useChannels(new CouponChannelResolver(canais));
+    }
 
     public FlairService(FlairProfileRepository profiles, FlairCoinEntryRepository coins, FlairCombinationRepository combinations,
                         FlairRedemptionRepository redemptions, FlairTeamRepository teams, FlairTeamMemberRepository members,
@@ -101,6 +107,7 @@ public class FlairService {
                         FaiPointsService faiPoints, HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig,
                         AtelierRewardSystem atelier) {
         this.atelier = atelier;
+        this.coupons = new br.com.fashionai.application.flair.FlairCouponWriter(redemptions);
         this.hypeScores = hypeScores;
         this.hypeConfig = hypeConfig;
         this.events = events;
@@ -769,7 +776,7 @@ public class FlairService {
                                   List<String> requiredStyles, List<String> requiredOccasions, Integer minBrandPieces,
                                   Integer minDeckPower, String minRarity, Integer minWins, String couponTitle,
                                   Integer discountPercent, BigDecimal discountAmount, BigDecimal minPurchase, Integer validDays,
-                                  Integer stock, Boolean active, Instant startsAt, Instant endsAt, String accentColor, String storeUrl) {
+                                  Integer stock, Boolean active, Instant startsAt, Instant endsAt, String accentColor, String storeUrl, UUID canalCupomId, String minPurchaseCurrency) {
     }
 
     @Transactional
@@ -799,20 +806,12 @@ public class FlairService {
                 && c.getMinRarity() == null && !"DUELO_PATROCINADO".equals(type)) {
             throw ApiException.badRequest("SEM_REQUISITOS", Msg.t("flair.defina_ao_menos_um_requisito"));
         }
-        c.setCouponTitle(InputSanitizer.required("couponTitle", InputSanitizer.moderated("couponTitle", f.couponTitle(), 120), 3, 120));
-        if (f.discountPercent() == null && f.discountAmount() == null) {
-            throw ApiException.badRequest("DESCONTO_OBRIGATORIO", Msg.t("flair.informe_o_desconto_em_ou"));
-        }
-        c.setDiscountPercent(f.discountPercent() == null ? null : clamp(f.discountPercent(), 1, 90));
-        c.setDiscountAmount(f.discountAmount());
-        c.setMinPurchase(f.minPurchase());
-        c.setValidDays(clamp(f.validDays() == null ? 30 : f.validDays(), 7, 120));
+        coupons.applyOffer(c, f);   // título, desconto, mínimo de compra, validade, canal e loja do cupom
         c.setStock(f.stock() == null ? null : Math.max(1, f.stock()));
         c.setActive(f.active() == null || f.active());
         c.setStartsAt(f.startsAt());
         c.setEndsAt(f.endsAt());
         c.setAccentColor(f.accentColor() != null && f.accentColor().matches("#[0-9A-Fa-f]{6}") ? f.accentColor().toUpperCase(Locale.ROOT) : null);
-        c.setStoreUrl(SealService.storeUrl(f.storeUrl()));
         combinations.save(c);
         return combinationView(c, null, null);
     }
@@ -911,7 +910,8 @@ public class FlairService {
         m.put("minRarity", c.getMinRarity());
         m.put("minWins", c.getMinWins());
         m.put("coupon", Map.of("title", c.getCouponTitle(), "discountPercent", c.getDiscountPercent() == null ? "" : c.getDiscountPercent(),
-                "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(), "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "validDays", c.getValidDays()));
+                "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(), "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "validDays", c.getValidDays(),
+                "minPurchaseCurrency", c.getMinPurchaseCurrency() == null ? "" : c.getMinPurchaseCurrency()));
         m.put("stock", c.getStock());
         m.put("redeemed", c.getRedeemed());
         m.put("active", c.isActive());
@@ -920,6 +920,7 @@ public class FlairService {
         m.put("endsAt", c.getEndsAt());
         m.put("accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor());
         m.put("storeUrl", c.getStoreUrl());
+        m.put("canalCupom", CouponChannelResolver.view(c.getCanalCupom()));
         if (viewer != null) {
             m.put("redemption", redemptions.findByCombinationIdAndUserId(c.getId(), viewer.id()).map(this::redemptionView).orElse(null));
         }
@@ -990,33 +991,11 @@ public class FlairService {
         if (checks.isEmpty() || !checks.stream().allMatch(x -> Boolean.TRUE.equals(x.get("ok")))) {
             throw new ApiException(422, "COMBINACAO_INCOMPLETA", Msg.t("flair.o_deck_ainda_nao_completa"), Map.of("checks", checks));
         }
-        FlairRedemption r = new FlairRedemption();
-        r.setCombination(c);
-        r.setUser(users.findById(user.id()).orElseThrow());
-        r.setScheme(s);
-        String code;
-        do {
-            code = "FLR-" + token(4) + "-" + token(4);
-        } while (redemptions.existsByCode(code));
-        r.setCode(code);
-        r.setStatus("EMITIDO");
-        r.setDeckPower(d == null ? null : d.power());
-        r.setExpiresAt(Instant.now().plus(c.getValidDays(), ChronoUnit.DAYS));
-        redemptions.save(r);
-        c.setRedeemed(c.getRedeemed() + 1);
+        FlairRedemption r = coupons.issue(c, users.findById(user.id()).orElseThrow(), s, d == null ? null : d.power());
         award(user.id(), 0, 50, "REDEMPTION", c.getId().toString());
         // Atelier: concluir a jornada da marca/celebridade vale um convite de temporada daquele perfil
         atelier.grant(AtelierGrants.brandJourney(user.id(), c.getId(), c.getName(), c.getBrand().getId(), brandNameOf(c.getBrand()), Instant.now()));
         return redemptionView(r);
-    }
-
-    private static String token(int n) {
-        String alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        StringBuilder b = new StringBuilder();
-        for (int i = 0; i < n; i++) {
-            b.append(alphabet.charAt(RANDOM.nextInt(alphabet.length())));
-        }
-        return b.toString();
     }
 
     Map<String, Object> redemptionView(FlairRedemption r) {
@@ -1033,8 +1012,8 @@ public class FlairService {
         m.put("user", Views.user(r.getUser()));
         m.put("combination", Map.of("id", c.getId(), "name", c.getName(), "brandName", brandNameOf(c.getBrand()), "coupon", c.getCouponTitle(),
                 "discountPercent", c.getDiscountPercent() == null ? "" : c.getDiscountPercent(), "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(),
-                "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor()));
-        return m;
+                "minPurchase", r.getMinPurchaseSnapshot() == null ? "" : r.getMinPurchaseSnapshot(), "accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor()));
+        return CouponTermsSnapshotWriter.read(m, r);   // o mínimo acima é o da emissão, não o atual da combinação
     }
 
     @Transactional(readOnly = true)

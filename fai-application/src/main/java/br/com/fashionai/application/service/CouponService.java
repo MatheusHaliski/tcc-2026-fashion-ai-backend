@@ -136,7 +136,7 @@ public class CouponService {
             Object best = c.get("bestDeck");
             UUID scheme = best instanceof Map<?, ?> m && m.get("schemeId") != null ? UUID.fromString(String.valueOf(m.get("schemeId"))) : null;
             created += grant(u, FLAIR, id, comb.getBrand().getId(), comb.getCouponTitle(),
-                    discountText(comb.getDiscountPercent(), comb.getDiscountAmount(), comb.getMinPurchase()), scheme) ? 1 : 0;
+                    discountText(comb.getDiscountPercent(), comb.getDiscountAmount(), CouponMinimumRules.inBrl(comb.getMinPurchase(), comb.getMinPurchaseCurrency())), scheme) ? 1 : 0;
         }
         return created;
     }
@@ -282,7 +282,7 @@ public class CouponService {
             v.put("title", c.getCouponTitle());
             v.put("kind", c.getGameType());
             v.put("detail", c.getName() + (c.getDescription() == null ? "" : " — " + c.getDescription()));
-            v.put("discount", discountText(c.getDiscountPercent(), c.getDiscountAmount(), c.getMinPurchase()));
+            v.put("discount", discountText(c.getDiscountPercent(), c.getDiscountAmount(), CouponMinimumRules.inBrl(c.getMinPurchase(), c.getMinPurchaseCurrency())));
             v.put("seal", null);
             v.put("active", active);
             v.put("status", active ? "ATIVA" : c.isActive() ? "FORA_DO_PERIODO" : "DESATIVADA");
@@ -352,17 +352,17 @@ public class CouponService {
                 : brands.findByOwnerId(r.getPartnerBrandUserId()).map(BrandProfile::getStoreUrl).orElse(null);
         String status = r.getStatus() == RedemptionStatus.USED ? "USADO"
                 : r.getExpiresAt() != null && r.getExpiresAt().isBefore(Instant.now()) ? "EXPIRADO" : "EMITIDO";
-        return coupon(r.getId(), SELO, r.getCode(), p.getTitle(), p.getDescription(), p.getDiscountPercent(), null, null, status,
+        return CouponTermsSnapshotWriter.read(coupon(r.getId(), SELO, r.getCode(), p.getTitle(), p.getDescription(), p.getDiscountPercent(), null, null, status,
                 r.getExpiresAt(), r.getRedeemedAt(), owner, firstNonNull(p.getStoreUrl(), partnerStore, storeOf(owner)), null,
-                p.getSeal() == null ? null : "Selo " + p.getSeal().getName());
+                p.getSeal() == null ? null : "Selo " + p.getSeal().getName()), r);
     }
 
     private Map<String, Object> couponView(FlairRedemption r) {
         FlairCombination c = r.getCombination();
         String status = "USADO".equals(r.getStatus()) ? "USADO" : r.getExpiresAt().isBefore(Instant.now()) ? "EXPIRADO" : "EMITIDO";
-        return coupon(r.getId(), FLAIR, r.getCode(), c.getCouponTitle(), c.getName(), c.getDiscountPercent(), c.getDiscountAmount(),
-                c.getMinPurchase(), status, r.getExpiresAt(), r.getCreatedAt(), c.getBrand(), firstNonNull(c.getStoreUrl(), storeOf(c.getBrand())),
-                c.getAccentColor(), Msg.t("coupon.jogo_flair", (r.getScheme() == null ? "" : " · deck " + r.getScheme().getTitle())));
+        return CouponTermsSnapshotWriter.read(coupon(r.getId(), FLAIR, r.getCode(), c.getCouponTitle(), c.getName(), c.getDiscountPercent(), c.getDiscountAmount(),
+                CouponMinimumRules.inBrl(r.getMinPurchaseSnapshot(), r.getMinPurchaseCurrencySnapshot()), status, r.getExpiresAt(), r.getCreatedAt(), c.getBrand(), firstNonNull(c.getStoreUrl(), storeOf(c.getBrand())),
+                c.getAccentColor(), Msg.t("coupon.jogo_flair", (r.getScheme() == null ? "" : " · deck " + r.getScheme().getTitle()))), r);
     }
 
     private Map<String, Object> coupon(UUID id, String source, String code, String title, String subtitle, Integer pct, BigDecimal amount,

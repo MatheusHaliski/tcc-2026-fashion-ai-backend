@@ -168,6 +168,9 @@ final class SealPolicyEvaluator {
         if (r.subcategory() != null && !r.subcategory().equalsIgnoreCase(String.valueOf(w.getSubcategory()))) {
             return false;
         }
+        if (r.brandReference() != null && !SealPolicyBrandMatch.matches(r.brandReference(), w)) {
+            return false;
+        }
         if (r.brand() != null) {
             String brand = w.getBrandName() != null ? w.getBrandName()
                     : w.getBrand() != null ? w.getBrand().getName()
