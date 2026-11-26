@@ -42,3 +42,55 @@ def dominant_lab(lab: np.ndarray, radius: float = 12.0) -> np.ndarray:
     peak = (keys[np.argmax(counts)] + 0.5) * np.array([8.0, 6.0, 6.0])
     near = pts[np.linalg.norm(pts - peak, axis=1) < radius]
     return near.mean(0) if len(near) else peak
+
+
+# cor nominal de ``nomes_cor.color_from_name`` → família que acerta a cor medida (``match_name``)
+FAMILIES = {"#1b1b1b": "preto", "#1f2a44": "marinho", "#f2f2f0": "branco", "#ece6d8": "off_white"}
+NAVY_CHROMA = 0.6 * 17.6   # o marinho medido fica com pelo menos 60 % do croma do marinho nominal (#1f2a44)
+
+
+def safe_gains(gains, garment_rgb) -> np.ndarray:
+    """Ganhos do balanço de branco que podem ser aplicados à foto sem tirar a cor da peça.
+
+    ``gains``: os ganhos (r, g, b) tirados do fundo; ``garment_rgb``: a cor da peça (0–255) medida **sem** os ganhos.
+    O fundo sozinho não diz se a marca o tingiu de propósito (J.Crew creme: a peça está certa) ou se a foto inteira
+    tem dominante (Napapijri azulada: a peça também). Por isso: peça escura (L < 25) não leva ganho — ele comia o azul
+    do marinho —; peça quase neutra que o ganho deixa mais neutra leva o ganho inteiro (é dominante da foto); nos
+    outros casos o ganho fica entre 0,97 e 1,03 (no máximo ~3 de b)."""
+    gains = np.asarray(gains, float)
+    before = rgb_to_lab(np.asarray(garment_rgb, float))
+    after = rgb_to_lab(np.clip(np.asarray(garment_rgb, float) * gains, 0, 255))
+    if before[0] < 25:
+        return np.ones(3)
+    c0, c1 = float(np.hypot(*before[1:])), float(np.hypot(*after[1:]))
+    if min(c0, c1) < 10 and c1 < c0:
+        return gains
+    return np.clip(gains, 0.97, 1.03)
+
+
+def match_name(lab, nominal_hex: str | None, solid: bool = True) -> np.ndarray:
+    """A cor medida (Lab) acertada pelo nome de cor que a marca deu — só quando a medida já está perto dele.
+
+    A foto subexposta deixa o preto entre L 2 e L 20, o marinho quase sem croma e o branco em modelo cinza (L 77–81).
+    O nome é o sinal que falta: ``nominal_hex`` é o que ``nomes_cor.color_from_name`` devolve (None ou outra cor: a
+    medida volta igual). Preto: L em 8–13 e sem dominante. Marinho: L ≥ 12 e croma ≥ 60 % do nominal, no matiz
+    medido. Branco e off-white: só em peça lisa (``solid``) já clara e neutra — o nome "branco" de uma estampa branca
+    numa camiseta preta não clareia nada —, com L ≥ 92 (branco, |b| ≤ 3) ou L ≥ 90 com o b quente (off-white)."""
+    lab = np.asarray(lab, float).copy()
+    family = FAMILIES.get((nominal_hex or "").lower())
+    light, a, b = lab
+    chroma = float(np.hypot(a, b))
+    if family == "preto" and light < 30 and chroma < 12:
+        scale = min(1.0, 4.0 / max(chroma, 1e-6))
+        return np.array([float(np.clip(10 + 0.25 * (light - 10), 8, 13)), a * scale, b * scale])
+    if family == "marinho" and light < 32 and (chroma < 8 or b < -abs(a)):
+        if chroma < 3 or b >= -abs(a):           # sem matiz medido que preste: o do marinho nominal
+            a, b = rgb_to_lab(np.array([0x1f, 0x2a, 0x44]))[1:]
+            chroma = float(np.hypot(a, b))
+        scale = max(1.0, NAVY_CHROMA / chroma)
+        return np.array([max(light, 12.0), a * scale, b * scale])
+    if family == "branco" and solid and light > 70 and chroma < 10:
+        return np.array([max(light, 92.0), float(np.clip(a, -2, 2)), float(np.clip(b, -3, 3))])
+    if family == "off_white" and solid and light > 70 and chroma < 14:
+        return np.array([max(light, 90.0), float(np.clip(a, -3, 3)), float(np.clip(b, 3, 10))])
+    return lab
