@@ -1,6 +1,9 @@
 # FashionAI Garment Delivery — peça criada no Atelier, produzida sob encomenda pela Fábrica FashionAI
 
-**Estado:** proposta aceita para esta edição e implementada (backend, frontend, testes e verificação no navegador).
+**Estado:** retirada do app em 2026-11-26 a pedido da dona do projeto ("esta modalidade ficará como uma opção de projeto
+futuro"). O código saiu (backend, frontend, testes); ficam esta proposta, as capturas e as tabelas da V103
+(`garment_orders`, `garment_order_events` e a coluna `garment_passports.manufacturing_json`), órfãs e reservadas ao
+projeto futuro — ver `docs/futuro/README.md`. O texto abaixo descreve a implementação como ela era.
 Numeração oficial no Trello pendente; aqui os requisitos usam o prefixo provisório **RF-GD**.
 
 > Pedido da dona do projeto: "A ideia geral é que o usuário possa criar uma peça de roupa no editor do atelier, enviar
