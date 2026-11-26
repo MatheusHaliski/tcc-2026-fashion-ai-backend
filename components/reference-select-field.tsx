@@ -2,6 +2,7 @@
 import { useReferenceOptions } from "@/lib/hooks/use-reference-options";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Field, Select } from "@/components/ui";
+import type { ReferenceOption } from "@/lib/api/types";
 
 /** Props comuns dos campos de opções dos criadores (o valor é sempre o UUID da opção, nunca o nome). */
 export interface ReferenceFieldProps {
@@ -20,7 +21,8 @@ export interface ReferenceFieldProps {
  * caminho e o prefixo das mensagens (`<prefixo>.label|unselected|unavailable|loadError|empty|hint`); nada muda na
  * segurança. Receita em docs/correcoes/CRIADORES_ORIGEM_401.md.
  */
-export function ReferenceSelectField({ id, path, messages, stateAttr, value, selectedName, onChange, error, disabled = false, hint }: ReferenceFieldProps & {
+export function ReferenceSelectField({ id, path, messages, stateAttr, value, selectedName, onChange, onSelect, error, disabled = false, hint }: ReferenceFieldProps & {
+  /** opção inteira escolhida (id, código e nome), para quem precisa guardar o nome exibido junto do id */ onSelect?: (option: ReferenceOption | null) => void;
   /** id do select e nome do campo no formulário (ex.: "origemId") */ id: string;
   /** GET que lista as opções (ex.: "/api/origens") */ path: string;
   /** prefixo das mensagens i18n do campo (ex.: "pieceReferences.origem") */ messages: string;
@@ -32,7 +34,8 @@ export function ReferenceSelectField({ id, path, messages, stateAttr, value, sel
   const state = { "data-reference-state": status, ...(stateAttr ? { [`data-${stateAttr}-state`]: status } : {}) };
   return <div {...state} data-reference-path={path} aria-busy={status === "loading"} className="sm:col-span-2">
     <Field id={id} label={t(`${messages}.label`)} error={error}>
-      <Select id={id} value={value} onChange={e => onChange(e.target.value)} error={!!error}
+      <Select id={id} value={value} error={!!error}
+        onChange={e => { onChange(e.target.value); onSelect?.(options.find(option => option.id === e.target.value) ?? null); }}
         disabled={disabled || status !== "ready" || options.length === 0} loading={status === "loading"}>
         <option value="">{t(`${messages}.unselected`)}</option>
         {unavailable && <option value={value} disabled>{selectedName || t(`${messages}.unavailable`)}</option>}

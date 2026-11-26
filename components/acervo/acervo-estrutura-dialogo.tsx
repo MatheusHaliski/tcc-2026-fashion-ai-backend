@@ -20,6 +20,9 @@ export type PedidoEstrutura =
   | { acao: "RENOMEAR"; alvo: AlvoEstrutura }
   | { acao: "APAGAR"; alvo: AlvoEstrutura };
 
+/** Limite do nome na API (AcervoRegras): acima disso o servidor recusa, não corta. */
+const NOME_MAX = 80;
+
 const TITULO: Record<PedidoEstrutura["acao"], string> = {
   NOVO_AMBIENTE: "acervo.estrutura.novoAmbiente",
   NOVO_MOVEL: "acervo.estrutura.novoMovel",
@@ -51,7 +54,9 @@ export function EstruturaDialogo({ pedido, onClose }: { pedido: PedidoEstrutura 
 
   if (!pedido) return null;
   const apagar = pedido.acao === "APAGAR";
-  const precisaNome = !apagar && pedido.acao !== "NOVO_COMPARTIMENTO";
+  // compartimento pode ficar sem nome: ao criar ou renomear, o servidor devolve o nome padrão do tipo ("Gaveta 2")
+  const nomeOpcional = pedido.acao === "NOVO_COMPARTIMENTO" || (pedido.acao === "RENOMEAR" && pedido.alvo.classe === "COMPARTIMENTO");
+  const precisaNome = !apagar && !nomeOpcional;
   const escolheAmbiente = pedido.acao === "NOVO_MOVEL" && pedido.ambienteId === null;
   const valido = (!precisaNome || nome.trim().length > 0) && (!escolheAmbiente || ambienteId !== "");
 
@@ -88,9 +93,10 @@ export function EstruturaDialogo({ pedido, onClose }: { pedido: PedidoEstrutura 
       )}
       {!apagar && (
         <Field label={t("acervo.estrutura.nome")} id="acv-nome" required={precisaNome}
-          hint={pedido.acao === "NOVO_COMPARTIMENTO" ? t("acervo.estrutura.nomeOpcional") : undefined}>
-          <Input id="acv-nome" value={nome} maxLength={80} autoFocus onChange={(e) => setNome(e.target.value)}
+          hint={pedido.acao === "NOVO_COMPARTIMENTO" ? t("acervo.estrutura.nomeOpcional") : nomeOpcional ? t("acervo.estrutura.nomeVazioPadrao") : undefined}>
+          <Input id="acv-nome" value={nome} maxLength={NOME_MAX} autoFocus aria-describedby="acv-nome-limite" onChange={(e) => setNome(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") void enviar(); }} />
+          <p id="acv-nome-limite" className="help tabular">{t("acervo.estrutura.nomeLimite", { n: nome.length, max: NOME_MAX })}</p>
         </Field>
       )}
     </Dialog>

@@ -45,6 +45,10 @@ final class AcervoMapa {
         return compartimento == null ? null : movelPorId.get(compartimento.getMovelId());
     }
 
+    AcervoAmbiente ambienteDe(AcervoMovel movel) {
+        return movel == null ? null : ambientePorId.get(movel.getAmbienteId());
+    }
+
     /** Compartimento onde a peça está, ou nulo (sem lugar, ou o compartimento já não existe). */
     UUID lugar(UUID pieceId) {
         AcervoPeca linha = linhaPorPeca.get(pieceId);

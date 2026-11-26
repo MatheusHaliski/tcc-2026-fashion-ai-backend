@@ -98,7 +98,9 @@ final class SealPolicyText {
             String c = Taxonomy.COLORS.containsKey(r.color()) ? Msg.t("taxonomy." + r.color()) : Msg.t("sealPolicy.familia." + r.color().toLowerCase(Locale.ROOT));
             w.add(Msg.t("sealPolicy.cor", c.toLowerCase(Locale.ROOT)));
         }
-        if (r.brand() != null) {
+        if (r.brandReference() != null) {
+            w.add(Msg.t("sealPolicy.da_marca", r.brandReference().label()));
+        } else if (r.brand() != null) {
             w.add(Msg.t("sealPolicy.da_marca", r.brand()));
         }
         if (r.hypeMin() != null) {

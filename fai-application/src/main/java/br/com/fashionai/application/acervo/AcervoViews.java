@@ -71,6 +71,30 @@ final class AcervoViews {
         return out;
     }
 
+    /**
+     * Onde a peça está guardada, para outras telas (detalhe da peça). {@code compartimentoId} é o endereço estável:
+     * não muda quando o compartimento, o móvel ou o ambiente são renomeados; os nomes vêm sempre do cadastro atual.
+     * Peça sem lugar devolve {@code guardada = false} e os demais campos nulos.
+     */
+    static Map<String, Object> lugar(UUID pieceId, AcervoMapa mapa) {
+        AcervoCompartimento c = mapa.compartimento(mapa.lugar(pieceId));
+        AcervoMovel m = mapa.movelDe(c);
+        AcervoAmbiente a = mapa.ambienteDe(m);
+        boolean guardada = a != null;
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("pieceId", pieceId);
+        out.put("guardada", guardada);
+        out.put("compartimentoId", guardada ? c.getId() : null);
+        out.put("movelId", guardada ? m.getId() : null);
+        out.put("ambienteId", guardada ? a.getId() : null);
+        out.put("tipo", guardada ? c.getTipo() : null);
+        out.put("compartimento", guardada ? c.getNome() : null);
+        out.put("movel", guardada ? m.getNome() : null);
+        out.put("ambiente", guardada ? a.getNome() : null);
+        out.put("caminho", guardada ? mapa.caminho(c.getId()) : null);
+        return out;
+    }
+
     static Map<String, Object> compartimento(AcervoCompartimento c, long pecas) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", c.getId());
@@ -107,6 +131,7 @@ final class AcervoViews {
         out.put("id", a.getId());
         out.put("nome", a.getNome());
         out.put("ordem", a.getOrdem());
+        out.put("iluminacao", AcervoLightingWriter.view(a));       // exercício 07: tipo de luz e kelvin (nulos no legado)
         out.put("moveis", moveis);
         out.put("pecas", pecas);
         return out;

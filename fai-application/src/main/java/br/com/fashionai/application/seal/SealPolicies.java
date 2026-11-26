@@ -47,10 +47,14 @@ public final class SealPolicies {
     private SealPolicies() {
     }
 
-    /** {@code hypeMin}: a peça só passa no filtro com Hype atual ≥ esse nível (nulo = sem filtro de Hype). */
-    public record Rule(String quantifier, int count, String color, String brand, String category, String subcategory, HypeLevel hypeMin) {
+    /**
+     * {@code hypeMin}: a peça só passa no filtro com Hype atual ≥ esse nível (nulo = sem filtro de Hype).
+     * {@code brandReference}: marca exigida por ID (exercício 13); {@code brand} é o texto das regras antigas.
+     */
+    public record Rule(String quantifier, int count, String color, String brand, String category, String subcategory, HypeLevel hypeMin,
+                       SealPolicyBrandReference brandReference) {
         public Rule(String quantifier, int count, String color, String brand, String category, String subcategory) {
-            this(quantifier, count, color, brand, category, subcategory, null);
+            this(quantifier, count, color, brand, category, subcategory, null, null);
         }
     }
 

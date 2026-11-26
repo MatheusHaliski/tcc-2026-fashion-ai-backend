@@ -1,5 +1,7 @@
 # Exercício 08 — Nome do módulo de armazenamento
 
+> **Implementado em 26/11/2026, no ACERVO** (o quarto 3D saiu do app em 15/11/2026: `docs/quarto/RETIRADA_DO_QUARTO_3D.md`). O "módulo" é o compartimento do acervo (`acervo_compartimentos`), que já é uma linha com id próprio: o endereço da peça é `acervo_pecas.compartimento_id` e não muda ao renomear. Entregue: `PUT /api/me/acervo/compartimentos/{id}` devolve o compartimento inteiro, nome vazio volta ao padrão do tipo e nome acima de 80 caracteres é 400 `ACERVO_NOME_LONGO`; `GET /api/me/acervo/pecas/{id}/lugar` devolve o endereço estável e os nomes atuais; o detalhe da peça mostra "Onde está" (`components/acervo/peca-lugar.tsx`). Sem mudança de schema (a V113 ficou sem uso). Testes: `AcervoNomeEnderecoTest`, `components/acervo/peca-lugar.test.tsx`. O roteiro abaixo é o desenho original, sobre o quarto.
+
 **Situação na revisão `9f5512a77`:** Parcial: gavetas já têm renameDrawer e drawer_labels_json; nomes genéricos de módulos precisam preservar IDs e endereços.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

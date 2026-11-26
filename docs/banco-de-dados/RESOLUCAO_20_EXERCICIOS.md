@@ -8,6 +8,8 @@ Nenhuma conexão de leitura/escrita ao banco real foi feita. Existência de JPA/
 
 ## Índice dos exercícios
 
+> Migrações Flyway versionadas de cada exercício, situação no Railway e conferência antes do deploy: [MIGRACOES_DOS_EXERCICIOS.md](MIGRACOES_DOS_EXERCICIOS.md).
+
 | Nº | Exercício resolvido | Situação no código | SQL |
 |---|---|---|---|
 | 1 | [TipoLook no espelho e no detalhe do look](solucoes/01-tipo-look.md) | Base implementada para espelho → look; o builder manual ainda tem contrato distinto. | [SQL 01](solucoes/sql/01-tipo-look.sql) |

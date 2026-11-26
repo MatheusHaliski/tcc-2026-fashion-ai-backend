@@ -1,4 +1,5 @@
 import type { HypeGroupSummary } from "@/lib/hype/types";
+import type { ReferenceOption } from "@/lib/api/types";
 
 /** Cabeçalho público de marca/celebridade retornado pelo feed RF14/RF22. */
 export interface InstitutionalProfileSummary {
@@ -18,6 +19,9 @@ export interface InstitutionalProfileSummary {
   storeUrl?: string | null;
   category?: string | null;
   fashionCategory?: string | null;
+  /** Opção escolhida na tabela categorias_marca (marca) ou areas_artisticas (celebridade); o texto/lista acima e abaixo são o legado. */
+  categoriaPrincipal?: ReferenceOption | null;
+  areaPrincipal?: ReferenceOption | null;
   areas?: string[] | null;
   officialHashtag?: string | null;
   country?: string | null;

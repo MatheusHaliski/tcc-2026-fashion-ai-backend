@@ -60,7 +60,7 @@ export function AcervoCentral() {
           <div className="acv-central-corpo">
             <section className="acv-lista" aria-label={titulo}>
               <header className="acv-lista-cabeca">
-                <h2 className="acv-lista-titulo">{titulo}</h2>
+                <h2 className="acv-lista-titulo type-h3">{titulo}</h2>
                 <span className="acv-lista-conta" data-testid="acervo-contagem">{t("acervo.pecas", { count: visiveis.length })}</span>
                 <label className="acv-ordem">
                   <span>{t("acervo.ordem.titulo")}</span>

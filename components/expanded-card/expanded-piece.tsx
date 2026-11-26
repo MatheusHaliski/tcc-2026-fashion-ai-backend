@@ -33,8 +33,9 @@ import { PieceForm, toPayload, validatePieceForm, type PieceFormValue, EMPTY_PIE
 import { PieceArtDialog } from "@/components/piece-art-editor";
 import { FlairPieceBlock } from "@/components/flair/flair-collection";
 import { mirrorHref } from "@/lib/nav/mirror-href";
+import { PecaLugarNoAcervo } from "@/components/acervo/peca-lugar";
 
-interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; canEdit?: boolean }
+interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; canEdit?: boolean }
 
 import { ExpandedPieceCard } from "./expanded-piece-card";
 import { pieceSlides } from "./piece-slides";
@@ -99,7 +100,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const rows: [string, ReactNode][] = ([
     [t("pieceDetail.usos"), mine ? t("pieceDetail.usos_valor", { count: p.wearCount, last: p.lastWornDate ? fmtDate(p.lastWornDate) : "" }) : null],
     [t("pieceDetail.situacao"), [!p.disponivel && t("common.unavailable"), p.forDonation && t("common.forDonation")].filter(Boolean).join(" · ") || null],
-    [t("pieceDetail.onde_esta"), mine ? data?.location?.label ?? null : null],
+    [t("pieceDetail.onde_esta"), mine ? <PecaLugarNoAcervo pieceId={p.id} /> : null],
   ] as [string, ReactNode][]).filter(([, v]) => v !== null && v !== undefined && v !== "");
   // UMA ação principal, conforme o contexto, e a alternativa em posição secundária (texto-link logo abaixo):
   // o dono monta um look com a peça (ou experimenta no manequim 3D); quem visita experimenta (ou guarda uma cópia)

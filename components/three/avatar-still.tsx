@@ -19,6 +19,8 @@ import { STILLS, stillKey, stillTick } from "@/lib/avatar3d/still";
 export interface AvatarStillProps {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body: BodyParams | null; pieces: Look3dPiece[];
   background?: string; hidden?: boolean; width?: number; height?: number;
+  /** a foto sai de dentro da cabine do Provador (o reflexo do Espelho), não do fundo liso */
+  booth?: boolean;
   onStill?: (url: string | null) => void;              // null: a foto falhou (canvas "sujo"), quem usava a anterior a larga
   alt?: string; className?: string;
 }
@@ -41,8 +43,8 @@ function Capture({ parts, expectFace, onShot }: { parts: React.MutableRefObject<
   return null;
 }
 
-export default function AvatarStill({ avatar, sex, body, pieces, background = "#EEEAE2", hidden = false, width = 360, height = 720, onStill, alt = "", className }: AvatarStillProps) {
-  const key = useMemo(() => stillKey({ avatar, sex, body, pieces, background }), [avatar, sex, body, pieces, background]);
+export default function AvatarStill({ avatar, sex, body, pieces, background = "#EEEAE2", hidden = false, width = 360, height = 720, onStill, alt = "", className, booth = false }: AvatarStillProps) {
+  const key = useMemo(() => stillKey({ avatar, sex, body, pieces, background: booth ? "provador" : background }), [avatar, sex, body, pieces, background, booth]);
   const [shot, setShot] = useState<{ key: string; url: string | null } | null>(() => { const u = STILLS.get(key); return u ? { key, url: u } : null; });
   const parts = useRef<HumanParts | null>(null);
   const cb = useRef(onStill); cb.current = onStill;
@@ -56,7 +58,7 @@ export default function AvatarStill({ avatar, sex, body, pieces, background = "#
   const expectFace = !!(avatar?.textureUrl || avatar?.texture);
   return (
     <div style={hidden ? { ...OFFSCREEN, width, height } : { width: "100%", height: "100%" }} aria-hidden={hidden || undefined} data-still-key={key}>
-      <AvatarViewer avatar={avatar} sex={sex} body={body} pieces={pieces} framing="full" view="front" controls={false} still hairLod={1} background={background}
+      <AvatarViewer avatar={avatar} sex={sex} body={body} pieces={pieces} framing="full" view="front" controls={false} still hairLod={1} background={background} booth={booth}
         onHuman={(p) => { parts.current = p; }}>
         {!current && <Capture parts={parts} expectFace={expectFace} onShot={(url) => {
           if (url) STILLS.set(key, url);

@@ -8,16 +8,19 @@ import { useAuth } from "@/lib/auth/session";
 import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast, ChipMultiSelect } from "@/components/ui";
 import { couponText, GAME_TYPE_LABEL, VoucherDialog, type Combination, type Voucher } from "@/components/flair/flair-shared";
 import { useI18n } from "@/lib/i18n/i18n";
+import { CouponChannelField, couponChannelText } from "@/components/coupons/coupon-channel-field";
+import { CouponMinimumFields, minimumBody, minimumValid } from "@/components/coupons/coupon-minimum";
 import { currentIntl } from "@/lib/i18n/state";
 
 interface Tab { admin: boolean; brandName: string; participating: boolean; combinations: Combination[]; redemptions?: Voucher[]; stats?: { issued: number; used: number }; gameTypes?: { id: string; label: string }[]; }
 interface Form {
   id?: string; name: string; description: string; gameType: string; requiredCategories: string[]; requiredStyles: string[]; requiredOccasions: string[];
   minBrandPieces: string; minDeckPower: string; minRarity: string; minWins: string; couponTitle: string; discountKind: "percent" | "amount"; discount: string;
-  minPurchase: string; validDays: string; stock: string; active: boolean; accentColor: string; storeUrl: string;
+  minPurchase: string; validDays: string; stock: string; active: boolean; accentColor: string; storeUrl: string; canalCupomId: string; canalCupomNome?: string | null;
+  minPurchaseCurrency: string; /** combinação antiga: valor gravado sem moeda */ minPurchaseLegacy?: boolean;
 }
 const EMPTY: Form = { name: "", description: "", gameType: "COMBINACAO", requiredCategories: [], requiredStyles: [], requiredOccasions: [], minBrandPieces: "1", minDeckPower: "0", minRarity: "",
-  minWins: "2", couponTitle: "", discountKind: "percent", discount: "10", minPurchase: "", validDays: "30", stock: "100", active: true, accentColor: "#2D55C9", storeUrl: "" };
+  minWins: "2", couponTitle: "", discountKind: "percent", discount: "10", minPurchase: "", validDays: "30", stock: "100", active: true, accentColor: "#2D55C9", storeUrl: "", canalCupomId: "", minPurchaseCurrency: "BRL" };
 
 /**
  * RF14/RF22 — aba "Minhas combinações FLAIR" do perfil da loja: a loja participante define qual combinação de cartas
@@ -40,7 +43,8 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
     id: c.id, name: c.name, description: c.description ?? "", gameType: c.gameType, requiredCategories: c.requiredCategories, requiredStyles: c.requiredStyles, requiredOccasions: c.requiredOccasions,
     minBrandPieces: String(c.minBrandPieces), minDeckPower: String(c.minDeckPower), minRarity: c.minRarity ?? "", minWins: String(c.minWins || 2), couponTitle: c.coupon.title,
     discountKind: c.coupon.discountPercent !== "" ? "percent" : "amount", discount: String(c.coupon.discountPercent !== "" ? c.coupon.discountPercent : c.coupon.discountAmount),
-    minPurchase: c.coupon.minPurchase === "" ? "" : String(c.coupon.minPurchase), validDays: String(c.coupon.validDays), stock: c.stock == null ? "" : String(c.stock), active: c.active, accentColor: c.accentColor, storeUrl: (c as Combination & { storeUrl?: string | null }).storeUrl ?? "",
+    minPurchase: c.coupon.minPurchase === "" ? "" : String(c.coupon.minPurchase), validDays: String(c.coupon.validDays), stock: c.stock == null ? "" : String(c.stock), active: c.active, accentColor: c.accentColor, storeUrl: (c as Combination & { storeUrl?: string | null }).storeUrl ?? "", canalCupomId: c.canalCupom?.id ?? "", canalCupomNome: c.canalCupom?.nome,
+    minPurchaseCurrency: c.coupon.minPurchaseCurrency || (c.coupon.minPurchase === "" ? "BRL" : ""), minPurchaseLegacy: c.coupon.minPurchase !== "" && !c.coupon.minPurchaseCurrency,
   });
   async function save() {
     if (!form) return;
@@ -49,7 +53,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
     const body = { name: form.name, description: form.description || null, gameType: form.gameType, requiredCategories: form.requiredCategories, requiredStyles: form.requiredStyles,
       requiredOccasions: form.requiredOccasions, minBrandPieces: n(form.minBrandPieces), minDeckPower: n(form.minDeckPower), minRarity: form.minRarity || null, minWins: n(form.minWins),
       couponTitle: form.couponTitle, discountPercent: form.discountKind === "percent" ? n(form.discount) : null, discountAmount: form.discountKind === "amount" ? n(form.discount) : null,
-      minPurchase: n(form.minPurchase), validDays: n(form.validDays), stock: n(form.stock), active: form.active, accentColor: form.accentColor, storeUrl: form.storeUrl || null };
+      ...minimumBody(form.minPurchase, form.minPurchaseCurrency), validDays: n(form.validDays), stock: n(form.stock), active: form.active, accentColor: form.accentColor, storeUrl: form.storeUrl || null, canalCupomId: form.canalCupomId || null };
     try {
       if (form.id) await api.put(`/api/flair/brand/combinations/${form.id}`, body); else await api.post("/api/flair/brand/combinations", body);
       toast.success(t("flair.brandFlairTab.combinacao_salva")); setForm(null); tab.reload();
@@ -97,6 +101,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
                 {c.gameType === "DUELO_PATROCINADO" && <Badge tone="thread">{t("flair.brandFlairTab.vitorias_na_semana", { minWins: c.minWins })}</Badge>}
               </div>
               <p className="type-caption text-faint mt-2">{t("flair.brandFlairTab.troca_s_cupom_valido_por", { redeemed: c.redeemed, value: c.stock != null ? t("flair.brandFlairTab.de", { stock: c.stock }) : "", validDays: c.coupon.validDays })}</p>
+              <p className="type-caption text-faint" data-offer-channel={c.canalCupom?.codigo ?? ""}>{couponChannelText({ canalCupom: c.canalCupom })}</p>
               {d.admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => edit(c)}>{t("common.edit")}</Button><Button size="sm" onClick={() => remove(c)}>{c.redeemed > 0 ? t("common.desativar") : t("common.delete")}</Button></div>}
               {!d.admin && c.redemption && <p className="type-caption mt-2">{rich("flair.brandFlairTab.voce_ja_trocou", { code: c.redemption.code }, { 0: ($c) => <code className="flair-code">{$c}</code> })}</p>}
             </div>
@@ -109,7 +114,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
       )}
 
       <Dialog open={!!form} onClose={() => setForm(null)} size="lg" title={form?.id ? t("flair.brandFlairTab.editar_combinacao_flair") : t("flair.brandFlairTab.nova_combinacao_flair")}
-        footer={<><Button onClick={() => setForm(null)}>{t("common.cancel")}</Button><Button variant="primary" loading={saving} onClick={save} disabled={!form || form.name.trim().length < 3 || form.couponTitle.trim().length < 3 || !form.discount}>{t("common.save")}</Button></>}>
+        footer={<><Button onClick={() => setForm(null)}>{t("common.cancel")}</Button><Button variant="primary" loading={saving} onClick={save} disabled={!form || form.name.trim().length < 3 || form.couponTitle.trim().length < 3 || !form.discount || !minimumValid(form.minPurchase)}>{t("common.save")}</Button></>}>
         {form && <div className="grid gap-3">
           <Field label={t("flair.brandFlairTab.nome_do_jogo")} id="fc-name" required><Input id="fc-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
           <Field label={t("common.descricao")} id="fc-desc"><Textarea id="fc-desc" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
@@ -127,13 +132,14 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label={t("flair.brandFlairTab.desconto")} id="fc-dk"><Select id="fc-dk" value={form.discountKind} onChange={(e) => setForm({ ...form, discountKind: e.target.value as Form["discountKind"] })}><option value="percent">{t("flair.brandFlairTab.do_valor")}</option><option value="amount">{t("flair.brandFlairTab.r_fixo")}</option></Select></Field>
             <Field label={form.discountKind === "percent" ? t("flair.brandFlairTab.percentual_1_90") : t("flair.brandFlairTab.valor_r")} id="fc-dv"><Input id="fc-dv" type="number" min={1} value={form.discount} onChange={(e) => setForm({ ...form, discount: e.target.value })} /></Field>
-            <Field label={t("flair.brandFlairTab.compra_minima_r")} id="fc-mp"><Input id="fc-mp" type="number" min={0} value={form.minPurchase} onChange={(e) => setForm({ ...form, minPurchase: e.target.value })} /></Field>
           </div>
+          <div className="grid gap-3 sm:grid-cols-2"><CouponMinimumFields amount={form.minPurchase} currency={form.minPurchaseCurrency} legacy={form.minPurchaseLegacy} onChange={(patch) => setForm({ ...form, ...patch })} /></div>
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label={t("flair.brandFlairTab.validade_dias_7_120")} id="fc-vd"><Input id="fc-vd" type="number" min={7} max={120} value={form.validDays} onChange={(e) => setForm({ ...form, validDays: e.target.value })} /></Field>
             <Field label={t("flair.brandFlairTab.estoque_de_cupons")} id="fc-st" hint={t("common.vazio_ilimitado")}><Input id="fc-st" type="number" min={1} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></Field>
             <Field label={t("common.color")} id="fc-col"><Input id="fc-col" type="color" className="h-10 w-16 p-1" value={form.accentColor} onChange={(e) => setForm({ ...form, accentColor: e.target.value })} /></Field>
           </div>
+          <CouponChannelField value={form.canalCupomId} selectedName={form.canalCupomNome} onChange={(canalCupomId) => setForm({ ...form, canalCupomId })} />
           <Field label={t("common.link_da_loja_onde_o")} id="fc-url" hint={t("common.opcional_sem_ele_vale_o")}><Input id="fc-url" type="url" placeholder="https://" value={form.storeUrl} onChange={(e) => setForm({ ...form, storeUrl: e.target.value })} /></Field>
           <Switch checked={form.active} onChange={(v) => setForm({ ...form, active: v })} label={t("flair.brandFlairTab.ativa_visivel_no_flair")} />
         </div>}
