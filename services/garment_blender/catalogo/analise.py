@@ -12,14 +12,15 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-from . import estampa, padrao
+from . import estampa, filtros, lugar, padrao
+from .recorte import decal_rgba
 from .cores import dominant_lab, lab_to_rgb, rgb_to_lab, to_hex
 from .mascara import body_hints, frame_of, garment_mask, image_score, pixels_per_meter
 
 WORK = 900          # lado maior da imagem de análise (px)
 SOLID = 0.0003      # menos que isso de desenho na peça: lisa (o "C" da manga da Champion tem ~0,05 %)
 ALL_OVER = 0.18     # desenho em mais que isso da peça, espalhado pelo tronco: estampa corrida
-FLAT_HALF = 1.3     # peça deitada: meia largura da frente ≈ ¼ da volta ≈ 1,3 × a (tronco de seção elíptica, b = 0,68·a)
+MAX_DECALS = 4      # desenhos por peça, os maiores depois do crivo
 
 
 def white_balance(rgb: np.ndarray, labels: np.ndarray) -> np.ndarray:
@@ -51,39 +52,9 @@ def _work(rgb: np.ndarray, labels: np.ndarray) -> tuple[np.ndarray, np.ndarray, 
     return small, labels, f
 
 
-def _placement(g: estampa.Group, frame, ppm: float, chest_a: float, sleeve: dict | None) -> dict | None:
-    """Lugar do desenho na peça (m): ``x`` do centro da frente (+ = lado esquerdo de quem veste, à direita na foto),
-    ``abaixo_do_ombro`` do centro do desenho e ``largura``. Na foto em modelo a distância ao centro é projeção do
-    tronco redondo: vira arco (a·arcsen). A frente do tronco vai, na foto em modelo, até ±a (os braços ficam do lado)
-    e, na peça deitada, até ±¼ da volta; fora dela o desenho é de manga (``_on_sleeve``)."""
-    y0, y1, x0, x1 = g.box
-    raw_x = ((x0 + x1) / 2 - frame.center) / ppm
-    x = chest_a * math.asin(max(-0.98, min(0.98, raw_x / chest_a))) if frame.worn else raw_x
-    below = ((y0 + y1) / 2 - frame.top) / ppm
-    width, height = (x1 - x0) / ppm, (y1 - y0) / ppm
-    zone = 0.85 * (chest_a if frame.worn else FLAT_HALF * chest_a)
-    if abs(x) + width / 2 > zone:
-        return _on_sleeve(raw_x, below, width, height, sleeve) if sleeve else None
-    if below - height / 2 < 0.02 or below + height / 2 > 0.97 * frame.height / ppm:
-        return None
-    return {"x": round(x, 4), "abaixo_do_ombro": round(below, 4), "largura": round(width, 4),
-            "altura": round(height, 4), "lado": "frente"}
-
-
-def _on_sleeve(x: float, below: float, width: float, height: float, sleeve: dict) -> dict | None:
-    """Desenho na manga: a distância é da ponta do ombro (meio ombro para o lado, a queda do ombro para baixo) ao
-    centro do desenho, manga abaixo; o lado é o de quem veste (à direita na foto = manga esquerda)."""
-    dx, dy = abs(x) - sleeve["meia_ombro"], below - sleeve["queda"]
-    along = math.hypot(max(dx, 0.0), dy)
-    if dy < 0 or not 0.04 < along < sleeve["comprimento"] - 0.03 or max(width, height) > 0.6 * sleeve["comprimento"]:
-        return None
-    return {"x": 0.0, "abaixo_do_ombro": round(along, 4), "largura": round(width, 4), "altura": round(height, 4),
-            "lado": "manga_esquerda" if x > 0 else "manga_direita"}
-
-
 def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, chest_a: float,
             avoid_center: bool = False, sleeve: dict | None = None, *, hooded: bool = False,
-            neck: float = 0.04) -> dict:
+            neck: float = 0.04, clues: dict | None = None) -> dict:
     """Tudo o que a foto diz da pintura da peça. ``length_m``: comprimento da base (ombro à barra); ``chest_a``: meia
     largura do tronco da base no peito (m); ``avoid_center``: a frente tem vista (botões/zíper) no meio; ``sleeve``:
     a manga da base (``meia_ombro``, ``queda``, ``comprimento``, em m), None sem manga; ``hooded``: com capuz;
@@ -113,8 +84,8 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
         stripes["periodo"] = round(stripes.pop("periodo_px") / ppm, 4)
         out.update(padrao="listras", listras=stripes)
         return out
-    found = estampa.groups(cand, frame, mask.sum(), dist, limit=6)
-    if _all_over(cand, raw, mask, frame, coverage, found):
+    found = estampa.groups(cand, frame, mask.sum(), dist, limit=12)
+    if _all_over(cand, raw, mask, frame, coverage, found[:6]):
         piece = padrao.tile(rgb, lab, mask, frame, avoid_center)
         if piece is not None:
             img, side = piece
@@ -123,14 +94,27 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
     if coverage <= SOLID or frame.symmetry < 0.72:   # de lado, o desenho cairia no lugar errado: só a cor
         return out
     rgb_big = np.clip(rgb_full * gains, 0, 255).astype(np.uint8) if f > 1 else rgb
-    for g in found[:4]:
-        where = _placement(g, frame, ppm, chest_a, sleeve)
-        if where is None or not _keep(where, frame, avoid_center, neck):
-            continue
-        where["imagem"] = estampa.decal_rgba(rgb_big, lab, shade, base, g, f)
+    for g, where in _decals(found, frame, mask, ppm, chest_a, sleeve, avoid_center, neck,
+                            filtros.Ruler(lab, shade, base, dist, cand, mask), clues):
+        where["imagem"] = decal_rgba(rgb_big, lab, shade, base, g, f)
         out["padrao"] = "localizada"
         out["decalques"].append(where)
     return out
+
+
+def _decals(found, frame, mask, ppm, chest_a, sleeve, avoid_center, neck, ruler, clues) -> list:
+    """Os desenhos que ficam, cada um com o lugar: todos os achados passam pelo lugar e pelo crivo antes do corte nos
+    ``MAX_DECALS`` maiores (o corte antes do crivo deixava a faixa da manga recusada tomar a vaga de uma linha de texto
+    do peito)."""
+    half = lugar.torso_half(mask, frame) if frame.worn else None
+    kept = []
+    for g in found:
+        where = lugar.placement(g.box, frame, ppm, chest_a, sleeve, half)
+        if where is None or not lugar.keep(where, frame, avoid_center, neck):
+            continue
+        if filtros.accept(ruler.looks(g), where, frame, clues):
+            kept.append((g, where))
+    return kept[:MAX_DECALS]
 
 
 def _all_over(cand, raw, mask, frame, coverage: float, found: list) -> bool:
@@ -144,19 +128,3 @@ def _all_over(cand, raw, mask, frame, coverage: float, found: list) -> bool:
     torso = 0.6 * (frame.right - frame.left) * 0.8 * frame.height
     biggest = max(((g.box[1] - g.box[0]) * (g.box[3] - g.box[2]) for g in found), default=0) / max(torso, 1.0)
     return not (len(found) <= 3 and biggest < 0.6)
-
-
-def _keep(where: dict, frame, avoid_center: bool, neck: float) -> bool:
-    """Desenho que é mesmo desenho e está no pano: nem lasca, nem cordão do capuz ou cadarço do zíper no meio, nem o
-    fundo da gola aparecendo pelo decote (o V), nem o que aparece pela frente aberta vestida (o meio e o V mostram a
-    roupa de baixo)."""
-    w, h, x = where["largura"], where["altura"], where["x"]
-    if min(w, h) < 0.008 or w * h < 0.0002:
-        return False
-    if where["lado"] != "frente":
-        return True
-    if h > 2.5 * w and abs(x) < 0.08:
-        return False
-    if abs(x) < 0.05 and where["abaixo_do_ombro"] - h / 2 < neck + 0.02:
-        return False
-    return not (avoid_center and frame.worn and (abs(x) < w / 2 or (abs(x) < 0.08 and where["abaixo_do_ombro"] < 0.35)))

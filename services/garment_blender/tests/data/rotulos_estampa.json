@@ -1,0 +1,1047 @@
+{
+"alexander-mcqueen-3fe5d58617": {
+"padrao": "liso"
+},
+"alexander-mcqueen-7f549c07db": {
+"aceita": [
+"liso"
+],
+"ambiguo": true,
+"padrao": "corrida"
+},
+"alexander-mcqueen-e73219346b": {
+"aceita": [
+"liso"
+],
+"ambiguo": true,
+"padrao": "corrida"
+},
+"allsaints-0840c5b454": {
+"padrao": "liso"
+},
+"allsaints-56e89c08a1": {
+"padrao": "liso"
+},
+"allsaints-5c09af6a87": {
+"padrao": "liso"
+},
+"allsaints-794b380b7f": {
+"padrao": "liso"
+},
+"allsaints-db59075acd": {
+"padrao": "liso"
+},
+"amaro-20597fcd32": {
+"padrao": "liso"
+},
+"amaro-5ce52914e5": {
+"padrao": "liso"
+},
+"amaro-cff56d9aa8": {
+"padrao": "liso"
+},
+"animale-076aca2877": {
+"padrao": "listras"
+},
+"animale-0871088e32": {
+"padrao": "liso"
+},
+"animale-1aa0bc651c": {
+"padrao": "liso"
+},
+"animale-1cb19c2725": {
+"padrao": "corrida"
+},
+"animale-4dd1565416": {
+"padrao": "liso"
+},
+"animale-5de8b9d166": {
+"ambiguo": true,
+"padrao": "liso"
+},
+"animale-8a19ebb8f3": {
+"padrao": "liso"
+},
+"animale-e9fe145dd6": {
+"padrao": "liso"
+},
+"aramis-cac294710a": {
+"padrao": "liso"
+},
+"armani-10f96b58dd": {
+"padrao": "liso"
+},
+"armani-15c188e5a5": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"armani-1700f47af7": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"armani-176e6294f2": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"armani-4cf90e38d6": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "dir"
+}
+],
+"faixas_manga": true,
+"padrao": "localizada"
+},
+"armani-5c33e443b7": {
+"aceita": [
+"liso"
+],
+"padrao": "corrida"
+},
+"armani-77f5e00178": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+},
+{
+"lado": "manga_direita"
+},
+{
+"lado": "manga_esquerda"
+}
+],
+"faixas_manga": true,
+"padrao": "localizada"
+},
+"armani-7f020465d0": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"armani-8c014d2a69": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"armani-a00bf7e0ff": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"armani-a62d9800ba": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"armani-be505b5bda": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"faixas_manga": true,
+"padrao": "localizada"
+},
+"armani-c0bdbeb7e6": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"armani-caef60adc3": {
+"aceita": [
+"liso"
+],
+"padrao": "corrida"
+},
+"armani-d6abd7599b": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"faixas_manga": true,
+"padrao": "localizada"
+},
+"armani-d6cb121350": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"faixas_manga": true,
+"padrao": "localizada"
+},
+"armani-e9a08dacf9": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"banana-republic-1eb95c6949": {
+"padrao": "liso"
+},
+"banana-republic-aad1ee2666": {
+"ambiguo": true,
+"padrao": "listras"
+},
+"baw-clothing-bb7efb827a": {
+"padrao": "corrida"
+},
+"billabong-bd13a72ce1": {
+"ambiguo": true,
+"padrao": "liso"
+},
+"brooks-brothers-3bf49ce7e6": {
+"padrao": "liso"
+},
+"brooks-brothers-4f2ea081e9": {
+"padrao": "liso"
+},
+"burberry-02afd4370b": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"burberry-20e4090599": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"burberry-4dbdaf351b": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"faixas_manga": true,
+"padrao": "localizada"
+},
+"burberry-608dbf8669": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"burberry-929c86573e": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"burberry-ae4d130454": {
+"padrao": "corrida"
+},
+"burberry-e9155d04b8": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"calvin-klein-134b3a825d": {
+"padrao": "liso"
+},
+"calvin-klein-f2acb5b993": {
+"padrao": "liso"
+},
+"cantao-0177c18fab": {
+"ambiguo": true,
+"faixas_manga": true,
+"padrao": "liso"
+},
+"cantao-5e505c0099": {
+"padrao": "liso"
+},
+"cantao-e0763be5b4": {
+"padrao": "corrida"
+},
+"carhartt-wip-0c613ccffc": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"carhartt-wip-b15791aaf9": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"carhartt-wip-e2ba8f4ed6": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"champion-37dae1f052": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "centro"
+},
+{
+"lado": "manga_esquerda",
+"pequeno": true
+}
+],
+"padrao": "localizada"
+},
+"champion-6b5811f604": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "centro"
+},
+{
+"lado": "manga_esquerda",
+"pequeno": true
+}
+],
+"padrao": "localizada"
+},
+"champion-ef06332437": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+},
+{
+"lado": "manga_direita"
+},
+{
+"lado": "manga_esquerda",
+"pequeno": true
+}
+],
+"padrao": "localizada"
+},
+"columbia-01302aadf4": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"columbia-1202feb44d": {
+"padrao": "liso"
+},
+"columbia-14c686e0ce": {
+"padrao": "corrida"
+},
+"columbia-3bdac3a5fa": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"columbia-6be2f1dcb9": {
+"padrao": "corrida"
+},
+"columbia-7c70bf0329": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"columbia-878c445c8c": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"columbia-974f13690d": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"columbia-b26e9b0d8e": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"columbia-e47a70f365": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"columbia-e94a805161": {
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+},
+{
+"lado": "manga_esquerda"
+}
+],
+"padrao": "localizada"
+},
+"columbia-fe6e58461d": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"desigual-06543fb909": {
+"padrao": "liso"
+},
+"desigual-399d2cf052": {
+"padrao": "corrida"
+},
+"desigual-47b6eac085": {
+"padrao": "liso"
+},
+"desigual-6c41f4f1d7": {
+"padrao": "liso"
+},
+"desigual-72e6a8f6a2": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"desigual-7aef826cbf": {
+"padrao": "liso"
+},
+"dickies-0248cd48f7": {
+"padrao": "liso"
+},
+"dickies-6a2637949d": {
+"ambiguo": true,
+"padrao": "localizada"
+},
+"dickies-a9104187fe": {
+"padrao": "liso"
+},
+"dickies-c30d2a0344": {
+"padrao": "liso"
+},
+"dudalina-0798314d93": {
+"padrao": "liso"
+},
+"dudalina-24745c1dd5": {
+"padrao": "liso"
+},
+"dudalina-b0d4872654": {
+"padrao": "liso"
+},
+"dudalina-dfebdd9636": {
+"padrao": "liso"
+},
+"ellesse-0e39807575": {
+"padrao": "liso"
+},
+"ellesse-179d93b312": {
+"padrao": "listras"
+},
+"ellesse-373d63e688": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"ellesse-8ae9323fd0": {
+"padrao": "listras"
+},
+"ellus-5ebd457d19": {
+"padrao": "liso"
+},
+"ellus-996f44b2a6": {
+"ambiguo": true,
+"padrao": "liso"
+},
+"ellus-c3fac3194f": {
+"padrao": "corrida"
+},
+"everlane-419f74fbff": {
+"padrao": "liso"
+},
+"everlane-453296f353": {
+"aceita": [
+"liso"
+],
+"padrao": "listras"
+},
+"everlane-4de17c4a18": {
+"padrao": "listras"
+},
+"everlane-78611e3b1c": {
+"padrao": "liso"
+},
+"everlane-99a92371cf": {
+"padrao": "liso"
+},
+"everlane-afdd068a40": {
+"padrao": "liso"
+},
+"everlane-b55810026f": {
+"padrao": "liso"
+},
+"everlane-cb796337d7": {
+"padrao": "liso"
+},
+"everlane-eac88ae4f0": {
+"padrao": "liso"
+},
+"farm-rio-9b185e1701": {
+"padrao": "corrida"
+},
+"fila-52e911d61c": {
+"padrao": "liso"
+},
+"fila-6c69124abb": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"fila-b0e27d810f": {
+"padrao": "liso"
+},
+"fila-c8fe595fb1": {
+"padrao": "liso"
+},
+"g-star-raw-b7afde9aa7": {
+"padrao": "liso"
+},
+"hering-c110704804": {
+"padrao": "liso"
+},
+"highstil-028e2df94c": {
+"padrao": "liso"
+},
+"highstil-7af8745ae6": {
+"padrao": "liso"
+},
+"highstil-d3722eace8": {
+"padrao": "liso"
+},
+"highstil-e1bace9d45": {
+"padrao": "liso"
+},
+"hope-ffb03fc122": {
+"aceita": [
+"liso"
+],
+"padrao": "corrida"
+},
+"insider-07fc27f6db": {
+"padrao": "liso"
+},
+"insider-85a50438e8": {
+"ambiguo": true,
+"padrao": "liso"
+},
+"j-crew-fadff2086f": {
+"padrao": "liso"
+},
+"jack-jones-10cda84e53": {
+"padrao": "liso"
+},
+"jack-jones-63806c4418": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"jack-jones-720e4ef329": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"jack-jones-a654a06b8d": {
+"padrao": "liso"
+},
+"jack-jones-f319f563f2": {
+"padrao": "liso"
+},
+"jack-jones-f9058b1c9a": {
+"padrao": "liso"
+},
+"john-john-2be9f37d74": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"john-john-53c78fface": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"john-john-c1ca53e222": {
+"padrao": "liso"
+},
+"john-john-df4da95668": {
+"padrao": "liso"
+},
+"le-lis-blanc-cff24377fb": {
+"ambiguo": true,
+"padrao": "localizada"
+},
+"le-lis-blanc-e568ba58b6": {
+"padrao": "liso"
+},
+"le-lis-e379bbbbb6": {
+"padrao": "liso"
+},
+"levi-s-5a06f8c247": {
+"padrao": "corrida"
+},
+"lupo-a03246bde3": {
+"ambiguo": true,
+"padrao": "localizada"
+},
+"malwee-e4a966d3e1": {
+"padrao": "liso"
+},
+"mizuno-076dbd20b9": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"napapijri-a4186b9d6b": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"faixas_manga": true,
+"padrao": "localizada"
+},
+"nike-17acb7248c": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"nike-35f41e0645": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"nike-6d8c9bcea8": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+},
+{
+"lado": "frente",
+"pequeno": true,
+"x": "esq"
+},
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"quiksilver-0759bcf69a": {
+"aceita": [
+"liso"
+],
+"padrao": "listras"
+},
+"quiksilver-11c9296a1a": {
+"padrao": "corrida"
+},
+"quiksilver-fbbc4ec8f9": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+},
+{
+"lado": "manga_esquerda"
+}
+],
+"padrao": "localizada"
+},
+"reebok-9f55f689d8": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"reserva-52487d120c": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"richards-5f0251eae4": {
+"ambiguo": true,
+"padrao": "liso"
+},
+"rip-curl-be2d91c2ad": {
+"padrao": "corrida"
+},
+"rip-curl-c3fc3cb8cb": {
+"padrao": "corrida"
+},
+"sergio-k-557f8c84dd": {
+"padrao": "liso"
+},
+"sergio-k-5a3d4edac0": {
+"aceita": [
+"listras"
+],
+"padrao": "corrida"
+},
+"sergio-k-750f660a80": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"sergio-k-9361972fff": {
+"padrao": "liso"
+},
+"sergio-k-d4a72a7034": {
+"padrao": "liso"
+},
+"sergio-k-e74f4af1a0": {
+"padrao": "liso"
+},
+"shoulder-569fa6ae57": {
+"padrao": "corrida"
+},
+"shoulder-8c77f91611": {
+"padrao": "liso"
+},
+"shoulder-9b7d8b6a83": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"shoulder-9e7a5b2f0d": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"shoulder-aecce65489": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"skechers-5bb6c70762": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "frente",
+"pequeno": true,
+"x": "dir"
+}
+],
+"padrao": "localizada"
+},
+"skechers-642ca22fe8": {
+"padrao": "liso"
+},
+"skechers-80af917843": {
+"aceita": [
+"liso"
+],
+"desenhos": [
+{
+"lado": "manga_esquerda",
+"pequeno": true
+}
+],
+"padrao": "localizada"
+},
+"skechers-8c2b1c4815": {
+"padrao": "liso"
+},
+"skechers-d049b349c6": {
+"padrao": "liso"
+},
+"skechers-de2f375bf4": {
+"desenhos": [
+{
+"lado": "frente",
+"x": "centro"
+}
+],
+"padrao": "localizada"
+},
+"skechers-f49b32be55": {
+"aceita": [
+"corrida"
+],
+"padrao": "listras"
+},
+"under-armour-9a62a8feed": {
+"padrao": "corrida"
+},
+"valentino-e8decadb63": {
+"padrao": "corrida"
+},
+"vero-moda-92a4343c88": {
+"padrao": "corrida"
+},
+"vero-moda-d5889567bf": {
+"ambiguo": true,
+"padrao": "liso"
+},
+"vero-moda-f6a2495f18": {
+"padrao": "liso"
+}
+}
