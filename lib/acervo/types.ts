@@ -16,6 +16,20 @@ export interface AcervoCompartimento {
   pecas: number;
 }
 
+/** Lugar de uma peça para outras telas: `compartimentoId` é o endereço estável; os nomes são os atuais. */
+export interface AcervoLugar {
+  pieceId: string;
+  guardada: boolean;
+  compartimentoId: string | null;
+  movelId: string | null;
+  ambienteId: string | null;
+  tipo: AcervoTipo | null;
+  compartimento: string | null;
+  movel: string | null;
+  ambiente: string | null;
+  caminho: string | null;
+}
+
 export interface AcervoMovelConfig {
   modo: AcervoModo;
   larguraCm: number;
