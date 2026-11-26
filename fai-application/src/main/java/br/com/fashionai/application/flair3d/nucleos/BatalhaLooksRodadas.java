@@ -110,15 +110,23 @@ final class BatalhaLooksRodadas {
         return contexto.sortear("desafio", CONVITE.equals(contexto.rodada()) ? CONVITES : CLIMAS);
     }
 
-    /** A nota do adversário da casa na rodada: o look dele, tirado da semente, pelas regras do desafio. */
+    /** A nota do adversário da casa na rodada: o look dele, tirado da semente, pela mesma conta da pessoa. */
     static int adversario(Contexto contexto, int rodada, Desafio desafio) {
-        return BatalhaLooksAdversario.nota(desafio, BatalhaLooksAdversario.look(contexto, rodada));
+        return BatalhaLooksPlacar.daCasa(desafio, BatalhaLooksAdversario.look(contexto, rodada)).total();
     }
 
-    /** O que a tela mostra do adversário depois da entrega da rodada: a nota, a família dominante e as peças. */
+    /** O que a tela mostra do adversário depois da entrega da rodada: a nota, a conta, a família dominante e as peças. */
     static Map<String, Object> adversarioNaTela(Contexto contexto, int rodada, Desafio desafio) {
         Map<String, CbcRules.Card> look = BatalhaLooksAdversario.look(contexto, rodada);
-        return BatalhaLooksAdversario.paraTela(look, BatalhaLooksAdversario.nota(desafio, look));
+        return BatalhaLooksAdversario.paraTela(look, BatalhaLooksPlacar.daCasa(desafio, look));
+    }
+
+    /** O desafio da vez numa partida aberta: o da etapa que a pessoa vai entregar (a batalha) ou o do treino. */
+    static Desafio daVez(Contexto contexto) {
+        if (!BATALHA.equals(contexto.rodada())) {
+            return treino(contexto);
+        }
+        return desafios(contexto).get(Math.min(RODADAS, contexto.andamento().anteriores().size() + 1) - 1);
     }
 
     /** Os 3 desafios da batalha: um de cada tipo, em ordem sorteada, cada um com a variação sorteada. */
@@ -156,8 +164,11 @@ final class BatalhaLooksRodadas {
                 Map<String, Object> adversario = adversarioNaTela(contexto, look.etapa(), desafio);
                 Map<String, Object> placar = new LinkedHashMap<>();
                 placar.put("rodada", look.etapa());
-                placar.put("voce", Math.round(pontos(regras)));
+                placar.put("desafio", desafio.codigo());
+                placar.put("voce", (long) voce.nota().total());
                 placar.put("adversario", adversario.get("nota"));
+                placar.put("conta", Map.of("voce", voce.nota().paraTela(), "adversario", adversario.get("conta")));
+                placar.put("cansadas", voce.cansadas());
                 placar.put("familia", adversario.get("familia"));
                 placar.put("look", adversario.get("look"));
                 List<Evento> eventos = new ArrayList<>();
@@ -190,7 +201,9 @@ final class BatalhaLooksRodadas {
 
             @Override
             public List<Evento> fecho(List<Passo> passos) {
+                // o placar de cada rodada volta no resultado final: a comparação rodada a rodada e o último look da casa
                 List<Evento> out = new ArrayList<>();
+                passos.forEach(p -> out.addAll(p.avaliacao().eventos()));
                 Map<String, Object> soma = new LinkedHashMap<>();
                 soma.put("voce", soma(passos));
                 soma.put("adversario", somaDoAdversario(passos));

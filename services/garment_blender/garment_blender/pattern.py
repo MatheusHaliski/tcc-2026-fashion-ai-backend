@@ -53,11 +53,19 @@ def pattern_maps(kind: str, spec, out: Path) -> tuple[dict[str, Path], tuple[flo
         tag = f"listras-{s.fundo.lstrip('#')}-{s.listra.lstrip('#')}"
     else:
         a = spec.estampa_corrida
-        m = int(np.clip(round(a.lado / TILE_M), 1, MAX_TILES))
-        img = Image.open(a.imagem).convert("RGB").resize((SIZE * m, SIZE * m), Image.Resampling.LANCZOS)
-        # o u do tronco cresce de +x para −x pela frente: a imagem vai espelhada para a estampa sair no sentido da foto
-        rgb = np.asarray(img, float)[:, ::-1] / 255
-        reps, scale, tag = (m, m), (1.0 / m, 1.0 / m), f"corrida-{Path(a.imagem).stem}"
+        return image_maps(kind, a.imagem, a.lado, out, f"corrida-{Path(a.imagem).stem}")
     hh = np.tile(h, reps)
     rgb = shade(rgb, hh)   # a média de cada canal continua a da padronagem
     return _save(rgb, _normal(hh, strength), out, tag), scale
+
+
+def image_maps(kind: str, image: str, side: float, out: Path, tag: str) -> tuple[dict[str, Path], tuple[float, float]]:
+    """Cor e normal map de um pedaço de padronagem tirado da foto (estampa corrida, faixa xadrez da vista), que cobre
+    ``side`` m de pano, com o relevo do tecido por cima; e a escala do UV."""
+    h, strength = height_map(kind if repeat(kind) == 1 else "nylon")
+    m = int(np.clip(round(side / TILE_M), 1, MAX_TILES))
+    img = Image.open(image).convert("RGB").resize((SIZE * m, SIZE * m), Image.Resampling.LANCZOS)
+    # o u do tronco cresce de +x para −x pela frente: a imagem vai espelhada para a estampa sair no sentido da foto
+    rgb = np.asarray(img, float)[:, ::-1] / 255
+    hh = np.tile(h, (m, m))
+    return _save(shade(rgb, hh), _normal(hh, strength), out, tag), (1.0 / m, 1.0 / m)

@@ -26,7 +26,7 @@ import java.util.*;
 @Service
 @Transactional
 public class GarmentPassportService {
-    private static final Set<String> SHARE_FIELDS = Set.of("NAME", "ORIGIN", "COMPOSITION", "CARE", "HISTORY", "MANUFACTURING");
+    private static final Set<String> SHARE_FIELDS = Set.of("NAME", "ORIGIN", "COMPOSITION", "CARE", "HISTORY");
     private static final Set<String> EVENT_KINDS = Set.of("PURCHASE", "CARE", "REPAIR", "ALTERATION", "CORRECTION");
     private static final Set<String> ORIGINS = Set.of("UNKNOWN", "COMPRADA", "GARIMPADA", "HERDADA", "PRESENTE", "FEITA_A_MAO", "TROCADA", "SOB_ENCOMENDA");
     private final GarmentPassportRepository passports;
@@ -120,7 +120,7 @@ public class GarmentPassportService {
     public record TransferView(UUID id, UUID passportId, String status, Instant expiresAt, long version, UUID recipientPieceId) {}
     public record PrivateView(UUID id, UUID pieceId, long version, String pieceName, String origin, String composition,
             String care, String provenance, List<EventView> events, List<EvidenceView> evidence,
-            List<ShareView> shares, List<TransferView> transfers, Map<String,Object> manufacturing) {}
+            List<ShareView> shares, List<TransferView> transfers) {}
     public record ShareCreated(ShareView share, String token, String path) {}
     public record TransferCreated(TransferView transfer, String token) {}
 
@@ -182,8 +182,7 @@ public class GarmentPassportService {
                 events.findByPassportIdOrderByCreatedAtAsc(p.getId()).stream().map(e->PassportViews.event(e,user.id())).toList(),
                 evidence.findByPassportIdAndControllerId(p.getId(),user.id()).stream().filter(e->e.getDeletedAt()==null).map(e->PassportViews.evidence(e,now())).toList(),
                 shares.findByPassportId(p.getId()).stream().filter(s->s.getOwnerId().equals(user.id())).map(PassportViews::share).toList(),
-                transfers.findByPassportIdOrderByCreatedAtDesc(p.getId()).stream().map(t->PassportViews.transfer(t,now())).toList(),
-                PassportViews.manufacturing(p.getManufacturingJson(),users,false));
+                transfers.findByPassportIdOrderByCreatedAtDesc(p.getId()).stream().map(t->PassportViews.transfer(t,now())).toList());
     }
     public ShareCreated share(CurrentUser user, UUID id, ShareCommand command) {
         writable(user); GarmentPassport p=locked(user,id); version(p,command.version());
@@ -237,7 +236,6 @@ public class GarmentPassportService {
         if(scope.contains("CARE")) out.put("care",p.getCare());
         if(scope.contains("HISTORY")) out.put("events",events.findByPassportIdOrderByCreatedAtAsc(p.getId()).stream()
                 .map(e->Map.of("kind",e.getKind(),"occurredOn",e.getOccurredOn(),"provenance",PassportViews.provenance(e.getKind()))).toList());
-        if(scope.contains("MANUFACTURING")&&p.getManufacturingJson()!=null) out.put("manufacturing",PassportViews.manufacturing(p.getManufacturingJson(),users,true));
         return out;
     }
     public Map<String,Object> resale(CurrentUser user, UUID id) {

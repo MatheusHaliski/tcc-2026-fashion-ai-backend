@@ -92,7 +92,7 @@ public final class Flair3dRecursoBonus {
     }
 
     /** O quanto os atributos pedidos passam do neutro (média ponderada), em até TETO_DOS_ATRIBUTOS pontos. */
-    static int pelosAtributos(PerfilDoJogo perfil, PerfilDoLook look) {
+    public static int pelosAtributos(PerfilDoJogo perfil, PerfilDoLook look) {
         double soma = 0;
         int pesos = 0;
         for (Map.Entry<Atributo, Integer> e : perfil.pesos().entrySet()) {

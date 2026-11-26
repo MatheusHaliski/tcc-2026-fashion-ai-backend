@@ -6,7 +6,7 @@
  * mesmo comando (use-nucleo-controls) e pela mesma redução de estado (lib/flair/nucleos/board.ts). Os efeitos das
  * cartas mostram só o que o servidor calculou e saem também por lib/flair/nucleos/fx-events.ts, para a cena.
  */
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import type { ApiError } from "@/lib/api/client";
 import { useMirrorAvatar } from "@/components/mirror/mirror-stage";
 import { useReducedMotion } from "@/components/three/common";
@@ -23,6 +23,7 @@ import { NucleoResult } from "@/components/flair/nucleos/nucleo-result";
 import { NucleoSlotRuler } from "@/components/flair/nucleos/nucleo-slot-ruler";
 import { NucleoStage } from "@/components/flair/nucleos/nucleo-stage";
 import type { AcionamentoPedido } from "@/components/flair/nucleos/nucleo-trigger";
+import { useNucleoAcionar } from "@/components/flair/nucleos/use-nucleo-acionar";
 import { useCardFx } from "@/components/flair/nucleos/use-card-fx";
 import { useCardZoom } from "@/components/flair/nucleos/use-card-zoom";
 import { useFxPrefs } from "@/components/flair/nucleos/use-fx-prefs";
@@ -108,9 +109,7 @@ export function NucleoGame(props: Props) {
   /** o look em cena: o da entrega com a troca do intervalo que o servidor aplicou (ou o look-alvo, enquanto está à vista) */
   const vestidas = useMemo(() => apresentacao.alvoAVista ?? lookComTroca(estado.sel.cartas, resultado), [apresentacao.alvoAVista, estado.sel.cartas, resultado]);
   const pecas = useMemo(() => (Object.keys(vestidas).length ? pecasDoLook(vestidas, cartas) : pecasDasZonas(codigo, estado.sel.zonas)), [vestidas, cartas, codigo, estado.sel.zonas]);
-  /** a pessoa já acionou uma carta nesta partida (vale até o servidor confirmar ou recusar) */
-  const [acionou, setAcionou] = useState(false);
-  const efeitos = useNucleoEffects(codigo, cartas, definicao.recursos.includes("CARTAS"), { partida: props.partida?.id, rodada: definicao.rodada });
+  const efeitos = useNucleoEffects(codigo, cartas, definicao.recursos.includes("CARTAS"), { partida: props.partida?.id, rodada: definicao.rodada, vez: apresentacao.briefing?.etapa?.etapa });
   const preparando = momento === "PREPARACAO";
   useRascunho(rascunho, preparando, estado.sel, !temEscolha(estado.sel), resultado?.status === "ENTREGUE", rascunho === props.partida?.id);
   const acionamento = acionamentoDe(codigo);
@@ -126,9 +125,6 @@ export function NucleoGame(props: Props) {
   const recursos = useLookDosRecursos(vestidas, efeitos.perfil, preparando, props.previa);
   const usoDeRecursos = useRecursosDaPartida(props.partida?.id, cartas, efeitos.perfil, momento !== "RESULTADO", definicao.deck?.semDeck ? vestidas : undefined);
   const cinema = useCinemaDaPartida({ codigo, partida: props.partida?.id, momento, resultado, reduzido });
-  useEffect(() => {
-    setAcionou(false);
-  }, [props.erroAcionar, resultado]);
   const variante = varianteDaCena(codigo, estado.sel.resposta, props.tentativa, props.partida);
   const entregar = () => {
     if (!preparando || !pronto || entregando) return;
@@ -143,11 +139,7 @@ export function NucleoGame(props: Props) {
     const vaga = tabs.find((t) => t.id === estado.vaga);
     setAviso(tx.t("flair3d.ui.card.noFit", { pos: tx.aba(x.tab), vaga: vaga ? tx.aba(vaga) : "" }));
   };
-  const acionar = (pedido: AcionamentoPedido) => {
-    emitirFx({ tipo: "acionamento", nucleo: codigo, acionamento: pedido.tipo, cardId: pedido.cardId });
-    if (pedido.cardId) setAcionou(true);
-    onAcionar?.(pedido);
-  };
+  const { acionou, acionar } = useNucleoAcionar(codigo, onAcionar, props.erroAcionar, resultado);
 
   const doEsporte = codigo === "FASHION_SPORTS";
   /** Fashion Sports e Fashion Detective jogados por cartas: o palco e a faixa de baixo do jogo (use-modo-por-cartas) */
@@ -173,7 +165,7 @@ export function NucleoGame(props: Props) {
           temAvatar={!!perfil.avatar}
           onEscolha={setEscolha}
           objetivoAberto={estado.objetivo}
-          resultado={resultado}
+          resultado={resultado} tentativa={props.tentativa}
           previa={props.previa ?? null}
           variante={variante} semente={props.partida?.semente}
           zonas={estado.sel.zonas} maquiagem={estado.sel.maquiagem}
