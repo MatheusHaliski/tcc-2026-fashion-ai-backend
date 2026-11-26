@@ -6,7 +6,7 @@
 .fai-store-card { display: grid; grid-template-rows: auto 1fr; width: 100%; height: 100%; padding: 0; overflow: hidden; text-align: left; color: var(--ink); background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); cursor: pointer; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
 .fai-store-card:hover { transform: translateY(-2px); border-color: var(--line); box-shadow: 0 8px 24px #0000001f; }
 .fai-store-card:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.fai-store-photo { display: grid; place-items: center; aspect-ratio: 4 / 5; overflow: hidden; background: var(--surface-2); }
+.fai-store-photo { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 5; overflow: hidden; background: var(--surface-2); }
 .fai-store-card-body { display: grid; align-content: start; gap: 6px; padding: 12px 14px 14px; min-width: 0; }
 .fai-store-card-kicker { color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .fai-store-card-name { overflow-wrap: anywhere; }
@@ -31,9 +31,10 @@
 
 /* card de loja expandido */
 .fai-store-expanded { display: grid; gap: 16px; }
-.fai-store-expanded-photo { display: grid; place-items: center; aspect-ratio: 4 / 5; max-height: 52vh; overflow: hidden; border-radius: var(--radius); background: var(--surface-2); }
+.fai-store-expanded-photo { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 5; max-height: 52vh; overflow: hidden; border-radius: var(--radius); background: var(--surface-2); }
 .fai-store-expanded-info { display: grid; align-content: start; gap: 8px; min-width: 0; }
 .fai-store-error { padding: 8px 12px; border-radius: var(--radius-sm); color: var(--ink); background: color-mix(in srgb, var(--mark) 18%, transparent); border: 1px solid var(--mark); }
 @media (min-width: 720px) {
   .fai-store-expanded { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
 }
+.fai-store-expanded-info > .badge { justify-self: start; }
