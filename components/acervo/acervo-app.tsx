@@ -4,7 +4,7 @@
  * financeiro) e "Meu espaço" (os móveis em perspectiva). Tudo é privado da dona das peças.
  */
 import { useState } from "react";
-import { ErrorState, SkeletonGrid } from "@/components/ui";
+import { ErrorState, PageHeader, SkeletonGrid } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/i18n";
 import type { AcervoVista } from "@/lib/acervo/use-acervo-tela";
 import { AcervoCentral } from "./acervo-central";
@@ -15,9 +15,9 @@ import { AcervoEspaco } from "./espaco/acervo-espaco";
 import { PainelFinanceiro } from "./painel-financeiro";
 import { PecaFicha } from "./peca-ficha";
 
-const VISTAS: { id: AcervoVista; numero: string; chave: string }[] = [
-  { id: "CENTRAL", numero: "01", chave: "acervo.vista.central" },
-  { id: "ESPACO", numero: "02", chave: "acervo.vista.espaco" },
+const VISTAS: { id: AcervoVista; chave: string }[] = [
+  { id: "CENTRAL", chave: "acervo.vista.central" },
+  { id: "ESPACO", chave: "acervo.vista.espaco" },
 ];
 
 function Tela() {
@@ -29,9 +29,8 @@ function Tela() {
 
   return (
     <div className="acv" data-vista={tela.vista} data-modo={tela.modo}>
-      <header className="acv-topo">
-        <p className="acv-marca"><span className="acv-marca-barra" aria-hidden>/</span>{t("acervo.titulo")}</p>
-        <h1 className="acv-vista-titulo"><span aria-hidden>{atual.numero} / </span>{t(atual.chave)}</h1>
+      {/* o mesmo cabeçalho das outras abas: rótulo, título e texto de apoio com os papéis tipográficos do app */}
+      <PageHeader kicker={t("acervo.titulo")} title={t(atual.chave)} lead={t("acervo.privado")} actions={
         <div className="acv-vistas" role="group" aria-label={t("acervo.vista.titulo")}>
           {VISTAS.map((v) => (
             <button key={v.id} type="button" className="acv-pilula" aria-pressed={tela.vista === v.id} onClick={() => tela.setVista(v.id)}>
@@ -39,8 +38,7 @@ function Tela() {
             </button>
           ))}
         </div>
-        <p className="acv-privado">{t("acervo.privado")}</p>
-      </header>
+      } />
       {dados.erro && <ErrorState error={dados.erro} onRetry={dados.recarregar} />}
       {dados.carregando && <SkeletonGrid n={6} />}
       {arvore && arvore.ambientes.length === 0 && <AcervoVazio />}

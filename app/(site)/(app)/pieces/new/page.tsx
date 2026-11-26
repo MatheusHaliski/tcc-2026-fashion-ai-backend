@@ -17,6 +17,8 @@ import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import type { FlairPreview } from "@/components/flair/flair-collection";
 import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCreationPreview } from "@/components/pieces/piece-creation-preview";
+import { useWideScreen } from "@/lib/hooks/use-wide-screen";
+import { PiecePhotoShortcut } from "@/components/pieces/piece-photo-shortcut";
 import { CreationSuccess } from "@/components/expanded-card";
 import { PieceArtEditor } from "@/components/piece-art-editor";
 import { FaiIcon } from "@/components/fai-icon";
@@ -221,6 +223,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
+  const wide = useWideScreen();
   const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category, subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(mode === "catalog" && pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: step === "review" ? savedVisibility(value.visibility, shareToFeed) : value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   return (
     <>
@@ -231,7 +234,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
         options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
       <PieceCreationSteps value={step} onChange={advance} />
       {/* na etapa da arte o editor tem a própria prévia do mesmo card */}
-      <div className={step === "art" ? "piece-create-layout is-art" : "piece-create-layout"}>
+      <div className={step === "art" ? "piece-create-layout is-art" : wide ? "piece-create-layout has-aside" : "piece-create-layout"}>
         <div className="piece-create-main min-w-0">
           {/* as fotos analisadas ficam montadas entre as etapas (só escondidas): voltar para a próxima peça não perde nada */}
           {mode === "photos" && (
@@ -268,17 +271,13 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
               </section>
               {/* RF4 · fotografia opcional: as duas formas de adicionar são separadas pela janela segmentada do topo; aqui só o
                   atalho para a aba Fotografar (uma ou várias fotos, com o guia de fotografia por categoria) */}
-              {mode === "catalog" && <section className="creator-section" aria-labelledby="piece-photo-label">
-                <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
-                <p className="mb-2 type-body-sm text-muted">{t("pieces.new.prefere_fotografar")}</p>
-                <Button size="sm" onClick={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("pieces.new.modo_fotos")}</Button>
-              </section>}
+              {mode === "catalog" && <PiecePhotoShortcut onPhotos={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />}
               {stepProblem && <p role="alert" className="error-text mt-3" data-step-problem>{stepProblem}</p>}
               {nav}
             </Card>
           )}
           {step === "more" && <PieceMoreStep value={value} onChange={editValue} onDetails={setValue} fieldErrors={fieldErrors} hint={mode === "photos" ? photoPick?.hint : null} problem={stepProblem} nav={nav} autoSex={autoSex} />}
-          {step === "art" && <Card><PieceArtEditor value={background} onChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} previewInDialog />{nav}</Card>}
+          {step === "art" && <Card><PieceArtEditor value={background} onChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} previewInDialog={!wide} />{nav}</Card>}
           {step === "review" && (
             <Card>
               <PieceReviewStep value={value} origin={origin} image={officialImg ?? asset} shareToFeed={shareToFeed} onShareToFeed={setShareToFeed}
@@ -289,7 +288,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
             </Card>
           )}
         </div>
-        {step !== "art" && <PieceCreationPreview piece={previewPiece} framing={photoFraming} onFramingChange={(next) => setBackground((current) => ({ ...current, photoFraming: next }))} showPostPreview={step === "review" && shareToFeed} sharedBy={step === "review" && shareToFeed ? user?.username : undefined} />}
+        {step !== "art" && <PieceCreationPreview aside={wide} piece={previewPiece} framing={photoFraming} onFramingChange={(next) => setBackground((current) => ({ ...current, photoFraming: next }))} showPostPreview={step === "review" && shareToFeed} sharedBy={step === "review" && shareToFeed ? user?.username : undefined} />}
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>
       {done && <CreationSuccess kind="piece" id={done} onDone={() => { window.location.href = user ? `/u/${user.username}` : "/closet"; }} />}
