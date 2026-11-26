@@ -24,7 +24,7 @@ import { CardBorder } from "@/components/card-border";
 import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
-import { CardFashionMeta } from "@/components/card-fashion-meta";
+import { infoGridOf } from "@/lib/cards/info-grid";
 import { DefaultGarmentPhoto } from "@/components/catalog/default-garment-photo";
 import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource } from "@/components/catalog/catalog-photo";
 import { catalogWholeFrame, resolveFraming, usePhotoFraming, type PhotoFraming } from "@/lib/photo-framing";
@@ -146,8 +146,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 : <Link href={link} onClick={openModal} className="pc-media" data-photo-framing={framing} style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
               <div className="pc-id">
                 <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} summaryFacts
-                  infoBefore={<>{identity}<CardFashionMeta brands={piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : []} colors={piece.color ?
-                [{ name: piece.color, hex: piece.colorHex }] : []} styles={piece.style} occasions={piece.occasion} /></>} live={live} />
+                  infoBefore={identity} grid={infoGridOf(piece.background, "piece")} live={live} />
               </div>
             </>
           )}

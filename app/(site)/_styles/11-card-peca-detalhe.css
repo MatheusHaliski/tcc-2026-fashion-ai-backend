@@ -31,6 +31,14 @@
 /* A fotografia ocupa menos altura; o resumo abaixo permanece legível e estável. */
 .card-meta-colors { display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .card-meta-more { font-size: 12px; font-weight: 600; color: var(--card-muted, var(--muted)); }
+/* células em ícones: peças do look (asset padrão da categoria na cor da peça), ocasiões (ícones FAI), marcas e estação */
+.card-piece-icons, .card-occasion-icons, .card-meta-brands { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; vertical-align: middle; }
+.card-piece-icon { display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line-soft); border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+.card-piece-icon img { width: 30px; height: 30px; object-fit: contain; }
+.card-occasion-text { font-size: inherit; }
+.card-season, .card-category { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+.card-category img { flex: none; width: 22px; height: 22px; object-fit: contain; }
+.card-season-glyph { flex: none; }
 .fai-card .card-fashion-meta .pc-info-color i { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #0003; }
 .piece-card[data-card-mode="feed"] .pc-id { padding: 14px 16px; gap: 12px; }
 .fai-card[data-card-mode="feed"] :is(.pc-name, .c-title) { min-height: 24px; font-size: 18px; line-height: 1.3; }

@@ -87,8 +87,9 @@ describe("SchemeCard — lista padrão (Peça ampliada)", () => {
     expect(container.querySelector(".piece2")).toBeNull();
     expect(container.querySelector(".c-chips")).toBeNull();
     expect(container.querySelector(".c-titleblock .card-seals .seal-slot")?.getAttribute("aria-label")).toBe("selos: Selo da camiseta");
-    const meta = Array.from(container.querySelectorAll(".card-fashion-meta > div")).map((d) => d.querySelector("dt")?.textContent);
-    expect(meta).toEqual(["Marca", "Cor", "Ocasião", "Estilo"]);
+    const meta = Array.from(container.querySelectorAll(".card-info-grid > div")).map((d) => d.getAttribute("data-field"));
+    expect(meta.every((f) => ["pieces", "brand", "color", "occasion"].includes(f!))).toBe(true);
+    expect(meta).toContain("pieces");
     expect((container.querySelector(".c-photo") as HTMLElement).style.aspectRatio).toBe("4 / 3");
   });
 

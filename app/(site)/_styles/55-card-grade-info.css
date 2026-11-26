@@ -1,0 +1,29 @@
+/* ── Grade de informações do card do feed (peça e look): só os campos escolhidos, numa grade única. Colunas, estilo
+   da célula, rótulos, alinhamento e densidade vêm do Background Studio (lib/cards/info-grid.ts). */
+.fai-card .pc-info.card-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.fai-card .pc-info.card-info-grid[data-cols="1"] { grid-template-columns: minmax(0, 1fr); }
+.fai-card .pc-info.card-info-grid[data-cols="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fai-card .pc-info.card-info-grid > div { display: grid; align-content: start; gap: 2px; min-width: 0; min-height: 0; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 10px; }
+.fai-card .pc-info.card-info-grid dt { margin: 0; font-size: 12px; line-height: 1.2; letter-spacing: .04em; text-transform: uppercase; opacity: .7; }
+.fai-card .pc-info.card-info-grid dd { margin: 0; min-width: 0; font-size: 14px; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }
+.fai-card .pc-info.card-info-grid .brand-logo-name { font-size: 14px; line-height: 1.35; }
+.fai-card .pc-info.card-info-grid .pc-info-color i { flex: none; width: 16px; height: 16px; border-radius: 50%; border: 1px solid #0003; }
+.fai-card .pc-info.card-info-grid .card-meta-colors { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+
+/* estilo da célula */
+.fai-card .pc-info.card-info-grid[data-cells="plain"] > div { padding: 2px 0; border: 0; border-radius: 0; }
+.fai-card .pc-info.card-info-grid[data-cells="pill"] > div { grid-auto-flow: column; justify-content: start; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, currentColor 6%, transparent); }
+
+/* alinhamento e densidade */
+.fai-card .pc-info.card-info-grid[data-align="center"] > div { justify-items: center; justify-content: center; text-align: center; }
+.fai-card .pc-info.card-info-grid[data-density="compact"] { gap: 4px; }
+.fai-card .pc-info.card-info-grid[data-density="compact"] > div { padding: 3px 6px; }
+.fai-card .pc-info.card-info-grid[data-density="compact"] dd { font-size: 13px; }
+.fai-card .pc-info.card-info-grid[data-density="compact"] .card-piece-icon { width: 28px; height: 28px; }
+.fai-card .pc-info.card-info-grid[data-density="compact"] .card-piece-icon img { width: 24px; height: 24px; }
+
+/* criador de peça: a prévia do card fica num painel fixo à direita em telas largas (em telas estreitas, modal) */
+@media (min-width: 1024px) {
+  .piece-create-layout.has-aside { grid-template-columns: minmax(0, 1fr) min(420px, 38%); }
+  .piece-create-aside { position: sticky; top: calc(var(--header-h) + 16px); max-height: calc(100dvh - var(--header-h) - 32px); overflow-y: auto; overscroll-behavior: contain; min-width: 0; grid-column: 2; grid-row: 1; }
+}

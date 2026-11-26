@@ -21,7 +21,7 @@
  "rule": "docs/refactoring/LINE_RULES.md",
  "files": {
   "app/(site)/(app)/pieces/new/page.tsx": {
-   "max": 300,
+   "max": 299,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/app-shell.tsx": {
@@ -41,7 +41,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/background-studio.tsx": {
-   "max": 337,
+   "max": 327,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/catalog/catalog-search.tsx": {
