@@ -45,7 +45,8 @@ describe("desfile jogável", () => {
     const emAcao = { ...RESULTADO_PASSARELA, status: "EM_ACAO" as const, eventos: [...RESULTADO_PASSARELA.eventos, { codigo: "EXECUCAO_PEDIDA", valor: pedido }] };
     renderApp(<NucleoGame definicao={definicao("PASSARELA")} cartas={CARTAS} entregando={false} erro={null} onEntregar={vi.fn()} momento="ACAO" resultado={emAcao} onFimAcao={vi.fn()} onAcionar={onAcionar} />);
     const hud = await screen.findByTestId("desfile-hud");
-    expect(hud.textContent).toContain("Foco: 40");
+    // o recurso com o nome dele no jogo: na Passarela, o FOCO é a confiança da modelo
+    expect(hud.textContent).toContain("Confiança da modelo: 40");
     act(() => emitirFx({ tipo: "desfile", nucleo: "PASSARELA", alcancadas: 1, total: 3, naPonta: false }));
     expect(hud.dataset.deixa).toBe("VESTIR");
     fireEvent.keyDown(window, { key: " ", code: "Space" });

@@ -10,12 +10,14 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Definicao.Rodada;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
+import br.com.fashionai.application.flair3d.Flair3dExecucao;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
+import br.com.fashionai.application.flair3d.recurso.Flair3dDesgaste;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -28,7 +30,9 @@ import java.util.function.Predicate;
  * Núcleo 4 — vestir o personagem (12,5 por parte do figurino, 4 partes; a peça inteira veste duas) e acertar a resposta entre 4 (50). O objetivo mais
  * simples é o "detetive noir", cujo título certo é {@link #CERTO}. Na rodada "cena sorteada" o personagem sai da semente
  * entre 4, cada um com o seu título inventado; em "Adivinhe a Década" a pessoa veste a década sorteada e escolhe qual é
- * entre 4. As pistas são texto da tela ({@code cena}); nenhum filme real é citado.
+ * entre 4. As pistas são texto da tela ({@code cena}); nenhum filme real é citado. A paciência do diretor é o FOCO do
+ * jogo (Flair3dDesgaste): a resposta errada tira {@value #POR_RESPOSTA_ERRADA} e cada parte do figurino fora da cena,
+ * {@value #POR_PARTE_FORA}; zerada, a cena acaba em {@value #CORTOU}, e a execução no percurso segue gastando nos erros.
  */
 public class PersonagemFilmeNucleo implements Flair3dNucleo {
     public static final double TITULO = 50;
@@ -41,6 +45,10 @@ public class PersonagemFilmeNucleo implements Flair3dNucleo {
     public static final List<String> VAGAS = List.of("SUP", "INF", "CAL", "ACE", "VES");
     public static final Set<String> CASACOS = Set.of("coat", "parka", "jacket", "blazer");
     public static final String CENA_SORTEADA = "CENA_SORTEADA";
+    public static final int POR_RESPOSTA_ERRADA = 15;
+    public static final int POR_PARTE_FORA = 10;
+    /** O diretor perdeu a paciência: a cena foi cortada. */
+    public static final String CORTOU = "DIRETOR_CORTOU";
     public static final String DECADA = "ADIVINHE_A_DECADA";
 
     /** Uma cena para adivinhar: o código das pistas, a resposta certa e o figurino. */
@@ -109,8 +117,13 @@ public class PersonagemFilmeNucleo implements Flair3dNucleo {
         regras.add(RegraResultado.de(DECADA.equals(contexto.rodada()) ? "DECADA" : "TITULO", certa, TITULO));
         Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
         regras.addAll(Flair3dPecas.porVaga(PARTES, porParte(vestidas), "FIGURINO", POR_PECA, cena.figurino()));
-        List<Evento> eventos = contexto.rodada() == null ? List.of() : List.of(new Evento("RESPOSTA_CERTA", cena.resposta()));
-        return Resultado.somando(regras, eventos).comCartas(rateio(vestidas, cena));
+        List<Evento> eventos = new ArrayList<>(contexto.rodada() == null ? List.of() : List.of(new Evento("RESPOSTA_CERTA", cena.resposta())));
+        int fora = (int) porParte(vestidas).entrySet().stream().filter(e -> PARTES.contains(e.getKey()) && !cena.figurino().test(e.getValue())).count();
+        Flair3dDesgaste paciencia = Flair3dDesgaste.de(Flair3dDesgaste.vidaDo(codigo()), contexto.andamento().usos())
+                .com("RESPOSTA_ERRADA", certa ? 0 : 1, POR_RESPOSTA_ERRADA).com("PARTE_FORA_DA_CENA", fora, POR_PARTE_FORA);
+        eventos.add(paciencia.evento());
+        Resultado r = Resultado.somando(regras, eventos).comCartas(rateio(vestidas, cena));
+        return paciencia.esgotou() ? Resultado.of(Math.min(r.pontos(), Flair3dExecucao.NOTA_DE_QUEM_ESGOTOU), CORTOU, regras, eventos).comCartas(r.cartas()) : r;
     }
 
     /** O figurino por parte: a peça inteira (VES) veste a parte de cima e a de baixo que estiverem vazias. */

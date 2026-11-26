@@ -9,6 +9,7 @@ import { cleanup, renderApp, screen } from "@/test-utils/render";
 import { NucleoBarrasDeVida } from "@/components/flair/nucleos/nucleo-barras-de-vida";
 import { NucleoTrigger } from "@/components/flair/nucleos/nucleo-trigger";
 import { estadoDaLuta, lancesDaLuta } from "@/lib/flair/nucleos/luta";
+import { definirRecuoDaLutadora } from "@/lib/flair/nucleos/luta-distancia";
 import { sequenciaDaLuta } from "@/lib/flair/nucleos/scene/sequences-match";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -42,9 +43,21 @@ describe("Dress Fighter: luta lance a lance", () => {
     expect(screen.getByText("Leitura: a oponente prepara golpe forte. Jogue a carta que responde.")).toBeTruthy();
     expect(screen.queryByText(/Camiseta vermelha/)).toBeNull();
     expect(screen.getByText("Calça preta: guarda")).toBeTruthy();
+    // a carta leva a faixa em que a lutadora está no ringue: na marca, perto; recuando, longe
     screen.getByText("Vestido verde: esquiva").click();
-    expect(onAcionar).toHaveBeenCalledWith({ tipo: "LANCE", cardId: "c3" });
+    expect(onAcionar).toHaveBeenCalledWith({ tipo: "LANCE", cardId: "c3", alvo: "DISTANCIA:PERTO" });
+    definirRecuoDaLutadora(0.8);
+    screen.getByText("Calça preta: guarda").click();
+    expect(onAcionar).toHaveBeenLastCalledWith({ tipo: "LANCE", cardId: "c2", alvo: "DISTANCIA:LONGE" });
+    definirRecuoDaLutadora(0);
     expect(screen.getByText("Guarda sem carta")).toBeTruthy();
+    expect(screen.getByTestId("lance-distancia").textContent).toMatch(/Recue/);
+  });
+
+  it("o look mais lento que a oponente só lê se ela vai atacar ou defender", () => {
+    renderApp(<NucleoTrigger tipo="LANCE" aberta usado={false} cartas={[card("c2", "Calça preta", "INF")]} vestidas={{}} vagas={["INF"]} ocupado={false} erro={null}
+      luta={estadoDaLuta(emAcao([luta(100, 100, "ATAQUE")]))} onAcionar={vi.fn()} />);
+    expect(screen.getByText(/a oponente prepara um ataque \(o seu look é mais lento/)).toBeTruthy();
   });
 
   it("na cena, quem leva dano recua e ninguém cai no meio da luta", () => {

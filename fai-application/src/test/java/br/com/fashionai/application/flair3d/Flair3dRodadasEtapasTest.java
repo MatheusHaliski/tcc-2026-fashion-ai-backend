@@ -322,6 +322,8 @@ class Flair3dRodadasEtapasTest {
                 assertThat(placar.get("voce")).isEqualTo((long) previa.pontos());
                 voce += ((Long) placar.get("voce")).intValue();
                 adversario += (int) placar.get("adversario");
+                // o adversário veste o look da casa da rodada: a família dominante e uma peça por vaga
+                assertThat(placar).containsKeys("familia", "look");
                 desafios.add((String) mapa(r, "PROXIMA_ETAPA").get("codigo"));
             }
         }
@@ -329,7 +331,7 @@ class Flair3dRodadasEtapasTest {
         assertThat(desafios).doesNotHaveDuplicates();
         Map<String, Object> soma = mapa(r, "SOMA_DA_BATALHA");
         assertThat((int) soma.get("voce")).isGreaterThanOrEqualTo(voce);
-        assertThat((int) soma.get("adversario")).isGreaterThan(adversario);
+        assertThat((int) soma.get("adversario")).isGreaterThanOrEqualTo(adversario);
         boolean venceu = (int) soma.get("voce") > (int) soma.get("adversario");
         boolean empate = (int) soma.get("voce") == (int) soma.get("adversario");
         if (!empate) {

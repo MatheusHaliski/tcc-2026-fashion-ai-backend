@@ -12,12 +12,13 @@ from scripts.catalog.process_photo_sets import build_set, current
 from scripts.catalog.process_local_photos import run
 
 
-def scene(height=80, *, logo=False, exterior_line=False):
+def scene(height=80, *, logo=False, exterior_line=False, person=True):
     size=(160,200);image=Image.new('RGB',size,'white');labels=np.zeros((200,160),dtype=np.uint8)
     target=Image.new('L',size);box=(40,60,119,60+height-1)
     ImageDraw.Draw(image).rectangle(box,fill='blue');ImageDraw.Draw(target).rectangle(box,fill=255)
     labels[60:60+height,40:120]=3
-    labels[10:40,65:95]=1;ImageDraw.Draw(image).rectangle((65,10,94,39),fill='pink')
+    if person:  # rosto (rótulo 1): peça vestida vai para revisão humana (FAI_PHOTO_SET_POSTFLIGHT_V1)
+        labels[10:40,65:95]=1;ImageDraw.Draw(image).rectangle((65,10,94,39),fill='pink')
     labels[160:190,40:120]=6;ImageDraw.Draw(image).rectangle((40,160,119,189),fill='green')
     if logo:
         labels[85:99,64:96]=0
@@ -33,8 +34,15 @@ def scene(height=80, *, logo=False, exterior_line=False):
 
 
 class AutomaticProviderTest(unittest.TestCase):
-    def test_actual_probability_consensus_removes_person_other_piece_background_and_exterior_line(self):
+    def test_garment_on_a_person_goes_to_human_review_without_output(self):
         image,provider,_=scene(exterior_line=True)
+        result=process_photo(image,'upper_piece','shirt',provider=provider)
+        self.assertEqual(('REVIEW','HUMAN_SOURCE_REVIEW_REQUIRED'),(result.status,result.reason))
+        self.assertEqual({'status':'REVIEW','reason':'HUMAN_SOURCE_REVIEW_REQUIRED'},result.metrics['postflight'])
+        self.assertIsNone(result.whole);self.assertIsNone(result.fabric)
+
+    def test_actual_probability_consensus_removes_other_piece_background_and_exterior_line(self):
+        image,provider,_=scene(exterior_line=True,person=False)
         result=process_photo(image,'upper_piece','shirt',provider=provider)
         self.assertEqual('READY',result.status,result.reason)
         evidence=result.metrics['preflight']['automaticEvidence']
@@ -48,7 +56,7 @@ class AutomaticProviderTest(unittest.TestCase):
         box=result.metrics['whole']['box'];self.assertAlmostEqual(.5,max(box['w'],box['h']),places=3)
 
     def test_white_original_logo_stays_opaque_inside_transparent_whole(self):
-        image,provider,_=scene(logo=True)
+        image,provider,_=scene(logo=True,person=False)
         result=process_photo(image,'upper_piece','shirt',provider=provider)
         self.assertEqual('READY',result.status,result.reason)
         out=np.array(Image.open(io.BytesIO(result.whole)))
@@ -100,7 +108,7 @@ class AutomaticProviderTest(unittest.TestCase):
             self.assertFalse(current(record,require_automatic_policy=True))
 
     def test_variant_identity_and_effective_color_bind_the_photo_evidence(self):
-        image,provider,_=scene()
+        image,provider,_=scene(person=False)
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp)/'source.png';image.save(path)
             downloader=Mock();downloader.get.return_value=path
@@ -111,6 +119,10 @@ class AutomaticProviderTest(unittest.TestCase):
             state=build_set(record,downloader,provider)
             self.assertEqual('READY',state['status'])
             self.assertEqual(('image-red','red-variant','red'),(state['imageId'],state['variantId'],state['color']))
+            # READY sem os atestados do postflight (FAI_PHOTO_SET_POSTFLIGHT_V1) não conta como atual: volta para reavaliação
+            ready={**record,'source_sha256':state['sourceSha256'],'assets_json':{'photoSet':state}}
+            self.assertFalse(current(ready,require_automatic_policy=True))
+            state={**state,'status':'REVIEW'}
             saved={**record,'source_sha256':state['sourceSha256'],'assets_json':{'photoSet':state}}
             self.assertTrue(current(saved,require_automatic_policy=True))
             self.assertFalse(current({**saved,'id':'other-image'}))

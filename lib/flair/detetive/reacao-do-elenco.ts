@@ -36,6 +36,8 @@ const NO_FINAL: Record<NonNullable<Retrato["final"]>, Record<string, Reacao>> = 
   PARCIAL: { IOLANDA: { anim: "idle", gesto: "lamentar" }, BENTO: { anim: "idle", gesto: "recuar" } },
   // segunda acusação errada: Iolanda aponta quem foi, Bento baixa a cabeça
   ERRADO_REVELA: { IOLANDA: { anim: "point" }, BENTO: { anim: "idle", gesto: "lamentar" } },
+  // pega sem fôlego: o caso é perdido; Iolanda lamenta e Bento fica onde está
+  CAPTURADO: { IOLANDA: { anim: "idle", gesto: "lamentar" } },
 };
 
 /** O número do suspeito do álibi em cena ("ALIBI:4" → 4), ou nulo. */

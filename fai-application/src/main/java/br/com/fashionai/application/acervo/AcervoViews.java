@@ -131,6 +131,7 @@ final class AcervoViews {
         out.put("id", a.getId());
         out.put("nome", a.getNome());
         out.put("ordem", a.getOrdem());
+        out.put("iluminacao", AcervoLightingWriter.view(a));       // exercício 07: tipo de luz e kelvin (nulos no legado)
         out.put("moveis", moveis);
         out.put("pecas", pecas);
         return out;

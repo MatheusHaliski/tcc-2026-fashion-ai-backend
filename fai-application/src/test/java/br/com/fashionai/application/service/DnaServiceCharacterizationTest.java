@@ -4,6 +4,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.testkit.FixedFonts;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.domain.model.DailyLook;
 import br.com.fashionai.domain.model.Scheme;
@@ -53,6 +54,7 @@ import static org.mockito.Mockito.when;
  * públicas — síntese da Camada 1, frase, card PNG (SHA-256), Esquemas de DNA em cada narrativa, construtor, prévia,
  * propostas do motor local e as regras puras usadas pelos testes — tem de continuar idêntico ao gravado em
  * {@code dna/dna-service-portrait.txt}. Ids e instantes gerados na hora viram marcadores na ordem em que aparecem.
+ * O card é desenhado com as fontes de {@link FixedFonts}: com as fontes do host o SHA-256 muda de máquina para máquina.
  */
 class DnaServiceCharacterizationTest {
     private static final String GOLDEN = "/dna/dna-service-portrait.txt";
@@ -145,7 +147,9 @@ class DnaServiceCharacterizationTest {
             dl.setFeedback(i == 4 ? DailyLookFeedback.NAO_GOSTEI : DailyLookFeedback.ADOREI);
             kit.dep(DailyLookRepository.class).save(dl);
         }
-        return kit.build(DnaService.class);
+        DnaService dna = kit.build(DnaService.class);
+        dna.useCardFonts(FixedFonts.byLogicalFamily());
+        return dna;
     }
 
     private DnaService.DnaSchemeForm form(String title, NarrativeType nt, String layout, String target, int cells, boolean milestone, boolean publish) {

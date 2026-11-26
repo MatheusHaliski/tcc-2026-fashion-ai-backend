@@ -11,6 +11,9 @@ import type { HypeLive } from "@/lib/hype/hype-signal-store";
 import { HypeGuideIcon } from "@/components/hype/hype-guide";
 import { BrandLogo } from "@/components/brand-logo";
 import { hypePreset } from "@/lib/hype/aura-hype-presets";
+import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
+import { fashionMetaCells, type FashionMetaSource } from "@/components/card-fashion-meta";
+import { INFO_FIELD_LABEL, type InfoField, type InfoGridView } from "@/lib/cards/info-grid";
 import { conservationLabel } from "@/lib/api/piece-references";
 import { SelectedSealLabels } from "@/components/selected-seal-labels";
 import { selectedPieceSeals, type SelectedSealRef } from "@/lib/seals/selected-seals";
@@ -26,11 +29,13 @@ function InfoIcon() {
  * atributos derivados do Hype, os mesmos do verso). Separa o que a peça É do que a comunidade faz com ela; uma aba por vez
  * mantém o card curto. Teclado de tablist: setas trocam de aba.
  */
-export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[], infoBefore, infoContent, replaceInfoRows = false, selectedSeals = selectedPieceSeals(piece.seals), live }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao"|"seals">>; summary?: HypeSummary | null; initial?: Tab;
+export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[], infoBefore, infoContent, replaceInfoRows = false, selectedSeals = selectedPieceSeals(piece.seals), live, grid, metaSource, gridCells }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao"|"seals">>; summary?: HypeSummary | null; initial?: Tab;
   /** modelo AURA Hype escolhido na peça: define a disposição da lista de atributos */
   auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][]; infoBefore?: ReactNode; infoContent?: ReactNode; replaceInfoRows?: boolean; selectedSeals?: SelectedSealRef[];
   /** memória e sinal do Hype desta pessoa (deltas do painel desde a última visita) */
-  live?: HypeLive }) {
+  live?: HypeLive;
+  /** card do feed: grade configurável (Background Studio); com ela só entram os campos escolhidos, numa grade só */
+  grid?: InfoGridView; metaSource?: FashionMetaSource; gridCells?: Partial<Record<InfoField, ReactNode>> }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>(initial);
   // a aba inicial acompanha a preferência (a AURA Hype salva no navegador chega depois do 1º render) até a pessoa escolher
@@ -38,9 +43,11 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
   useEffect(() => { if (!touched.current) setTab(initial); }, [initial]);
   const id = useId();
   const list = (values?: string[] | null) => (values ?? []).filter(Boolean).map((v) => label(v)).join(" · ");
+  const categoryName = subcategoryLabel(piece.subcategory) || (piece.category ? CATEGORY_LABEL[piece.category] : null);
+  const categoryNode = categoryName ? <span className="card-category">{piece.category && <img src={defaultGarmentUrl(piece.category, piece.subcategory, piece.colorHex, piece.color)} alt="" width={22} height={22} loading="lazy" decoding="async" />}{categoryName}</span> : null;
   const rows: [string, ReactNode][] = ([
     [t("common.brand"), piece.brandName ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={18} withName /> : null],
-    [t("common.category"), subcategoryLabel(piece.subcategory) || (piece.category ? CATEGORY_LABEL[piece.category] : null)],
+    [t("common.category"), categoryNode],
     [t("common.color"), piece.color ? <span className="pc-info-color">{piece.colorHex && <i style={{ background: piece.colorHex }} aria-hidden />}{label(piece.color)}</span> : null],
     [t("common.style"), list(piece.style)],
     [t("common.occasion"), list(piece.occasion)],
@@ -50,8 +57,15 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
     if(piece.size) rows.push([t("common.size"),label(piece.size)]);
   }
   const condition = conservationLabel(piece, t);
-  if (condition) rows.push([t("pieceReferences.condition.label"), condition]);
+  // estado de conservação é da peça: no card de look a célula só repetia "Não informado"
+  if (condition && type !== "SCHEME") rows.push([t("pieceReferences.condition.label"), condition]);
   rows.push(...infoRows);
+  const meta = grid ? fashionMetaCells(metaSource ?? { styles: piece.style, occasions: piece.occasion, brands: piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : [], colors: piece.color ? [{ name: piece.color, hex: piece.colorHex }] : [] }) : null;
+  const cellOf: Partial<Record<InfoField, ReactNode>> = meta ? {
+    ...meta, category: categoryNode, material: piece.material ? label(piece.material) : null, size: piece.size ? label(piece.size) : null,
+    condition: type === "SCHEME" ? null : condition, ...gridCells,
+  } : {};
+  const gridRows = grid ? grid.fields.filter((f) => !!cellOf[f]).map((f) => [f, t(INFO_FIELD_LABEL[f]), cellOf[f]] as const) : null;
   const tabs: { key: Tab; icon: ReactNode; text: string }[] = [
     { key: "info", icon: <InfoIcon />, text: t("pieceCard.tab_info") },
     { key: "hype", icon: <HypeGuideIcon kind="score" className="pc-seg-hype" />, text: t("pieceCard.tab_hype") },
@@ -78,7 +92,9 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
       <SelectedSealLabels seals={selectedSeals} tier={type === "SCHEME" ? "LOOK" : "PECA"} />
       <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} className="pc-panel">
         {tab === "info"
-          ? <div className="pc-info-content">{infoBefore}{!replaceInfoRows && <dl className="pc-info">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}{infoContent}</div>
+          ? <div className="pc-info-content">{infoBefore}{gridRows ? (gridRows.length > 0 && <dl className="pc-info card-info-grid" data-cols={grid!.columns} data-cells={grid!.cells} data-labels={grid!.labels ? "on" : "off"} data-align={grid!.align} data-density={grid!.density}>
+              {gridRows.map(([f, k, v]) => <div key={f} data-field={f}><dt className={grid!.labels ? undefined : "sr-only"}>{k}</dt><dd>{v}</dd></div>)}</dl>)
+            : !replaceInfoRows && <dl className="pc-info">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}{infoContent}</div>
           : <FashionCardStats summary={summary} type={type} layout={preset?.layout} context={piece} live={live} />}
       </div>
     </div>

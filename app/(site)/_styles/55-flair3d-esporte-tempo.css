@@ -1,0 +1,50 @@
+/* A barra de tempo do chute e do desarme no Fashion Sports (components/flair/esporte/barra-de-tempo.tsx): a marca corre
+   de uma ponta à outra; o meio, mais claro, é o perfeito. */
+.fsp-tempo {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: rgb(0 0 0 / 35%);
+}
+
+.fsp-tempo-barra {
+  position: relative;
+  height: 14px;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 15%);
+  overflow: hidden;
+}
+
+.fsp-tempo-alvo {
+  position: absolute;
+  inset: 0 25%;
+  background: rgb(224 176 77 / 35%);
+}
+
+.fsp-tempo-alvo::after {
+  content: "";
+  position: absolute;
+  inset: 0 30%;
+  background: rgb(224 176 77 / 85%);
+}
+
+.fsp-tempo-marca {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: #fff;
+  animation: fsp-tempo var(--fsp-tempo-periodo, 900ms) linear infinite alternate;
+}
+
+@keyframes fsp-tempo {
+  from {
+    left: 0;
+  }
+
+  to {
+    left: calc(100% - 4px);
+  }
+}

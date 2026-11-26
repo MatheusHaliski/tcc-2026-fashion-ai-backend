@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { buscarRecursos, usarPeca } from "@/lib/flair/recursos/api";
 import type { PerfilDaPeca, Recurso, RecursosDaPartida } from "@/lib/flair/recursos/types";
-import { usoOtimista, usosRestantes } from "@/lib/flair/recursos/uso";
+import { cartasUsaveis, usoOtimista, usosRestantes } from "@/lib/flair/recursos/uso";
 
 /** Quanto tempo o "+25 Vida" fica na tela depois do uso. */
 export const GANHO_MS = 1600;
@@ -36,7 +36,12 @@ function novoPedido(): string {
   return c?.randomUUID ? c.randomUUID() : `uso-${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 }
 
-export function useRecursosDaPartida(partida: string | null | undefined, cartas: FlairCollectionCard[], perfil: (cardId: string) => PerfilDaPeca | undefined, ligado: boolean): RecursosNaTela {
+/**
+ * `soVestidas`: nos jogos sem deck (o Road to Glory veste do guarda-roupa inteiro), só as peças vestidas na partida
+ * podem ser usadas como recurso, como o servidor confere; nos de deck, fica de fora e vale o deck inteiro.
+ */
+export function useRecursosDaPartida(partida: string | null | undefined, cartas: FlairCollectionCard[], perfil: (cardId: string) => PerfilDaPeca | undefined, ligado: boolean,
+  soVestidas?: Record<string, string>): RecursosNaTela {
   const [estado, setEstado] = useState<RecursosDaPartida | null>(null);
   const [ganho, setGanho] = useState<RecursosNaTela["ganho"]>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -75,10 +80,10 @@ export function useRecursosDaPartida(partida: string | null | undefined, cartas:
       .finally(() => setOcupado(false));
   }, [partida, estado, perfil, ocupado]);
 
-  const pecas = useMemo(() => cartas.flatMap((c): PecaParaUsar[] => {
+  const pecas = useMemo(() => cartasUsaveis(cartas, soVestidas).flatMap((c): PecaParaUsar[] => {
     const p = perfil(c.id);
     return p ? [{ cardId: c.id, nome: c.name, recurso: p.recurso, quantidade: p.quantidade, restantes: usosRestantes(estado, c.id, p) }] : [];
-  }), [cartas, perfil, estado]);
+  }), [cartas, perfil, estado, soVestidas]);
 
   return { estado: ligado ? estado : null, pecas, ganho, ocupado, erro, usar };
 }

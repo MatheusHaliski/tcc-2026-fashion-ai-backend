@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DESFILE_INICIO, marcasDoDesfile, noDesfile } from "@/lib/flair/nucleos/movimento/desfile";
+import { DESFILE_INICIO, INICIO_DO_DESFILE, marcasDoDesfile, noDesfile } from "@/lib/flair/nucleos/movimento/desfile";
 import { areaDeAndar, RAIO_DO_CORPO } from "@/lib/flair/nucleos/movimento/andar";
 import { obstaculosDaSala } from "@/lib/flair/nucleos/camera/enquadramento";
 import { SALAS } from "@/lib/flair/nucleos/scene/registry";
@@ -40,6 +40,21 @@ describe("desfile jogável", () => {
         expect(dentroDeMovel, `${codigo} ${m.x},${m.z}`).toBe(false);
       }
     }
+  });
+
+  it("na Passarela o desfile começa no arco do backstage e as marcas vão pela passarela inteira até a ponta", () => {
+    const sala = SALAS.PASSARELA;
+    const area = areaDeAndar(sala, obstaculosDaSala(sala, 0));
+    const inicio = INICIO_DO_DESFILE.PASSARELA!;
+    const marcas = marcasDoDesfile("PASSARELA", sala);
+    for (const p of [inicio, ...marcas]) {
+      expect(p.x >= area.x[0] && p.x <= area.x[1] && p.z >= area.z[0] && p.z <= area.z[1], `${p.x},${p.z}`).toBe(true);
+      const dentroDeMovel = area.caixas.some((c) => p.x > c.x[0] - RAIO_DO_CORPO && p.x < c.x[1] + RAIO_DO_CORPO && p.z > c.z[0] - RAIO_DO_CORPO && p.z < c.z[1] + RAIO_DO_CORPO);
+      expect(dentroDeMovel, `${p.x},${p.z}`).toBe(false);
+    }
+    // do backstage à ponta são mais de 9 m de passarela, e a primeira marca pede andar
+    expect(marcas[2].z - inicio.z).toBeGreaterThan(9);
+    expect(marcas[0].z - inicio.z).toBeGreaterThan(2);
   });
 
   it("no palco do Dress the Star a personagem não desce do palco", () => {

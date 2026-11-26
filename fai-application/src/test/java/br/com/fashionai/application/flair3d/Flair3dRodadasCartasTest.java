@@ -160,6 +160,24 @@ class Flair3dRodadasCartasTest {
     }
 
     @Test
+    void noFilmeAPacienciaDoDiretorCaiComARespostaErradaEComAParteForaDaCena() {
+        PersonagemFilmeNucleo n = new PersonagemFilmeNucleo();
+        CbcRules.Card casaco = card("SUP", "sub:coat");
+        CbcRules.Card amarela = card("INF", "color:yellow");
+        CbcRules.Card rosa = card("CAL", "color:pink");
+        CbcRules.Card verde = card("ACE", "color:green");
+        Contexto c = Flair3dFixtures.contexto(1L, casaco, amarela, rosa, verde);
+        Entrega certa = new Entrega(vestir(casaco, amarela).cartas(), null, null, PersonagemFilmeNucleo.CERTO);
+        assertThat(valor(n.pontuar(certa, c), "DESGASTE")).containsEntry("recurso", "FOCO").containsEntry("restante", 30)
+                .containsEntry("motivos", Map.of("PARTE_FORA_DA_CENA", 10));
+        // título errado (15) e três partes fora da cena (30): o diretor corta a cena
+        Entrega errada = new Entrega(vestir(casaco, amarela, rosa, verde).cartas(), null, null, "FILME_VERAO_EM_NEON");
+        Resultado cortada = n.pontuar(errada, c);
+        assertThat(cortada.resultado()).isEqualTo(PersonagemFilmeNucleo.CORTOU);
+        assertThat(valor(cortada, "DESGASTE")).containsEntry("restante", 0);
+    }
+
+    @Test
     void quatroPecasForaDoPerfilZeramAConfiancaDaEstrela() {
         DressTheStarNucleo n = new DressTheStarNucleo();
         CbcRules.Card[] fora = {card("SUP", "style:classic"), card("INF", "color:green"), card("CAL"), card("ACE")};
@@ -226,7 +244,22 @@ class Flair3dRodadasCartasTest {
     }
 
     @Test
-    void treinosDaBatalhaSorteiamODesafioEONotaDoAdversario() {
+    void aNotaDoAdversarioSaiDoLookDeleEMudaComASemente() {
+        BatalhaLooksNucleo n = new BatalhaLooksNucleo();
+        CbcRules.Card formal = card("SUP", "occasion:formal");
+        Set<Object> notas = new HashSet<>();
+        for (long semente = 1; semente <= 30; semente++) {
+            Contexto c = naRodada("VISTA_O_CLIMA", semente, formal);
+            Resultado r = n.pontuar(vestir(formal), c);
+            assertThat(n.pontuar(vestir(formal), c).eventos()).isEqualTo(r.eventos());
+            notas.add(simples(r, "ADVERSARIO"));
+        }
+        assertThat(notas).hasSizeGreaterThan(1);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void treinosDaBatalhaSorteiamODesafioEOLookDoAdversario() {
         BatalhaLooksNucleo n = new BatalhaLooksNucleo();
         CbcRules.Card formal = card("SUP", "occasion:formal");
         CbcRules.Card festa = card("INF", "occasion:party");
@@ -240,9 +273,14 @@ class Flair3dRodadasCartasTest {
         assertThat(r.pontos()).isEqualTo(50);
         assertThat(r.regras()).contains(new Resultado.RegraResultado("SEM_PECA_PROIBIDA", false, -25));
         assertThat(simples(r, "DESAFIO")).isEqualTo("CONVITE_BLACK_TIE");
+        // o adversário da casa veste um look da semente, avaliado pelas mesmas regras: a nota é a do look dele
         int adversario = (int) simples(r, "ADVERSARIO");
-        assertThat(List.of(25, 50, 75)).contains(adversario);
+        Map<String, Object> casa = valor(r, "LOOK_DO_ADVERSARIO");
+        assertThat(casa.get("nota")).isEqualTo(adversario);
+        assertThat((Map<String, Object>) casa.get("look")).containsOnlyKeys("SUP", "INF", "CAL", "ACE");
+        assertThat(adversario).isBetween(0, 100).isEqualTo((int) simples(n.pontuar(vestir(formal), c), "ADVERSARIO"));
         assertThat(r.resultado()).isEqualTo(r.pontos() > adversario ? "VITORIA" : "DERROTA");
+        // a prévia não revela o adversário: a nota dele só sai na entrega
         assertThat(n.previa(vestir(formal, festa, tenis), c).eventos()).isEmpty();
         assertThat(n.efeitos(formal, c)).containsExactly(new Efeito("NA_REGRA", 25));
         assertThat(n.efeitos(card("SUP"), c)).containsExactly(Efeito.motivo("FORA_DA_REGRA"));

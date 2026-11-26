@@ -21,7 +21,7 @@ export function ListaDesejos() {
   return (
     <section className="acv-desejos" aria-label={t("acervo.desejos.titulo")}>
       <header className="acv-lista-cabeca">
-        <h2 className="acv-lista-titulo">{t("acervo.desejos.titulo")}</h2>
+        <h2 className="acv-lista-titulo type-h3">{t("acervo.desejos.titulo")}</h2>
         <span className="acv-lista-conta">{t("acervo.desejos.itens", { count: dados.desejos.length })}</span>
         {dados.desejos.length > 0 && novo}
       </header>

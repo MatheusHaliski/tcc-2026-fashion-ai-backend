@@ -6,6 +6,7 @@ import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Andamento;
 import br.com.fashionai.application.flair3d.Andamento.UsoDeRecurso;
+import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dCartas;
 import br.com.fashionai.application.flair3d.Flair3dDeck;
 import br.com.fashionai.application.flair3d.Flair3dErros;
@@ -19,14 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * Usar uma peça do deck como recurso (POST /api/flair/3d/partidas/{id}/usar). Só o servidor decide: a partida é da
- * pessoa e não fechou; a carta é dela e está no deck da partida; ainda tem uso (a raridade dá 1 ou 2 por partida); o
+ * pessoa e não fechou; a carta é dela e está no deck da partida (nos jogos sem deck, como o Road to Glory, entre as
+ * vestidas na partida: o look entregue ou o rascunho guardado); ainda tem uso (a raridade dá 1 ou 2 por partida); o
  * mesmo pedido repetido (rede lenta, clique duplo) devolve a mesma resposta sem gastar de novo. A quantidade sai da
  * tabela peça-recurso, nunca do cliente.
  */
@@ -65,10 +69,10 @@ public class Flair3dRecursoUso {
         if (repetido.isPresent()) {
             return resposta(m, a, repetido.get());
         }
-        if (!Flair3dDeck.ids(m.getDeckJson()).contains(pedido.carta())) {
+        CbcRules.Card carta = usaveis(m, a).contains(pedido.carta()) ? cartas.daPessoa(user.id(), List.of(pedido.carta())).get(pedido.carta()) : null;
+        if (carta == null) {
             throw Flair3dErros.invalido("CARTA_FORA_DO_DECK", "carta_fora_do_deck");
         }
-        CbcRules.Card carta = cartas.daPessoa(user.id(), List.of(pedido.carta())).get(pedido.carta());
         PerfilDaPeca perfil = Flair3dRecursoCalculo.daCarta(carta, null);
         if (Flair3dRecursoEstado.usosDa(pedido.carta(), a.usos()) >= perfil.usos()) {
             throw Flair3dErros.invalido("SEM_USOS", "sem_usos");
@@ -98,9 +102,30 @@ public class Flair3dRecursoUso {
             out.put("uso", u);
         }
         Map<String, Long> usados = new LinkedHashMap<>();
-        for (UUID id : Flair3dDeck.ids(m.getDeckJson())) usados.put(id.toString(), Flair3dRecursoEstado.usosDa(id, a.usos()));
+        for (UUID id : usaveis(m, a)) usados.put(id.toString(), Flair3dRecursoEstado.usosDa(id, a.usos()));
         out.put("usados", usados);
         return out;
+    }
+
+    /**
+     * As cartas que dá para usar: as do deck; no jogo sem deck (o Road to Glory veste do guarda-roupa inteiro), as que
+     * a pessoa vestiu na partida — o look entregue e o rascunho guardado. A carta de outra pessoa cai depois, no dono.
+     */
+    static List<UUID> usaveis(Flair3dMatch m, Andamento a) {
+        List<UUID> deck = Flair3dDeck.ids(m.getDeckJson());
+        if (!deck.isEmpty()) {
+            return deck;
+        }
+        Set<UUID> vestidas = new LinkedHashSet<>();
+        Entrega entregue = Json.read(m.getEntregaJson(), Entrega.class);
+        if (entregue != null) {
+            vestidas.addAll(entregue.cartas().values());
+        }
+        if (a.rascunho() != null) {
+            vestidas.addAll(a.rascunho().cartas().values());
+        }
+        vestidas.remove(null);
+        return List.copyOf(vestidas);
     }
 
     private Flair3dMatch daPessoa(CurrentUser user, UUID partidaId) {

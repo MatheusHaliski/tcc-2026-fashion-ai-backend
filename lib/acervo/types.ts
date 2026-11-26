@@ -51,12 +51,28 @@ export interface AcervoMovel extends AcervoMovelConfig {
   pecas: number;
 }
 
+/** Exercício 07: luz do ambiente; tipo e kelvin nulos = ambiente legado, sem classificação (a cena usa a luz padrão). */
+export interface AcervoIluminacao {
+  tipo: { id: string; codigo: string; nome: string } | null;
+  temperaturaKelvin: number | null;
+}
+
+/** PUT da luz: ID/kelvin nulos mantêm o atual; limpar* apaga (os dois juntos com valor são recusados com 400). */
+export interface AcervoLuzForm {
+  tipoIluminacaoId: string | null;
+  temperaturaKelvin: number | null;
+  limparTipo: boolean;
+  limparTemperatura: boolean;
+}
+
 export interface AcervoAmbiente {
   id: string;
   nome: string;
   ordem: number;
   moveis: AcervoMovel[];
   pecas: number;
+  /** ausente em respostas antigas: tratar como sem luz definida */
+  iluminacao?: AcervoIluminacao | null;
 }
 
 export interface AcervoMedidas {
