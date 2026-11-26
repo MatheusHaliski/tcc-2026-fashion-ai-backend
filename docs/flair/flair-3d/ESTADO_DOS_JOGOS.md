@@ -260,10 +260,26 @@ uso; a roda de recursos não mostra o desgaste; o avatar veste só a cor dominan
 pintados); não há adversário nem física (o cone não é driblado, o drone não atira); a pontuação não depende do caminho
 feito, só do lance e do tempo.
 
+### Item 2, parte 1 (feito): Around the World troca de lugar a cada etapa
+
+A reauditoria: "Nova York, Paris, Tóquio, o elevador e o metrô aparecem todos na calçada do Rio". A rua do Rio virou
+fábrica (`ruaDaViagem`, em `scene/salas/around-the-world.ts`; a sala do Rio sai idêntica, conferida por comparação da
+descrição antes e depois) e cada etapa tem o lugar dela pelo código que o servidor já mandava (`PROXIMA_ETAPA` e a
+abertura da partida): sete regiões com pedra, fachada, toldo, céu e luz próprios e o que identifica cada uma (tijolo e
+neon em Nova York, mármore e o arco da galeria em Milão, letreiros à noite em Tóquio e Seul, o pôr do sol de Lagos); os
+andares da torre são um saguão com a porta do elevador na cor do andar, o rooftop é a céu aberto à noite, e as estações
+do metrô são uma plataforma com a cor da linha (`scene/salas/around-the-world-regioes.ts`). Todos dividem as zonas, o
+mapa e as luzes com a rua do Rio (regra das variantes de sala).
+
+**Visto na tela** (`/lab/jogo?jogo=AROUND_THE_WORLD&variante=...`): Nova York, Paris, Milão, Lagos, Seul, Tóquio, Sydney,
+o andar do escritório, o rooftop e a estação do show. **Não visto:** a troca de lugar dentro de uma partida com o
+servidor (está no teste de `varianteDaCena`); os outros andares e estações (mesma fábrica, só muda a cor). **Falta:** o
+caminho continua uma reta sem ramos nem interagíveis, e as moedas ainda não pagam para pular a região.
+
 ### Nota projetada depois desta rodada
 
-Projeção de quem implementou, a conferir por auditor independente. Só mudam os quatro jogos de zonas; os outros onze
-ficam com a projeção anterior (ganharam as marcas desenhadas no piso, sem mudança de nota).
+Projeção de quem implementou, a conferir por auditor independente. Mudam os quatro jogos de zonas e o Around the
+World; os outros dez ficam com a projeção anterior (ganharam as marcas desenhadas no piso, sem mudança de nota).
 
 | Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Final | Projeção anterior | Reauditoria |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -271,8 +287,9 @@ ficam com a projeção anterior (ganharam as marcas desenhadas no piso, sem muda
 | FAVORITE_SINGER | 4,6 | 4,4 | 5,8 | 4,5 | 4,3 | 5,3 | 5 | **4,8** | 4,3 | 3,9 |
 | PILOTO_FAVORITO | 4,6 | 4,4 | 5,4 | 4,8 | 3,5 | 5,3 | 5 | **4,7** | 4,2 | 3,9 |
 | SUPER_HEROI | 4,6 | 4,4 | 5,4 | 4,5 | 3,6 | 5,3 | 5 | **4,7** | 4,1 | 3,8 |
+| AROUND_THE_WORLD | 3,9 | 5,3 | 6,6 | 5,2 | 5 | 6,5 | 5,5 | **5,4** | 5,2 | 5,0 |
 
-Média projetada dos 15: 5,2 (anterior: 5,1; reauditoria: 4,7). Nenhum jogo chega a 8.
+Média projetada dos 15: 5,2 (anterior: 5,1; reauditoria: 4,7). Nenhum jogo chega a 8 em nenhum critério.
 
 ## Resumo
 

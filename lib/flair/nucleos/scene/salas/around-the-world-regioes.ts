@@ -170,7 +170,7 @@ function estacao(cor: string): Sala {
     materiais: {
       portuguesa: { ...ladrilho("#F2C230", "#1B1B1E"), repete: 0.4 },
       calcada: concreto("#9A9CA3"),
-      fachada: ladrilho("#F2F2EE", "#C9CCD2"),
+      fachada: { ...ladrilho("#F2F2EE", "#C9CCD2"), repete: 0.3 },
       toldo: tinta(cor),
       ferro: metalPintado("#1F2226"),
       madeira: borracha("#3A3D44"),
