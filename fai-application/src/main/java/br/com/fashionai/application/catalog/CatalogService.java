@@ -285,7 +285,7 @@ public class CatalogService {
             : products.browse(brand == null ? null : brand.getId().toString(), cat, sub,
                 words.size() > 0 ? words.get(0) : null, words.size() > 1 ? words.get(1) : null, words.size() > 2 ? words.get(2) : null,
                 color, gender, PageRequest.of(page, size));
-        out.put("items", cards(pg.getContent()));
+        out.put("items", cards(pg.getContent(), identifier, color));
         out.put("page", page);
         out.put("size", size);
         out.put("total", pg.getTotalElements());
@@ -326,6 +326,11 @@ public class CatalogService {
 
     /** Cards de uma lista do acervo (foto canônica ou principal, variantes, marca), na ordem recebida, sem pontuação. */
     List<Map<String, Object>> cards(List<CatalogProduct> list) {
+        return cards(list, null, null);
+    }
+
+    /** Com identificador (SKU/código), o card já vem na variante que ele aponta, com a cor e a foto dessa variante. */
+    List<Map<String, Object>> cards(List<CatalogProduct> list, String identifier, String color) {
         if (list.isEmpty()) {
             return List.of();
         }
@@ -339,8 +344,11 @@ public class CatalogService {
             if (CatalogPhotoEligibility.excluded(p)) continue;
             Brand b = brandById.computeIfAbsent(p.getBrandId(), id -> brands.findById(id).orElse(null));
             List<CatalogVariant> productVariants = variantsBy.getOrDefault(p.getId(), List.of());
-            Map<String, Object> m = card(p, b, primary.get(p.getId()), productVariants);
+            CatalogVariant byCode = CatalogVariantIdentity.byIdentifier(productVariants, identifier, color);
+            Map<String, Object> m = card(p, b, byCode == null ? primary.get(p.getId()) : CatalogPhotoChoice.select(p,
+                    images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()), productVariants, byCode, null), productVariants);
             m.put("variants", productVariants.stream().map(CatalogCards::variantMap).toList());
+            if (byCode != null) CatalogCards.applyVariant(m, byCode);
             out.add(m);
         }
         withModels(out);
@@ -643,8 +651,9 @@ public class CatalogService {
             throw ApiException.badRequest("PRODUTO_RECUSADO", Msg.t("catalog.produto_recusado"));
         }
         Brand b = brands.findById(p.getBrandId()).orElseThrow(() -> ApiException.notFound(Msg.t("common.brand")));
-        CatalogVariant variant = a.variantId() == null ? null : variants.findById(a.variantId())
+        CatalogVariant chosenVariant = a.variantId() == null ? null : variants.findById(a.variantId())
                 .filter(v -> v.getProductId().equals(p.getId())).orElseThrow(()->ApiException.notFound("Catalog variant"));
+        CatalogVariant variant = chosenVariant;
         List<CatalogVariant> productVariants=variants.findByProductIdOrderByVariantKey(p.getId());
         CatalogImage chosen = variant==null ? mainImagesFor(List.of(p),Map.of(p.getId(),productVariants)).get(p.getId())
                 : CatalogPhotoChoice.select(p,images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()),productVariants,variant,null);
@@ -652,6 +661,7 @@ public class CatalogService {
             UUID effective = CatalogImageIdentity.effectiveVariantId(chosen,p,productVariants);
             variant = productVariants.stream().filter(v -> v.getId().equals(effective)).findFirst().orElse(null);
         }
+        String color = CatalogVariantIdentity.color(a.color(), chosenVariant, variant, p);
         // escolhido por alguém: o candidato descoberto passa a ser catálogo (o próximo usuário acha localmente)
         if (p.getIngestionStatus() == CatalogIngestionStatus.DISCOVERED) {
             p.setIngestionStatus(CatalogIngestionStatus.REFERENCE_ONLY);
@@ -659,9 +669,8 @@ public class CatalogService {
         p.setOwnersCount(p.getOwnersCount() + 1);
         p.setLastVerifiedAt(p.getLastVerifiedAt() == null ? Instant.now() : p.getLastVerifiedAt());
         products.save(p);
-        String color = firstValid(a.color(), variant == null ? null : variant.getColor(), p.getColor(), Taxonomy.COLORS::containsKey, "black");
-        String material = firstValid(a.material(), p.getMaterial(), null, Taxonomy.MATERIALS::contains, "BLEND");
-        String sex = firstValid(a.sex(), p.getGender(), null, Taxonomy.SEXES::contains, "UNISSEX");
+        String material = CatalogVariantIdentity.firstValid(a.material(), p.getMaterial(), null, Taxonomy.MATERIALS::contains, "BLEND");
+        String sex = CatalogVariantIdentity.firstValid(a.sex(), p.getGender(), null, Taxonomy.SEXES::contains, "UNISSEX");
         // o Provador guarda a peça sem formulário (sem tamanho): antes a validação recusava com "Corrija os campos destacados"
         String size = sizeOf(a.size(), p.getCategory());
         List<String> occasion = a.occasion() == null || a.occasion().isEmpty()
@@ -680,7 +689,7 @@ public class CatalogService {
         br.com.fashionai.application.wardrobe.PieceForm form = new br.com.fashionai.application.wardrobe.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
                 b.getId(), b.getName(), color, material, size, null, occasion, style, List.of(),
                 a.price() == null ? BigDecimal.ZERO : a.price(), a.visibility(), List.of(), a.notes(), a.condition(), a.purchaseDate(),
-                a.purchaseLocation(), p.getSku(), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
+                a.purchaseLocation(), CatalogVariantIdentity.sku(variant, p), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
                 a.background(), null, null, null, null, null, false, null, null, null, false);
         Views.PieceView view = wardrobe.createFromCatalog(user, form, new CatalogPick(p.getId(),
                 variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card,
@@ -704,15 +713,6 @@ public class CatalogService {
             }
         }
         return "upper_piece".equals(category) || "lower_piece".equals(category) || "full_body_piece".equals(category) ? "m" : "one_size";
-    }
-
-    private static String firstValid(String a, String b, String c, java.util.function.Predicate<String> valid, String fallback) {
-        for (String v : new String[]{a, b, c}) {
-            if (v != null && valid.test(v)) {
-                return v;
-            }
-        }
-        return fallback;
     }
 
     // ───────────────────────────── Explorador (RF26): marcas do catálogo sem perfil cadastrado

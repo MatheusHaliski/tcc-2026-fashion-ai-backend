@@ -39,6 +39,7 @@ interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapsh
 
 import { ExpandedPieceCard } from "./expanded-piece-card";
 import { pieceSlides } from "./piece-slides";
+import { pieceCatalogOrigin } from "./piece-catalog-origin";
 
 const PieceModelViewer = dynamic(() => import("@/components/piece3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
@@ -101,6 +102,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     [t("pieceDetail.usos"), mine ? t("pieceDetail.usos_valor", { count: p.wearCount, last: p.lastWornDate ? fmtDate(p.lastWornDate) : "" }) : null],
     [t("pieceDetail.situacao"), [!p.disponivel && t("common.unavailable"), p.forDonation && t("common.forDonation")].filter(Boolean).join(" · ") || null],
     [t("pieceDetail.onde_esta"), mine ? <PecaLugarNoAcervo pieceId={p.id} /> : null],
+    [t("pieceDetail.catalogo"), pieceCatalogOrigin(p, label, t)],
   ] as [string, ReactNode][]).filter(([, v]) => v !== null && v !== undefined && v !== "");
   // UMA ação principal, conforme o contexto, e a alternativa em posição secundária (texto-link logo abaixo):
   // o dono monta um look com a peça (ou experimenta no manequim 3D); quem visita experimenta (ou guarda uma cópia)

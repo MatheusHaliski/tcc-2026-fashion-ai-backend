@@ -1,5 +1,24 @@
 # Exercício 20 — Variante do catálogo por SKU e cor
 
+> **Conferido e completado em 26/11/2026 (Implementado em 26/11/2026).** A base já existia e foi mantida: a consulta
+> `CatalogProductRepository.browseByIdentifier` exige o código (SKU, código ou chave) e a cor na MESMA variante (alias
+> `v`), com a contagem igual; `addToWardrobe` só aceita variante do próprio produto. **Sem mudança de schema** (a V125
+> ficou sem uso): nada a rodar no Railway.
+> - **Busca por código:** o card agora volta já na variante que o código aponta (`selectedVariant` com SKU e cor, cor do
+>   card e foto dessa variante; sem foto aprovada, fica a ilustração, nunca a foto de outra cor). Antes vinha a variante
+>   da foto principal, que podia ser de outra cor.
+> - **Cor do payload:** com `variantId` escolhido, uma `color` diferente da cor da variante volta 400
+>   `COR_DIVERGE_DA_VARIANTE` antes de qualquer gravação, em vez de a cor do payload esconder a variante.
+> - **Peça criada:** guarda o SKU da variante (o do produto quando a variante não tem) e a leitura da peça devolve
+>   `catalogProductId` e `catalogVariantId`; o detalhe mostra "Do catálogo: SKU … · cor".
+> - **Tela:** uma variante escolhida antes não fica ativa quando a busca devolve o mesmo produto em outra variante.
+> - **Não feito:** o reforço por SQL (UNIQUE `(product_id, id)` + FK composta na peça) continua só como alternativa
+>   descrita abaixo; a pertença variante → produto segue validada no serviço.
+> - Testes: `CatalogVariantSkuColorTest` (SKU-A azul × SKU-B vermelho, SKU do produto, variante de outro produto, cor
+>   conflitante, SKU repetido em outra marca, texto da consulta e da contagem, foto indisponível, peça relida),
+>   `catalog-variante-sku-cor.test.tsx`. No MySQL 8 local a consulta do repositório devolveu: `sku-a` → 2 produtos
+>   (duas marcas), `sku-a`+azul → 1, `sku-a`+vermelho → 0, `sku-b`+vermelho → 1, sempre com o mesmo total na contagem.
+
 **Situação na revisão `9f5512a77`:** A query por identificador já correlaciona SKU e cor na mesma variante; manter isso e testar seleção/criação.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).
