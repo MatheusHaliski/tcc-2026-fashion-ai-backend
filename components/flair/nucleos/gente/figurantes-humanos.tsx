@@ -15,6 +15,7 @@ import { variacaoDoAtor } from "@/lib/flair/nucleos/gente/variacao";
 import { CORPOS_CHEIOS } from "@/lib/flair/nucleos/gente/detalhe";
 import { agora, CenaContexto } from "@/components/flair/nucleos/scene/stage-context";
 import type { NucleoPersonagem } from "@/lib/flair/nucleos/types";
+import type { Look3dPiece } from "@/components/three/common";
 
 interface Props {
   codigo: string;
@@ -27,11 +28,13 @@ interface Props {
   limite?: () => number;
   /** até que distância da câmera um figurante faz sombra (metros) */
   sombraAte?: () => number;
+  /** a roupa que a partida deu a um papel (o look da casa do adversário), no lugar da roupa do papel */
+  roupas?: Record<string, Look3dPiece[]> | null;
 }
 
-export function FigurantesHumanos({ codigo, semente, personagens, prontos, reduzido, limite, sombraAte }: Props) {
+export function FigurantesHumanos({ codigo, semente, personagens, prontos, reduzido, limite, sombraAte, roupas }: Props) {
   const raiz = semente ?? sementeDoTexto(codigo);
-  const pessoas = useMemo(() => pessoasDosFigurantes(raiz, personagens, codigo === "FASHION_SPORTS"), [codigo, raiz, personagens]);
+  const pessoas = useMemo(() => pessoasDosFigurantes(raiz, personagens, codigo === "FASHION_SPORTS", roupas), [codigo, raiz, personagens, roupas]);
   // cada pessoa reage no próprio instante, com a própria força: a plateia não se mexe como um bloco
   const variacoes = useMemo(() => new Map(atoresDosFigurantes(personagens).map((a) => [a.id, variacaoDoAtor(a.id, raiz)])), [personagens, raiz]);
   const atores = useMemo(() => atoresDosFigurantes(personagens), [personagens]);
