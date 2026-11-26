@@ -1,4 +1,6 @@
-package br.com.fashionai.application.service;
+package br.com.fashionai.application.scheme;
+
+import br.com.fashionai.application.service.SchemeService;
 
 import java.math.BigDecimal;
 import java.util.List;

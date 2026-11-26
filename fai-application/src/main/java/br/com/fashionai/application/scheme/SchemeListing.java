@@ -1,4 +1,6 @@
-package br.com.fashionai.application.service;
+package br.com.fashionai.application.scheme;
+
+import br.com.fashionai.application.service.SchemeService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -28,7 +30,7 @@ public final class SchemeListing {
     static final Set<String> LOOK_HYPE_SORTS = Set.of("hype", "hype_desc", "hype_asc", "growth");
 
     /** Ordenação pedida pela tela; nomes em português e valores desconhecidos caem em "recent". */
-    static String lookSort(String raw) {
+    public static String lookSort(String raw) {
         String s = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
         return switch (s) {
             case "hype", "hype_desc", "maior_hype" -> "hype_desc";
@@ -42,7 +44,7 @@ public final class SchemeListing {
      * Faixa mínima de Hype → score mínimo (limiares do HypeScoreConfig: NICHE, RELEVANT, HOT, TRENDING, VIRAL).
      * LOW_SIGNAL = "tem Hype calculado" (0); faixa vazia ou desconhecida = sem filtro (nulo).
      */
-    static Integer hypeMinimum(String level, int[] thresholds) {
+    public static Integer hypeMinimum(String level, int[] thresholds) {
         if (level == null || level.isBlank() || thresholds == null || thresholds.length < 5) {
             return null;
         }
@@ -62,7 +64,7 @@ public final class SchemeListing {
      * da faixa exibida ({@code min - 0,5}: 59,6 aparece como 60 e já é "Em alta"), igual ao guarda-roupa. Sem score =
      * fora do filtro e por último na ordenação (nunca 0); empate mantém a ordem recebida (mais recentes primeiro).
      */
-    static List<Scheme> byHype(List<Scheme> list, String order, Integer minimum, Map<UUID, HypeScoreCurrent> hype) {
+    public static List<Scheme> byHype(List<Scheme> list, String order, Integer minimum, Map<UUID, HypeScoreCurrent> hype) {
         java.util.function.Function<Scheme, BigDecimal> score = s -> hype.containsKey(s.getId()) ? hype.get(s.getId()).getScore() : null;
         List<Scheme> out = new ArrayList<>(list);
         if (minimum != null) {
@@ -87,7 +89,7 @@ public final class SchemeListing {
         return Comparator.comparing(key, Comparator.nullsLast(cmp));
     }
 
-    static boolean stateMatches(Scheme s, String state) {
+    public static boolean stateMatches(Scheme s, String state) {
         return switch (state == null ? "" : state) {
             case "", "todos", "all" -> true;
             case "favoritos", "favorites" -> s.isFavorite();

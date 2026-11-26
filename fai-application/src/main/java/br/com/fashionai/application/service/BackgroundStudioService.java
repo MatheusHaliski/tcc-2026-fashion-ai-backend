@@ -135,7 +135,7 @@ public class BackgroundStudioService {
     private AuraPermissionsService auraPermissions;
     @org.springframework.beans.factory.annotation.Autowired
     public void setAuraPermissions(AuraPermissionsService permissions) { this.auraPermissions = permissions; }
-    void requireAuraAccess(CurrentUser user, Object config) {
+    public void requireAuraAccess(CurrentUser user, Object config) {
         if (auraPermissions == null) return; // legacy unit constructors; managed runtime always injects the guard
         if (!(config instanceof Map<?,?> outer)) return;
         if (outer.get("scheme") instanceof Map<?,?> nested) requireAuraAccess(user,nested);
