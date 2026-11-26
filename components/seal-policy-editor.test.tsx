@@ -22,9 +22,9 @@ describe("RF25 — política padronizada do selo", () => {
     mockApi({ "GET /api/taxonomy": TAXONOMY });
     let last: { p: SealPolicy } | null = null;
     renderApp(<Harness onPolicy={(p) => { last = { p }; }} />);
-    fireEvent.click(await screen.findByRole("button", { name: "no mínimo 3 peças na cor azul da marca Zara" }));
-    expect(last!.p.rules).toEqual([{ quantifier: "AT_LEAST", count: 3, color: "Azul", brand: "Zara" }]);
-    expect(screen.getAllByText("no mínimo 3 peças na cor azul da marca Zara").length).toBeGreaterThan(0);
+    fireEvent.click(await screen.findByRole("button", { name: "no mínimo 3 peças na cor azul" }));
+    expect(last!.p.rules).toEqual([{ quantifier: "AT_LEAST", count: 3, color: "Azul" }]);
+    expect(screen.getAllByText("no mínimo 3 peças na cor azul").length).toBeGreaterThan(0);
     expect(screen.queryByRole("textbox", { name: /política/i })).toBeNull();          // não há mais campo de texto livre
   });
 
@@ -113,6 +113,6 @@ describe("RF53 — Hype na política do selo", () => {
     fireEvent.click(screen.getByRole("button", { name: "Hype mín." }));
     fireEvent.click(screen.getByRole("option", { name: "Viral ou mais" }));
     expect(last.rules[0].hypeMin).toBe("VIRAL");
-    expect(screen.getAllByText(/ao menos uma peça da marca Zara com Hype ≥ Viral/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/ao menos uma peça com Hype ≥ Viral/).length).toBeGreaterThan(0);
   });
 });

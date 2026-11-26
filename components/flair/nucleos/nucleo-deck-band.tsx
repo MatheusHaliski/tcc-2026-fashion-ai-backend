@@ -17,6 +17,7 @@ import type { ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
 import { valorDoEvento } from "@/lib/flair/nucleos/action-fx";
 import { salaoDaVez } from "@/lib/flair/nucleos/detective";
 import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
+import { desgasteDe, nomeDoRecurso, type Desgaste } from "@/lib/flair/recursos/desgaste";
 import { respostaObrigatoria, vagasQueFaltam } from "@/lib/flair/nucleos/rodadas";
 import type { ResourceTab } from "@/lib/flair/nucleos/selection";
 import type { EfeitoItem, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
@@ -52,15 +53,15 @@ export interface NucleoDeckBandProps {
 }
 
 /**
- * O espelho não abriu: a tentativa, quantas peças faltam, de qual família de cor e quando a peça achada na sala entra
- * (a partir da 3ª apresentação; uma segunda a partir da 5ª).
+ * O espelho não abriu: a tentativa, quantas peças faltam, de qual família de cor e quanto Reflexo sobrou (cada
+ * apresentação errada gasta; zerado, a partida acaba em derrota).
  */
-function textoDoEspelho(tx: ReturnType<typeof useNucleoText>, n: number, faltam: number, familia: unknown): string {
+function textoDoEspelho(tx: ReturnType<typeof useNucleoText>, n: number, faltam: number, familia: unknown, gasto: Desgaste | null): string {
   const base = typeof familia === "string"
     ? tx.t("flair3d.ui.trigger.ESPELHO.retryFamily", { n, faltam, familia: tx.familiaCor(familia).toLowerCase() })
     : tx.t("flair3d.ui.trigger.ESPELHO.retry", { n, faltam });
-  const achada = n === 2 || n === 4 ? ` ${tx.t("flair3d.ui.trigger.ESPELHO.found")}` : "";
-  return `${base}${achada}`;
+  const reflexo = gasto ? ` ${tx.t("flair3d.ui.trigger.ESPELHO.reflexo", { recurso: nomeDoRecurso(tx.ou, "LABIRINTO", gasto.recurso), n: gasto.restante })}` : "";
+  return `${base}${reflexo}`;
 }
 
 export function NucleoDeckBand(props: NucleoDeckBandProps) {
@@ -93,7 +94,7 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
   } else if (props.tentativa) {
     const n = Number(valorDoEvento(props.tentativa, "TENTATIVA") ?? 1);
     const faltam = Number(valorDoEvento(props.tentativa, "FALTAM_PECAS") ?? 0);
-    dica = textoDoEspelho(tx, n, faltam, valorDoEvento(props.tentativa, "FAMILIA"));
+    dica = textoDoEspelho(tx, n, faltam, valorDoEvento(props.tentativa, "FAMILIA"), desgasteDe(props.tentativa));
   } else if (espelho) dica = tx.t("flair3d.ui.trigger.ESPELHO.hint");
   else if (props.automatico && abaDaResposta >= 0) dica = tx.t("flair3d.ui.modalidade.hint", { modalidade: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta ?? "FUTEBOL"}`, "") });
   else if (props.automatico) dica = tx.t("flair3d.ui.auto");

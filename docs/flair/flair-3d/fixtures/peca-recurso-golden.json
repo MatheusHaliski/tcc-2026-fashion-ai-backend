@@ -1,0 +1,27 @@
+[
+  {
+    "nome": "tênis de corrida preto de tela (bronze, OVR 92)",
+    "vaga": "CAL", "tier": "BRONZE", "ovr": 92, "sub": "running_shoes", "materials": ["mesh"], "colors": ["black"],
+    "esperado": { "atributos": { "AGILIDADE": 40, "FURTIVIDADE": 11 }, "recurso": "ENERGIA", "quantidade": 20, "usos": 1, "acoes": ["CORRER"], "dominante": "AGILIDADE" }
+  },
+  {
+    "nome": "salto de cetim vermelho (ouro, OVR 45)",
+    "vaga": "CAL", "tier": "OURO", "ovr": 45, "sub": "heels", "materials": ["satin"], "colors": ["red"],
+    "esperado": { "atributos": { "AGILIDADE": -1, "CARISMA": 21, "FORCA": 5 }, "recurso": "ENERGIA", "quantidade": 30, "usos": 2, "acoes": ["CONVENCER"], "dominante": "CARISMA" }
+  },
+  {
+    "nome": "blazer de lã preto (prata, OVR 60)",
+    "vaga": "SUP", "tier": "PRATA", "ovr": 60, "sub": "blazer", "materials": ["wool"], "colors": ["black"],
+    "esperado": { "atributos": { "FURTIVIDADE": 10, "CARISMA": 8, "RESISTENCIA": 26 }, "recurso": "VIDA", "quantidade": 25, "usos": 1, "acoes": ["BLOQUEAR"], "dominante": "RESISTENCIA" }
+  },
+  {
+    "nome": "bolsa de couro marrom (especial, OVR 80)",
+    "vaga": "ACE", "tier": "ESPECIAL", "ovr": 80, "sub": "handbag", "materials": ["leather"], "colors": ["brown"],
+    "esperado": { "atributos": { "FURTIVIDADE": 4, "RESISTENCIA": 13 }, "recurso": "MOEDAS", "quantidade": 10, "usos": 2, "acoes": ["CARREGAR"], "dominante": "RESISTENCIA" }
+  },
+  {
+    "nome": "jeans de algodão azul (bronze, OVR 60)",
+    "vaga": "INF", "tier": "BRONZE", "ovr": 60, "sub": "jeans", "materials": ["denim", "cotton"], "colors": ["blue"],
+    "esperado": { "atributos": { "AGILIDADE": 9, "RESISTENCIA": 17 }, "recurso": "ENERGIA", "quantidade": 20, "usos": 1, "acoes": [], "dominante": "RESISTENCIA" }
+  }
+]

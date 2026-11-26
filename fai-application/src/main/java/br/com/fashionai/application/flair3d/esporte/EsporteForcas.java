@@ -6,6 +6,7 @@ import br.com.fashionai.application.flair3d.Flair3dCores;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,7 +41,20 @@ public final class EsporteForcas {
     public static final double CANSACO_DO_RIVAL = 0.012;
 
     /** Os atributos do time (o uniforme inteiro). */
-    public record Time(int velocidade, int tecnica, int resistencia, int defesa, int fisico) {
+    /** {@code recargas}: as jogadas em que uma peça usada como recurso (ENERGIA) devolveu o fôlego ao time. */
+    public record Time(int velocidade, int tecnica, int resistencia, int defesa, int fisico, List<Integer> recargas) {
+        public Time {
+            recargas = recargas == null ? List.of() : List.copyOf(recargas);
+        }
+
+        public Time(int velocidade, int tecnica, int resistencia, int defesa, int fisico) {
+            this(velocidade, tecnica, resistencia, defesa, fisico, List.of());
+        }
+
+        public Time comRecargas(List<Integer> novas) {
+            return new Time(velocidade, tecnica, resistencia, defesa, fisico, novas);
+        }
+
         /** A força de base do time na ação. */
         public double base(String acao) {
             return switch (acao) {
@@ -59,9 +73,10 @@ public final class EsporteForcas {
             return Math.max(0.004, Math.min(0.022, 0.022 - resistencia * 0.0004));
         }
 
-        /** Quanto da força de base resta na jogada de índice dado (a partir de 0). */
+        /** Quanto da força de base resta na jogada de índice dado (a partir de 0); a recarga zera o cansaço dali em diante. */
         public double folego(int jogada) {
-            return Math.max(0.5, 1 - jogada * cansaco());
+            int desde = recargas.stream().filter(r -> r <= jogada).mapToInt(Integer::intValue).max().orElse(0);
+            return Math.max(0.5, 1 - (jogada - desde) * cansaco());
         }
     }
 

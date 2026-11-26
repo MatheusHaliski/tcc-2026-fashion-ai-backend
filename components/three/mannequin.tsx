@@ -12,6 +12,7 @@ import { withDefaultOutfit } from "@/lib/avatar3d/human/default-outfit";
 import { useReducedMotion } from "@/components/three/common";
 import { clampAdjust, skinWithLight, validateModel } from "@/lib/avatar3d/model";
 import { BODY_KEYS, buildSpec, mannequinBody, validateBody, type BodyParams, type BodySources, type Sex, type Spec } from "@/lib/avatar3d/body-spec";
+import { rostoMaquiado, type MaquiagemNoRosto } from "@/lib/flair/make-up/rosto-maquiado";
 
 /*
  * Manequim da Passarela 3D, do My Stage 3D, do "Gerar 3D", da "Foto com meu manequim" e do Avatar 3D. O corpo sai
@@ -193,10 +194,12 @@ export function CapsuleMannequin({ mannequin, pieces, sway = true, onClick, body
  * não cobre (tronco, pernas, pés) veste peças padrão dos assets do FashionAI: nenhuma tela 3D mostra o corpo sem roupa.
  * Sem Avatar 3D, é o manequim de vitrine (marfim ou o tom escolhido), sem rosto de ninguém.
  */
-export function Mannequin({ mannequin, pieces, onClick, body, still = false, externalPose = false, onHuman, hairLod, fallback }: { mannequin: Mannequin3d; pieces: Look3dPiece[]; sway?: boolean; onClick?: () => void; body?: BodyParams | null; still?: boolean; externalPose?: boolean; onHuman?: (p: HumanParts) => void; hairLod?: HairLod;
+export function Mannequin({ mannequin, pieces, onClick, body, still = false, externalPose = false, onHuman, hairLod, fallback, maquiagem }: { mannequin: Mannequin3d; pieces: Look3dPiece[]; sway?: boolean; onClick?: () => void; body?: BodyParams | null; still?: boolean; externalPose?: boolean; onHuman?: (p: HumanParts) => void; hairLod?: HairLod;
   /** o que desenhar enquanto o corpo carrega (ou se falhar); padrão: o manequim de cápsulas. O provador passa null:
    *  ele mostra o estado do corpo em texto, nunca cápsulas com a roupa pintada. */
-  fallback?: React.ReactNode }) {
+  fallback?: React.ReactNode;
+  /** a maquiagem escolhida (Road to Glory, MAKE UP): pintada por cima da foto do rosto ou da pele da modelo da casa */
+  maquiagem?: MaquiagemNoRosto | null }) {
   const reduced = useReducedMotion();
   const sex: Sex = mannequinSex(mannequin);
   const saved = validateBody(mannequin.avatar?.model?.body);
@@ -207,14 +210,19 @@ export function Mannequin({ mannequin, pieces, onClick, body, still = false, ext
   const adj = clampAdjust(avatar?.adjust);
   const skin = avatar ? skinWithLight(avatar.model.skin, adj.skinLight) : mannequin.skinTone ? SKIN[mannequin.skinTone] ?? VITRINE : VITRINE;
   const tex = useAvatarTexture(avatar);
-  const atlas = (tex?.image as (CanvasImageSource & { width: number; height: number }) | undefined) ?? null;
+  const foto = (tex?.image as (CanvasImageSource & { width: number; height: number }) | undefined) ?? null;
+  const chaveDaMaquiagem = JSON.stringify(maquiagem ?? null);
+  // a maquiagem por cima: da foto, quando ela já chegou; sem avatar, da pele lisa
+  const maquiado = useMemo(() => (maquiagem && typeof document !== "undefined" && (!avatar || foto) ? rostoMaquiado(avatar ? foto : null, skin, maquiagem) : null),
+    [chaveDaMaquiagem, foto, skin, !!avatar]); // eslint-disable-line react-hooks/exhaustive-deps
+  const atlas = maquiado ?? (avatar ? foto : null);
   const pkey = JSON.stringify(params), skey = JSON.stringify(sources);
   const input = useMemo(() => ({ sex, params, sources }), [sex, pkey, skey]); // eslint-disable-line react-hooks/exhaustive-deps
   // nunca sem roupa: o que o look não cobre (tronco, pernas, pés) vem dos assets de peças do FashionAI
   const dressed = useMemo(() => withDefaultOutfit(pieces), [pieces]);
   return (
     <group onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined}>
-      <HumanAvatar body={input} stature={params.stature} skin={skin} face={avatar?.model ?? null} atlas={avatar ? atlas : null} hair={avatar?.model.hair ?? null}
+      <HumanAvatar body={input} stature={params.stature} skin={skin} face={avatar?.model ?? null} atlas={atlas} hair={avatar?.model.hair ?? null}
         pieces={dressed} adjust={avatar ? adj : null} motion={!reduced && !still} externalPose={externalPose} onReady={onHuman} hairLod={hairLod}
         fallback={fallback !== undefined ? fallback : <CapsuleMannequin mannequin={mannequin} pieces={dressed} sway={false} body={body} />} />
     </group>

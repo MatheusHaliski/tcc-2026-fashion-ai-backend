@@ -1,56 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.flair.FlairEngine;
-import br.com.fashionai.application.flair.FlairEngine.Card;
-import br.com.fashionai.application.flair.FlairEngine.Deck;
-import br.com.fashionai.application.hype.HypeScoreConfig;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.FlairCoinEntry;
-import br.com.fashionai.domain.model.FlairCombination;
-import br.com.fashionai.domain.model.FlairMatch;
-import br.com.fashionai.domain.model.FlairMatchEntry;
-import br.com.fashionai.domain.model.FlairProfile;
-import br.com.fashionai.domain.model.FlairRedemption;
-import br.com.fashionai.domain.model.FlairTeam;
-import br.com.fashionai.domain.model.FlairTeamMember;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.Model3dStatus;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.FlairCoinEntryRepository;
-import br.com.fashionai.domain.repository.FlairCombinationRepository;
-import br.com.fashionai.domain.repository.FlairMatchEntryRepository;
-import br.com.fashionai.domain.repository.FlairMatchRepository;
-import br.com.fashionai.domain.repository.FlairProfileRepository;
-import br.com.fashionai.domain.repository.FlairRedemptionRepository;
-import br.com.fashionai.domain.repository.FlairTeamMemberRepository;
-import br.com.fashionai.domain.repository.FlairTeamRepository;
-import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
-import br.com.fashionai.domain.repository.ReactionRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.DayOfWeek;
@@ -72,6 +21,24 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.flair.AtelierGrants;
+import br.com.fashionai.application.flair.FlairEngine;
+import br.com.fashionai.application.flair.FlairEngine.Card;
+import br.com.fashionai.application.flair.FlairEngine.Deck;
+import br.com.fashionai.application.hype.HypeScoreConfig;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * FLAIR (card Trello · jogo de cartas): as cartas são as peças e os decks são os esquemas do usuário. Jogos:
@@ -124,6 +91,12 @@ public class FlairService {
     private final HypeScoreCurrentRepository hypeScores;
     private final HypeScoreConfig hypeConfig;
     private final AtelierRewardSystem atelier;
+    private final br.com.fashionai.application.flair.FlairCouponWriter coupons;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setCouponChannels(CanalCupomRepository canais) {
+        coupons.useChannels(new CouponChannelResolver(canais));
+    }
 
     public FlairService(FlairProfileRepository profiles, FlairCoinEntryRepository coins, FlairCombinationRepository combinations,
                         FlairRedemptionRepository redemptions, FlairTeamRepository teams, FlairTeamMemberRepository members,
@@ -134,6 +107,7 @@ public class FlairService {
                         FaiPointsService faiPoints, HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig,
                         AtelierRewardSystem atelier) {
         this.atelier = atelier;
+        this.coupons = new br.com.fashionai.application.flair.FlairCouponWriter(redemptions);
         this.hypeScores = hypeScores;
         this.hypeConfig = hypeConfig;
         this.events = events;
@@ -157,7 +131,7 @@ public class FlairService {
         this.guard = guard;
     }
 
-    static LocalDate today() {
+    public static LocalDate today() {
         return LocalDate.now(FaiPointsService.ZONE);
     }
 
@@ -226,7 +200,7 @@ public class FlairService {
     }
 
     /** Uma carta (o Hype v2 da peça numa consulta); para várias, {@link #cardsOf}. */
-    Card card(WardrobeItem w) {
+    public Card card(WardrobeItem w) {
         return cardsOf(List.of(w)).get(0);
     }
 
@@ -289,7 +263,7 @@ public class FlairService {
 
     // ================================================================== perfil, coins e rank
 
-    FlairProfile profile(UUID userId) {
+    public FlairProfile profile(UUID userId) {
         return profiles.findByUserId(userId).orElseGet(() -> {
             FlairProfile p = new FlairProfile();
             p.setUser(users.findById(userId).orElseThrow());
@@ -298,7 +272,7 @@ public class FlairService {
     }
 
     /** Recompensa idempotente: (motivo, referência) paga uma vez só. */
-    boolean award(UUID userId, int delta, int rankPoints, String reason, String ref) {
+    public boolean award(UUID userId, int delta, int rankPoints, String reason, String ref) {
         if (coins.existsByUserIdAndReasonAndRef(userId, reason, ref)) {
             return false;
         }
@@ -373,7 +347,7 @@ public class FlairService {
             new Quest("DUEL_CHAMPION", Msg.k("flair.campeao_de_duelos"), "WEEK", 200, Msg.k("flair.vencer_5_duelos_nesta_semana")),
             new Quest("POWER_DECK", Msg.k("flair.deck_poderoso"), "WEEK", 300, Msg.k("flair.montar_um_deck_com_poder")));
 
-    static final Map<String, String> CATEGORY_LABELS = Map.of("upper_piece", Msg.k("flair.parte_de_cima"), "lower_piece", Msg.k("flair.parte_de_baixo"),
+    public static final Map<String, String> CATEGORY_LABELS = Map.of("upper_piece", Msg.k("flair.parte_de_cima"), "lower_piece", Msg.k("flair.parte_de_baixo"),
             "shoes_piece", Msg.k("flair.calcado"), "accessory_piece", Msg.k("flair.acessorio"), "full_body_piece", Msg.k("flair.peca_inteira"));
 
     @Transactional(readOnly = true)
@@ -793,7 +767,7 @@ public class FlairService {
     }
 
     /** Loja apta a oferecer cupom: perfil de marca/celebridade aprovado e conta ativa (pendente, suspensa ou excluída não). */
-    static boolean sellerActive(User owner) {
+    public static boolean sellerActive(User owner) {
         return owner != null && owner.getStatus() == AccountStatus.ACTIVE
                 && (owner.getProfileType() == ProfileType.MARCA || owner.getProfileType() == ProfileType.CELEBRIDADE);
     }
@@ -802,7 +776,7 @@ public class FlairService {
                                   List<String> requiredStyles, List<String> requiredOccasions, Integer minBrandPieces,
                                   Integer minDeckPower, String minRarity, Integer minWins, String couponTitle,
                                   Integer discountPercent, BigDecimal discountAmount, BigDecimal minPurchase, Integer validDays,
-                                  Integer stock, Boolean active, Instant startsAt, Instant endsAt, String accentColor, String storeUrl) {
+                                  Integer stock, Boolean active, Instant startsAt, Instant endsAt, String accentColor, String storeUrl, UUID canalCupomId, String minPurchaseCurrency) {
     }
 
     @Transactional
@@ -832,20 +806,12 @@ public class FlairService {
                 && c.getMinRarity() == null && !"DUELO_PATROCINADO".equals(type)) {
             throw ApiException.badRequest("SEM_REQUISITOS", Msg.t("flair.defina_ao_menos_um_requisito"));
         }
-        c.setCouponTitle(InputSanitizer.required("couponTitle", InputSanitizer.moderated("couponTitle", f.couponTitle(), 120), 3, 120));
-        if (f.discountPercent() == null && f.discountAmount() == null) {
-            throw ApiException.badRequest("DESCONTO_OBRIGATORIO", Msg.t("flair.informe_o_desconto_em_ou"));
-        }
-        c.setDiscountPercent(f.discountPercent() == null ? null : clamp(f.discountPercent(), 1, 90));
-        c.setDiscountAmount(f.discountAmount());
-        c.setMinPurchase(f.minPurchase());
-        c.setValidDays(clamp(f.validDays() == null ? 30 : f.validDays(), 7, 120));
+        coupons.applyOffer(c, f);   // título, desconto, mínimo de compra, validade, canal e loja do cupom
         c.setStock(f.stock() == null ? null : Math.max(1, f.stock()));
         c.setActive(f.active() == null || f.active());
         c.setStartsAt(f.startsAt());
         c.setEndsAt(f.endsAt());
         c.setAccentColor(f.accentColor() != null && f.accentColor().matches("#[0-9A-Fa-f]{6}") ? f.accentColor().toUpperCase(Locale.ROOT) : null);
-        c.setStoreUrl(SealService.storeUrl(f.storeUrl()));
         combinations.save(c);
         return combinationView(c, null, null);
     }
@@ -944,7 +910,8 @@ public class FlairService {
         m.put("minRarity", c.getMinRarity());
         m.put("minWins", c.getMinWins());
         m.put("coupon", Map.of("title", c.getCouponTitle(), "discountPercent", c.getDiscountPercent() == null ? "" : c.getDiscountPercent(),
-                "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(), "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "validDays", c.getValidDays()));
+                "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(), "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "validDays", c.getValidDays(),
+                "minPurchaseCurrency", c.getMinPurchaseCurrency() == null ? "" : c.getMinPurchaseCurrency()));
         m.put("stock", c.getStock());
         m.put("redeemed", c.getRedeemed());
         m.put("active", c.isActive());
@@ -953,6 +920,7 @@ public class FlairService {
         m.put("endsAt", c.getEndsAt());
         m.put("accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor());
         m.put("storeUrl", c.getStoreUrl());
+        m.put("canalCupom", CouponChannelResolver.view(c.getCanalCupom()));
         if (viewer != null) {
             m.put("redemption", redemptions.findByCombinationIdAndUserId(c.getId(), viewer.id()).map(this::redemptionView).orElse(null));
         }
@@ -1023,33 +991,11 @@ public class FlairService {
         if (checks.isEmpty() || !checks.stream().allMatch(x -> Boolean.TRUE.equals(x.get("ok")))) {
             throw new ApiException(422, "COMBINACAO_INCOMPLETA", Msg.t("flair.o_deck_ainda_nao_completa"), Map.of("checks", checks));
         }
-        FlairRedemption r = new FlairRedemption();
-        r.setCombination(c);
-        r.setUser(users.findById(user.id()).orElseThrow());
-        r.setScheme(s);
-        String code;
-        do {
-            code = "FLR-" + token(4) + "-" + token(4);
-        } while (redemptions.existsByCode(code));
-        r.setCode(code);
-        r.setStatus("EMITIDO");
-        r.setDeckPower(d == null ? null : d.power());
-        r.setExpiresAt(Instant.now().plus(c.getValidDays(), ChronoUnit.DAYS));
-        redemptions.save(r);
-        c.setRedeemed(c.getRedeemed() + 1);
+        FlairRedemption r = coupons.issue(c, users.findById(user.id()).orElseThrow(), s, d == null ? null : d.power());
         award(user.id(), 0, 50, "REDEMPTION", c.getId().toString());
         // Atelier: concluir a jornada da marca/celebridade vale um convite de temporada daquele perfil
         atelier.grant(AtelierGrants.brandJourney(user.id(), c.getId(), c.getName(), c.getBrand().getId(), brandNameOf(c.getBrand()), Instant.now()));
         return redemptionView(r);
-    }
-
-    private static String token(int n) {
-        String alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        StringBuilder b = new StringBuilder();
-        for (int i = 0; i < n; i++) {
-            b.append(alphabet.charAt(RANDOM.nextInt(alphabet.length())));
-        }
-        return b.toString();
     }
 
     Map<String, Object> redemptionView(FlairRedemption r) {
@@ -1066,8 +1012,8 @@ public class FlairService {
         m.put("user", Views.user(r.getUser()));
         m.put("combination", Map.of("id", c.getId(), "name", c.getName(), "brandName", brandNameOf(c.getBrand()), "coupon", c.getCouponTitle(),
                 "discountPercent", c.getDiscountPercent() == null ? "" : c.getDiscountPercent(), "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(),
-                "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor()));
-        return m;
+                "minPurchase", r.getMinPurchaseSnapshot() == null ? "" : r.getMinPurchaseSnapshot(), "accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor()));
+        return CouponTermsSnapshotWriter.read(m, r);   // o mínimo acima é o da emissão, não o atual da combinação
     }
 
     @Transactional(readOnly = true)

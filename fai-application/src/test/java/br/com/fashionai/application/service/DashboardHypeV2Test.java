@@ -1,6 +1,15 @@
 package br.com.fashionai.application.service;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
 import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.hype.DashboardHypeBlocks;
 import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.ports.AnalyticsQueryPort;
 import br.com.fashionai.application.security.CurrentUser;
@@ -9,13 +18,6 @@ import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.repository.BackupRecordRepository;
 import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import org.junit.jupiter.api.Test;
-
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

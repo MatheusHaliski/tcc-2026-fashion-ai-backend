@@ -20,9 +20,12 @@ export function conservationLabel(piece: PieceReferences, t: Translate): string 
   return key ? t(key) : condition;
 }
 
-/** Keep free-form care text when it adds information to the washing catalog entry. */
-export function washingDetails(piece: PieceReferences): { washing: string | null; additionalCare: string | null } {
+/**
+ * A lavagem da peça em três linhas, sem repetir texto: o tipo de lavagem escolhido no catálogo; a "Lavagem" do texto
+ * livre antigo, só quando a peça não tem tipo; e os cuidados adicionais, quando o texto livre diz algo além do tipo.
+ */
+export function washingDetails(piece: PieceReferences): { tipo: string | null; washing: string | null; additionalCare: string | null } {
   const name = piece.tipoLavagem?.nome?.trim() || null;
   const care = piece.careInstructions?.trim() || null;
-  return { washing: name || care, additionalCare: name && care && name !== care ? care : null };
+  return { tipo: name, washing: name ? null : care, additionalCare: name && care && name !== care ? care : null };
 }

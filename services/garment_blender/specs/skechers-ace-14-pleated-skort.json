@@ -1,0 +1,18 @@
+{
+ "produto": "Ace 14 Inch Pleated Skort",
+ "marca": "Skechers",
+ "url_oficial": "https://www.skechers.com/ace-14-inch-pleated-skort/SK46.html",
+ "subcategoria": "skort",
+ "tamanho": "38",
+ "sexo": "FEMININO",
+ "tecido": {
+  "tipo": "jersey",
+  "cor": "#f0efeb",
+  "gramatura": 200
+ },
+ "fechamento": "nenhum",
+ "pregas": 24,
+ "observacao": "14 polegadas (36 cm) com short por baixo; saia plissada. Cor não conferida (branco escolhido).",
+ "caimento": "regular",
+ "ribana": false
+}

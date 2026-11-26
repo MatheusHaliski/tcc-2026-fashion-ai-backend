@@ -33,6 +33,11 @@ public final class DetetiveVigias {
 
     /** O ponto está no cone de visão do vigia (ou é o próprio ponto dele)? */
     public static boolean noCone(DetetiveSala sala, Vigia v, int passo, Ponto p) {
+        return noCone(sala, v, passo, p, ALCANCE);
+    }
+
+    /** Com o alcance do cone que o look da detetive deixa (DetetiveDoLook). */
+    public static boolean noCone(DetetiveSala sala, Vigia v, int passo, Ponto p, double alcance) {
         Ponto g = onde(sala, v, passo);
         double dx = p.x() - g.x();
         double dz = p.z() - g.z();
@@ -40,7 +45,7 @@ public final class DetetiveVigias {
         if (dist < 0.01) {
             return true;
         }
-        if (dist > ALCANCE) {
+        if (dist > alcance) {
             return false;
         }
         double angulo = Math.toDegrees(Math.atan2(dx, dz));
@@ -50,7 +55,11 @@ public final class DetetiveVigias {
 
     /** O vigia vê a pessoa neste passo? (vigia de porta não vigia; quem está escondido não é visto) */
     public static boolean ve(DetetiveSala sala, Vigia v, int passo, Ponto p, boolean escondido) {
-        return v.barra() == null && !escondido && noCone(sala, v, passo, p);
+        return ve(sala, v, passo, p, escondido, ALCANCE);
+    }
+
+    public static boolean ve(DetetiveSala sala, Vigia v, int passo, Ponto p, boolean escondido, double alcance) {
+        return v.barra() == null && !escondido && noCone(sala, v, passo, p, alcance);
     }
 
     /** O ponto é vizinho do vigia (perto o bastante para o bolso ou o confronto)? */

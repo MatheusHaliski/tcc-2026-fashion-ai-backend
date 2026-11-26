@@ -12,7 +12,8 @@ import { InsightStrip } from "@/components/insights/insight-strip";
 import { HypeItemRow } from "@/components/hype/hype-item-row";
 import type { HypeWardrobe } from "@/lib/hype/types";
 import { GuideAuto, HowItWorks } from "@/components/guide/guide";
-import { RankingsPanel, type RankingsView } from "@/components/highlights/rankings-panel";
+import { RankingsPanel } from "@/components/highlights/rankings-panel";
+import type { RankingsView } from "@/components/highlights/ranking-types";
 
 interface Highlights { eligible: boolean; pieces: number; progress?: { missing: number; target: number; message: string; steps: { label: string; done: boolean }[] }; manifesto: string; score?: number; band?: string; bands?: { min: number; max: number; label: string }[]; k?: number; kNote?: string; dimensions?: { code: string; name: string; value?: number; weight: number; rule?: string; pullingDown?: { name?: string; id?: string }[] }[]; dims?: Record<string, number>; delta?: { score?: number; previous?: number }; highlights?: { emoji?: string; title?: string; name?: string; value?: string; pieceId?: string; text?: string }[]; evolution?: { history?: { date: string; score: number }[]; title?: string }; records?: { noRepeatStreak?: number; currentStreak?: number; rescuedInAWeek?: number; uniqueLooks?: number; note?: string }; achievements?: { code: string; name?: string; emoji?: string; unlocked?: boolean; unlockedAt?: string; secret?: boolean }[]; suggestedChallenges?: { code: string; name: string }[]; rankingsOptIn?: boolean; computedAt?: string; }
 const bandColor = (s?: number) => (s ?? 0) >= 800 ? "var(--status-good)" : (s ?? 0) >= 500 ? "var(--thread)" : (s ?? 0) >= 300 ? "var(--status-warning)" : "var(--status-serious)";

@@ -11,6 +11,8 @@ import type { Look3dPiece } from "@/components/three/common";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { EsportePainel } from "@/components/flair/esporte/esporte-painel";
 import { EsportePalco } from "@/components/flair/esporte/esporte-palco";
+import { alvoDaCapita } from "@/lib/flair/esporte/capita-posicao";
+import { alvoComTempo } from "@/lib/flair/esporte/tempo";
 import { LANCE_MS, useEsporte, type EsporteNaTela } from "@/components/flair/esporte/use-esporte";
 import { cartasDoDetetive, DetetivePainel } from "@/components/flair/detetive/detetive-painel";
 import { DetetivePalco } from "@/components/flair/detetive/detetive-palco";
@@ -39,6 +41,8 @@ interface Entrada {
   ocupado: boolean;
   erro: ApiError | null;
   acionar: (pedido: AcionamentoPedido) => void;
+  /** por cima do palco do jogo (a roda de recursos) */
+  extra?: ReactNode;
 }
 
 export interface ModoPorCartas {
@@ -57,9 +61,10 @@ export function useModoPorCartas(e: Entrada): ModoPorCartas {
     return {
       esporte,
       detetive: false,
-      palco: <EsportePalco modalidade={esporte.modalidade} jogadas={esporte.jogadas} duracao={LANCE_MS} uniforme={esporte.uniforme} fim={e.momento === "RESULTADO"} semente={e.semente} />,
+      palco: <EsportePalco modalidade={esporte.modalidade} jogadas={esporte.jogadas} duracao={LANCE_MS} uniforme={esporte.uniforme} fim={e.momento === "RESULTADO"} semente={e.semente}
+        capita={!!esporte.situacao && !e.ocupado}>{e.extra}</EsportePalco>,
       acao: <EsportePainel modalidade={esporte.modalidade} jogadas={esporte.jogadas} situacao={esporte.situacao} mao={esporte.mao} ocupado={e.ocupado} erro={e.erro}
-        onJogar={(cardId) => e.acionar({ tipo: "CARTA", cardId: cardId ?? undefined })} onPular={e.acao.pular} />,
+        onJogar={(cardId, tempo) => e.acionar({ tipo: "CARTA", cardId: cardId ?? undefined, alvo: alvoComTempo(alvoDaCapita(), tempo ?? null) })} onPular={e.acao.pular} />,
     };
   }
   if (retrato && !preparando) {
@@ -67,7 +72,7 @@ export function useModoPorCartas(e: Entrada): ModoPorCartas {
     return {
       esporte,
       detetive: true,
-      palco: <DetetivePalco r={retrato} pecas={e.pecas} protagonista={e.protagonista} semente={e.semente ?? 1} ocupado={e.ocupado} onAcao={onAcao} />,
+      palco: <DetetivePalco r={retrato} pecas={e.pecas} protagonista={e.protagonista} semente={e.semente ?? 1} ocupado={e.ocupado} onAcao={onAcao}>{e.extra}</DetetivePalco>,
       acao: <DetetivePainel r={retrato} mao={cartasDoDetetive(retrato.mao, e.cartas, e.itens)} ocupado={e.ocupado} erro={e.erro} onAcao={onAcao} />,
     };
   }

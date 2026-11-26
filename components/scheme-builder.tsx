@@ -9,7 +9,7 @@ import { Button, Chip, Stepper, EmptyState, ErrorState, Field, Input, Select, Sk
 import { SchemeTags } from "@/components/scheme-tags";
 import { SchemeDetailFields } from "@/components/scheme-detail-fields";
 import { AiCompositionCard } from "@/components/ai-compositions";
-import { useUndo } from "@/lib/hooks/use-undo";
+import { useSchemeArt } from "@/components/scheme-builder-art";
 import { SchemeBuilderPieces } from "@/components/scheme-builder-pieces";
 import { SchemeBuilderPreview } from "@/components/scheme-builder-preview";
 import { CreatorWelcome, SuppressCreatorWelcome } from "@/components/creator-welcome";
@@ -57,11 +57,11 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const { data: b, loading, error, reload } = useApi<Builder>((signal) => api.get("/api/schemes/builder", { signal }), []);
   const [mode, setMode] = useState<"manual" | "ai">(initial?.creationMode === "AI_ASSISTED" ? "ai" : "manual");
   const [selected, setSelected] = useState<{ id: string; slot: string }[]>(initial ? initial.items.map((i) => ({ id: i.wardrobeItemId, slot: i.slot })) : []);
-  const [form, setForm] = useState({ title: initial?.title ?? "", description: initial?.description ?? "", occasion: initial?.occasion ?? [], style: initial?.style ?? [], season: initial?.season ?? "", mood: initial?.mood ?? "", visibility: initial?.visibility ?? "PRIVATE", publish: false, lookDoDia: initial?.lookDoDia ?? false, tags: (initial?.tags ?? []).join(", "), colecaoId: (initial?.colecao?.id ?? null) as string | null, intensidadeTermicaId: (initial?.intensidadeTermica?.id ?? null) as string | null });
-  const [bg, setBg] = useState<BgConfig>(() => { const st = studioOf(initial?.background) as BgConfig; const { photo: _p, ...rest } = st; void _p; return rest; });
-  const artUndo = useUndo(bg, setBg); // "Desfazer" acima do preview: volta a arte ao estado anterior
+  const [form, setForm] = useState({ title: initial?.title ?? "", description: initial?.description ?? "", occasion: initial?.occasion ?? [], style: initial?.style ?? [], season: initial?.season ?? "", mood: initial?.mood ?? "", visibility: initial?.visibility ?? "PRIVATE", publish: false, lookDoDia: initial?.lookDoDia ?? false, tags: (initial?.tags ?? []).join(", "), colecaoId: (initial?.colecao?.id ?? null) as string | null, intensidadeTermicaId: (initial?.intensidadeTermica?.id ?? null) as string | null, nivelTermicoId: (initial?.nivelTermico?.id ?? null) as string | null });
+  // arte, skin e layouts do card; "Desfazer" e "Limpar arte" da prévia valem para o conjunto (scheme-builder-art.ts)
+  const { bg, setBg, skin, setSkin, anatomy, setAnatomy, pieceAnatomy, setPieceAnatomy, undo: artUndo, clear: clearArt, empty: artEmpty } = useSchemeArt(initial);
   // foto do conjunto (como um post): o sistema só a verifica (formato e políticas da FAI Network) — nunca edita a foto do look
-  const [photo, setPhoto] = useState<{ url?: string | null }>(() => ({ url: studioOf(initial?.background).photo?.url ?? null })); const [skin, setSkin] = useState(initial?.cardSkin ?? "atelier"); const [anatomy, setAnatomy] = useState(initial?.layoutAnatomy ?? "LISTA_VERTICAL"); const [pieceAnatomy, setPieceAnatomy] = useState<string>(((initial?.background as { pieces?: { anatomy?: string } })?.pieces?.anatomy) ?? "PECA_AMPLIADO");
+  const [photo, setPhoto] = useState<{ url?: string | null }>(() => ({ url: studioOf(initial?.background).photo?.url ?? null }));
   const [comps, setComps] = useState<Composition[] | null>(null); const [aiMsg, setAiMsg] = useState<string | null>(null); const [prompt, setPrompt] = useState(""); const [orientationNote, setOrientationNote] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [step, setStep] = useState(0);
   const [artNote, setArtNote] = useState<string | null>(null); const [done, setDone] = useState<string | null>(null);
   const sealVerification = useLookSeals({ pieceIds: selected.map((s) => s.id), occasion: form.occasion, style: form.style, background: { ...bg, cardSkin: skin, layoutAnatomy: anatomy }, enabled: step >= 2 });
@@ -95,7 +95,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   // navegação livre (RF5): voltar sempre; avançar para qualquer etapa cujo pré-requisito já está cumprido
   const enoughPieces = selected.length >= 2 || selected.length === 1 && selected[0].slot === "FULL_BODY";
   const canGo = (i: number) => i < step || i <= 1 || (enoughPieces && (i === 2 || !!form.title.trim()));
-  const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), seals: [], creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy, photo: { url: photo.url ?? null } }, pieces: { anatomy: pieceAnatomy }, selectedSeals: selectedSeals.selected }, cardSkin: skin, layoutAnatomy: anatomy });
+  const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), seals: [], creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy, photo: { url: photo.url ?? null } }, pieces: { anatomy: pieceAnatomy }, selectedSeals: selectedSeals.selected }, cardSkin: skin, layoutAnatomy: anatomy, clearNivelTermico: !form.nivelTermicoId && !!initial?.nivelTermico });
   async function uploadPhoto(file: File) {
     const fd = new FormData(); fd.append("file", file);
     try { const r = await api.upload<{ url: string }>("/api/schemes/photos", fd); setPhoto({ url: r.url }); toast.success(t("schemeBuilder.foto_verificada")); } catch (e) { toast.fromError(e); }
@@ -167,8 +167,8 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   return (
     <div className="grid gap-5">
       {!initial && <CreatorWelcome kind="scheme" onEntry />}
-      <div>
-        <div className="mb-4 flex justify-end"><SchemeBuilderPreview draft={draft} bg={bg} undo={artUndo} onClear={() => setBg({})} schemeId={initial?.id ?? null} /></div>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:items-start"><div className="min-w-0">
+        <div className="mb-4 flex justify-end lg:hidden"><SchemeBuilderPreview inDialog draft={draft} canClear={!artEmpty} undo={artUndo} onClear={clearArt} schemeId={initial?.id ?? null} /></div>
         <Stepper steps={steps} current={step} onStep={go} label={t("builder.stepsLabel")} canGo={canGo} />
         {step === 0 && (
           <div className="surface p-4">
@@ -205,7 +205,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <Field label={t("common.descricao")} id="description" className="sm:col-span-2"><Textarea id="description" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={500} /></Field>
             <SchemeTags k="occasion" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
             <SchemeTags k="style" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
-            <SchemeDetailFields form={form} setForm={setForm} />
+            <SchemeDetailFields form={form} setForm={setForm} nivelTermicoNome={initial?.nivelTermico?.nome} />
             <Field label={t("common.visibility")} id="visibility"><Select id="visibility" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
 
             <Field label={t("schemeBuilder.selos_do_look")} className="sm:col-span-2"><SealSuggestions {...sealVerification} {...selectedSeals} selectionOnly /></Field>
@@ -236,6 +236,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
           </div>
         )}
       </div>
+      <SchemeBuilderPreview draft={draft} canClear={!artEmpty} undo={artUndo} onClear={clearArt} schemeId={initial?.id ?? null} /></div>
       {done && <CreationSuccess kind="scheme" id={done} edited={!!initial} />}
     </div>
   );

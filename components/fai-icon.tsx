@@ -1,10 +1,12 @@
 "use client";
 import catalog from "@/lib/icons/fai-icons.json";
+import occasions from "@/lib/icons/fai-occasion-icons.json";
 import { useI18n } from "@/lib/i18n/i18n";
 import { toServerLanguage } from "@/lib/i18n/state";
 
 type Icon = { id: string; slug: string; family: string; label: Record<string, string>; states: string[]; files: Record<string, Record<string, string>>; glyph?: string; };
-const ICONS: Record<string, Icon> = Object.fromEntries((catalog as { icons: Icon[] }).icons.map((i) => [i.id, i]));
+// + família OCC (ocasiões do Vista-me), desenhada por scripts/icons/fai_occasion_icons.py na mesma medalha
+const ICONS: Record<string, Icon> = Object.fromEntries([...(catalog as { icons: Icon[] }).icons, ...(occasions as { icons: Icon[] }).icons].map((i) => [i.id, i]));
 
 /** Glifos SVG de reserva (quando o PNG não carrega ou o ícone não existe no catálogo). */
 const GLYPHS: Record<string, string> = {

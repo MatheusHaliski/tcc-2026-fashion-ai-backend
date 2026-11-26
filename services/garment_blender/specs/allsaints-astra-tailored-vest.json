@@ -1,0 +1,24 @@
+{
+ "produto": "Astra Tailored Vest",
+ "marca": "AllSaints",
+ "url_oficial": "https://www.allsaints.com/us/womenswear/astra-tailored-vest/USW043QD-7.html",
+ "subcategoria": "vest",
+ "sexo": "FEMININO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#2a2a2e",
+  "gramatura": 260
+ },
+ "gola": "v",
+ "fechamento": "botoes",
+ "botoes": 4,
+ "sem_manga": true,
+ "ribana": false,
+ "medidas_marca": {
+  "decote_frente": 22,
+  "comprimento": 58
+ },
+ "observacao": "colete de alfaiataria: decote V, 4 botões, sem manga. Cor não conferida (grafite escolhido).",
+ "tamanho": "M"
+}

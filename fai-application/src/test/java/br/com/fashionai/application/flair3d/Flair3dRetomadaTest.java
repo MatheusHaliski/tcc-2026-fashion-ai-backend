@@ -74,7 +74,10 @@ class Flair3dRetomadaTest {
         String pedida = (String) ((Map<?, ?>) espera.eventos().stream().filter(e -> e.codigo().equals("PEDIDO_DE_CENA")).findFirst().orElseThrow().valor()).get("familia");
 
         // sem deck: a carta da sessão é qualquer carta da pessoa fora do look; as 4 regras (100) e a luz (10) dão 100
-        Resultado fim = service.acionar(ana, id, new Acionamento(porCor.get(pedida).getId(), null));
+        Resultado luz = service.acionar(ana, id, new Acionamento(porCor.get(pedida).getId(), null));
+        // depois da luz, a execução no percurso até a foto
+        assertThat(luz.status()).isEqualTo("EM_ACAO");
+        Resultado fim = service.acionar(ana, id, Flair3dFixtures.perfeita(luz));
         assertThat(fim.status()).isEqualTo("ENTREGUE");
         assertThat(fim.pontos()).isEqualTo(100);
         assertThat(fim.eventos()).anyMatch(e -> e.codigo().equals("TETO"));
@@ -94,7 +97,9 @@ class Flair3dRetomadaTest {
         assertThat(retomada.emAndamento(bia, "PASSARELA")).isEmpty();
 
         service.entregar(ana, id, new Entrega(Map.of("SUP", sup.getId()), null, null, null));
-        // a jogada de cena espera a carta: a partida ainda volta; seguir sem carta a fecha
+        // a jogada de cena espera a carta e depois a execução: a partida ainda volta; seguir nas duas a fecha
+        assertThat(partida(retomada.emAndamento(ana, "PASSARELA").orElseThrow())).containsEntry("status", "EM_ACAO");
+        service.acionar(ana, id, Acionamento.NENHUM);
         assertThat(partida(retomada.emAndamento(ana, "PASSARELA").orElseThrow())).containsEntry("status", "EM_ACAO");
         service.acionar(ana, id, Acionamento.NENHUM);
         assertThat(retomada.emAndamento(ana, "PASSARELA")).isEmpty();

@@ -1,45 +1,35 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.assets.AssetCatalogService;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.audit.AuditActions;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.hype.HypeCache;
-import br.com.fashionai.application.imaging.ImageOps;
-import br.com.fashionai.application.imaging.MannequinGeometry;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.UserPreferences;
-import br.com.fashionai.domain.model.enums.BodyBuild;
-import br.com.fashionai.domain.model.enums.HypeScorePanelVersion;
-import br.com.fashionai.domain.model.enums.MannequinSex;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.PhotoOrigin;
-import br.com.fashionai.domain.model.enums.SizeSystem;
-import br.com.fashionai.domain.model.enums.ThemeMode;
-import br.com.fashionai.domain.model.enums.UiDensity;
-import br.com.fashionai.domain.model.enums.UiLanguage;
-import br.com.fashionai.domain.model.enums.UnitSystem;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
 import java.awt.image.BufferedImage;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import br.com.fashionai.application.assets.AssetCatalogService;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.audit.AuditActions;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.hype.HypeCache;
+import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.imaging.MannequinGeometry;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.preference.PreferenceValueRules;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.UserPreferences;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.UserPreferencesRepository;
+import br.com.fashionai.domain.repository.UserRepository;
 
 /**
  * RF23 — preferências de interface e dados NÃO sensíveis (salvam direto, sem reautenticação): tema,

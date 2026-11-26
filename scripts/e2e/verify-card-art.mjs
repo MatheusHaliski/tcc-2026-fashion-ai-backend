@@ -211,11 +211,11 @@ for (const who of ["owner", "visitor"]) {
   await ed.getByRole("button", { name: /Prévia e aplicação$/ }).click(); await page.waitForTimeout(500); await ed.screenshot({ path: `${OUT}/editor-6-previa.png` });
   // posição inteira na página antes da captura: sem isso, a diferença de subpixel entre a prévia e a grade vira ruído
   const snap = (loc) => loc.evaluate((el) => { el.style.transform = ""; const r = el.getBoundingClientRect(); el.style.transform = `translate3d(${Math.round(r.left) - r.left}px, ${Math.round(r.top) - r.top}px, 0)`; el.style.willChange = "transform"; });
-  await snap(ed.locator(".pae-preview-card article"));
-  const previewShot = await ed.locator(".pae-preview-card article").screenshot({ path: `${OUT}/previa-card.png`, animations: "disabled" });
+  await snap(ed.locator(".pae-preview .card-preview-mode > article"));
+  const previewShot = await ed.locator(".pae-preview .card-preview-mode > article").screenshot({ path: `${OUT}/previa-card.png`, animations: "disabled" });
   const layout = (el) => { const r0 = el.getBoundingClientRect(); return [...el.querySelectorAll(".c-header, .pc-media, .pc-media img, .c-actions, .c-act, .pc-id, .pc-name, .pc-sub, .pc-content")].map((x) => { const r = x.getBoundingClientRect(); return [r.top - r0.top, r.left - r0.left, r.width, r.height].map((n) => Math.round(n * 100) / 100).join(","); }); };
-  const previewLayout = await ed.locator(".pae-preview-card article").evaluate(layout);
-  const previewGeom = await ed.locator(".pae-preview-card article").evaluate((c) => { const r = c.getBoundingClientRect(); const f = getComputedStyle(c.querySelector(".pc-frame")); return { w: r.width, h: r.height, pad: [f.paddingTop, f.paddingLeft, f.paddingBottom], family: c.dataset.family, variant: c.dataset.variant, cls: c.className }; });
+  const previewLayout = await ed.locator(".pae-preview .card-preview-mode > article").evaluate(layout);
+  const previewGeom = await ed.locator(".pae-preview .card-preview-mode > article").evaluate((c) => { const r = c.getBoundingClientRect(); const f = getComputedStyle(c.querySelector(".pc-frame")); return { w: r.width, h: r.height, pad: [f.paddingTop, f.paddingLeft, f.paddingBottom], family: c.dataset.family, variant: c.dataset.variant, cls: c.className }; });
   await ed.getByRole("button", { name: "Aplicar" }).click(); await page.waitForTimeout(800);
   const applied = { puts: puts.length, corpo: puts[0]?.body && { v: puts[0].body.v, template: puts[0].body.template, composition: puts[0].body.composition, surface: puts[0].body.surface, baseRev: puts[0].body.baseRev, anatomy: puts[0].body.anatomy, efeitosLigados: Object.entries(puts[0].body.effects).filter(([, x]) => x === true || (x && x.on)).map(([k]) => k) }, editorFechou: (await page.locator('[role="dialog"]').count()) === 1 };
   await page.keyboard.press("Escape"); await page.waitForTimeout(300);
@@ -250,7 +250,7 @@ for (const who of ["owner", "visitor"]) {
   await page.locator('[role="dialog"]').first().getByRole("button", { name: "Mais opções" }).click(); await page.getByRole("menuitem", { name: "Editar arte do card" }).click();
   ed2 = page.locator('[role="dialog"]').last(); await ed2.waitFor();
   await ed2.getByRole("button", { name: "Restaurar padrão" }).click();
-  const previaRestaurada = await ed2.locator(".pae-preview-card article").getAttribute("data-family");
+  const previaRestaurada = await ed2.locator(".pae-preview .card-preview-mode > article").getAttribute("data-family");
   // conflito: outra janela aplicou antes (a revisão no servidor andou)
   store.p1 = { ...store.p1, rev: (store.p1.rev ?? 0) + 5 };
   await ed2.getByRole("button", { name: "Aplicar" }).click(); await page.waitForTimeout(600);

@@ -1,19 +1,22 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.testkit.Kit;
-import br.com.fashionai.domain.model.TipoLavagem;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.repository.TipoLavagemRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.testkit.Kit;
+import br.com.fashionai.application.wardrobe.PieceForm;
+import br.com.fashionai.application.wardrobe.PieceTaxonomyWriter;
+import br.com.fashionai.domain.model.TipoLavagem;
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.repository.TipoLavagemRepository;
+import br.com.fashionai.domain.repository.WardrobeItemRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -53,7 +56,7 @@ class PieceWashingTest {
                 "sex", "UNISSEX", "color", "blue", "material", "COTTON", "size", "m", "occasion", List.of("casual"),
                 "style", List.of("basic"), "price", 100));
         body.put("tipoLavagemId", washing.getId());
-        var form = Json.read(Json.write(body), WardrobeService.PieceForm.class);
+        var form = Json.read(Json.write(body), PieceForm.class);
 
         var result = wardrobe.update(Kit.as(owner), piece.getId(), form);
 
@@ -62,7 +65,7 @@ class PieceWashingTest {
 
         body.remove("tipoLavagemId");
         body.put("clearTipoLavagem", true);
-        var clear = Json.read(Json.write(body), WardrobeService.PieceForm.class);
+        var clear = Json.read(Json.write(body), PieceForm.class);
         assertThat(wardrobe.update(Kit.as(owner), piece.getId(), clear).tipoLavagem()).isNull();
         assertThat(piece.getTipoLavagem()).isNull();
     }
@@ -70,8 +73,8 @@ class PieceWashingTest {
     @Test
     void legacyTaxonomyKeepsWashingFields() {
         UUID id = UUID.randomUUID();
-        var form = Json.read(Json.write(Map.of("subcategory", "bermuda_shorts", "tipoLavagemId", id)), WardrobeService.PieceForm.class);
-        assertThat(form.resolveTaxonomy().tipoLavagemId()).isEqualTo(id);
+        var form = Json.read(Json.write(Map.of("subcategory", "bermuda_shorts", "tipoLavagemId", id)), PieceForm.class);
+        assertThat(PieceTaxonomyWriter.resolveLegacy(form).tipoLavagemId()).isEqualTo(id);
     }
 
     private static TipoLavagem washing() {

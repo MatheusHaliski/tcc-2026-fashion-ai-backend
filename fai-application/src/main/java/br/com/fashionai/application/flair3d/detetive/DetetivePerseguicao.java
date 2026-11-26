@@ -2,6 +2,7 @@ package br.com.fashionai.application.flair3d.detetive;
 
 import br.com.fashionai.application.flair3d.detetive.DetetiveSala.Ponto;
 import br.com.fashionai.application.flair3d.detetive.DetetiveSala.Vigia;
+import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveAcusacao;
 
 /**
  * Ronda, perseguição e volta dos vigias (pedido da dona: inimigos com movimento e mecânica de confronto, sem arma e sem
@@ -20,7 +21,8 @@ final class DetetivePerseguicao {
     /** quanto o vigia anda por passo na perseguição (a pessoa anda até 3,6 m: correr dá para fugir) */
     static final double PASSO_DO_VIGIA = 2.6;
     /** até onde o vigia que persegue ainda enxerga a pessoa */
-    static final double ALCANCE_DA_PERSEGUICAO = DetetiveVigias.ALCANCE * 1.5;
+    /** quem persegue enxerga 1,5 vez o alcance do cone (o do look da detetive, DetetiveDoLook) */
+    static final double FATOR_DA_PERSEGUICAO = 1.5;
     static final double ALCANCE_DA_PEGADA = 1.3;
 
     /** O que o vigia faz fora da ronda: o modo e onde ele está. */
@@ -62,7 +64,7 @@ final class DetetivePerseguicao {
 
     /** O vigia nota a pessoa a um passo dele? Em ronda, só no cone; fora da ronda, ele já está atento. */
     static boolean nota(DetetiveEstado e, DetetiveSala s, Vigia v) {
-        return e.alertas.containsKey(v.id()) || DetetiveVigias.noCone(s, v, e.passo, e.pontoAtual());
+        return e.alertas.containsKey(v.id()) || DetetiveVigias.noCone(s, v, e.passo, e.pontoAtual(), e.doLook.alcance());
     }
 
     /** Depois de cada passo da pessoa: cada vigia da sala vê, persegue, procura ou volta; no máximo uma pegada. */
@@ -90,7 +92,7 @@ final class DetetivePerseguicao {
         Alerta a = e.alertas.get(v.id());
         boolean livre = !e.escondido;
         if (a == null) {
-            if (DetetiveVigias.ve(s, v, e.passo, p, e.escondido)) {
+            if (DetetiveVigias.ve(s, v, e.passo, p, e.escondido, e.doLook.alcance())) {
                 Ponto g = DetetiveVigias.onde(s, v, e.passo);
                 e.alertas.put(v.id(), new Alerta(PERSEGUE, g.x(), g.z()));
                 e.avisos.add("VISTO:" + v.id());
@@ -100,7 +102,7 @@ final class DetetivePerseguicao {
         Ponto aqui = a.ponto(v.id());
         switch (a.modo()) {
             case PERSEGUE -> {
-                if (!livre || DetetiveSala.distancia(aqui, p) > ALCANCE_DA_PERSEGUICAO) {
+                if (!livre || DetetiveSala.distancia(aqui, p) > e.doLook.alcance() * FATOR_DA_PERSEGUICAO) {
                     e.alertas.put(v.id(), new Alerta(PROCURA, a.x(), a.z()));
                     e.avisos.add("ESCAPOU:" + v.id());
                     return false;
@@ -114,7 +116,7 @@ final class DetetivePerseguicao {
                 e.alertas.put(v.id(), new Alerta(PERSEGUE, novo.x(), novo.z()));
             }
             case PROCURA -> {
-                boolean reaparece = livre && DetetiveSala.distancia(aqui, p) <= DetetiveVigias.ALCANCE;
+                boolean reaparece = livre && DetetiveSala.distancia(aqui, p) <= e.doLook.alcance();
                 e.alertas.put(v.id(), new Alerta(reaparece ? PERSEGUE : VOLTA, a.x(), a.z()));
                 if (reaparece) {
                     e.avisos.add("VISTO:" + v.id());
@@ -143,7 +145,10 @@ final class DetetivePerseguicao {
         return new Ponto(de.id(), de.x() + (para.x() - de.x()) * k, de.z() + (para.z() - de.z()) * k, false);
     }
 
-    /** Pega: uma marca de vida, 30 segundos e de volta à porta da sala; sem vida, o fôlego volta com mais tempo perdido. */
+    /**
+     * Pega: uma marca de vida, 30 segundos e de volta à porta da sala; sem vida, a detetive é levada para fora da gala e
+     * o caso fecha em derrota (reauditoria de 25/11/2026: antes, o fôlego voltava e não havia derrota).
+     */
     static void pegar(DetetiveEstado e, String quem) {
         e.penalidades++;
         e.tempo += DetetivePartida.SEGUNDOS_DE_PENALIDADE;
@@ -152,9 +157,10 @@ final class DetetivePerseguicao {
         e.ponto = e.chegada;
         e.escondido = false;
         if (e.vida <= 0) {
-            e.vida = DetetiveEstado.VIDA;
-            e.tempo += 2 * DetetivePartida.SEGUNDOS_DE_PENALIDADE;
+            e.vida = 0;
             e.avisos.add("SEM_VIDA");
+            e.fim = FashionDetectiveAcusacao.Final.CAPTURADO;
+            e.cutscene = "FINAL:" + e.fim.name();
         }
     }
 }

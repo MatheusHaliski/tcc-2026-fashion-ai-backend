@@ -308,3 +308,15 @@ def test_unknown_generator_or_origin_is_refused(tmp_path):
             imp.main(["--manifest", "m.csv", "--root", str(tmp_path), *extra], connect=lambda: pytest.fail("conectou"))
     with pytest.raises(ValueError):
         GlbSource("hunyuan3d-2.1", "meshy")
+
+
+def test_meshy_71_pose_t_is_a_known_meshy_generator():
+    source = GlbSource("meshy-7.1")
+    assert (source.family, source.origin) == ("meshy", "codex")
+    assert source.notes.startswith("Meshy 7.1 (frente e costas")
+
+
+def test_blender_engine_lot_is_a_known_generator_from_a_local_run():
+    source = GlbSource("garment-blender-1", "local")
+    assert source.family == "blender" and source.notes.startswith("Motor Blender")
+    assert "sem esqueleto" in source.notes                      # vitrine do produto: o encaixe no avatar é outro

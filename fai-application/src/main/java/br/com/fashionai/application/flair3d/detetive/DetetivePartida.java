@@ -1,6 +1,7 @@
 package br.com.fashionai.application.flair3d.detetive;
 
 import br.com.fashionai.application.flair3d.Acionamento;
+import br.com.fashionai.application.flair3d.Andamento;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Flair3dErros;
 import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveAcusacao;
@@ -30,14 +31,38 @@ public final class DetetivePartida {
     private final DetetiveMao mao;
 
     public DetetivePartida(Contexto contexto, Collection<UUID> noLook) {
+        this(contexto, noLook, DetetiveDoLook.NEUTRO);
+    }
+
+    /** Com o que o look muda no corpo da detetive: vida máxima, cone dos vigias e tempo do passo. */
+    public DetetivePartida(Contexto contexto, Collection<UUID> noLook, DetetiveDoLook doLook) {
         mao = new DetetiveMao(contexto, noLook);
+        e.doLook = doLook;
+        e.vida = doLook.vidaMaxima();
     }
 
     public DetetivePartida jogar(List<Acionamento> passos) {
-        for (Acionamento a : passos) {
-            passo(a);
+        return jogar(passos, List.of());
+    }
+
+    /**
+     * Os passos na ordem, com as peças usadas como recurso entre eles: cada uso de VIDA devolve uma marca de vida (até a
+     * máxima do look) antes do passo seguinte, nunca para trás. Sem vida, a detetive é pega e o caso acaba.
+     */
+    public DetetivePartida jogar(List<Acionamento> passos, List<Andamento.UsoDeRecurso> usos) {
+        for (int i = 0; i < passos.size(); i++) {
+            recuperar(usos, i);
+            passo(passos.get(i));
+        }
+        if (e.fim == null) {
+            recuperar(usos, passos.size());
         }
         return this;
+    }
+
+    private void recuperar(List<Andamento.UsoDeRecurso> usos, int lance) {
+        long vidas = usos.stream().filter(u -> u.lance() == lance && "VIDA".equals(u.recurso())).count();
+        e.vida = (int) Math.min(e.doLook.vidaMaxima(), e.vida + vidas);
     }
 
     public boolean encerrada() {

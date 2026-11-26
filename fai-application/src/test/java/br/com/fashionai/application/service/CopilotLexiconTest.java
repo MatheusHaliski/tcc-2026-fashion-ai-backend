@@ -1,18 +1,21 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import tools.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.ObjectMapper;
+
+import br.com.fashionai.application.copilot.CopilotLexicon;
+import br.com.fashionai.application.copilot.CopilotText;
+import br.com.fashionai.application.taxonomy.Taxonomy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,14 +43,14 @@ class CopilotLexiconTest {
     @Test
     void addsMoreThan300KeywordsNotKnownBefore() {
         Set<String> previous = new HashSet<>();
-        CopilotService.COLOR_WORDS.keySet().stream().map(CopilotService::normalized).forEach(previous::add);
-        CopilotService.TYPE_WORDS.keySet().stream().map(CopilotService::normalized).forEach(previous::add);
-        CopilotService.MATERIAL_WORDS.keySet().stream().map(CopilotService::normalized).forEach(previous::add);
-        previous.removeAll(CopilotLexicon.COLOR_PREFIXES.keySet().stream().map(CopilotService::normalized).toList());
-        previous.removeAll(CopilotLexicon.TYPE_PREFIXES.keySet().stream().map(CopilotService::normalized).toList());
-        previous.removeAll(CopilotLexicon.PIECE_MATERIALS.keySet().stream().map(CopilotService::normalized).toList());
+        CopilotService.COLOR_WORDS.keySet().stream().map(CopilotText::normalized).forEach(previous::add);
+        CopilotService.TYPE_WORDS.keySet().stream().map(CopilotText::normalized).forEach(previous::add);
+        CopilotService.MATERIAL_WORDS.keySet().stream().map(CopilotText::normalized).forEach(previous::add);
+        previous.removeAll(CopilotLexicon.COLOR_PREFIXES.keySet().stream().map(CopilotText::normalized).toList());
+        previous.removeAll(CopilotLexicon.TYPE_PREFIXES.keySet().stream().map(CopilotText::normalized).toList());
+        previous.removeAll(CopilotLexicon.PIECE_MATERIALS.keySet().stream().map(CopilotText::normalized).toList());
 
-        Set<String> added = CopilotLexicon.keywords().stream().map(CopilotService::normalized).collect(Collectors.toSet());
+        Set<String> added = CopilotLexicon.keywords().stream().map(CopilotText::normalized).collect(Collectors.toSet());
         added.removeAll(previous);
         assertThat(added).hasSizeGreaterThan(300);
     }

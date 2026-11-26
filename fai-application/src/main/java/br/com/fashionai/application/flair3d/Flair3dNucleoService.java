@@ -4,6 +4,8 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.recurso.Flair3dPecaVirtual;
+import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoBonus;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.Flair3dMatch;
 import br.com.fashionai.domain.repository.Flair3dMatchRepository;
@@ -75,7 +77,8 @@ public class Flair3dNucleoService {
     }
 
     /**
-     * O efeito de cada carta da pessoa neste núcleo: {efeitos:[{cardId, itens:[{codigo, valor, motivo}]}]}. Carta que não
+     * O efeito de cada carta da pessoa neste núcleo: {efeitos:[{cardId, itens:[{codigo, valor, motivo}], perfil}]}
+     * (Flair3dEfeitosDaCarta). Carta que não
      * pontua num núcleo de cartas leva um item de motivo (o do núcleo, ou SEM_BONUS), nunca a lista vazia.
      */
     @Transactional(readOnly = true)
@@ -86,13 +89,7 @@ public class Flair3dNucleoService {
         Contexto ctx = contextoDosEfeitos(user, n, minhas, pedido);
         boolean deCartas = n.definicao().recursos().contains(Definicao.CARTAS);
         List<Map<String, Object>> out = new ArrayList<>();
-        minhas.forEach((id, carta) -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("cardId", id);
-            List<Efeito> itens = n.efeitos(carta, ctx);
-            m.put("itens", comEfeitoDaCor(n.codigo(), carta, itens.isEmpty() && deCartas ? List.of(Efeito.motivo(Efeito.SEM_BONUS)) : itens));
-            out.add(m);
-        });
+        minhas.forEach((id, carta) -> out.add(Flair3dEfeitosDaCarta.daCarta(n, id, carta, ctx, deCartas)));
         return Map.of("efeitos", out);
     }
 
@@ -139,7 +136,7 @@ public class Flair3dNucleoService {
         Flair3dNucleo n = nucleo(m.getNucleo());
         Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
         Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa(Json.read(m.getEntregaJson(), Entrega.class));
-        return gravar(m, e, a, n.pontuar(e, contexto(user, m, n, e, a)));
+        return gravar(m, e, a, comLook(n, e, a, contexto(user, m, n, e, a)));
     }
 
     /**
@@ -152,7 +149,7 @@ public class Flair3dNucleoService {
         Flair3dNucleo n = nucleo(m.getNucleo());
         Entrega e = Json.read(m.getEntregaJson(), Entrega.class);
         Andamento a = Andamento.ler(m.getEstadoJson()).com(acionamento == null ? Acionamento.NENHUM : acionamento);
-        return gravar(m, e, a, n.pontuar(e, contexto(user, m, n, e, a)));
+        return gravar(m, e, a, comLook(n, e, a, contexto(user, m, n, e, a)));
     }
 
     /** Prévia da entrega numa partida ABERTA: pontos e regras de agora, sem gravar nada nem contar tentativa. */
@@ -162,7 +159,8 @@ public class Flair3dNucleoService {
         Flair3dNucleo n = nucleo(m.getNucleo());
         Entrega e = entrega == null ? new Entrega(null, null, null, null) : entrega;
         Andamento a = Andamento.ler(m.getEstadoJson()).proximaTentativa(Json.read(m.getEntregaJson(), Entrega.class));
-        return n.previa(e, contexto(user, m, n, e, a)).comStatus(m.getStatus());
+        Contexto ctx = contexto(user, m, n, e, a);
+        return Flair3dRecursoBonus.naPrevia(n.codigo(), n.previa(e, ctx), vestidasOuZonas(n, e, ctx), a.usos()).comStatus(m.getStatus());
     }
 
     /** A rodada pedida, quando o jogo a tem (422 RODADA_INVALIDA); sem pedido, nula: vale o objetivo mais simples. */
@@ -188,18 +186,6 @@ public class Flair3dNucleoService {
         return base.comSemente(m.getSemente()).comAndamento(Andamento.ler(m.getEstadoJson()));
     }
 
-    /** Os itens da carta com o efeito da cor dela no jogo no fim (Flair3dCores), quando há um e o núcleo não o mandou. */
-    private static List<Efeito> comEfeitoDaCor(String nucleo, CbcRules.Card carta, List<Efeito> itens) {
-        Efeito cor = Flair3dCores.efeitoDaCor(nucleo, carta);
-        if (cor == null) {
-            return itens;
-        }
-        List<Efeito> out = new ArrayList<>(itens);
-        out.removeIf(e -> e.codigo().equals(cor.codigo()));
-        out.add(cor);
-        return out;
-    }
-
     /** A partida da pessoa (404, 403) no status que a operação pede (409). */
     Flair3dMatch partida(CurrentUser user, UUID partidaId, String status) {
         Flair3dMatch m = matches.findById(partidaId)
@@ -223,6 +209,17 @@ public class Flair3dNucleoService {
         List<UUID> deck = Flair3dDeck.ids(m.getDeckJson());
         Flair3dEntregas.conferir(n.definicao().naRodada(a.rodada()), e, minhas, deck, a.cartas());
         return cartas.contexto(minhas, m.getSemente()).comAndamento(a).comDeck(deck.isEmpty() ? minhas : cartas.daPessoa(user.id(), deck));
+    }
+
+    /** A nota do jogo com o que o look e os recursos somam (regra peça-recurso, Flair3dRecursoBonus). */
+    private static Resultado comLook(Flair3dNucleo n, Entrega e, Andamento a, Contexto ctx) {
+        return Flair3dRecursoBonus.aplicar(n.codigo(), n.pontuar(e, ctx), vestidasOuZonas(n, e, ctx), a.usos());
+    }
+
+    /** As cartas vestidas; nos jogos de zonas, as zonas pintadas como peças virtuais. */
+    private static Map<String, CbcRules.Card> vestidasOuZonas(Flair3dNucleo n, Entrega e, Contexto ctx) {
+        Map<String, CbcRules.Card> vestidas = ctx.vestidas(e);
+        return vestidas.isEmpty() ? Flair3dPecaVirtual.daZonas(n.codigo(), e.zonas()) : vestidas;
     }
 
     /** Grava a etapa: entrega, andamento e status; resultado, pontos e estrelas só quando a partida fecha. */

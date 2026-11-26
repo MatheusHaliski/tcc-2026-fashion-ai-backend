@@ -1,0 +1,71 @@
+/* A fase de uso dos jogos de zonas (components/flair/nucleos/fase-de-uso-hud.tsx): os dois lances da deixa, o seguro e
+   o ousado com o custo, e a barra do prazo da fase. */
+.n3d-desfile[data-uso] {
+  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: 14px;
+}
+
+.n3d-lances {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 4px 6px;
+}
+
+.n3d-lance {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  font-size: var(--text-caption);
+}
+
+.n3d-lance small {
+  font-size: inherit;
+  white-space: nowrap;
+}
+
+.n3d-lance[data-ousado] .n3d-deixa {
+  background: rgb(122 92 255 / 45%);
+}
+
+.n3d-lance[data-ousado] .n3d-deixa::after {
+  border-color: #b9a8ff;
+}
+
+.n3d-lance[data-ousado] b {
+  color: #ffb3b3;
+}
+
+.n3d-prazo {
+  display: block;
+  width: 72px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 20%);
+}
+
+.n3d-prazo span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #e0b04d;
+  transform-origin: left;
+  animation: n3d-prazo var(--n3d-prazo, 25000ms) linear forwards;
+}
+
+.n3d-prazo[data-parado] span {
+  animation-play-state: paused;
+}
+
+@keyframes n3d-prazo {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+    background: #e5484d;
+  }
+}

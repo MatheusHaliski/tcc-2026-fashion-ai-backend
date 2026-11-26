@@ -20,6 +20,8 @@ import { SALA_PERSONAGEM_FILME } from "@/lib/flair/nucleos/scene/salas/personage
 import { SALA_PILOTO_FAVORITO } from "@/lib/flair/nucleos/scene/salas/piloto-favorito";
 import { SALA_ROAD_TO_GLORY } from "@/lib/flair/nucleos/scene/salas/road-to-glory";
 import { SALA_SUPER_HEROI } from "@/lib/flair/nucleos/scene/salas/super-heroi";
+import { SALAS_DE_USO } from "@/lib/flair/nucleos/scene/salas/fase-de-uso";
+import { SALA_DE_USO } from "@/lib/flair/nucleos/movimento/fase-de-uso";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
 
 export const SALAS: Record<NucleoCodigo, Sala> = {
@@ -49,7 +51,11 @@ export const VARIANTES: Partial<Record<NucleoCodigo, Record<string, Sala>>> = {
   FASHION_SPORTS: QUADRAS,
 };
 
-/** A sala do jogo; com variante conhecida, a sala dela. */
+/**
+ * A sala do jogo; com variante conhecida, a sala dela. A fase de uso dos jogos de zonas (variante "USO") tem o lugar
+ * próprio, com outras zonas (o piso inteiro é do avatar): fica fora de VARIANTES, que dividem as zonas da sala do jogo.
+ */
 export function salaDe(codigo: NucleoCodigo, variante?: string | null): Sala {
+  if (variante === SALA_DE_USO && SALAS_DE_USO[codigo]) return SALAS_DE_USO[codigo];
   return (variante && VARIANTES[codigo]?.[variante]) || SALAS[codigo];
 }

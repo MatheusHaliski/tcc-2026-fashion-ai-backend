@@ -4,6 +4,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Acionamento;
+import br.com.fashionai.application.flair3d.Andamento;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Flair3dFixtures;
 import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveAcusacao;
@@ -123,12 +124,47 @@ class DetetivePartidaTest {
         r = fazer("AJUDA:PASSARELA");
         assertThat(r).containsEntry("sala", "PASSARELA");
         assertThat(r.get("pistas").toString()).contains("P12");
-        r = fazer("ACUSAR:4");
-        assertThat(r).containsEntry("cutscene", "ALIBI:4");
-        assertThat(agora().encerrada()).isFalse();
-        fazer("ACUSAR:5");
-        assertThat(agora().fim()).isEqualTo(FashionDetectiveAcusacao.Final.ERRADO_REVELA);
-        assertThat(catchThrowableOfType(() -> fazer("ACUSAR:2"), ApiException.class)).isNotNull();
+        // quem corre direto para a passarela não acusa: a acusação abre com 6 pistas (ou com o tempo esgotado)
+        assertThat(r).containsEntry("podeAcusar", false).containsEntry("pistasParaAcusar", 6);
+        assertThat(catchThrowableOfType(() -> fazer("ACUSAR:2"), ApiException.class).status()).isEqualTo(422);
+    }
+
+    @Test
+    void comSeisPistasAAcusacaoAbreEOSuspeitoErradoTemSegundaChance() {
+        DetetiveEstado e = new DetetiveEstado();
+        e.sala = "PASSARELA";
+        for (String p : List.of("P1", "P2", "P3", "P4", "P5")) {
+            e.pistas.put(p, true);
+        }
+        assertThat(e.podeAcusar()).isFalse();
+        e.pistas.put("P12", true);
+        assertThat(e.podeAcusar()).isTrue();
+        DetetiveAcoes.fazer("ACUSAR", "4", e, null);
+        assertThat(e.cutscene).isEqualTo("ALIBI:4");
+        assertThat(e.fim).isNull();
+        DetetiveAcoes.fazer("ACUSAR", "5", e, null);
+        assertThat(e.fim).isEqualTo(FashionDetectiveAcusacao.Final.ERRADO_REVELA);
+        // sem as pistas, só o relógio esgotado abre a acusação: nenhum caso fica sem fim
+        DetetiveEstado tarde = new DetetiveEstado();
+        tarde.tempo = DetetiveEstado.LIMITE_DE_TEMPO;
+        assertThat(tarde.podeAcusar()).isTrue();
+    }
+
+    @Test
+    void pecaUsadaComoVidaDevolveUmaMarcaDaliEmDianteSemPassarDaMaxima() {
+        List<UUID> ids = look.stream().map(CbcRules.Card::id).toList();
+        UUID carta = look.get(0).id();
+        // vai até a porta do salão, na ronda do segurança, e fica parada até ser pega uma vez
+        chegar("tapete", "meio", "portaSalao");
+        for (int i = 0; i < 12 && (int) agora().retrato().get("vida") == 3; i++) {
+            fazer("ESPERAR");
+        }
+        assertThat(agora().retrato()).containsEntry("vida", 2);
+        List<Andamento.UsoDeRecurso> agoraMesmo = List.of(new Andamento.UsoDeRecurso(carta, "VIDA", 15, "u1", passos.size(), 0));
+        assertThat(new DetetivePartida(contexto, ids).jogar(passos, agoraMesmo).retrato()).containsEntry("vida", 3);
+        // o uso antes do primeiro passo não devolve o que ainda não se perdeu: a vida já estava cheia
+        List<Andamento.UsoDeRecurso> cedo = List.of(new Andamento.UsoDeRecurso(carta, "VIDA", 15, "u1", 0, 0));
+        assertThat(new DetetivePartida(contexto, ids).jogar(passos, cedo).retrato()).containsEntry("vida", 2);
     }
 
     @Test

@@ -1,16 +1,18 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.HypeLevel;
-import br.com.fashionai.domain.model.enums.HypeMomentum;
-import br.com.fashionai.domain.model.enums.SealTier;
-import org.junit.jupiter.api.Test;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.seal.SealPolicies;
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.HypeLevel;
+import br.com.fashionai.domain.model.enums.HypeMomentum;
+import br.com.fashionai.domain.model.enums.SealTier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

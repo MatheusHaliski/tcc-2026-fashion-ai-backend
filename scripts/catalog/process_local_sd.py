@@ -31,7 +31,6 @@ from __future__ import annotations
 import argparse
 import gc
 import hashlib
-import html as html_lib
 import io
 import json
 import logging
@@ -42,195 +41,33 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
-from urllib.parse import urljoin, urlsplit
 
 import numpy as np
-from PIL import Image, ImageFilter, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageFilter
 from scipy import ndimage
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from photo_preflight import MIN_SOURCE_HEIGHT, fit_box, inspect_source  # noqa: E402
-from photo_set import MAX_ANALYSIS_SIDE, MAX_INPUT_PIXELS, PHOTO_SET_VERSION, LocalClothProvider, PhotoMasks, clean_target_mask  # noqa: E402
+from photo_set import PHOTO_SET_VERSION, LocalClothProvider, PhotoMasks, clean_target_mask  # noqa: E402
 from photo_set import _fabric_box as fabric_box  # noqa: E402  — o mesmo retângulo 3:4 só de tecido do worker do catálogo
 from whole_frame import HEIGHT, WIDTH, GarmentSegmenter, cloth_class  # noqa: E402
 from fashn_open import FashnOpenProvider, LamaInpainter  # noqa: E402
 from photo_set_quality import apply_quality_gate  # noqa: E402
+from ghost_photo_error import PhotoSkip  # noqa: E402
+from ghost_photo_source import (  # noqa: E402
+    Fetch, open_image, requests_fetch, resolve_image,
+    HOST_PAUSED as HOST_PAUSED, IMAGE_EXT as IMAGE_EXT, MAX_BYTES as MAX_BYTES,
+    MIN_SIDE as MIN_SIDE, UA as UA, og_image as og_image, polite_fetch as polite_fetch,
+)
+from ghost_sd_defaults import CONTROLNET_MODEL, DEFAULT_MODEL, NEGATIVE, PROMPT, SDXL_MODEL  # noqa: E402
+from ghost_sd_renderer import SdGhostRenderer  # noqa: E402
+from ghost_sd_runtime import LOG as LOG, emit, free_memory, make_inpaint_condition as make_inpaint_condition, pick_device  # noqa: E402
 
-LOG = logging.getLogger("fashionai.sd")
+
 VERSION = "LOCAL_SD_GHOST_V1"
-DEFAULT_MODEL = "stable-diffusion-v1-5/stable-diffusion-inpainting"
-SDXL_MODEL = "diffusers/stable-diffusion-xl-1.0-inpainting-0.1"
-CONTROLNET_MODEL = "lllyasviel/control_v11p_sd15_inpaint"
-PROMPT = ("professional studio product photo, ghost mannequin effect, 3d hollow form, smooth fabric, "
-          "clean white background, soft drop shadow, high catalog quality")
-NEGATIVE = ("person, human, model, mannequin head, face, skin, hands, arms, legs, hair, text, watermark, logo, "
-            "blurry, deformed, extra garment, duplicate")
-MIN_SIDE = 300                      # foto original menor que 300×300 é descartada
-MAX_BYTES = 15 * 1024 * 1024
-UA = "FashionAI-CatalogBot/1.0 (+https://fashionai.app/catalog-bot)"
 BACKGROUND = (255, 255, 255)
 IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-IMAGE_EXT = (".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif")
-
-
-class PhotoSkip(Exception):
-    """Foto que não gera packshot: `status` (REJECTED, REVIEW, INELIGIBLE, RETRY) e motivo curto em maiúsculas."""
-
-    def __init__(self, reason: str, status: str = "REVIEW", metrics: Optional[dict] = None):
-        super().__init__(reason)
-        self.status, self.metrics = status, metrics or {}
-
-
-def emit(event: str, **values):
-    LOG.info(json.dumps({"event": event, **values}, ensure_ascii=False, default=str))
-
-
-# ───────────────────────── dispositivo e memória
-
-def pick_device(torch_module=None, wanted: str = "auto") -> str:
-    """CUDA → MPS (Apple Silicon) → CPU; `wanted` força um deles."""
-    if wanted and wanted != "auto":
-        return wanted
-    torch = torch_module or __import__("torch")
-    if torch.cuda.is_available():
-        return "cuda"
-    mps = getattr(torch.backends, "mps", None)
-    if mps is not None and mps.is_available():
-        return "mps"
-    return "cpu"
-
-
-def free_memory(device: str, torch_module=None):
-    """Depois de cada foto: coletor + cache do acelerador (uma foto grande não deixa o lote sem memória)."""
-    gc.collect()
-    torch = torch_module or sys.modules.get("torch")
-    if torch is None:
-        return
-    if device == "cuda":
-        torch.cuda.empty_cache()
-    elif device == "mps" and hasattr(torch, "mps"):
-        torch.mps.empty_cache()
-
-
-# ───────────────────────── download: link direto ou página HTML (og:image)
-
-Fetch = Callable[[str], tuple[int, bytes, str]]
-_META = re.compile(r"<meta\b[^>]*>", re.I)
-_ATTR = re.compile(r"""([a-zA-Z_:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))""")
-
-
-def og_image(page: bytes, page_url: str) -> Optional[str]:
-    """`og:image` (ou `og:image:secure_url`, `twitter:image`) da página; só http(s), resolvido contra a página."""
-    text = page.decode("utf-8", "replace")
-    found = {}
-    for tag in _META.findall(text):
-        attrs = {m.group(1).lower(): next(g for g in m.groups()[1:] if g is not None) for m in _ATTR.finditer(tag)}
-        key = (attrs.get("property") or attrs.get("name") or "").lower()
-        if key in ("og:image:secure_url", "og:image", "twitter:image") and attrs.get("content"):
-            found.setdefault(key, html_lib.unescape(attrs["content"]).strip())
-    for key in ("og:image:secure_url", "og:image", "twitter:image"):
-        url = found.get(key)
-        if url:
-            url = urljoin(page_url, "https:" + url if url.startswith("//") else url)
-            if urlsplit(url).scheme in ("http", "https"):
-                return url
-    return None
-
-
-HOST_PAUSED = "host-paused"                 # "content-type" sintético: o host pediu para parar e não foi mais consultado
-
-
-def polite_fetch(fetch: Fetch, min_interval: float = 1.0, retries: int = 2, sleep=time.sleep, clock=time.monotonic,
-                 host_limit: int = 3) -> Fetch:
-    """Polidez por host (os CDNs das lojas — vtexassets.com — devolvem 429 a quem baixa em rajada) e espera em 429/503:
-    respeita Retry-After quando vem, senão 5 s, até `retries` vezes; depois devolve o status para virar RETRY no relatório.
-    Disjuntor por host (a regra do coletor, "o site pediu para parar"): depois de `host_limit` URLs seguidas em que o host
-    terminou em 429/503 mesmo após as esperas, as próximas URLs dele voltam 429 sem pedido algum; um 200 zera a conta; 0 desliga."""
-    last: dict[str, float] = {}
-    strikes: dict[str, int] = {}
-
-    def fetch_polite(url: str) -> tuple[int, bytes, str]:
-        host = urlsplit(url).hostname or ""
-        if host_limit and strikes.get(host, 0) >= host_limit:
-            return 429, b"", HOST_PAUSED
-        for attempt in range(retries + 1):
-            wait = last.get(host, -1e9) + min_interval - clock()
-            if wait > 0:
-                sleep(wait)
-            last[host] = clock()
-            status, body, ctype = fetch(url)
-            if status not in (429, 503) or attempt == retries:
-                strikes[host] = strikes.get(host, 0) + 1 if status in (429, 503) else 0
-                return status, body, ctype
-            retry_after = ctype if isinstance(ctype, str) and ctype.startswith("retry-after:") else ""
-            try:
-                pause = float(retry_after.split(":", 1)[1]) if retry_after else 5.0
-            except ValueError:
-                pause = 5.0
-            sleep(min(max(pause, 1.0), 60.0))
-        return status, body, ctype                                  # pragma: no cover
-
-    return fetch_polite
-
-
-def requests_fetch(timeout: float = 20, min_interval: float = 1.0, host_limit: int = 3) -> Fetch:
-    """fetch(url) -> (status, corpo até MAX_BYTES, content-type) com requests, polidez por host e espera em 429.
-    Em 429/503 o "content-type" devolvido é "retry-after:<s>" para o polite_fetch saber quanto esperar."""
-    import requests
-
-    def fetch(url: str) -> tuple[int, bytes, str]:
-        with requests.get(url, headers={"User-Agent": UA, "Accept": "image/*,text/html;q=0.9,*/*;q=0.5"},
-                          timeout=timeout, stream=True) as r:
-            if r.status_code in (429, 503):
-                return r.status_code, b"", "retry-after:" + (r.headers.get("Retry-After") or "")
-            data = bytearray()
-            for chunk in r.iter_content(64 * 1024):
-                data.extend(chunk)
-                if len(data) > MAX_BYTES:
-                    raise PhotoSkip("IMAGE_TOO_LARGE", "REJECTED")
-            return r.status_code, bytes(data), r.headers.get("Content-Type", "")
-    return polite_fetch(fetch, min_interval, host_limit=host_limit)
-
-
-def resolve_image(url: str, fetch: Fetch) -> tuple[bytes, str]:
-    """Bytes da imagem: a própria URL se for imagem; página HTML → og:image → imagem. (status, url final)."""
-    if not url or urlsplit(url).scheme not in ("http", "https"):
-        raise PhotoSkip("INVALID_IMAGE_URL", "REJECTED")
-    status, body, ctype = fetch(url)
-    if status in (403, 429):
-        raise PhotoSkip(f"HTTP_{status}" + ("_HOST_PAUSED" if ctype == HOST_PAUSED else ""), "RETRY")
-    if status != 200:
-        raise PhotoSkip(f"HTTP_{status}", "RETRY" if status >= 500 else "REJECTED")
-    kind = (ctype or "").split(";")[0].strip().lower()
-    if kind.startswith("image/") or (not kind and urlsplit(url).path.lower().endswith(IMAGE_EXT)):
-        return body, url
-    if "html" in kind or body[:512].lstrip().lower().startswith((b"<!doctype html", b"<html")):
-        direct = og_image(body, url)
-        if not direct:
-            raise PhotoSkip("NO_OG_IMAGE", "REJECTED")
-        status, body, ctype = fetch(direct)
-        if status != 200 or not (ctype or "").lower().startswith("image/"):
-            raise PhotoSkip("OG_IMAGE_UNAVAILABLE", "RETRY" if status >= 500 else "REJECTED")
-        return body, direct
-    raise PhotoSkip("NOT_AN_IMAGE", "REJECTED")
-
-
-def open_image(data: bytes) -> tuple[Image.Image, tuple[int, int]]:
-    """Imagem RGB orientada pelo EXIF e reduzida para análise; devolve também o tamanho original."""
-    try:
-        with Image.open(io.BytesIO(data)) as raw:
-            if raw.width * raw.height > MAX_INPUT_PIXELS:
-                raise PhotoSkip("IMAGE_TOO_LARGE", "REJECTED")
-            if min(raw.size) < MIN_SIDE:
-                raise PhotoSkip("BELOW_MINIMUM_300X300", "REJECTED")
-            image = ImageOps.exif_transpose(raw).convert("RGB")
-            image.load()
-    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
-        raise PhotoSkip("CORRUPT_IMAGE", "REJECTED") from None
-    original = image.size
-    image.thumbnail((MAX_ANALYSIS_SIDE, MAX_ANALYSIS_SIDE), Image.Resampling.LANCZOS)
-    return image, original
 
 
 # ───────────────────────── máscaras: peça, corpo e a região "fantasma"
@@ -383,82 +220,6 @@ def sd_inputs(source: Image.Image, target: np.ndarray, ghost: np.ndarray, max_si
     tw = max(8, int(round(crop.width * scale / 8)) * 8)
     th = max(8, int(round(crop.height * scale / 8)) * 8)
     return (crop.resize((tw, th), Image.Resampling.LANCZOS), mask.resize((tw, th), Image.Resampling.NEAREST), box)
-
-
-def make_inpaint_condition(image: Image.Image, mask: Image.Image):
-    """Imagem de controle do ControlNet inpaint: pixels mascarados = -1 (convenção do control_v11p_sd15_inpaint)."""
-    import torch
-    rgb = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
-    masked = np.asarray(mask.convert("L")) > 127
-    rgb[masked] = -1.0
-    return torch.from_numpy(rgb).permute(2, 0, 1)[None]
-
-
-class SdGhostRenderer:
-    """Stable Diffusion Inpainting local (opcional ControlNet inpaint). Carrega sob demanda; CUDA em fp16, MPS/CPU em fp32."""
-
-    def __init__(self, model: str = DEFAULT_MODEL, device: str = "auto", controlnet: bool = False, steps: int = 30,
-                 guidance: float = 7.5, seed: Optional[int] = None, max_side: Optional[int] = None, offload: bool = False,
-                 prompt: str = PROMPT, negative: str = NEGATIVE):
-        self.model, self.wanted, self.controlnet = model, device, controlnet
-        self.steps, self.guidance, self.seed, self.offload = steps, guidance, seed, offload
-        self.prompt, self.negative = prompt, negative
-        self.xl = "xl" in model.lower()
-        self.max_side = max_side or (1024 if self.xl else 512)
-        self.pipe = None
-        self.device = "cpu"
-
-    def load(self):
-        if self.pipe is not None:
-            return
-        import torch
-        self.device = pick_device(torch, self.wanted)
-        dtype = torch.float16 if self.device == "cuda" else torch.float32
-        kwargs = {"torch_dtype": dtype}
-        if not self.xl:
-            kwargs.update(safety_checker=None, requires_safety_checker=False)
-        if self.controlnet:
-            if self.xl:
-                raise SystemExit("--controlnet só com modelo SD 1.5 (control_v11p_sd15_inpaint)")
-            from diffusers import ControlNetModel, StableDiffusionControlNetInpaintPipeline
-            cn = ControlNetModel.from_pretrained(CONTROLNET_MODEL, torch_dtype=dtype)
-            self.pipe = self._load(StableDiffusionControlNetInpaintPipeline, controlnet=cn, **kwargs)
-        else:
-            from diffusers import AutoPipelineForInpainting
-            self.pipe = self._load(AutoPipelineForInpainting, **kwargs)
-        self.pipe.set_progress_bar_config(disable=True)
-        if self.device == "cuda" and self.offload:
-            self.pipe.enable_model_cpu_offload()          # GPU pequena: cada bloco vai à GPU só na hora de usar
-        else:
-            self.pipe.to(self.device)
-        self.pipe.enable_attention_slicing()
-        if hasattr(self.pipe, "enable_vae_slicing"):
-            self.pipe.enable_vae_slicing()
-        emit("model_loaded", model=self.model, device=self.device, dtype=str(dtype), controlnet=self.controlnet)
-
-    def _load(self, cls, **kwargs):
-        try:
-            return cls.from_pretrained(self.model, variant="fp16", use_safetensors=True, **kwargs)   # pesos menores
-        except (OSError, ValueError, EnvironmentError):
-            return cls.from_pretrained(self.model, **kwargs)
-
-    def render(self, init: Image.Image, mask: Image.Image) -> Image.Image:
-        import torch
-        self.load()
-        generator = None
-        if self.seed is not None:
-            generator = torch.Generator("cpu" if self.device == "mps" else self.device).manual_seed(self.seed)
-        kwargs = dict(prompt=self.prompt, negative_prompt=self.negative, image=init, mask_image=mask, width=init.width,
-                      height=init.height, num_inference_steps=self.steps, guidance_scale=self.guidance, generator=generator)
-        if self.controlnet:
-            kwargs["control_image"] = make_inpaint_condition(init, mask)
-        if self.xl:
-            kwargs["strength"] = 0.99                         # recomendação do modelo SDXL inpainting 0.1
-        with torch.inference_mode():
-            return self.pipe(**kwargs).images[0].convert("RGB")
-
-    def free(self):
-        free_memory(self.device)
 
 
 # ───────────────────────── composição do packshot

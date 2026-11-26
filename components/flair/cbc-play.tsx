@@ -22,11 +22,14 @@ import { useCbcLabels, windowOf } from "@/components/flair/use-cbc-labels";
 import { useCbcMesa } from "@/components/flair/use-cbc-mesa";
 import { HowItWorks } from "@/components/guide/guide";
 import { cenaDoCenario } from "@/lib/flair/cenas/catalogo";
+import { useState } from "react";
+import { CbcCenarioPreferido } from "@/components/flair/cbc-cenario-preferido";
 
 export function CbcPlay({ slug }: { slug: string }) {
   const { t } = useI18n();
   const { slotLabel, storyText, tOr } = useCbcLabels();
   const m = useCbcMesa(slug);
+  const [preferido, setPreferido] = useState<string | null>(null);   // exercício 16: só a cena muda; o desafio é o mesmo
   const j = useCbcJogo(m);
   const d = m.d;
   const foco = useCbcControle(j, d?.slots.map((s) => s.key) ?? [], !!d && !m.readOnly);
@@ -34,7 +37,7 @@ export function CbcPlay({ slug }: { slug: string }) {
   if (m.detail.error) return <ErrorState error={m.detail.error} onRetry={m.detail.reload} />;
   if (m.detail.loading || !d) return <Skeleton className="h-96" />;
   const w = windowOf(d, t);
-  const cena = cenaDoCenario(d.scenario);
+  const cena = cenaDoCenario(preferido ?? d.scenario);
   const cartas = Object.fromEntries(m.available.map((c) => [c.id, c]));
   const postas: Record<string, FlairCollectionCard | undefined> = Object.fromEntries(Object.entries(m.placed).map(([k, v]) => [k, cartas[v]]));
   const sintonia = m.fresca && m.check ? Object.fromEntries(m.check.evaluation.slots.map((r) => [r.slot, r.sintonia])) : null;
@@ -51,6 +54,7 @@ export function CbcPlay({ slug }: { slug: string }) {
           actions={<div className="flex flex-wrap items-center gap-2"><HowItWorks id="flair.cbc" /><Badge tone={w.tone}>{w.text}</Badge>{d.moment && <Badge>{d.moment.name}</Badge>}</div>} />
       </div>
       {d.description && <p className="type-body-lg mb-4 max-w-prose">{d.description}</p>}
+      <CbcCenarioPreferido slug={slug} onCodigo={setPreferido} />
       {d.status === "UPCOMING" && <p className="cbc-note" role="note">{t("cbc.note.upcoming")}</p>}
       {d.status === "ENDED" && <p className="cbc-note" role="note">{t("cbc.note.ended")}</p>}
       {delivered && d.status !== "ENDED" && (

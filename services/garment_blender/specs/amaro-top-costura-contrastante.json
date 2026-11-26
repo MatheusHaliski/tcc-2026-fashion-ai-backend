@@ -1,0 +1,24 @@
+{
+ "produto": "Top com Costura Contrastante de Microfibra - Violeta",
+ "marca": "Amaro",
+ "url_oficial": "https://amaro.com/produtos/top-com-costura-contrastante-de-microfibra-violeta/",
+ "subcategoria": "top",
+ "sexo": "FEMININO",
+ "caimento": "justo",
+ "tecido": {
+  "tipo": "jersey",
+  "cor": "#6b4c9a",
+  "gramatura": 200
+ },
+ "ribana": false,
+ "sem_manga": true,
+ "cor_linha": "#f2f2f2",
+ "medidas_marca": {
+  "comprimento": 36,
+  "cava": 19,
+  "decote_frente": 9
+ },
+ "observacao": "top curto de alças largas com pesponto contrastante (linha branca: cor estimada). Cor do tecido: a do nome (violeta).",
+ "tamanho": "M",
+ "gola": "vies"
+}

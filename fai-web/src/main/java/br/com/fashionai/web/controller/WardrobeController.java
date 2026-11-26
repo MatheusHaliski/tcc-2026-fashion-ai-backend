@@ -1,9 +1,10 @@
 package br.com.fashionai.web.controller;
 
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.WardrobeService;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.web.support.Uploads;
+import br.com.fashionai.application.wardrobe.ClosetFilter;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -11,9 +12,11 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.WardrobeService;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.application.wardrobe.PieceForm;
+import br.com.fashionai.web.support.Uploads;
 
 /**
  * RF4/RF7/RF15/RF16 — peças do guarda-roupa: análise em lote, cadastro, closet, detalhe, edição, estados, foto, marca,
@@ -39,14 +42,14 @@ public class WardrobeController {
     @PostMapping("/api/pieces")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "RF4.CA05 — Cadastrar a peça a partir do rascunho analisado")
-    public Views.PieceView create(CurrentUser user, @RequestBody WardrobeService.PieceForm form) {
+    public Views.PieceView create(CurrentUser user, @RequestBody PieceForm form) {
         return wardrobe.create(user, form);
     }
 
     @PostMapping("/api/pieces/batch")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "RF4.CA11 — Cadastrar várias peças de uma vez")
-    public List<Views.PieceView> createBatch(CurrentUser user, @RequestBody List<WardrobeService.PieceForm> forms) {
+    public List<Views.PieceView> createBatch(CurrentUser user, @RequestBody List<PieceForm> forms) {
         return wardrobe.createBatch(user, forms);
     }
 
@@ -66,7 +69,7 @@ public class WardrobeController {
                                                @RequestParam(required = false) String hypeLevel,
                                                @RequestParam(required = false) String seal) {
         // seal (RF53): hype | brand | any — peças com selo de Hype, com selo de marca/celebridade, ou qualquer um
-        return wardrobe.closet(user, user.id(), new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel, seal));
+        return wardrobe.closet(user, user.id(), new ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel, seal));
     }
 
     @GetMapping("/api/users/{ownerId}/closet")
@@ -87,7 +90,7 @@ public class WardrobeController {
         // estado (disponível / indisponível / à venda) também vale no perfil: são dados públicos da peça
         // hypeLevel (P2-11, Lookbook › Peças): FILTRO por faixa mínima, mesma regra do /api/me/closet; o serviço aplica a
         // guarda de privacidade (terceiros só com score publicEligible; o resto fica "—", por último e fora do filtro)
-        return wardrobe.closet(viewer, ownerId, new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel));
+        return wardrobe.closet(viewer, ownerId, new ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel, null));
     }
 
     @GetMapping("/api/pieces/{id}")
@@ -98,7 +101,7 @@ public class WardrobeController {
 
     @PutMapping("/api/pieces/{id}")
     @Operation(summary = "RF7.CA05 — Editar a peça")
-    public Views.PieceView update(CurrentUser user, @PathVariable UUID id, @RequestBody WardrobeService.PieceForm form) {
+    public Views.PieceView update(CurrentUser user, @PathVariable UUID id, @RequestBody PieceForm form) {
         return wardrobe.update(user, id, form);
     }
 

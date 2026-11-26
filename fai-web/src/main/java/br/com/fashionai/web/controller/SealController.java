@@ -1,22 +1,23 @@
 package br.com.fashionai.web.controller;
 
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.SealDesignService;
-import br.com.fashionai.application.service.SealService;
-import br.com.fashionai.application.service.SealPolicyCopilot;
-import br.com.fashionai.domain.model.enums.SealTier;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.NotNull;
-import br.com.fashionai.web.support.Uploads;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import br.com.fashionai.application.seal.SealPolicyCopilot;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.SealDesignService;
+import br.com.fashionai.application.service.SealService;
+import br.com.fashionai.domain.model.enums.SealTier;
+import br.com.fashionai.web.support.Uploads;
 
 /**
  * RF20/RF21/RF25 — selos (criador, rascunho pelo Copilot, uploads), sugestões e vínculos (SealBond); as promoções

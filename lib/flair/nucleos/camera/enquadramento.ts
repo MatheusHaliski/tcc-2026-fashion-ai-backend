@@ -109,12 +109,15 @@ function caixasComTipo(sala: Sala): { tipo: string; caixa: Caixa }[] {
 }
 
 /** Os móveis da sala como obstáculos da lente, com a folga em volta de cada parte (a conta é feita uma vez por sala). */
-const COM_FOLGA = new WeakMap<Sala, Caixa[]>();
+const COM_FOLGA = new WeakMap<Sala, Map<number, Caixa[]>>();
 export function obstaculosDaSala(sala: Sala, folga = FOLGA_DA_LENTE): Caixa[] {
-  let lista = COM_FOLGA.get(sala);
+  // uma lista por folga: a lente pede a dela e o andar pede zero (antes valia a de quem chamasse primeiro)
+  const porFolga = COM_FOLGA.get(sala) ?? new Map<number, Caixa[]>();
+  COM_FOLGA.set(sala, porFolga);
+  let lista = porFolga.get(folga);
   if (!lista) {
     lista = caixasComTipo(sala).map(({ caixa: c }) => ({ x: [c.x[0] - folga, c.x[1] + folga], y: [c.y[0] - folga, c.y[1] + folga], z: [c.z[0] - folga, c.z[1] + folga] }));
-    COM_FOLGA.set(sala, lista);
+    porFolga.set(folga, lista);
   }
   return lista;
 }

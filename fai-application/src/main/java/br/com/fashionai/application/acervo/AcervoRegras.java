@@ -33,12 +33,23 @@ final class AcervoRegras {
     private AcervoRegras() {
     }
 
+    /** Nome obrigatório; acima do limite é recusado (400), nunca cortado em silêncio. */
     static String nome(String valor, int max) {
-        String limpo = InputSanitizer.clean(valor, max);
+        String limpo = InputSanitizer.clean(valor, Integer.MAX_VALUE);
         if (limpo == null || limpo.isBlank()) {
             throw ApiException.badRequest("ACERVO_NOME", Msg.t("acervo.erro.nome"), Map.of("nome", Msg.t("acervo.erro.nome")));
         }
+        if (limpo.length() > max) {
+            String texto = Msg.t("acervo.erro.nome_longo", max);
+            throw ApiException.badRequest("ACERVO_NOME_LONGO", texto, Map.of("nome", texto));
+        }
         return limpo;
+    }
+
+    /** Nome que pode ficar vazio (nulo = usar o nome padrão); acima do limite também é recusado. */
+    static String nomeOuPadrao(String valor, int max) {
+        String limpo = InputSanitizer.clean(valor, Integer.MAX_VALUE);
+        return limpo == null || limpo.isBlank() ? null : nome(limpo, max);
     }
 
     static String opcional(String valor, int max) {

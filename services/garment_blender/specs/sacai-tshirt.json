@@ -1,0 +1,18 @@
+{
+ "produto": "sacai x Carhartt WIP Cotton Jersey T-Shirt",
+ "marca": "Carhartt WIP",
+ "url_oficial": "https://www.carhartt-wip.com/p/sacai-x-carhartt-wip-cotton-jersey-t-shirt-sacai-black-119",
+ "subcategoria": "t_shirt",
+ "tamanho": "M",
+ "sexo": "MASCULINO",
+ "caimento": "amplo",
+ "tecido": {
+  "tipo": "jersey",
+  "cor": "#18181a",
+  "gramatura": 220
+ },
+ "gola": "careca",
+ "ribana": false,
+ "manga_curta": true,
+ "observacao": "cor: a da variante (black), não amostrada de foto; barra e manga com bainha dobrada, gola em ribana"
+}

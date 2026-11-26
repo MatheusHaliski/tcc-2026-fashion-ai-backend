@@ -1,8 +1,10 @@
 package br.com.fashionai.application.service;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import br.com.fashionai.application.copilot.CopilotScope;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

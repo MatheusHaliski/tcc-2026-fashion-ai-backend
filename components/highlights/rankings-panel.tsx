@@ -2,18 +2,8 @@
 
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button } from "@/components/ui";
-
-export interface RankingPositionView { segment: string; position: number; total: number; topPercent?: number | null }
-export interface RankingsView { score?: number | null; optedIn?: boolean; message?: string; available?: string[]; positions?: RankingPositionView[]; note?: string }
-
-/** "PAIS:BR" → nome do ranking na tela ("Seu país · BR"); código sem nome conhecido aparece como veio. */
-export function rankingName(segment: string, t: (key: string) => string): string {
-  const [kind, detail] = segment.split(":", 2);
-  const key = `highlights.rank.seg.${kind}`;
-  const name = t(key);
-  const label = name === key ? kind : name;
-  return detail ? `${label} · ${detail}` : label;
-}
+import { rankingName } from "./ranking-name";
+import type { RankingsView } from "./ranking-types";
 
 /**
  * Conteúdo da janela "Rankings" dos Destaques (RF34.CA08): a nota, a frase de quem ainda não participa com o botão

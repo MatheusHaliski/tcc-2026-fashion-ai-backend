@@ -9,6 +9,7 @@
  * baixa, levantar) é só a matriz dela (lib/flair/nucleos/gente/leve.ts).
  */
 import * as THREE from "three";
+import { COR_DO_ROSTO, COR_DO_SAPATO, corpoHumanoLeve, type CorpoHumanoLeve } from "@/components/flair/nucleos/gente/corpo-humano-leve";
 import { geometriasDaTorcida } from "@/components/flair/nucleos/gente/torcida-3d";
 import type { PessoaDoElenco } from "@/lib/flair/nucleos/gente/elenco";
 import type { PoseLeve } from "@/lib/flair/nucleos/gente/leve";
@@ -20,6 +21,9 @@ const ASSENTO = 0.43;
 /** As cinco malhas do corpo leve, na ordem em que são desenhadas. */
 export const MALHAS_LEVES = ["tronco", "bracos", "cabeca", "cabelo", "pernas"] as const;
 type Malha = (typeof MALHAS_LEVES)[number];
+/** O que o corpo humano leve tem a mais que as cápsulas, e a malha cuja matriz cada parte acompanha. */
+const EXTRAS = { maos: "bracos", rosto: "cabeca", pes: "pernas" } as const;
+type Extra = keyof typeof EXTRAS;
 
 /** As cores do corpo leve tiradas da roupa da pessoa: a peça de cima (ou o vestido), a de baixo, a pele e o cabelo. */
 export function coresDoCorpoLeve(p: PessoaDoElenco): { roupa: string; calca: string; pele: string; cabelo: string } {
@@ -51,7 +55,11 @@ export class MultidaoLeve {
   readonly grupo = new THREE.Group();
   readonly capacidade: number;
   private readonly malhas: Record<Malha, THREE.InstancedMesh>;
-  private readonly geometrias = geometriasDaTorcida();
+  /** as cápsulas de reserva (próprias); o corpo humano leve, quando chega, é compartilhado e não é descartado aqui */
+  private capsulas: ReturnType<typeof geometriasDaTorcida> | null = geometriasDaTorcida();
+  private readonly extras: Partial<Record<Extra, THREE.InstancedMesh>> = {};
+  private readonly peles: string[];
+  private descartada = false;
   private readonly material = new THREE.MeshStandardMaterial({ roughness: 0.85 });
   private readonly escalas: number[];
   private readonly visiveis: boolean[];
@@ -62,29 +70,66 @@ export class MultidaoLeve {
     this.grupo.name = "corpos-leves";
     this.escalas = new Array(this.capacidade).fill(1);
     this.visiveis = new Array(this.capacidade).fill(false);
-    const malha = (nome: Malha) => {
-      const m = new THREE.InstancedMesh(this.geometrias[nome], this.material, this.capacidade);
-      m.name = `leve-${nome}`;
-      // as pessoas andam pela sala: a esfera de recorte de uma malha instanciada não acompanha
-      m.frustumCulled = false;
-      m.castShadow = false;
-      for (let i = 0; i < this.capacidade; i++) m.setMatrixAt(i, SOME);
-      this.grupo.add(m);
-      return m;
-    };
+    this.peles = new Array(this.capacidade).fill("#C99A7A");
+    const g = this.capsulas!;
+    const malha = (nome: Malha) => this.malha(nome, g[nome]);
     this.malhas = { tronco: malha("tronco"), bracos: malha("bracos"), cabeca: malha("cabeca"), cabelo: malha("cabelo"), pernas: malha("pernas") };
+    void corpoHumanoLeve().then((corpo) => {
+      if (corpo && !this.descartada) this.usarCorpoHumano(corpo);
+    });
+  }
+
+  private malha(nome: string, geometria: THREE.BufferGeometry): THREE.InstancedMesh {
+    const m = new THREE.InstancedMesh(geometria, this.material, this.capacidade);
+    m.name = `leve-${nome}`;
+    // as pessoas andam pela sala: a esfera de recorte de uma malha instanciada não acompanha
+    m.frustumCulled = false;
+    m.castShadow = false;
+    for (let i = 0; i < this.capacidade; i++) m.setMatrixAt(i, SOME);
+    this.grupo.add(m);
+    return m;
+  }
+
+  /** Troca as cápsulas pelo corpo humano modelado e acrescenta as mãos, o rosto e os sapatos (matrizes das partes que seguem). */
+  usarCorpoHumano(corpo: CorpoHumanoLeve): void {
+    for (const nome of MALHAS_LEVES) this.malhas[nome].geometry = corpo[nome];
+    for (const g of Object.values(this.capsulas ?? {})) g.dispose();
+    this.capsulas = null;
+    for (const nome of Object.keys(EXTRAS) as Extra[]) {
+      const m = this.malha(nome, corpo[nome]);
+      const segue = this.malhas[EXTRAS[nome]];
+      for (let i = 0; i < this.capacidade; i++) {
+        segue.getMatrixAt(i, PARTE);
+        m.setMatrixAt(i, PARTE);
+        m.setColorAt(i, COR.set(nome === "maos" ? this.peles[i] : nome === "rosto" ? COR_DO_ROSTO : COR_DO_SAPATO));
+      }
+      this.extras[nome] = m;
+    }
+    this.mudou = true;
+  }
+
+  /** A mesma matriz na parte e no que a acompanha (a mão com o braço, o rosto com a cabeça, o sapato com a perna). */
+  private por(nome: Malha, i: number, matriz: THREE.Matrix4): void {
+    this.malhas[nome].setMatrixAt(i, matriz);
+    for (const extra of Object.keys(this.extras) as Extra[]) if (EXTRAS[extra] === nome) this.extras[extra]!.setMatrixAt(i, matriz);
+  }
+
+  private todas(): THREE.InstancedMesh[] {
+    return [...Object.values(this.malhas), ...Object.values(this.extras)];
   }
 
   /** As cores e a altura da pessoa na vaga `i`. */
   vestir(i: number, pessoa: PessoaDoElenco): void {
     const c = coresDoCorpoLeve(pessoa);
     this.escalas[i] = pessoa.estatura / 1.7;
+    this.peles[i] = c.pele;
+    this.extras.maos?.setColorAt(i, COR.set(c.pele));
     this.malhas.tronco.setColorAt(i, COR.set(c.roupa));
     this.malhas.bracos.setColorAt(i, COR.set(c.roupa));
     this.malhas.pernas.setColorAt(i, COR.set(c.calca));
     this.malhas.cabeca.setColorAt(i, COR.set(c.pele));
     this.malhas.cabelo.setColorAt(i, COR.set(c.cabelo));
-    for (const m of Object.values(this.malhas)) if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    for (const m of this.todas()) if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }
 
   /** Põe a pessoa da vaga `i` no lugar, na pose do momento. */
@@ -92,12 +137,12 @@ export class MultidaoLeve {
     const desce = pose.sentada ? -ASSENTO : 0;
     BASE.compose(P.set(em.x, em.y + pose.pulo, em.z), Q.setFromEuler(E.set(pose.inclina, em.giro, 0)), S.setScalar(this.escalas[i]));
     PARTE.copy(BASE).multiply(AUX.makeTranslation(0, desce, 0));
-    this.malhas.tronco.setMatrixAt(i, PARTE);
-    this.malhas.cabeca.setMatrixAt(i, PARTE);
-    this.malhas.cabelo.setMatrixAt(i, PARTE);
-    this.malhas.bracos.setMatrixAt(i, PARTE.copy(BASE).multiply(AUX.makeTranslation(0, OMBRO + desce, 0)).multiply(AUX.makeRotationX(pose.bracos)));
+    this.por("tronco", i, PARTE);
+    this.por("cabeca", i, PARTE);
+    this.por("cabelo", i, PARTE);
+    this.por("bracos", i, PARTE.copy(BASE).multiply(AUX.makeTranslation(0, OMBRO + desce, 0)).multiply(AUX.makeRotationX(pose.bracos)));
     // sentada, as pernas encolhem (o resto do corpo desce até o assento)
-    this.malhas.pernas.setMatrixAt(i, PARTE.copy(BASE).multiply(AUX.makeScale(1, pose.sentada ? 0.5 : 1, 1)));
+    this.por("pernas", i, PARTE.copy(BASE).multiply(AUX.makeScale(1, pose.sentada ? 0.5 : 1, 1)));
     this.visiveis[i] = true;
     this.mudou = true;
   }
@@ -106,7 +151,7 @@ export class MultidaoLeve {
   esconder(i: number): void {
     if (!this.visiveis[i]) return;
     this.visiveis[i] = false;
-    for (const m of Object.values(this.malhas)) m.setMatrixAt(i, SOME);
+    for (const m of this.todas()) m.setMatrixAt(i, SOME);
     this.mudou = true;
   }
 
@@ -118,7 +163,7 @@ export class MultidaoLeve {
   fechar(): void {
     if (!this.mudou) return;
     this.mudou = false;
-    for (const m of Object.values(this.malhas)) m.instanceMatrix.needsUpdate = true;
+    for (const m of this.todas()) m.instanceMatrix.needsUpdate = true;
   }
 
   /** A matriz de uma malha da pessoa `i` (para os testes). */
@@ -128,8 +173,9 @@ export class MultidaoLeve {
   }
 
   descartar(): void {
-    for (const g of Object.values(this.geometrias)) g.dispose();
+    this.descartada = true;
+    for (const g of Object.values(this.capsulas ?? {})) g.dispose();
     this.material.dispose();
-    for (const m of Object.values(this.malhas)) m.dispose();
+    for (const m of this.todas()) m.dispose();
   }
 }

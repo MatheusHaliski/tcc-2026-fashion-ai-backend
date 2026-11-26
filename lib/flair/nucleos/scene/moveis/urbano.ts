@@ -2,7 +2,7 @@
  * Móveis de rua, quadra e box: grade, caixote, tambor, calçada, fachada com vitrine, placa da região, mapa, trave,
  * rede de proteção, linhas da quadra, pneus, armário de ferramentas, capacete no suporte, parapeito e prédio.
  */
-import { caixa, chanfrada, cilindro, esfera, movel, plano, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
+import { caixa, chanfrada, cilindro, comGlb, esfera, movel, plano, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
 import type { Movel, Parte } from "@/lib/flair/nucleos/scene/types";
 
 /** Grade metálica: quadro, barras verticais e duas travessas. */
@@ -29,7 +29,7 @@ export function caixote(em: Em, madeira: string, lado = 0.7): Movel {
     chanfrada(madeira, [lado + 0.03, 0.07, lado + 0.03], [0, 0.06, 0]),
     chanfrada(madeira, [lado + 0.03, 0.07, lado + 0.03], [0, lado - 0.06, 0]),
     caixa(madeira, [0.07, lado * 1.25, 0.02], [0, r, r + 0.012], [0, 0, 42]),
-  ]);
+  ], { madeira });
 }
 
 /** Tambor de metal pintado, com dois aros. */
@@ -38,7 +38,7 @@ export function tambor(em: Em, metal: string): Movel {
     cilindro(metal, 0.29, 0.88, [0, 0.44, 0], undefined, 16),
     toro(metal, 0.29, 0.016, [0, 0.3, 0], [90, 0, 0], 16),
     toro(metal, 0.29, 0.016, [0, 0.6, 0], [90, 0, 0], 16),
-  ]);
+  ], { metal });
 }
 
 /** Calçada elevada com meio-fio, ao longo de z. */
@@ -50,7 +50,7 @@ export function calcada(em: Em, pedra: string, largura = 1.4, comprimento = 14):
 
 /** Vitrine de fachada: moldura, vidro, toldo listrado e a soleira. `pos` é o pé, encostado na fachada. */
 export function fachadaVitrine(em: Em, moldura: string, vidro: string, toldo: string, largura = 2.6): Movel {
-  return movel("fachadaVitrine", em, [
+  return comGlb(movel("fachadaVitrine", em, [
     chanfrada(moldura, [largura + 0.2, 0.3, 0.16], [0, 0.15, 0.08]),
     caixa(vidro, [largura, 2.0, 0.02], [0, 1.3, 0.1]),
     chanfrada(moldura, [0.1, 2.0, 0.14], [-largura / 2 - 0.05, 1.3, 0.08]),
@@ -59,7 +59,7 @@ export function fachadaVitrine(em: Em, moldura: string, vidro: string, toldo: st
     chanfrada(toldo, [largura + 0.3, 0.04, 0.95], [0, 2.62, 0.5], [22, 0, 0]),
     caixa(toldo, [largura + 0.3, 0.18, 0.02], [0, 2.36, 0.94]),
     chanfrada(moldura, [largura * 0.5, 0.5, 0.4], [0, 0.55, -0.2]),
-  ]);
+  ], { moldura, vidro, toldo }), `fachada-vitrine-${Math.round(largura * 10)}`);
 }
 
 /** Placa da região: poste e painel com a calçada da cidade desenhada (sem texto). */
@@ -100,7 +100,7 @@ export function trave(em: Em, metal: string, rede: string): Movel {
     plano(rede, [3.0, 2.2], [0, 1.0, -0.45], [-24, 0, 0]),
     plano(rede, [0.9, 2.0], [-1.5, 1.0, -0.45], [0, 90, 0]),
     plano(rede, [0.9, 2.0], [1.5, 1.0, -0.45], [0, 90, 0]),
-  ]);
+  ], { metal, rede });
 }
 
 /** Rede de proteção esticada entre dois postes. */
@@ -143,7 +143,8 @@ export function bola(em: Em, couro: string): Movel {
 export function pilhaDePneus(em: Em, borracha: string, quantos = 4): Movel {
   const partes: Parte[] = [];
   for (let i = 0; i < quantos; i++) partes.push(toro(borracha, 0.24, 0.1, [0, 0.1 + i * 0.2, 0], [90, 0, 0], 18));
-  return movel("pilhaDePneus", em, partes);
+  // objeto do motor Blender, um arquivo por altura da pilha (public/flair/3d/assets/pilha-de-pneus-<n>.glb)
+  return comGlb(movel("pilhaDePneus", em, partes, { borracha }), `pilha-de-pneus-${quantos}`);
 }
 
 /** Armário de ferramentas com gavetas e tampo. */
@@ -153,7 +154,7 @@ export function armarioFerramentas(em: Em, corpo: string, metal: string, largura
     chanfrada(corpo, [largura, 0.95, 0.5], [0, 0.475, 0]),
     chanfrada(metal, [largura + 0.04, 0.04, 0.54], [0, 0.97, 0]),
     ...gavetas,
-  ]);
+  ], { corpo, metal });
 }
 
 /** Capacete num suporte de metal: casco, viseira e a base. */
@@ -163,7 +164,7 @@ export function capaceteNoSuporte(em: Em, casco: string, viseira: string, metal:
     cilindro(metal, 0.02, 1.05, [0, 0.55, 0], undefined, 8),
     esfera(casco, [0.15, 0.16, 0.17], [0, 1.2, 0], 14),
     esfera(viseira, [0.125, 0.07, 0.1], [0, 1.21, 0.09], 12),
-  ]);
+  ], { casco, viseira, metal });
 }
 
 /** Parapeito de terraço com corrimão de metal. */
@@ -177,8 +178,8 @@ export function parapeito(em: Em, concreto: string, metal: string, largura = 9):
 
 /** Prédio ao longe com janelas acesas e a caixa-d'água no topo. */
 export function predio(em: Em, janelas: string, largura = 2, altura = 6, profundidade = 1.6): Movel {
-  return movel("predio", em, [
+  return comGlb(movel("predio", em, [
     caixa(janelas, [largura, altura, profundidade], [0, altura / 2, 0]),
     caixa(janelas, [largura * 0.4, 0.5, profundidade * 0.5], [largura * 0.15, altura + 0.25, 0]),
-  ]);
+  ], { janelas }), `predio-${Math.round(largura * 10)}x${Math.round(altura * 10)}`);
 }

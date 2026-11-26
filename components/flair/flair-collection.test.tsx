@@ -75,11 +75,14 @@ async function fillToReview() {
   fireEvent.click(await screen.findByRole("button", { name: /^Parte superior$/ }));
   fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: "Camiseta branca" } });
   const pick = (id: string, option: string) => { fireEvent.click(document.getElementById(id)!); fireEvent.click(screen.getByRole("option", { name: option })); };
-  pick("subcategory", "Camiseta"); pick("color", "Branco"); pick("material", "Algodão");
+  const next = () => fireEvent.click(screen.getAllByRole("button").find((b) => /Próximo|Avançar|Next/i.test(b.textContent ?? ""))!);
+  pick("subcategory", "Camiseta"); pick("color", "Branco");
+  next();                                                   // "2 · Mais detalhes": material, preço, ocasião e estilo
+  pick("material", "Algodão");
   fireEvent.change(document.getElementById("price") as HTMLInputElement, { target: { value: "50" } });
   fireEvent.click(screen.getByRole("button", { name: "Casual" }));
   fireEvent.click(screen.getByRole("button", { name: "Básico" }));
-  for (let i = 0; i < 3; i++) fireEvent.click(screen.getAllByRole("button").find((b) => /Próximo|Avançar|Next/i.test(b.textContent ?? ""))!);
+  for (let i = 0; i < 2; i++) next();
   expect(await screen.findByRole("heading", { name: "Depois de salvar" })).toBeTruthy();
 }
 const save = async () => {

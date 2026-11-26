@@ -6,7 +6,10 @@
  * O arquivo é dado não confiável: nada nele é executado; acessores fora do buffer, tipos inesperados ou extensões de
  * compressão (Draco/meshopt, que a Meshy não usa) fazem a leitura falhar com erro, nunca ler memória errada.
  */
-export interface GlbGeometry { position: Float32Array; index: Uint32Array }
+import { partOfColor } from "./part-codes";
+
+/** `parts`: rótulo da parte por vértice (cor do vértice gravada pelo motor Blender, part-codes.ts); null sem ela. */
+export interface GlbGeometry { position: Float32Array; index: Uint32Array; parts?: Int8Array | null }
 
 interface Accessor { bufferView?: number; byteOffset?: number; componentType: number; count: number; type: string }
 interface BufferView { byteOffset?: number; byteLength: number; byteStride?: number }
@@ -67,7 +70,7 @@ function multiply(a: number[], b: number[]): number[] {
 /** Junta as malhas (triângulos) da cena padrão do .glb no espaço da cena. */
 export function readGlbGeometry(buf: ArrayBuffer): GlbGeometry {
   const { json, bin } = chunks(buf);
-  const pos: number[] = [], index: number[] = [];
+  const pos: number[] = [], index: number[] = [], parts: number[] = []; let labeled = true;
   const nodes = json.nodes ?? [];
   const visit = (i: number, parent: number[], depth: number) => {
     const n = nodes[i]; if (!n || depth > 32) return;
@@ -79,6 +82,13 @@ export function readGlbGeometry(buf: ArrayBuffer): GlbGeometry {
         const [x, y, z] = [p[v], p[v + 1], p[v + 2]];
         pos.push(m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]);
       }
+      const color = prim.attributes.COLOR_0;
+      if (color === undefined) labeled = false;
+      else {   // inteiro normalizado (0–255, 0–65535) ou float; o canal vermelho guarda a parte
+        const a = json.accessors[color], c = read(json, bin, color), width = COMPONENTS[a.type] ?? 4;
+        const unit = a.componentType === 5121 ? 255 : a.componentType === 5123 ? 65535 : 1;
+        for (let v = 0; v < p.length / 3; v++) parts.push(partOfColor(c[v * width] / unit));
+      }
       const idx = prim.indices !== undefined ? read(json, bin, prim.indices) : Array.from({ length: p.length / 3 }, (_, k) => k);
       for (const k of idx) index.push(base + k);
     }
@@ -88,5 +98,5 @@ export function readGlbGeometry(buf: ArrayBuffer): GlbGeometry {
   const roots = json.scenes?.[json.scene ?? 0]?.nodes ?? nodes.map((_, i) => i);
   for (const r of roots) visit(r, identity, 0);
   if (!pos.length) throw new Error("GLB_SEM_MALHA");
-  return { position: Float32Array.from(pos), index: Uint32Array.from(index) };
+  return { position: Float32Array.from(pos), index: Uint32Array.from(index), parts: labeled && parts.length === pos.length / 3 ? Int8Array.from(parts) : null };
 }

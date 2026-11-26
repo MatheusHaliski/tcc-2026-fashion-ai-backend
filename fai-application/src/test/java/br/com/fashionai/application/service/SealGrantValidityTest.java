@@ -1,7 +1,15 @@
 package br.com.fashionai.application.service;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.common.OwnMedia;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.Seal;
 import br.com.fashionai.domain.model.SealBond;
@@ -10,12 +18,6 @@ import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SealBondStatus;
 import br.com.fashionai.domain.model.enums.SealTier;
 import br.com.fashionai.domain.repository.*;
-import org.junit.jupiter.api.Test;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;

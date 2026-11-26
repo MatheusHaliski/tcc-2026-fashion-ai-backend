@@ -12,6 +12,7 @@ import br.com.fashionai.application.flair3d.Flair3dPercurso.Passo;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
+import br.com.fashionai.application.flair3d.recurso.Flair3dDesgaste;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,15 +25,18 @@ import java.util.Set;
  * Rodadas do AROUND_THE_WORLD além do Rio (docs/flair/flair-3d/JOGOS.md, jogo 12, e OBJETIVOS_POR_JOGO.md): a Volta ao
  * Mundo (8 regiões em rota fixa; cada uma pede clima, estética e paleta), o Elevador da Torre (4 andares, até 2 trocas
  * por andar), o Metrô de Moda (6 estações, exatamente 1 troca por estação) e o Shopping de 4 Andares (1 item por andar
- * para o pedido sorteado). As regiões são descritas pela moda contemporânea do lugar, nunca por roupa tradicional.
+ * para o pedido sorteado). As regiões são descritas pela moda contemporânea do lugar, nunca por roupa tradicional. Na
+ * volta, no elevador e no metrô, cada tentativa reprovada gasta {@link Flair3dDesgaste#POR_FALHA} de ENERGIA (o
+ * recurso-vida do jogo); zerada, a viagem acaba em derrota. O caminho não abre mais sem cumprir (reauditoria de 25/11).
  */
 final class AroundTheWorldRodadas {
     static final String VOLTA = "VOLTA_AO_MUNDO";
     static final String ELEVADOR = "ELEVADOR_DA_TORRE";
     static final String METRO = "METRO_DE_MODA";
     static final String SHOPPING = "SHOPPING_DE_4_ANDARES";
-    /** Tentativas sem cumprir depois das quais o caminho abre com o que a pessoa fez. */
-    static final int CEDE_NA = 4;
+    /** O que cada tentativa reprovada gasta: a energia da viagem. */
+    static final Flair3dDesgaste.Falha FALHA = new Flair3dDesgaste.Falha(Flair3dDesgaste.vidaDo("AROUND_THE_WORLD"), Flair3dDesgaste.POR_FALHA,
+            "TENTATIVA_REPROVADA");
     static final int APROVA = 60;
 
     /** Uma região: os materiais do clima dela, a estética e a paleta. */
@@ -114,12 +118,13 @@ final class AroundTheWorldRodadas {
                     RegraResultado.de("LOOK_COMPLETO", Flair3dPecas.temBase(l) && l.containsKey("CAL"), 25));
             double pontos = regras.stream().mapToDouble(RegraResultado::pontos).sum();
             boolean cumpre = pontos >= APROVA;
-            boolean cede = !cumpre && look.tentativa() >= CEDE_NA;
-            List<Evento> eventos = new ArrayList<>(List.of(new Evento("ESTRELAS_DA_REGIAO", Resultado.estrelas((int) Math.round(pontos)))));
-            if (cede) {
-                eventos.add(new Evento("CAMINHO_ABERTO_SEM_CUMPRIR", look.etapa()));
-            }
-            return new Avaliacao(cumpre || cede, pontos, regras, eventos);
+            List<Evento> eventos = List.of(new Evento("ESTRELAS_DA_REGIAO", Resultado.estrelas((int) Math.round(pontos))));
+            return new Avaliacao(cumpre, pontos, regras, eventos);
+        }
+
+        @Override
+        public Flair3dDesgaste.Falha falha() {
+            return FALHA;
         }
 
         @Override
@@ -132,7 +137,7 @@ final class AroundTheWorldRodadas {
     /**
      * Paradas com dress code e limite de trocas (o elevador e o metrô): a parada pede {@code pecas} peças da ocasião e
      * entre {@code trocasMin} e {@code trocasMax} trocas em relação ao look anterior (a primeira parada é livre). Passar
-     * de primeira vale a parada inteira; depois, ela abre sem pontos.
+     * de primeira vale a parada inteira; depois, ela abre sem pontos; cada tentativa reprovada gasta energia.
      */
     static Flair3dPercurso.Etapas paradas(List<Parada> lista, String regraDoCodigo, String regraDasTrocas, int pecas, int trocasMin, int trocasMax) {
         return new Flair3dPercurso.Etapas() {
@@ -154,17 +159,18 @@ final class AroundTheWorldRodadas {
                 boolean codigoOk = noCodigo >= pecas;
                 boolean trocasOk = trocas >= trocasMin && trocas <= trocasMax;
                 boolean abre = codigoOk && trocasOk;
-                boolean cede = !abre && look.tentativa() >= CEDE_NA;
                 List<Evento> eventos = new ArrayList<>(List.of(new Evento("PECAS_NO_CODIGO", noCodigo)));
                 if (look.anterior() != null) {
                     eventos.add(new Evento("TROCAS_FEITAS", trocas));
                 }
-                if (cede) {
-                    eventos.add(new Evento("CAMINHO_ABERTO_SEM_CUMPRIR", look.etapa()));
-                }
                 double pontos = abre ? (look.tentativa() == 1 ? 100 : 0) : (codigoOk ? 50 : 0) + (trocasOk ? 50 : 0);
-                return new Avaliacao(abre || cede, cede ? 0 : pontos,
+                return new Avaliacao(abre, pontos,
                         List.of(RegraResultado.de(regraDoCodigo, codigoOk, 50), RegraResultado.de(regraDasTrocas, trocasOk, 50)), eventos);
+            }
+
+            @Override
+            public Flair3dDesgaste.Falha falha() {
+                return FALHA;
             }
         };
     }

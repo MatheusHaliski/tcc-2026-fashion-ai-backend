@@ -10,6 +10,7 @@ import { HudIcon } from "@/components/flair/nucleos/nucleo-icons";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { FxPrefs } from "@/lib/flair/nucleos/fx-sound";
 import type { Momento } from "@/lib/flair/nucleos/moments";
+import { passouDoOrcamento, tintaDe } from "@/lib/flair/nucleos/tinta";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 
 interface HudProps {
@@ -46,7 +47,8 @@ interface ScoreProps {
 export function NucleoScore({ momento, resultado, previa = null, prefs, onPref }: ScoreProps) {
   const tx = useNucleoText();
   const aoVivo = momento === "PREPARACAO" ? previa : null;
-  const atributos = aoVivo?.resultado === "PREVIA" ? aoVivo.eventos : [];
+  // só números e códigos viram linha (o perfil do look, um objeto, vai para a roda de atributos)
+  const atributos = aoVivo?.resultado === "PREVIA" ? aoVivo.eventos.filter((e) => e.valor == null || typeof e.valor !== "object") : [];
   let nota: NucleoResultado | null = null;
   if (momento === "RESULTADO") nota = resultado;
   else if (aoVivo && aoVivo.resultado !== "PREVIA") nota = aoVivo;
@@ -56,6 +58,8 @@ export function NucleoScore({ momento, resultado, previa = null, prefs, onPref }
   if (nota && aoVivo) rotulo = tx.t("flair3d.ui.hud.preview", { nota: rotulo });
   let estado = "espera";
   if (nota) estado = aoVivo ? "previa" : "final";
+  // jogos de zonas: o orçamento de tinta, na prévia enquanto a pessoa pinta e no resultado
+  const tinta = tintaDe(aoVivo ?? (momento === "RESULTADO" ? resultado : null));
   return (
     <div className="n3d-score" data-testid="nucleo-score" data-estado={estado}>
       <p className="n3d-score-line" role="img" aria-label={rotulo}>
@@ -68,6 +72,11 @@ export function NucleoScore({ momento, resultado, previa = null, prefs, onPref }
           ))}
         </span>
       </p>
+      {tinta && (
+        <p className="n3d-score-tinta tabular" data-testid="nucleo-tinta" data-passou={passouDoOrcamento(tinta) || undefined}>
+          {tx.t(passouDoOrcamento(tinta) ? "flair3d.ui.tinta.passou" : "flair3d.ui.tinta.conta", { ...tinta })}
+        </p>
+      )}
       {atributos.length > 0 && (
         <dl className="n3d-score-attrs tabular" data-testid="nucleo-preview-attrs">
           {atributos.map((e) => (

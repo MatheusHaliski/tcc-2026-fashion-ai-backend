@@ -6,7 +6,9 @@ import br.com.fashionai.domain.model.IntensidadeTermica;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.repository.ColecaoRepository;
+import br.com.fashionai.domain.repository.CorteRepository;
 import br.com.fashionai.domain.repository.IntensidadeTermicaRepository;
+import br.com.fashionai.domain.repository.OrigemRepository;
 import br.com.fashionai.domain.repository.TipoLavagemRepository;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Referências de coleção e intensidade térmica da peça e do look, e tipo de lavagem da peça. O formulário manda o ID
+ * Referências de coleção e intensidade térmica da peça e do look; tipo de lavagem, origem e corte da peça. O formulário manda o ID
  * da opção, que é conferido na tabela e vira uma FK. Chamado após autorização pelo WardrobeService/SchemeService.
  * ID nulo mantém o valor atual, salvo remoção explícita; ID inexistente responde 400 com o campo a corrigir.
  */
@@ -23,12 +25,16 @@ public class ClassificationService {
     private final ColecaoRepository colecoes;
     private final IntensidadeTermicaRepository intensidades;
     private final TipoLavagemRepository lavagens;
+    private final OrigemRepository origens;
+    private final CorteRepository cortes;
 
     public ClassificationService(ColecaoRepository colecoes, IntensidadeTermicaRepository intensidades,
-                                 TipoLavagemRepository lavagens) {
+                                 TipoLavagemRepository lavagens, OrigemRepository origens, CorteRepository cortes) {
         this.colecoes = colecoes;
         this.intensidades = intensidades;
         this.lavagens = lavagens;
+        this.origens = origens;
+        this.cortes = cortes;
     }
 
     public void apply(WardrobeItem piece, UUID colecaoId, UUID intensidadeTermicaId) {
@@ -46,6 +52,18 @@ public class ClassificationService {
         }
         if (intensidadeTermicaId != null) {
             look.setIntensidadeTermica(intensidade(intensidadeTermicaId));
+        }
+    }
+
+    /** Origem e corte da peça: ID nulo mantém o valor atual; corte desativado não entra em peça nova. */
+    public void applyOrigemECorte(WardrobeItem piece, UUID origemId, UUID corteId) {
+        if (origemId != null) {
+            piece.setOrigem(origens.findById(origemId).orElseThrow(() ->
+                    invalid("ORIGEM_INVALIDA", "origemId", "Origem inválida")));
+        }
+        if (corteId != null && (piece.getCorte() == null || !corteId.equals(piece.getCorte().getId()))) {
+            piece.setCorte(cortes.findById(corteId).filter(c -> c.isAtivo()).orElseThrow(() ->
+                    invalid("CORTE_INVALIDO", "corteId", "Corte inválido")));
         }
     }
 

@@ -180,4 +180,22 @@ class Model3dServiceTest {
         e.service.tick();
         assertThat(e.service.status(e.piece).get("canRetryFree")).isEqualTo(false);
     }
+
+    @Test
+    void fotoComFundoInseparavelFalhaComMotivoEmVezDeVirarBloco() {
+        Env e = env();
+        BufferedImage print = new BufferedImage(200, 200, BufferedImage.TYPE_INT_RGB);
+        java.util.Random r = new java.util.Random(7);
+        for (int y = 0; y < 200; y++) {
+            for (int x = 0; x < 200; x++) {
+                print.setRGB(x, y, r.nextInt(0xFFFFFF));                // estampa até a borda: não há fundo a tirar
+            }
+        }
+        e.storage.put(e.piece.getImageUrl(), ImageOps.jpeg(print, 0.9f));
+        e.service.request(e.piece);
+        e.service.tick();
+        assertThat(e.piece.getModel3dStatus()).isEqualTo(Model3dStatus.FAILED);
+        assertThat(e.saved.get(0).getErrorCode()).isEqualTo("SEM_RECORTE");
+        assertThat(e.piece.getModel3dUrl()).isNull();
+    }
 }

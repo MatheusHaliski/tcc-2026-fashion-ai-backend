@@ -90,6 +90,10 @@ public class UserPreferences extends VersionedAuditableEntity {
     @Column(name = "default_card_skin", length = 20)
     private String defaultCardSkin = "atelier";
 
+    @jakarta.persistence.ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_tipo_look_id")
+    private TipoLook defaultTipoLook;
+
     @Column(name = "notification_push_master", nullable = false)
     private boolean notificationPushMaster = true;
 

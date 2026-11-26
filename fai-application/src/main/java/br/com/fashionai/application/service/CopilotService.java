@@ -1,47 +1,7 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.acervo.AcervoLugares;
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.ai.local.LocalAdvisors;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.domain.model.DailyLook;
-import br.com.fashionai.application.ai.local.LocalSchemeComposer;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.StyleDna;
-import br.com.fashionai.domain.model.UserPreferences;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.DailyLookSource;
-import br.com.fashionai.domain.model.enums.SchemeOrigin;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.repository.DailyLookRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.application.hype.HypeQueryService;
-import br.com.fashionai.application.hype.RecommendationScoring;
-import br.com.fashionai.application.hype.StyleCompatibility;
-import br.com.fashionai.application.insights.InsightContext;
-import br.com.fashionai.application.insights.InsightService;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import br.com.fashionai.application.wardrobe.*;
 import java.time.LocalDate;
-import java.text.Normalizer;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -63,6 +23,33 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.acervo.AcervoLugares;
+import br.com.fashionai.application.ai.*;
+import br.com.fashionai.application.ai.local.LocalAdvisors;
+import br.com.fashionai.application.ai.local.LocalSchemeComposer;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.copilot.CopilotLexicon;
+import br.com.fashionai.application.copilot.CopilotScope;
+import br.com.fashionai.application.hype.*;
+import br.com.fashionai.application.insights.InsightContext;
+import br.com.fashionai.application.insights.InsightService;
+import br.com.fashionai.application.looks.LookScorer;
+import br.com.fashionai.application.seal.SealPolicyCopilot;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
+
+import static br.com.fashionai.application.copilot.CopilotText.mentions;
+import static br.com.fashionai.application.copilot.CopilotText.normalized;
+import static br.com.fashionai.application.copilot.CopilotText.startsWithWord;
+
 /**
  * RF10 — Copilot contextual (01-especificacao-meu-quarto.md §3). Um motor, três portas (Copilot, Vista-me,
  * Autopiloto). Contexto por ferramentas executadas no servidor com a sessão do usuário (buscar_pecas,
@@ -78,8 +65,8 @@ public class CopilotService {
     public void setSealPolicyService(SealService service) { this.sealPolicyService = service; }
     public static final int MIN_PIECES = 3;
     static final Pattern REF = Pattern.compile("\\[\\[(p\\d+)]]");
-    static final Map<String, Set<String>> COLOR_WORDS = new LinkedHashMap<>();
-    static final Map<String, Set<String>> TYPE_WORDS = new LinkedHashMap<>();
+    public static final Map<String, Set<String>> COLOR_WORDS = new LinkedHashMap<>();
+    public static final Map<String, Set<String>> TYPE_WORDS = new LinkedHashMap<>();
     static final Map<String, Set<String>> MATERIAL_WORDS = new LinkedHashMap<>();
 
     static {
@@ -365,23 +352,6 @@ public class CopilotService {
 
     /** weather: faixa de clima pedida no texto (VERAO_LEVE, MEIA_ESTACAO, CAMADAS, INVERNO_PESADO) ou null */
     record LookPrompt(List<String> occasions, List<String> styles, String mood, String season, String weather) {}
-
-    static String normalized(String value) {
-        return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD).replaceAll("\\p{M}", "")
-                .toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " ").trim();
-    }
-
-    static boolean mentions(String text, String phrase) {
-        String value = normalized(text);
-        String target = normalized(phrase).trim();
-        return !target.isEmpty() && (" " + value.replaceAll("[^a-z0-9]+", " ") + " ").contains(" " + target + " ");
-    }
-
-    static boolean startsWithWord(String text, String prefix) {
-        String wanted = normalized(prefix);
-        if (wanted.contains(" ")) return mentions(text, wanted);
-        return java.util.Arrays.stream(normalized(text).split("\\s+")).anyMatch(word -> word.startsWith(wanted));
-    }
 
     static LookPrompt lookPrompt(String message, List<String> requestedOccasions, String requestedMood) {
         List<String> occasions = new ArrayList<>(requestedOccasions == null ? List.of() : requestedOccasions.stream()
@@ -956,7 +926,7 @@ public class CopilotService {
         LookPrompt interpreted = lookPrompt(message, req.occasion(), req.mood());
         List<String> occasions = new ArrayList<>(interpreted.occasions());
         if (occasions.isEmpty()) {
-            MirrorService.localInterpretation(message, List.of()).occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).forEach(occasions::add);
+            MirrorPromptRules.localInterpretation(message, List.of()).occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).forEach(occasions::add);
         }
         // Momentos §17: "monte um look para o Halloween…" — o Momento ativo mencionado empresta ocasiões e tema
         Map<String, Object> moment = detectMoment(user.id(), message);
@@ -1351,7 +1321,7 @@ public class CopilotService {
         if (!t.startsWith("{")) {
             return new Answer(text.trim(), List.of());
         }
-        Map<String, Object> m = WardrobeService.extractJson(t);
+        Map<String, Object> m = AiResponseJson.extractJson(t);
         String body = ANSWER_FIELDS.stream().map(m::get).filter(v -> v instanceof String s && !s.isBlank())
                 .map(String::valueOf).findFirst().orElse(null);
         if (body == null) {
@@ -1371,7 +1341,7 @@ public class CopilotService {
         if (occasions == null || occasions.isEmpty()) {
             return Msg.t("copilot.separei_looks_com_pecas_do", count, "");
         }
-        String labels = String.join("/", occasions.stream().map(o -> WardrobeService.label(o).toLowerCase(Msg.locale())).toList());
+        String labels = String.join("/", occasions.stream().map(o -> PiecePrefill.label(o).toLowerCase(Msg.locale())).toList());
         return Msg.t("copilot.separei_looks_para", count, labels);
     }
 

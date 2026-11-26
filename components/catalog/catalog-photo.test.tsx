@@ -210,17 +210,17 @@ it("retries an unavailable required image without exposing an unframed source", 
 });
 
 
-it("keeps a labeled category illustration after every image candidate fails", () => {
+it("keeps the category illustration, with no label over the photo, after every image candidate fails", () => {
   const result = render(<CatalogPhoto alt="Jeans" category="lower_piece" subcategory="jeans" color="blue"
     image={{ url: "/media/jeans.png", mode: "PROCESSED" }} />);
   fireEvent.error(result.container.querySelector("img")!);
   expect(result.container.querySelector("[data-mode=default]")).toBeTruthy();
-  expect(result.container.textContent).toContain("Ilustração de referência");
+  expect(result.container.textContent).not.toContain("Ilustração de referência");   // a etiqueta cobria a foto
   expect(result.container.querySelector("img")?.getAttribute("src")).toContain("/api/catalog/default-asset?");
 });
 
-it("uses a labeled category illustration when no photo URL exists", () => {
+it("uses the category illustration, with no label over the photo, when no photo URL exists", () => {
   const result = render(<CatalogPhoto alt="Casaco" category="upper_piece" subcategory="coat" />);
   expect(result.container.querySelector("[data-mode=default]")).toBeTruthy();
-  expect(result.container.textContent).toContain("Ilustração de referência");
+  expect(result.container.textContent).not.toContain("Ilustração de referência");   // a etiqueta cobria a foto
 });
