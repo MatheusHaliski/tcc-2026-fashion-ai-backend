@@ -1,7 +1,7 @@
 # Migrações Flyway dos exercícios de banco de dados
 
-Situação em **25/11/2026**. Produção: MySQL **9.7** no Railway (schema `fashionai`). No último deploy ativo da API
-(#564) o Flyway registrou `Current version of schema fashionai: 110`. As versões 111 e 112 entram no próximo deploy.
+Situação em **26/11/2026**. Produção: MySQL **9.7** no Railway (schema `fashionai`). No último deploy ativo da API
+(#564) o Flyway registrou `Current version of schema fashionai: 110`. As versões 111 e 112 entram no próximo deploy; as versões 114, 115 e 116 (exercícios 09 a 11) entram no seguinte.
 
 ## Regras
 
@@ -39,11 +39,18 @@ Situação em **25/11/2026**. Produção: MySQL **9.7** no Railway (schema `fash
 | 05 | Origem da peça | `origem` (+ `nome`, `ativo`); `wardrobe_items.origem_id` (`fk_wardrobe_items_origem`, SET NULL / CASCADE) | V105, V106 | aplicadas. `origem.codigo` é `ENUM('ADQUIRIDA','HERDADA','TROCADA')` no banco, e a entidade mapeia texto de até 30: uma origem nova exige migração que amplie o ENUM |
 | 06 | Estação do look | `estacoes` (chave `codigo` = texto do enum `Season`); `fk_schemes_estacao`, `fk_moments_estacao`, `fk_dna_schemes_estacao` (RESTRICT / RESTRICT) | **V111** | criada à mão no Railway; a V111 só cria o que faltar |
 | 07 | Iluminação e temperatura (no acervo, porque o quarto saiu do app) | `tipos_iluminacao` (`uq_tipos_iluminacao_codigo`); `acervo_ambientes.tipo_iluminacao_id` e `temperatura_kelvin`; `fk_acervo_ambientes_tipo_iluminacao` (RESTRICT / RESTRICT); `ck_acervo_ambientes_kelvin` (2700–6500 K ou NULL) | **V112** | criada à mão no Railway; a V112 só cria o que faltar |
+| 08 | Nome do módulo de armazenamento (no acervo, porque o quarto saiu do app) | nenhum objeto novo: o nome é `acervo_compartimentos.nome` e o endereço da peça é `acervo_pecas.compartimento_id` (V102) | — (V113 sem uso) | sem mudança de schema |
+| 09 | Categoria principal da marca | `categorias_marca` (`uq_categorias_marca_codigo`); `brand_profiles.categoria_marca_id` (`fk_brand_profiles_categoria_marca`, RESTRICT / RESTRICT). O texto `brand_profiles.fashion_category` continua | **V114** | a criar à mão no Railway com `solucoes/sql/railway/09-categoria-marca.sql`; a V114 só cria o que faltar |
+| 10 | Área artística principal da celebridade | `areas_artisticas` (`uq_areas_artisticas_codigo`); `celebrity_profiles.area_artistica_principal_id` (`fk_celebrity_area_principal`, RESTRICT / RESTRICT). A lista `celebrity_profiles.areas_json` continua | **V115** | a criar à mão no Railway com `solucoes/sql/railway/10-area-artistica.sql`; a V115 só cria o que faltar |
+| 11 | Prazo de disponibilidade do selo | `ck_seals_availability_order` em `seals` (fim ≥ início, ou um dos dois NULL). As colunas `available_from` / `available_until` são da V2/V20 | **V116** | a criar à mão no Railway com `solucoes/sql/railway/11-prazo-selo.sql`; a V116 só cria se faltar e se não houver selo com o período invertido |
+| 12 | Política do selo: quantidade mínima por cor | nenhum objeto novo: a regra fica em `seals.background_config_json` (`$.policy.rules[*]`) | — (V117 sem uso) | sem mudança de schema |
 
 FK entre colunas de texto exige o mesmo charset e a mesma collation dos dois lados; se não forem iguais, o MySQL dá o
 erro 3780. Por isso as migrações alinham as colunas:
 - na V111, `estacoes.codigo` segue `schemes.season`;
 - na V112, `acervo_ambientes.tipo_iluminacao_id` segue `tipos_iluminacao.id`.
+- na V114, `brand_profiles.categoria_marca_id` segue `categorias_marca.id`;
+- na V115, `celebrity_profiles.area_artistica_principal_id` segue `areas_artisticas.id`.
 
 ## Conferência antes do deploy (só leitura, no console do Railway)
 
@@ -158,3 +165,58 @@ O teste com o binário do MySQL 9.7 não foi feito localmente.
    esse registro é retirado. Essa decisão é da pessoa dona do projeto e nunca é automatizada (CLAUDE.md:
    nada de `flyway repair`/`clean` por agente). Como cada passo confere antes de criar, rodar a migração de novo depois
    da correção termina o que faltou.
+
+## Exercícios 08 a 12 (26/11/2026)
+
+O SQL simples de cada exercício, para rodar à mão no Railway antes do deploy, fica em `solucoes/sql/railway/`
+(`09-categoria-marca.sql`, `10-area-artistica.sql`, `11-prazo-selo.sql`). Cada arquivo começa por uma conferência só
+de leitura e usa os mesmos nomes da migração. Os exercícios 08 e 12 não mudam o schema, e as versões 113 e 117
+ficaram sem uso (buracos na numeração não incomodam o Flyway).
+
+Conferência antes do deploy (só leitura):
+
+```sql
+SELECT 'tabela' AS tipo, TABLE_NAME AS objeto FROM information_schema.TABLES
+ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('categorias_marca', 'areas_artisticas')
+UNION ALL
+SELECT 'coluna', CONCAT(TABLE_NAME, '.', COLUMN_NAME, ' ', COLLATION_NAME) FROM information_schema.COLUMNS
+ WHERE TABLE_SCHEMA = DATABASE() AND ((TABLE_NAME IN ('categorias_marca', 'areas_artisticas') AND COLUMN_NAME = 'id')
+    OR COLUMN_NAME IN ('categoria_marca_id', 'area_artistica_principal_id'))
+UNION ALL
+SELECT 'fk', CONCAT(CONSTRAINT_NAME, ' ', DELETE_RULE, ' / ', UPDATE_RULE) FROM information_schema.REFERENTIAL_CONSTRAINTS
+ WHERE CONSTRAINT_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME IN ('categorias_marca', 'areas_artisticas')
+UNION ALL
+SELECT 'check', CONCAT(tc.CONSTRAINT_NAME, ' ', cc.CHECK_CLAUSE) FROM information_schema.TABLE_CONSTRAINTS tc
+  JOIN information_schema.CHECK_CONSTRAINTS cc ON cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA AND cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+ WHERE tc.CONSTRAINT_SCHEMA = DATABASE() AND tc.TABLE_NAME = 'seals' AND tc.CONSTRAINT_TYPE = 'CHECK'
+ORDER BY 1, 2;
+SELECT codigo, COUNT(*) AS linhas FROM categorias_marca GROUP BY codigo ORDER BY codigo;
+SELECT codigo, COUNT(*) AS linhas FROM areas_artisticas GROUP BY codigo ORDER BY codigo;
+-- selos com o período invertido (precisa voltar vazio para o CHECK existir)
+SELECT id, name, available_from, available_until FROM seals
+ WHERE available_from IS NOT NULL AND available_until IS NOT NULL AND available_until < available_from;
+```
+
+Esperado: 2 tabelas; as duas colunas de FK com a mesma collation do `id` da tabela de opções; 2 FKs `RESTRICT / RESTRICT`;
+o CHECK `ck_seals_availability_order`; 6 categorias e 6 áreas, 1 linha por código; nenhum selo invertido.
+
+| O que a conferência mostra | O que acontece no deploy |
+|---|---|
+| Falta tabela, coluna, UNIQUE ou FK | A migração cria |
+| Collation da coluna diferente da do `id` e a FK ainda não existe (a FK à mão daria 3780) | A migração alinha a coluna e cria a FK |
+| CHECK do período criado à mão sem nome (`seals_chk_1`) | Reconhecido pelo conteúdo: a V116 não cria um segundo |
+| Há selo com o fim antes do início | A V116 passa **sem criar o CHECK** (não derruba o deploy). Corrija as datas pela tela do selo e crie o CHECK à mão com o passo 2 de `11-prazo-selo.sql` |
+| Mais de 1 linha para o mesmo código | A migração não duplica nada e não cria o UNIQUE; apague a linha repetida que não estiver em uso e crie o UNIQUE à mão |
+
+Validação em laboratório (MySQL 8.0 local e descartável, Flyway 12.4.0 com as migrações reais; nada foi executado no
+Railway, e o binário do MySQL 9.7 não foi testado localmente):
+
+| Cenário | Resultado |
+|---|---|
+| Banco novo, V1 → V116 | V114, V115 e V116 `SUCCESS`; 6 categorias, 6 áreas, 2 FKs, 1 CHECK |
+| Railway simulado: V112 + os três SQLs manuais, depois o deploy | os SQLs rodam sem erro; V114, V115 e V116 `SUCCESS` sem alterar nada; schema idêntico ao do banco novo (colunas, collations, constraints, regras das FKs, CHECK, índices e linhas) |
+| Reexecutar os três scripts das migrações no mesmo banco | nenhum erro, nenhuma linha nova, schema igual |
+| Coluna da FK criada à mão com outra collation e sem a FK (a FK à mão dá 3780) | a migração alinha as duas colunas e cria as duas FKs; schema idêntico ao do banco novo |
+| Selo legado com o período invertido | V116 `SUCCESS` sem criar o CHECK |
+| CHECK criado à mão sem nome | a V116 não cria um segundo |
+| Integridade depois das migrações | categoria ou área inexistente → 1452; apagar opção em uso → 1451; desativar (`ativo = FALSE`) é aceito e o perfil continua lendo a opção; código repetido → 1062; período invertido → 3819; período igual, só início, só fim e sem período são aceitos |

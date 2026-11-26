@@ -1,5 +1,7 @@
 # Exercício 11 — Prazo de disponibilidade do selo
 
+> **Implementado em 26/11/2026.** As colunas e a validação de ordem já existiam. Entregue o que faltava: `availabilityState` na leitura do selo (`INACTIVE`, `SCHEDULED`, `OPEN`, `ENDED`, `SOLD_OUT`, calculado em `SealViews`, nunca gravado); a aba Selos mostra início e fim com data e hora e o estado (`components/seal-availability.tsx`); a edição deixou de deslocar o prazo pelo fuso (`lib/seals/availability.ts`); o assistente avisa fim antes do início; e o CHECK `ck_seals_availability_order` na migração `V116__seals_ordem_disponibilidade_exercicio_11.sql` (SQL para o Railway: `sql/railway/11-prazo-selo.sql`). O prazo já era revalidado no pedido de vínculo (`SealBondRouting`), agora com teste. Testes: `SealAvailabilityWindowTest`, `SealAvailabilityRequestTest`, `components/seal-availability.test.tsx`.
+
 **Situação na revisão `9f5512a77`:** Base implementada com available_from/available_until e validação de ordem.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

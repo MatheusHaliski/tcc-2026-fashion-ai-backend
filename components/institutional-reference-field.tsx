@@ -60,7 +60,7 @@ export function InstitutionalReferenceField({ kind, userId }: { kind: Kind; user
     } finally { setSaving(false); }
   }
   return (
-    <div className="grid gap-2" data-institutional-reference={kind} data-saved-id={saved?.id ?? ""}>
+    <div className="flex flex-col gap-2" data-institutional-reference={kind} data-saved-id={saved?.id ?? ""}>
       <ReferenceSelectField id={cfg.id} path={cfg.options} messages={cfg.messages} value={value} selectedName={saved?.id === value ? saved?.nome : null}
         onChange={(id) => { setValue(id); setFieldError(undefined); }} error={fieldError} disabled={saving} />
       {legado && <p className="help" data-institutional-legacy>{t(`${cfg.messages}.legacy`, { value: legado })}</p>}

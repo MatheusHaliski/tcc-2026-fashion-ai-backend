@@ -109,11 +109,11 @@ class AcervoControllersTest {
         List<String> todas = new ArrayList<>(rotas(AcervoController.class));
         todas.addAll(rotas(AcervoPecasController.class));
 
-        assertThat(todas).hasSize(25).doesNotHaveDuplicates().allSatisfy(r -> assertThat(r.split(" ")[1]).startsWith("/api/me/acervo"));
+        assertThat(todas).hasSize(26).doesNotHaveDuplicates().allSatisfy(r -> assertThat(r.split(" ")[1]).startsWith("/api/me/acervo"));
         assertThat(new TreeSet<>(todas)).contains("GET /api/me/acervo", "POST /api/me/acervo/ambientes", "PUT /api/me/acervo/moveis/{id}",
                 "DELETE /api/me/acervo/compartimentos/{id}", "POST /api/me/acervo/pecas/mover", "POST /api/me/acervo/arrumacao/previa",
                 "POST /api/me/acervo/arrumacao/confirmar", "GET /api/me/acervo/financeiro", "GET /api/me/acervo/busca", "GET /api/me/acervo/uso",
-                "GET /api/me/acervo/pecas/{id}/looks", "GET /api/me/acervo/desejos", "DELETE /api/me/acervo/desejos/{id}");
+                "GET /api/me/acervo/pecas/{id}/looks", "GET /api/me/acervo/pecas/{id}/lugar", "GET /api/me/acervo/desejos", "DELETE /api/me/acervo/desejos/{id}");
     }
 
     @Test
