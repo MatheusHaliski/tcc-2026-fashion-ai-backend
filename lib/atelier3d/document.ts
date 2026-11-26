@@ -4,6 +4,8 @@ import {
   type GLTF,
 } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
+import type { GarmentState } from "./garment/state";
+import { applyGarment } from "./garment/apply";
 export type Vec3 = [number, number, number];
 export interface NodeEdit {
   position: Vec3;
@@ -22,6 +24,8 @@ export interface SceneDocument {
   nodes: Record<string, NodeEdit>;
   materials: Record<string, MaterialEdit>;
   vertices: Record<string, Record<string, Vec3>>;
+  /** Tecido, pintura, estampas, costuras e aviamentos (lib/atelier3d/garment). */
+  garment?: GarmentState;
 }
 export interface Inspection {
   nodes: number;
@@ -218,6 +222,7 @@ export function applyDocument(asset: LoadedAsset, doc: SceneDocument) {
       mesh.geometry.computeBoundingSphere();
     }
   }
+  applyGarment(asset, doc);
   asset.gltf.scene.updateMatrixWorld(true);
 }
 export async function exportGlb(
