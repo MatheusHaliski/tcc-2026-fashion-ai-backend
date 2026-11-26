@@ -45,8 +45,14 @@ COLLARS = (
     ("lapela", _rx(r"lapela", r"\blapel", r"notch", r"peak lapel")),
     ("colarinho", _rx(r"colarinho", r"gola de camisa", r"button[- ]down", r"spread collar", r"point collar",
                       r"camp collar", r"gola italiana")),
-    ("vies", _rx(r"decote u\b", r"\bscoop", r"gola canoa", r"boat ?neck", r"decote quadrado", r"square neck")),
+    ("vies", _rx(r"decote u\b", r"\bscoop", r"gola canoa", r"boat ?neck", r"decote quadrado", r"decote reto",
+                 r"square neck")),
     ("careca", _rx(r"gola careca", r"crew[- ]?neck", r"gola redonda", r"round neck", r"decote redondo")),
+)
+# forma do decote da peça sem manga (o motor desenha o recorte com ela; strap_cut.py)
+NECKLINES = (
+    ("quadrado", _rx(r"decote (reto|quadrado)", r"square[- ]neck", r"straight[- ]neck")),
+    ("redondo", _rx(r"decote (u|redondo|cavado)\b", r"\bscoop")),
 )
 CLOSURES = (
     ("polo", _rx(r"henley")),

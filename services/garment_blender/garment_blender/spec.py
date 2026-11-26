@@ -20,6 +20,7 @@ PANTS = tuple(CUTS)
 FABRICS = ("malha_la", "malha_algodao", "jersey", "moletom", "sarja", "denim", "tricoline")   # tricoline: tecido plano
 COLLARS = ("careca", "alta", "capuz", "colarinho", "v", "lapela", "polo", "vies", "faixa")   # colarinho: pé + folha virada; lapela: V + colarinho + lapelas
 CLOSURES = ("nenhum", "ziper_inteiro", "botao_ziper", "cordao", "botoes", "polo", "aberto")   # polo: vista curta; aberto: frente sem fecho
+NECKLINES = ("redondo", "quadrado", "reto", "v")   # decote da peça sem manga (reto = quadrado)
 POCKETS = ("canguru", "peito", "faca", "traseiro", "cargo", "joelho_duplo", "vivo", "lateral")   # joelho_duplo: reforço chapado
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
@@ -57,6 +58,10 @@ class GarmentSpec:
     botoes: int = 6                   # quantos botões na vista (fechamento "botoes")
     pregas: int = 0                   # saia: pregas faca na volta (divisor de 96: 12, 16, 24, 32)
     sem_manga: bool = False           # regata, top, colete: cava acabada, sem manga
+    alca: float | None = None         # sem manga: largura da alça (cm); None: a da subcategoria (strap_cut.DEFAULTS)
+    alca_centro: float | None = None  # meio da alça, 0–1 do pescoço à ponta do ombro
+    decote: str | None = None         # forma do decote da frente sem manga (NECKLINES); None: a da subcategoria
+    decote_costas_forma: str = "redondo"
     cor_botao: str = "#2e2a26"
     cor_linha: str | None = None      # linha do pesponto; None: um tom abaixo do tecido (costura tom sobre tom)
     medidas_marca: dict[str, float] = field(default_factory=dict)
@@ -92,7 +97,8 @@ def parse(raw: dict, size: str | None = None, base_dir: Path | None = None) -> G
     de onde as imagens das estampas são lidas (a pasta da ficha)."""
     known = {"produto", "marca", "subcategoria", "tamanho", "sexo", "caimento", "tecido", "gola", "fechamento",
              "bolsos", "ribana", "manga_curta", "angulo_manga", "cor_ziper", "passantes", "capuz_abaixado", "medidas_marca", "url_oficial", "observacao",
-             "botoes", "cor_botao", "cor_linha", "pregas", "sem_manga", "estampas", "listras", "estampa_corrida", "origem"}
+             "botoes", "cor_botao", "cor_linha", "pregas", "sem_manga", "estampas", "listras", "estampa_corrida", "origem",
+             "alca", "alca_centro", "decote", "decote_costas_forma"}
     unknown = set(raw) - known
     if unknown:
         raise ValueError(f"campos desconhecidos na ficha: {', '.join(sorted(unknown))}")
@@ -121,6 +127,10 @@ def parse(raw: dict, size: str | None = None, base_dir: Path | None = None) -> G
         capuz_abaixado=bool(raw.get("capuz_abaixado", False)),
         botoes=int(raw.get("botoes", 6)), pregas=int(raw.get("pregas", 0)), sem_manga=bool(raw.get("sem_manga", False)), cor_botao=str(raw.get("cor_botao", "#2e2a26")).lower(),
         cor_linha=str(raw["cor_linha"]).lower() if raw.get("cor_linha") else None,
+        alca=float(raw["alca"]) if raw.get("alca") is not None else None,
+        alca_centro=float(raw["alca_centro"]) if raw.get("alca_centro") is not None else None,
+        decote=_pick(raw["decote"], NECKLINES, "decote") if raw.get("decote") else None,
+        decote_costas_forma=_pick(raw.get("decote_costas_forma", "redondo"), NECKLINES, "decote_costas_forma"),
         medidas_marca=measures, **parse_prints(raw, base_dir))
     for name in ("cor_ziper", "cor_botao", "cor_linha"):
         if getattr(spec, name) is not None and not HEX.match(getattr(spec, name)):

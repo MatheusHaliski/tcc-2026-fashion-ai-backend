@@ -120,6 +120,9 @@ def spec_for(product: dict, color: str, brand_prior: dict[str, str]) -> dict:
             "bolsos": list(pockets), "ribana": rib,
             "manga_curta": sleeve == "curta", "sem_manga": sleeve == "sem", "botoes": n_buttons,
             "url_oficial": product.get("official_product_url") or ""}
+    neckline = texto.first(texto.NECKLINES, name, desc) if sleeve == "sem" else None
+    if neckline:                              # "Decote Reto": o recorte entre as alças sai quadrado
+        spec["decote"] = neckline
     if closure in ("botoes", "polo") or collar == "lapela":
         spec["cor_botao"] = button_color(color, bool(texto.GOLD.search(name)), kind)
     shape = forma.measures(sub, sex, collar, bool(texto.CROPPED.search(name)) and sub != "crop_top")

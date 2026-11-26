@@ -122,13 +122,18 @@ def band_along(mesh: Mesh, ids: list[int], width: float, thick: float, mat: str)
     stitch_line(mesh, outer - across * 0.005 + normal * 0.0006, normal)
 
 
-def binding(mesh: Mesh, neck: list[int], thick: float, closed: bool, mat: str = "corpo") -> None:
-    """Viés: a borda do decote dobrada para dentro, sem subir (regata, top, body, blusa de malha), com pesponto."""
+def binding(mesh: Mesh, neck: list[int], thick: float, closed: bool, mat: str = "corpo", frame=None) -> None:
+    """Viés: a borda do decote dobrada para dentro, sem subir (regata, top, body, blusa de malha), com pesponto.
+    ``frame``: (normal, para dentro do pano) de ``edge_frame``: o pesponto vai 7 mm para dentro do pano, não para baixo."""
     from .sleeves import fold_edge
-    fold_edge(mesh, neck, 0.009, thick * 1.5, mat, closed=closed)
-    pts = np.array([mesh.verts[i] for i in neck]) - np.array([0.0, 0.007, 0.0])
-    normal = pts.copy(); normal[:, 1] = 0.0
-    normal /= np.maximum(np.linalg.norm(normal, axis=1, keepdims=True), 1e-9)
+    fold_edge(mesh, neck, 0.009, thick * 1.5, mat, closed=closed, frame=frame)
+    if frame is not None:
+        normal, away = frame
+        pts = np.array([mesh.verts[i] for i in neck]) + away * 0.007
+    else:
+        pts = np.array([mesh.verts[i] for i in neck]) - np.array([0.0, 0.007, 0.0])
+        normal = pts.copy(); normal[:, 1] = 0.0
+        normal /= np.maximum(np.linalg.norm(normal, axis=1, keepdims=True), 1e-9)
     if closed:
         pts, normal = np.vstack([pts, pts[:1]]), np.vstack([normal, normal[:1]])
     stitch_line(mesh, pts + normal * 0.0006, normal)
@@ -157,9 +162,11 @@ def _crew(mesh: Mesh, spec, neck: list[int], thick: float, closed: bool) -> None
     stitch_line(mesh, line + normal * 0.0006, normal)
 
 
-def neck_finish(mesh: Mesh, spec, neck: list[int], front, y_v: float, thick: float, ribbed: bool) -> None:
+def neck_finish(mesh: Mesh, spec, neck: list[int], front, y_v: float, thick: float, ribbed: bool,
+                frame=None) -> None:
     """A gola de cada peça (o capuz é à parte): colarinho, polo, lapela, V com ribana, faixa, viés, careca ou alta.
-    ``neck``: o decote (aberto quando a frente abre); ``front``: a frente aberta; ``y_v``: o fundo do V."""
+    ``neck``: o decote (aberto quando a frente abre); ``front``: a frente aberta; ``y_v``: o fundo do V. ``frame``: a
+    peça sem manga de alça (``edge_frame``): careca e alta viram viés (a gola subindo não cabe no decote da alça)."""
     closed = front is None
     mesh.seams.update(neck)
     g = spec.gola
@@ -172,11 +179,12 @@ def neck_finish(mesh: Mesh, spec, neck: list[int], front, y_v: float, thick: flo
     elif g == "v" and front is not None and ribbed:      # cardigã: ribana contínua pelo V e pela nuca
         up = lambda ids: [i for i in ids if mesh.verts[i][1] >= y_v - 1e-6]   # noqa: E731
         band_along(mesh, up(front.minus) + neck[1:-1] + up(front.plus)[::-1], V_BAND, thick, "ribana")
-    elif g == "v":                                        # colete de alfaiataria: só a vista
+    elif g == "v" and (frame is None or front is not None):   # colete de alfaiataria: só a vista
         return
     elif g == "faixa" and front is not None:             # quimono: a faixa corre a frente toda e a nuca
         band_along(mesh, list(front.minus) + neck[1:-1] + list(front.plus)[::-1], SASH, thick, "corpo")
-    elif g == "vies":
-        binding(mesh, neck, thick, closed)
+    elif g == "vies" or frame is not None:
+        binding(mesh, neck, thick, closed, "ribana" if frame is not None and g != "vies" and spec.ribana else "corpo",
+                frame)
     else:
         _crew(mesh, spec, neck, thick, closed)

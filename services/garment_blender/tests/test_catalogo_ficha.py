@@ -70,6 +70,14 @@ def test_base_da_subcategoria_traz_o_v_da_lapela_e_o_comprimento():
     assert spec("t_shirt", "Camiseta Gola V")["medidas_marca"]["decote_frente"] == 12
 
 
+def test_decote_reto_da_regata_vira_recorte_quadrado():
+    raw = spec("tank_top", "Top De Tricot Decote Reto")
+    assert raw["sem_manga"] and raw["decote"] == "quadrado" and raw["gola"] == "vies"
+    assert parse(raw).decote == "quadrado"
+    assert spec("tank_top", "Regata Decote U")["decote"] == "redondo"
+    assert "decote" not in spec("t_shirt", "Camiseta Decote Reto")   # com manga o recorte é o de sempre
+
+
 def test_cropped_encurta_a_base():
     assert spec("crop_top", "Top Cropped Listras")["medidas_marca"]["comprimento"] < 50
     assert "medidas_marca" not in spec("t_shirt", "Camiseta Básica")

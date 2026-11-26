@@ -12,6 +12,7 @@
  },
  "ribana": false,
  "sem_manga": true,
+ "alca": 5,
  "cor_linha": "#f2f2f2",
  "medidas_marca": {
   "comprimento": 36,
