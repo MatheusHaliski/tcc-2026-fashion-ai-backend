@@ -55,6 +55,16 @@ class SleeveBand:
     cor: str
 
 
+@dataclass(frozen=True)
+class PlacketTrim:
+    """Faixa da frente que abre (a vista xadrez do cardigã): corre pelas bordas e pelo decote. ``imagem``: pedaço da
+    padronagem dela (None: lisa, na ``cor``); ``lado``: quantos metros de pano o pedaço cobre."""
+    cor: str
+    largura: float           # m, as duas bordas juntas
+    imagem: str | None = None
+    lado: float = 0.05
+
+
 def _image(value, base_dir: Path | None) -> str:
     p = Path(str(value))
     p = p if p.is_absolute() or base_dir is None else base_dir / p
@@ -103,6 +113,13 @@ def parse_prints(raw: dict, base_dir: Path | None) -> dict:
             raise ValueError(f"faixa de manga inválida: {b}")
     if bands:
         out["faixas_manga"] = bands
+    if raw.get("faixa_vista"):
+        t = raw["faixa_vista"]
+        out["faixa_vista"] = PlacketTrim(str(t["cor"]).lower(), float(t["largura"]),
+                                         _image(t["imagem"], base_dir) if t.get("imagem") else None,
+                                         float(t.get("lado", 0.05)))
+        if not HEX.match(out["faixa_vista"].cor) or not 0.01 <= out["faixa_vista"].largura <= 0.2:
+            raise ValueError(f"faixa_vista inválida: {t}")
     if "listras" in out and "estampa_corrida" in out:
         raise ValueError("listras e estampa corrida ao mesmo tempo")
     return out

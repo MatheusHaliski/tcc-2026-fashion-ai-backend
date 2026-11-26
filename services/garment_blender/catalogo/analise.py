@@ -81,7 +81,7 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
     shade = estampa.shading(lab, mask, base, 0.05 * frame.height)
     dist = estampa.distance(lab, base, shade)
     raw = estampa.candidates(dist, mask, frame.right - frame.left)
-    cand = estampa.clean(raw, mask, frame, lab, shade, base)
+    cand = estampa.clean(_dotted(raw, mask), mask, frame, lab, shade, base)
     coverage = float(cand.sum() / mask.sum())
     out["cobertura"] = round(coverage, 4)
     stripes = padrao.stripes(lab, mask, frame)
@@ -89,11 +89,16 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
         stripes["periodo"] = round(stripes.pop("periodo_px") / ppm, 4)
         out.update(padrao="listras", listras=stripes)
         return out
+    trim = faixas.placket_band(rgb, lab, mask, frame, ppm, base) if avoid_center else None
+    if trim:   # a faixa da vista é pano de outra padronagem, não desenho
+        half = int(trim.pop("_meia_px")) + 2
+        cand[:, max(0, int(frame.center) - half):int(frame.center) + half] = False
+        out["faixa_vista"] = trim
     hem = faixas.hem_band(lab, mask, frame, base)
     if hem:   # a faixa da barra é pano de outra cor, não desenho
         out["faixa_barra"] = hem
         cand[frame.hem - int(hem["fracao"] * frame.height) - 2:] = False
-    bands = faixas.sleeve_bands(dist, lab, mask, frame, ppm, sleeve)
+    bands = faixas.sleeve_bands(dist, lab, mask, frame, ppm, sleeve, base)
     if bands:
         out["faixas_manga"] = bands
     found = estampa.groups(cand, frame, mask.sum(), dist, limit=12, fill=_fill_maps(lab, base, dist, mask))
@@ -157,3 +162,11 @@ def _all_over(lab, mask, frame, clues: dict | None) -> bool:
         return False
     edge, full, rim = padrao.texture(lab, mask, frame)
     return edge >= ALL_OVER and full >= 0.8 and rim >= 0.75
+
+
+def _dotted(raw: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    """Letra de tachinha, pesponto de pontos, estampa em retícula: na imagem de análise cada ponto tem 1–3 px e a
+    limpeza os tira como ruído (o "armani exchange" de pontos sumia no meio). Onde os pontos são densos (mais de
+    20 % da vizinhança de 7 × 7 px), eles viram traço; o recorte na foto inteira volta a mostrar os pontos."""
+    dense = ndimage.uniform_filter(raw.astype(np.float32), 7) > 0.2
+    return raw | (ndimage.binary_closing(raw, iterations=2) & dense & mask)

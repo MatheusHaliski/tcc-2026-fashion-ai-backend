@@ -170,6 +170,11 @@ def neck_finish(mesh: Mesh, spec, neck: list[int], front, y_v: float, thick: flo
     closed = front is None
     mesh.seams.update(neck)
     g = spec.gola
+    trim = getattr(spec, "faixa_vista", None)
+    if trim is not None and front is not None and g in ("v", "careca"):   # a faixa xadrez da frente: decote e bordas
+        band_along(mesh, list(front.minus) + neck[1:-1] + list(front.plus)[::-1], trim.largura / 2, thick,
+                   "faixa_vista")
+        return
     if g in ("colarinho", "polo"):
         point_collar(mesh, neck, thick, closed, style=g)
     elif g == "lapela":                                   # colarinho só atrás; na frente, as lapelas

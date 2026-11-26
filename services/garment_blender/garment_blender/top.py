@@ -13,6 +13,7 @@ from .decals import add_decal
 from .edge_frame import edge_frame
 from .sleeve_decals import add_sleeve_decal
 from .details import chest_pocket, kangaroo
+from .flap_pockets import chest_flap_pockets, hip_flap_pockets
 from .geometry import ARMHOLE_HALF_ANGLE, COLUMNS, Mesh, build_torso
 from .hood import build_hood
 from .measure import measure_top
@@ -20,6 +21,7 @@ from .sleeves import build_sleeve, extend, fold_edge, inset
 from .spec import GarmentSpec
 from .bands import paint_hem, paint_sleeves
 from .stitches import ring_line, stitch_line
+from .strapless import build_strapless, measure_tube, tube_height
 from .strap_cut import SLEEVELESS_ARMHOLE, STRAP_GOLAS, legacy_sleeveless, resolve
 from .tank import build_sleeveless_torso
 
@@ -29,6 +31,8 @@ POLO_PLACKET = 0.14  # vista curta da polo (m abaixo do decote)
 
 def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
     """Malha da peça e as medidas usadas (cm) para o relatório."""
+    if spec.sem_alca:   # tomara que caia, tarja, bandeau: o tubo sem alça
+        return _strapless(spec)
     m, mesh, cut = spec.medidas, Mesh(), None
     # sem manga com viés, careca, alta ou V: alça de verdade (strap_cut, tank); com colarinho, polo, lapela, faixa ou
     # capuz a gola precisa do anel inteiro do decote e fica o recorte antigo
@@ -98,6 +102,10 @@ def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
         closure = buttons(mesh, front, spec.botoes, low, high)
     if "canguru" in spec.bolsos:
         kangaroo(mesh, rows, rib_top, zipped, "corpo")
+    if "peito_lapela" in spec.bolsos:
+        chest_flap_pockets(mesh, rows, rows[i_arm].y, "corpo")
+    if "lapela" in spec.bolsos:
+        hip_flap_pockets(mesh, rows, rib_top, "corpo")
     if "peito" in spec.bolsos:
         chest_pocket(mesh, rows, rows[i_arm].y, "corpo")
     # a fita métrica mede a manga ao longo do eixo x: com a manga caída, mede a mesma peça construída em pose T
@@ -126,3 +134,18 @@ def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
     if cut:
         report["alca"] = cut.cm_report
     return mesh, report
+
+
+def _strapless(spec: GarmentSpec) -> tuple[Mesh, dict]:
+    """O tubo sem alça (strapless.py), com as faixas e os desenhos colados na frente."""
+    m, mesh = spec.medidas, Mesh()
+    thick = spec.tecido.espessura_mm / 1000 * (2 if spec.ribana else 1)
+    rows = build_strapless(mesh, m, thick, "ribana" if spec.ribana else "corpo", spec.ribana)
+    if spec.faixa_barra is not None:
+        paint_hem(mesh, spec.faixa_barra.altura)
+    for k, decal in enumerate(spec.estampas):
+        if decal.lado == "frente":
+            add_decal(mesh, rows, decal, f"estampa_{k}", rows[-1].y - 0.01, 0.015)
+    used = {k: getattr(m, k) for k in m.__dataclass_fields__} | {"altura_tubo": round(tube_height(m) * 100, 1)}
+    return mesh, {"medidas_cm": used, "colunas": COLUMNS, "angulo_manga": spec.angulo_manga,
+                  "medido_cm": measure_tube(mesh, rows), "fechamento": {}}

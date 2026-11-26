@@ -23,13 +23,14 @@ from garment_blender.sizes import top_measures
 from garment_blender.spec import parse
 
 from . import forma, pistas, produtos, texto
+from .forma import BANDEAU_DROP
 from .analise import analyze
 from .baixar import fetch
 from .cores import lab_to_rgb, match_name, rgb_to_lab, to_hex
 from .ficha import button_color, spec_for
 from .nomes_cor import color_from_name
 
-FULL_SIDE = 2400     # lado maior da foto guardada para recortar os desenhos (px)
+FULL_SIDE = 3600     # lado maior da foto guardada para recortar os desenhos (px)
 TRIES = 2            # fotos olhadas por produto (a primeira costuma ser a da frente)
 
 
@@ -75,7 +76,8 @@ def _measures(spec: dict) -> tuple[float, float, dict | None, float]:
     sleeve = None if spec["sem_manga"] else {
         "meia_ombro": m.ombro / 200, "queda": m.caimento_ombro / 100,
         "comprimento": (m.ombro * 0.45 if spec["manga_curta"] else m.manga) / 100}
-    return m.comprimento / 100, ellipse_semi_axes(m.torax / 100, 0.68)[0], sleeve, m.decote_frente / 100
+    length = m.comprimento / 100 - (BANDEAU_DROP if spec.get("sem_alca") else 0.0)   # na foto: só o tubo
+    return length, ellipse_semi_axes(m.torax / 100, 0.68)[0], sleeve, m.decote_frente / 100
 
 
 def _stripes_from_text(spec: dict, name: str, result: dict) -> None:
@@ -162,12 +164,16 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
             length = top_measures("M", spec["sexo"], spec["caimento"], spec.get("medidas_marca")).comprimento / 100
             spec["faixa_barra"] = {"cor": best["faixa_barra"]["cor"],
                                    "altura": round(best["faixa_barra"]["fracao"] * length, 4)}
+        if best.get("faixa_vista") and spec["fechamento"] in ("botoes", "ziper_inteiro", "aberto"):
+            t = best["faixa_vista"]
+            Image.fromarray(t["imagem"]).save(folder / "vista.jpg", quality=92)
+            spec["faixa_vista"] = {"cor": t["cor"], "largura": t["largura_m"], "imagem": "vista.jpg", "lado": t["lado_m"]}
         if best.get("faixas_manga") and not spec["sem_manga"]:
             spec["faixas_manga"] = [{"lado": b["lado"], "distancia": b["distancia_m"], "largura": b["largura_m"],
                                      "cor": b["cor"]} for b in best["faixas_manga"]]
         thumb = photo.copy(); thumb.thumbnail((512, 512)); thumb.save(folder / "foto.jpg", quality=85)
     folder.mkdir(parents=True, exist_ok=True)
-    summary = {k: v for k, v in best.items() if k not in ("decalques", "corrida", "listras")}
+    summary = {k: v for k, v in best.items() if k not in ("decalques", "corrida", "listras", "faixa_vista")}
     spec["origem"] = {"sku": p.get("sku"), "imagem": best_url, **summary}
     _validate(spec, folder)
     (folder / "ficha.json").write_text(json.dumps(spec, ensure_ascii=False, indent=1), encoding="utf-8")
