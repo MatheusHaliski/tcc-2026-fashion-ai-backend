@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .prints import AllOver, Decal, HemBand, SleeveBand, Stripes, parse_prints
+from .prints import AllOver, Decal, HemBand, PlacketTrim, SleeveBand, Stripes, parse_prints
 from .sizes import EASE, LETTERS, TopMeasures, check, top_measures
 from .sizes_pants import CUTS, NUMBERS, PantsMeasures, check_pants, pants_measures
 
@@ -59,6 +59,7 @@ class GarmentSpec:
     capuz_abaixado: bool = False      # capuz deitado nas costas (experimental: atravessa as costas no provador)
     botoes: int = 6                   # quantos botões na vista (fechamento "botoes")
     pregas: int = 0                   # saia: pregas faca na volta (divisor de 96: 12, 16, 24, 32)
+    sem_alca: bool = False            # tomara que caia, tarja, bandeau: o tubo sem alça (strapless.py)
     sem_manga: bool = False           # regata, top, colete: cava acabada, sem manga
     alca: float | None = None         # sem manga: largura da alça (cm); None: a da subcategoria (strap_cut.DEFAULTS)
     alca_centro: float | None = None  # meio da alça, 0–1 do pescoço à ponta do ombro
@@ -72,6 +73,7 @@ class GarmentSpec:
     estampa_corrida: AllOver | None = None
     faixa_barra: HemBand | None = None   # faixa de outra cor da barra para cima
     faixas_manga: tuple[SleeveBand, ...] = ()   # anéis de outra cor na manga
+    faixa_vista: PlacketTrim | None = None      # faixa da frente que abre (decote e bordas)
 
     @property
     def calca(self) -> bool:
@@ -101,7 +103,7 @@ def parse(raw: dict, size: str | None = None, base_dir: Path | None = None) -> G
     de onde as imagens das estampas são lidas (a pasta da ficha)."""
     known = {"produto", "marca", "subcategoria", "tamanho", "sexo", "caimento", "tecido", "gola", "fechamento",
              "bolsos", "ribana", "manga_curta", "angulo_manga", "cor_ziper", "passantes", "capuz_abaixado", "medidas_marca", "url_oficial", "observacao",
-             "botoes", "cor_botao", "cor_linha", "pregas", "sem_manga", "estampas", "listras", "estampa_corrida", "origem", "faixa_barra", "faixas_manga",
+             "botoes", "cor_botao", "cor_linha", "pregas", "sem_manga", "estampas", "listras", "estampa_corrida", "origem", "faixa_barra", "faixas_manga", "sem_alca", "faixa_vista",
              "alca", "alca_centro", "decote", "decote_costas_forma"}
     unknown = set(raw) - known
     if unknown:
@@ -129,7 +131,8 @@ def parse(raw: dict, size: str | None = None, base_dir: Path | None = None) -> G
         angulo_manga=float(raw.get("angulo_manga", 80.0)),
         cor_ziper=str(raw.get("cor_ziper", "#a7a9ac")).lower(), passantes=bool(raw.get("passantes", False)),
         capuz_abaixado=bool(raw.get("capuz_abaixado", False)),
-        botoes=int(raw.get("botoes", 6)), pregas=int(raw.get("pregas", 0)), sem_manga=bool(raw.get("sem_manga", False)), cor_botao=str(raw.get("cor_botao", "#2e2a26")).lower(),
+        botoes=int(raw.get("botoes", 6)), pregas=int(raw.get("pregas", 0)), sem_manga=bool(raw.get("sem_manga", False)) or bool(raw.get("sem_alca", False)),
+        sem_alca=bool(raw.get("sem_alca", False)), cor_botao=str(raw.get("cor_botao", "#2e2a26")).lower(),
         cor_linha=str(raw["cor_linha"]).lower() if raw.get("cor_linha") else None,
         alca=float(raw["alca"]) if raw.get("alca") is not None else None,
         alca_centro=float(raw["alca_centro"]) if raw.get("alca_centro") is not None else None,

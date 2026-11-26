@@ -122,3 +122,17 @@ def test_fundo_da_gola_v_aparecendo_nao_e_desenho():
     rgb, labels = garment()
     rgb[TOP + 10:TOP + 70, 290:310] = (200, 200, 200)                    # o forro claro da gola, no meio, no alto
     assert analyze(rgb, labels, 0.70, 0.21, neck=0.12)["decalques"] == []
+
+
+def test_letras_de_pontos_no_eixo_nao_sao_botoes():
+    rgb, labels = garment()
+    rng = np.random.default_rng(3)
+    for line in (0, 1):                                        # duas linhas de "letras" de tachinhas no meio
+        for letter in range(7):
+            for _ in range(18):
+                y = TOP + 160 + line * 34 + int(rng.integers(0, 24))
+                x = 252 + letter * 14 + int(rng.integers(0, 10))
+                rgb[y:y + 3, x:x + 3] = (230, 230, 225)
+    r = analyze(rgb, labels, 0.70, 0.21)
+    assert r["padrao"] == "localizada" and abs(r["decalques"][0]["x"]) < 0.02
+    assert r["decalques"][0]["largura"] > 0.1                  # o texto inteiro num desenho só, não dois pedaços

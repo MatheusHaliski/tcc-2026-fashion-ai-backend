@@ -129,7 +129,9 @@ def spec_for(product: dict, color: str, brand_prior: dict[str, str]) -> dict:
     shape = forma.measures(sub, sex, collar, bool(texto.CROPPED.search(name)) and sub != "crop_top")
     if shape:
         spec["medidas_marca"] = shape
-    if spec["sem_manga"]:   # alcinha, alça larga, tomara que caia, decote reto ou em U: o que o texto disser
+    if forma.STRAPLESS.search(name) and sub in ("top", "crop_top", "tank_top", "blouse", "bodysuit"):
+        spec.update(sem_alca=True, sem_manga=True, manga_curta=False)   # tomara que caia, tarja: sem alça nem manga
+    if spec["sem_manga"]:   # alcinha, alça larga, decote reto ou em U: o que o texto disser
         found = forma.straps(name + " " + desc, sub)
         depth = found.pop("decote_frente", None)
         if depth and collar != "v":
