@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { elencoDaRota, FORMACOES, formacaoLocal, mesclarElenco, rotaDoElenco } from "@/lib/flair/elencos/formacoes";
 import { cartaCumpre, encaixadas, estadosDasPecas } from "@/lib/flair/elencos/progresso";
+import { QUEBRA_CABECAS } from "@/lib/flair/elencos/quebra-cabecas";
 import type { ElencoConferencia } from "@/lib/flair/elencos/types";
 
 describe("formações locais", () => {
@@ -17,6 +18,15 @@ describe("formações locais", () => {
     expect(mesclarElenco("DESAFIO_FOGO", { vagas: [] })!.vagas).toHaveLength(4);
     expect(elencoDaRota("celebracao-arena")).toBe("CELEBRACAO_ARENA");
     expect(rotaDoElenco("LOGO_CACOS")).toBe("/flair/elencos/logo-cacos");
+  });
+
+  it("cada cena toca só o próprio quadrante do vídeo Firefly; a arena o dela; os logos nenhum", () => {
+    expect(QUEBRA_CABECAS.map((q) => [q.codigo, q.video])).toEqual([
+      ["DESAFIO_FOGO", "/flair/elencos/fogo.mp4"], ["DESAFIO_VERDE_FLORESTAL", "/flair/elencos/verde-florestal.mp4"],
+      ["DESAFIO_AZUL_TECH", "/flair/elencos/azul-tech.mp4"], ["DESAFIO_FASHIONAI_TECH", "/flair/elencos/fai-tech.mp4"],
+      ["CELEBRACAO_ARENA", "/flair/elencos/arena-celebracao.mp4"], ["LOGO_QUEBRA_CABECA", null], ["LOGO_SETORES", null],
+      ["LOGO_TEAL", null], ["LOGO_CACOS", null], ["LOGO_PECAS_FALTANDO", null],
+    ]);
   });
 });
 
