@@ -54,7 +54,11 @@ a peça em destaque (pelas etiquetas da carta), só para ajudar; quem julga é o
 
 Título "Parabéns, você completou!", a edição ganha e:
 
-- **cenas** (fogo, verde, azul, FashionAI tech): o vídeo `cenas-firefly.mp4` (o vídeo de 10.webp);
+- **cenas** (fogo, verde, azul, FashionAI tech): só o quadrante daquela cena no vídeo de 10.webp (Firefly 2×2,
+  1280×720 com tarjas pretas; quadrado útil `crop=720:720:280:0`). Cada quadrante virou um arquivo próprio
+  (`fogo.mp4`, `verde-florestal.mp4`, `azul-tech.mp4`, `fai-tech.mp4`, 480×480, sem áudio), recortado com
+  `ffmpeg -i firefly.mp4 -vf "crop=360:360:X:Y,scale=480:480" -an -c:v libx264 -crf 26`: FashionAI tech X=280 Y=0,
+  azul X=640 Y=0, fogo X=280 Y=360, verde X=640 Y=360;
 - **arena**: o vídeo `arena-celebracao.mp4`;
 - **logos**: não há vídeo próprio. O modal mostra o próprio quebra-cabeça **se montando em CSS**, peça a peça (cada
   uma voa até o lugar com um atraso pela ordem), e a imagem brilha no fim. Escolhemos isso em vez de reaproveitar o
@@ -82,4 +86,5 @@ peça encaixa quando a vaga tem carta e a carta cumpre o pedido.
 
 Em `capturas/` (API simulada no navegador): a lista (`elencos-01-lista.webp`), o fogo em andamento com uma peça que não
 encaixou, completo e o modal com o vídeo, o modal da arena, os setores em andamento e o modal com o logo se montando,
-e os cacos em andamento e completos.
+e os cacos em andamento e completos. O modal de cada cena mostra só o quadrante dela do vídeo:
+`elencos-fogo-3-modal.webp`, `elencos-verde-3-modal.webp`, `elencos-azul-3-modal.webp` e `elencos-faitech-3-modal.webp`.

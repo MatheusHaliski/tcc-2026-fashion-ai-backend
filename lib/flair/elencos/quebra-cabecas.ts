@@ -1,7 +1,7 @@
 /**
  * O desenho de cada elenco em quebra-cabeça: a imagem (public/flair/elencos), o vídeo do modal de conclusão, a forma
  * do recorte, as peças (uma por vaga, na ordem p1, p2...) e o que cada vaga pede, igual ao servidor
- * (FlairCbcElencos.java). Os logos sem vídeo próprio mostram no modal a animação CSS do logo se montando.
+ * (FlairCbcElencos.java). Cada cena tem o próprio vídeo: o quadrante dela, recortado do vídeo Firefly 2×2. Os logos sem vídeo próprio mostram no modal a animação CSS do logo se montando.
  */
 import { cacos, grade, jigsaw, setores, type Peca, type Ponto } from "@/lib/flair/elencos/recortes";
 import type { ElencoRequisito } from "@/lib/flair/elencos/types";
@@ -22,7 +22,6 @@ export interface QuebraCabeca {
 }
 
 const DIR = "/flair/elencos";
-const VIDEO_CENAS = `${DIR}/cenas-firefly.mp4`;
 const VIDEO_ARENA = `${DIR}/arena-celebracao.mp4`;
 const [VERMELHO, VERDE, AZUL, LARANJA, PRETO, ROSA, ROXO] = ["red", "green", "blue", "orange", "black", "pink", "purple"].map((c) => `color:${c}`);
 const MODERNO = "style:modern";
@@ -50,7 +49,7 @@ const RACHADURAS: Ponto[][] = [
 ];
 
 const cena = (codigo: string, imagem: string, pedidos: string[], requisitos: ElencoRequisito[]): QuebraCabeca => ({
-  codigo, imagem: `${DIR}/${imagem}.webp`, largura: 100, video: VIDEO_CENAS, forma: "grade", pecas: grade(2, 2, 100), pedidos, requisitos,
+  codigo, imagem: `${DIR}/${imagem}.webp`, largura: 100, video: `${DIR}/${imagem}.mp4`, forma: "grade", pecas: grade(2, 2, 100), pedidos, requisitos,
 });
 
 const logo = (codigo: string, imagem: string, forma: Forma, pecas: Peca[], pedidos: string[], requisitos: ElencoRequisito[]): QuebraCabeca => ({
