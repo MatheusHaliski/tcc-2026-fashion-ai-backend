@@ -54,8 +54,9 @@ it.each(["BENTO", "PASSARELA"] as const)("profile publications retain the social
  await screen.findByText(scheme.title);
  const card=container.querySelector("article.scheme-card")!;
  expect(card.classList.contains("is-compact")).toBe(false);
- const meta=card.querySelector(".card-fashion-meta")!;
- expect([...meta.querySelectorAll("dt")].map(e=>e.textContent)).toEqual(["Marca","Cor","Ocasião","Estilo"]);
+ // grade mínima do look no feed: peças, marca, cor e ocasião (estilo e estação são opcionais, no Background Studio)
+ const meta=card.querySelector(".card-info-grid")!;
+ expect([...meta.querySelectorAll("dt")].map(e=>e.textContent)).toEqual(["Peças","Marca","Cor","Ocasião"]);
  expect(meta.textContent).toContain("Nike");
  // a ocasião conhecida virou ícone FAI: o nome continua no rótulo acessível, não no texto visível
  expect(meta.querySelector('.card-occasion-icons img[alt="Trabalho"]')).toBeTruthy();expect(meta.textContent).not.toContain("Trabalho");

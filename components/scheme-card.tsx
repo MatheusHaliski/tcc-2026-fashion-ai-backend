@@ -2,6 +2,7 @@
 import { CardFashionMeta } from "@/components/card-fashion-meta";
 import { CardPieceIcons, SeasonGlyph } from "@/components/card-meta-icons";
 import { isSeason } from "@/lib/cards/card-icons";
+import { infoGridOf } from "@/lib/cards/info-grid";
 import { CardBorder } from "@/components/card-border";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
@@ -128,8 +129,10 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
         {pieceSeals(p.id).length > 0 && <SealSlot inline px={22} seals={pieceSeals(p.id)} />}
       </div>
     ));
-  const fashionMeta = <CardFashionMeta brands={items.flatMap(it=>it.piece?.brandName?[{name:it.piece.brandName,logoUrl:it.piece.brandLogoUrl}]:[])} colors={items.flatMap(it=>it.piece?.color?[{name:it.piece.color,hex:it.piece.colorHex}]:[])} styles={scheme.style} occasions={scheme.occasion}/>;
-  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} live={live} selectedSeals={selectedLookSeals(scheme.background)} infoBefore={social ? <>{titleBlock}{fashionMeta}</> : expanded ? fashionMeta : undefined} infoContent={expanded ? <div className="scheme-info-pieces">{pieceList}</div> : undefined} replaceInfoRows={expanded} infoRows={social?[[t("common.pecas"),pieceIcons.length?<CardPieceIcons pieces={pieceIcons}/>:String(items.length)],[t("common.season"),isSeason(scheme.season)?<span className="card-season">{<SeasonGlyph season={scheme.season}/>}{label(scheme.season.toLowerCase())}</span>:t("lookbook.season.notInformed")] as [string,ReactNode]]:[]}/>;
+  const metaSource = { brands: items.flatMap(it=>it.piece?.brandName?[{name:it.piece.brandName,logoUrl:it.piece.brandLogoUrl}]:[]), colors: items.flatMap(it=>it.piece?.color?[{name:it.piece.color,hex:it.piece.colorHex}]:[]), styles: scheme.style, occasions: scheme.occasion };
+  const fashionMeta = <CardFashionMeta {...metaSource}/>;
+  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} live={live} selectedSeals={selectedLookSeals(scheme.background)} infoBefore={social ? titleBlock : expanded ? fashionMeta : undefined} infoContent={expanded ? <div className="scheme-info-pieces">{pieceList}</div> : undefined} replaceInfoRows={expanded} grid={social ? infoGridOf({ ...scheme.background, ...studio }, "look") : undefined} metaSource={metaSource}
+    gridCells={{ pieces: pieceIcons.length ? <CardPieceIcons pieces={pieceIcons}/> : null, season: isSeason(scheme.season) ? <span className="card-season"><SeasonGlyph season={scheme.season}/>{label(scheme.season.toLowerCase())}</span> : null }}/>;
   const gridCells = pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtPriceShort(p.price) : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>);
   const card = (
     <article data-card-mode={expanded?"expanded":social?"feed":"compact"} className={`fai-card scheme-card ${social?"scheme-card-social":""} ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>

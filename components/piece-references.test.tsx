@@ -71,7 +71,12 @@ it("does not duplicate identical washing and care text", () => {
 
 it("retains the real conservation object in the feed piece card", () => {
   mockApi({});
-  renderApp(<PieceCard piece={{ ...PIECE, estadoConservacao, tipoLavagem }} flip={false} />);
+  // estado de conservação é opcional no card do feed: fica de fora por padrão e entra quando ligado no Background Studio
+  const piece = { ...PIECE, estadoConservacao, tipoLavagem };
+  const { unmount } = renderApp(<PieceCard piece={piece} flip={false} />);
+  expect(within(screen.getByRole("tabpanel")).queryByText(estadoConservacao.nome)).toBeNull();
+  unmount();
+  renderApp(<PieceCard piece={{ ...piece, background: { infoGrid: { fields: ["brand", "condition"] } } }} flip={false} />);
   expect(within(screen.getByRole("tabpanel")).getByText(estadoConservacao.nome)).toBeTruthy();
 });
 
