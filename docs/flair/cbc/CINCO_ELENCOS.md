@@ -86,4 +86,5 @@ peça encaixa quando a vaga tem carta e a carta cumpre o pedido.
 
 Em `capturas/` (API simulada no navegador): a lista (`elencos-01-lista.webp`), o fogo em andamento com uma peça que não
 encaixou, completo e o modal com o vídeo, o modal da arena, os setores em andamento e o modal com o logo se montando,
-e os cacos em andamento e completos.
+e os cacos em andamento e completos. O modal de cada cena mostra só o quadrante dela do vídeo:
+`elencos-fogo-3-modal.webp`, `elencos-verde-3-modal.webp`, `elencos-azul-3-modal.webp` e `elencos-faitech-3-modal.webp`.
