@@ -63,8 +63,8 @@ def _side(dist, lab, mask, frame, ppm: float, sleeve: dict, sign: int) -> tuple[
     return bands, length / ppm
 
 
-def sleeve_bands(dist: np.ndarray, lab: np.ndarray, mask: np.ndarray, frame, ppm: float, sleeve: dict | None
-                 ) -> list[dict]:
+def sleeve_bands(dist: np.ndarray, lab: np.ndarray, mask: np.ndarray, frame, ppm: float, sleeve: dict | None,
+                 base=None) -> list[dict]:
     """``[{lado, distancia_m, largura_m, cor}]``: as faixas que aparecem nas duas mangas, à mesma distância da ponta
     da manga (medida de volta a partir da barra dela, que é o que as duas fotos de manga têm em comum) e da mesma
     cor. ``distancia_m`` é da ponta do ombro ao meio da faixa, manga abaixo."""
@@ -77,7 +77,12 @@ def sleeve_bands(dist: np.ndarray, lab: np.ndarray, mask: np.ndarray, frame, ppm
         for b in left:
             same_place = abs((len_r - a["distancia_m"]) - (len_l - b["distancia_m"])) < 0.02
             same_width = 0.5 < a["largura_m"] / b["largura_m"] < 2.0
-            if same_place and same_width and float(np.linalg.norm(a["_lab"] - b["_lab"])) < 20:
+            shading = base is not None and float(np.hypot(*(a["_lab"] - base)[1:])) < 8 and \
+                abs(float(a["_lab"][0] - base[0])) < 25   # a sombra da ribana do punho: mesmo tom, só mais claro
+            # friso fino (< 1,2 cm) só com contraste forte: o brilho na crista da ribana do punho também é fino
+            shading = shading or (base is not None and a["largura_m"] < 0.012 and
+                                  float(np.linalg.norm(a["_lab"] - base)) < 40)
+            if same_place and same_width and not shading and float(np.linalg.norm(a["_lab"] - b["_lab"])) < 20:
                 for side, band in (("manga_esquerda", a), ("manga_direita", b)):
                     out.append({"lado": side, **{k: v for k, v in band.items() if k != "_lab"}})
                 break
@@ -117,3 +122,37 @@ def hem_band(lab, mask, frame, base) -> dict | None:
     if across.sum() < 10 or (np.linalg.norm(lab[mid][across] - color, axis=1) < THRESHOLD).mean() < 0.7:
         return None
     return {"fracao": round((frame.hem - run[-1][0]) / frame.height, 3), "cor": to_hex(lab_to_rgb(color))}
+
+
+def placket_band(rgb, lab, mask, frame, ppm: float, base) -> dict | None:
+    """Faixa de outra cor ou padronagem pelas bordas da frente que abre (a vista xadrez do cardigã), na foto da peça
+    sozinha: em cada linha do peito à barra, quanto pano a partir do meio foge da cor do tecido, de cada lado.
+    ``{"largura_m" (as duas bordas), "cor", "imagem" (pedaço da faixa, RGB), "lado_m"}``; None sem faixa."""
+    if frame.worn:
+        return None   # vestida e aberta: o que aparece no meio é a roupa de baixo
+    w = frame.right - frame.left
+    reach = int(0.12 * w)
+    halves = []
+    for y in np.linspace(frame.top + 0.35 * frame.height, frame.hem - 0.1 * frame.height, 24).astype(int):
+        for sign in (-1, 1):
+            xs = np.round(frame.center + sign * np.arange(reach)).astype(int)
+            xs = xs[(xs >= 0) & (xs < mask.shape[1])]
+            off = mask[y, xs] & (np.linalg.norm(lab[y, xs] - base, axis=1) > THRESHOLD)
+            run = int(np.argmin(off)) if not off.all() else len(off)
+            halves.append(run)
+    halves = np.array(halves)
+    half = float(np.median(halves))
+    if half < 0.01 * ppm or half > 0.08 * ppm or (halves > 0.6 * half).mean() < 0.7:
+        return None
+    y0, y1 = int(frame.top + 0.45 * frame.height), int(frame.hem - 0.12 * frame.height)
+    x0 = int(frame.center + 0.15 * half)
+    side = int(min(half * 0.85, y1 - y0))
+    if side < 8:
+        return None
+    ym = (y0 + y1) // 2
+    piece = rgb[ym - side // 2:ym + side // 2, x0:x0 + side]
+    color = np.median(lab[y0:y1, x0:x0 + side][mask[y0:y1, x0:x0 + side]], 0)
+    row = np.concatenate([piece, piece[:, ::-1]], 1)
+    tile = np.concatenate([row, row[::-1]], 0)
+    return {"largura_m": round(2 * half / ppm, 4), "cor": to_hex(lab_to_rgb(color)), "imagem": tile,
+            "lado_m": round(2 * side / ppm, 4), "_meia_px": half}

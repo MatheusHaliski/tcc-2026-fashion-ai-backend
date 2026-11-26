@@ -97,14 +97,18 @@ def clean(cand: np.ndarray, mask: np.ndarray, frame, lab: np.ndarray, shade: np.
 
 
 def _keep_not_buttons(small: list, width: int, height: int) -> list[int]:
-    """Pontinhos no eixo: três ou mais um embaixo do outro (mesma coluna, espalhados na altura) são botões — o motor
-    faz os dele; letras de um logo ficam lado a lado (mesma linha) e voltam."""
+    """Pontinhos no eixo: três ou mais um embaixo do outro (mesma coluna, espalhados na altura e separados uns dos
+    outros) são botões — o motor faz os dele. Pontinho com vizinhos lado a lado na mesma linha é letra (o logo de
+    tachinhas, o texto em pontos) e volta, com os vizinhos."""
+    def letter(cx, cy):
+        return sum(1 for _, x, y in small if abs(y - cy) < 0.015 * height and 0 < abs(x - cx) < 0.06 * width) >= 2
+    alone = [(i, x, y) for i, x, y in small if not letter(x, y)]
     buttons = set()
-    for i, cx, cy in small:
-        column = [(j, y) for j, x, y in small if abs(x - cx) < 0.012 * width]
-        ys = [y for _, y in column]
-        if len(column) >= 3 and max(ys) - min(ys) > 0.12 * height:
-            buttons.update(j for j, _ in column)
+    for i, cx, cy in alone:
+        ys = sorted(y for _, x, y in alone if abs(x - cx) < 0.012 * width)
+        gaps = np.diff(ys) if len(ys) > 1 else np.array([])
+        if len(ys) >= 3 and ys[-1] - ys[0] > 0.12 * height and (gaps > 0.03 * height).mean() > 0.6:
+            buttons.update(j for j, x, _ in alone if abs(x - cx) < 0.012 * width)
     return [i for i, _, _ in small if i not in buttons]
 
 

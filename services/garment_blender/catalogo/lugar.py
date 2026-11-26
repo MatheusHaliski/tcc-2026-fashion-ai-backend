@@ -80,8 +80,8 @@ def keep(where: dict, frame, avoid_center: bool, neck: float) -> bool:
         return True
     if h > 2.5 * w and abs(x) < 0.08 and w < 0.03:
         return False
-    if abs(x) < 0.05 and where["abaixo_do_ombro"] - h / 2 < neck + 0.02:
-        return False
+    if abs(x) < 0.05 and where["abaixo_do_ombro"] - h / 2 < neck + 0.02 and max(w, h) < 0.12:
+        return False   # o fundo da gola é pequeno; a estampa grande que encosta no decote fica
     if avoid_center and abs(x) < 0.04 and max(w, h) < 0.04:
         return False
     return not (avoid_center and frame.worn and (abs(x) < w / 2 + 0.01 or (abs(x) < 0.04 and

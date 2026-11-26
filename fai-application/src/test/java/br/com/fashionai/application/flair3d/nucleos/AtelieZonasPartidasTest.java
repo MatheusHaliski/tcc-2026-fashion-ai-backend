@@ -182,6 +182,12 @@ class AtelieZonasPartidasTest {
         assertThat(semTinta.pontos()).isLessThanOrEqualTo(Flair3dExecucao.NOTA_DE_QUEM_ESGOTOU);
         // a prévia mostra o orçamento enquanto a pessoa pinta
         assertThat(armadura.previa(cara, naRodada).eventos()).contains(new Resultado.Evento("TINTA", Map.of("orcamento", 8, "gasto", 12, "sobra", 0)));
+        // e o fôlego que a pintura deixa para a fase de uso (a roda de recursos): 60 de vida + 40 das latas − 30 gastos
+        assertThat(armadura.previa(JOGANDO_BEM.get("SUPER_HEROI/ARMADURA"), naRodada).eventos()).filteredOn(e -> e.codigo().equals("DESGASTE"))
+                .extracting(Resultado.Evento::valor).first().asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP)
+                .containsEntry("recurso", "VIDA").containsEntry("reserva", 100).containsEntry("restante", 70);
+        assertThat(armadura.previa(cara, naRodada).eventos()).filteredOn(e -> e.codigo().equals("DESGASTE"))
+                .extracting(Resultado.Evento::valor).first().asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP).containsEntry("restante", 0);
     }
 
     @Test

@@ -270,7 +270,10 @@ class Flair3dRodadasCartasTest {
         }
         Contexto c = naRodada("DRESS_CODE_DO_CONVITE", semente, formal, festa, tenis);
         Resultado r = n.pontuar(vestir(formal, festa, tenis), c);
-        assertThat(r.pontos()).isEqualTo(50);
+        // 50 pelas regras do convite mais o que o look soma (regra peça-recurso, dentro da nota da rodada)
+        Map<String, Object> conta = (Map<String, Object>) valor(r, "CONTA_DA_BATALHA").get("voce");
+        assertThat(conta.get("regra")).isEqualTo(50);
+        assertThat(r.pontos()).isEqualTo(50 + (int) conta.get("look") + (int) conta.get("recurso"));
         assertThat(r.regras()).contains(new Resultado.RegraResultado("SEM_PECA_PROIBIDA", false, -25));
         assertThat(simples(r, "DESAFIO")).isEqualTo("CONVITE_BLACK_TIE");
         // o adversário da casa veste um look da semente, avaliado pelas mesmas regras: a nota é a do look dele

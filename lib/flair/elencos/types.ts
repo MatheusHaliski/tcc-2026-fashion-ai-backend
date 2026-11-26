@@ -1,7 +1,7 @@
 /** FLAIR Card Building Challenge, os cinco elencos: tipos da API /api/flair/elencos (docs/flair/flair-3d/BASE_NUCLEOS.md). */
 
-export const ELENCO_CODIGOS = ["PRIMEIRO_ELENCO", "PALETA_ATELIE", "CASA_MARCA", "NOITE_ESTREIA", "ELENCO_LENDARIO"] as const;
-export type ElencoCodigo = (typeof ELENCO_CODIGOS)[number];
+export const ELENCO_CODIGOS: readonly string[] = [];
+export type ElencoCodigo = string;
 
 export interface ElencoResumo {
   codigo: string;

@@ -8,7 +8,6 @@ import { alfaEm, girosEm, nivelEm, preparar, pulsosEm, viajantesEm } from "@/lib
 import { adiantoDoFloreio, brilhoDoFloreio, FLOREIO_S, tempoDaCena } from "@/lib/flair/cenas/relogio";
 import { enderecoDaMarca } from "@/lib/flair/cenas/sprites";
 import { trechosNoNivel } from "@/lib/flair/cenas/tubos";
-import { ELENCO_CODIGOS } from "@/lib/flair/elencos/types";
 import { SCENES } from "@/lib/flair/cbc";
 import en from "@/lib/i18n/messages/en.json";
 import es from "@/lib/i18n/messages/es.json";
@@ -59,11 +58,11 @@ describe("caminho", () => {
 });
 
 describe("todas as cenas do catálogo", () => {
-  it("há pelo menos oito cenas diferentes, e cada elenco e cada cenário dos desafios tem a sua", () => {
+  it("há pelo menos oito cenas diferentes, e cada cenário dos desafios tem a sua", () => {
     expect(cenas.length).toBeGreaterThanOrEqual(8);
     expect(new Set(cenas.map((c) => c.id)).size).toBe(cenas.length);
-    for (const codigo of ELENCO_CODIGOS) expect(CENA_DO_ELENCO[codigo], codigo).toBeTruthy();
-    expect(new Set(ELENCO_CODIGOS.map((c) => cenaDoElenco(c).id)).size).toBe(ELENCO_CODIGOS.length);
+    // os elencos de quebra-cabeça usam imagens próprias: nenhum elenco tem cena dinâmica
+    expect(Object.keys(CENA_DO_ELENCO)).toEqual([]);
     for (const cenario of Object.keys(SCENES)) expect(CENA_DO_CENARIO[cenario], cenario).toBeTruthy();
     // toda cena tem nome e descrição (o texto lido por leitores de tela) nos três idiomas
     for (const cena of cenas) {

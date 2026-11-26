@@ -15,7 +15,7 @@ from mathutils import Vector
 from .fabric import repeat, write_maps
 from .finish import METAL, PLASTIC, TRIM, Finish, finish
 from .geometry import Mesh
-from .pattern import pattern_maps
+from .pattern import image_maps, pattern_maps
 from .previa import render_preview  # noqa: F401 - a prévia mora em previa.py; o cli a chama por aqui
 
 SEAM_DEPTH = 0.0009   # profundidade do vinco da costura (m)
@@ -90,6 +90,14 @@ def fabric_materials(spec, tex_dir: Path) -> dict:
     if spec.faixa_barra is not None:   # o mesmo tecido na cor da faixa da barra
         band = spec.faixa_barra.cor
         mats["faixa_barra"] = _tiled(_material("faixa_barra", write_maps(kind, band, tex_dir), fin, tint=_rgb(band)), kind)
+    if spec.faixa_vista is not None:   # a faixa da frente: o pedaço de padronagem da foto, ou a cor dela
+        t = spec.faixa_vista
+        if t.imagem:
+            maps, scale = image_maps(kind, t.imagem, t.lado, tex_dir, f"vista-{Path(t.imagem).stem}")
+            mats["faixa_vista"] = _material("faixa_vista", maps, fin, tint=_rgb(t.cor))
+            mats["faixa_vista"]["uv_scale"] = scale
+        else:
+            mats["faixa_vista"] = _material("faixa_vista", write_maps(kind, t.cor, tex_dir), fin, tint=_rgb(t.cor))
     for k, b in enumerate(spec.faixas_manga):   # anéis da manga: o mesmo tecido na cor de cada faixa
         mats[f"faixa_manga_{k}"] = _tiled(_material(f"faixa_manga_{k}", write_maps(kind, b.cor, tex_dir), fin,
                                                     tint=_rgb(b.cor)), kind)
@@ -103,7 +111,7 @@ def fabric_materials(spec, tex_dir: Path) -> dict:
     thread = spec.cor_linha or ("#c58a3b" if kind == "denim" else
                                 "#" + "".join(f"{int(int(color[i:i + 2], 16) * 0.72):02x}" for i in (1, 3, 5)))
     mats["linha"] = solid_material("linha", _rgb(thread), Finish(0.6, specular=0.15))
-    if spec.fechamento in ("botoes", "polo") or "vivo" in spec.bolsos:   # botão da vista ou do bolso embutido
+    if spec.fechamento in ("botoes", "polo") or {"vivo", "lapela", "peito_lapela"} & set(spec.bolsos):   # botão da vista ou do bolso embutido
         mats["botao"] = solid_material("botao", _rgb(spec.cor_botao), PLASTIC)
         mats["furo"] = solid_material("furo", tuple(c * 0.35 for c in _rgb(spec.cor_botao)), Finish(0.8))
     for k, decal in enumerate(spec.estampas):

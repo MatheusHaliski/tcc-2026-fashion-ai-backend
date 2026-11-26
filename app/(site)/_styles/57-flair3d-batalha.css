@@ -1,0 +1,51 @@
+/* Batalha de Looks (components/flair/nucleos/batalha-placar.tsx): a comparação rodada a rodada com o adversário da
+   casa, com a conta da nota de cada lado, e a faixa de Hype da carta no resultado (só leitura). */
+.n3d-batalha {
+  margin: 8px 0;
+}
+
+.n3d-batalha-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-caption);
+}
+
+.n3d-batalha-tabela caption {
+  padding-bottom: 4px;
+  text-align: left;
+}
+
+.n3d-batalha-tabela th,
+.n3d-batalha-tabela td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: left;
+  vertical-align: top;
+}
+
+.n3d-batalha-tabela tfoot th,
+.n3d-batalha-tabela tfoot td {
+  border-bottom: 0;
+  font-weight: 700;
+}
+
+.n3d-batalha-tabela td.is-win {
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--ok, #2e7d5b);
+}
+
+.n3d-batalha-desafio,
+.n3d-batalha-nota {
+  display: block;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.n3d-result-hype {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: var(--text-caption);
+}

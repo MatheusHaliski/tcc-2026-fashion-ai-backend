@@ -57,7 +57,7 @@ const CONTRA_PLONGEE: Camera = { id: "CONTRA_PLONGEE", rig: "ORBITAL", dist: 3.6
  * A fase de uso dos jogos de zonas (o campo, o palco, a pista, o terraço): do alto e de frente, parada na direção, para
  * o piso com as marcas aparecer inteiro atrás da personagem e "para cima" na tela ser sempre o fundo do lugar.
  */
-const PERCURSO: Camera = { id: "PERCURSO", rig: "ORBITAL", dist: 6.2, altura: 3.2, angulo: 0, mira: 0.4, fov: 50 };
+const PERCURSO: Camera = { id: "PERCURSO", rig: "ORBITAL", dist: 5.4, altura: 3.0, angulo: 0, mira: 1.0, fov: 50 };
 
 const jogo = (acao: string, resultado: string, ...cameras: Camera[]): CamerasDoJogo => ({ cameras: [TRES_QUARTOS, ...cameras], momento: { PREPARO: "TRES_QUARTOS", ACAO: acao, RESULTADO: resultado } });
 

@@ -23,7 +23,8 @@ import type { RecursosNaTela } from "@/components/flair/nucleos/recursos/use-rec
 import { CinemaOverlay } from "@/components/flair/cinema/cinema-overlay";
 import { andaAgora } from "@/lib/flair/nucleos/movimento/quando-anda";
 import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
-import { salaDaFaseDeUso } from "@/lib/flair/nucleos/movimento/fase-de-uso";
+import { desgasteNaRoda } from "@/lib/flair/recursos/desgaste";
+import { SALA_DE_USO, salaDaFaseDeUso } from "@/lib/flair/nucleos/movimento/fase-de-uso";
 import { DesfileHud } from "@/components/flair/nucleos/desfile-hud";
 import { AnalogicoDeToque } from "@/components/flair/nucleos/analogico-de-toque";
 import type { Toque } from "@/lib/flair/nucleos/movimento/execucao";
@@ -56,6 +57,8 @@ export interface NucleoStageProps {
   objetivoAberto: boolean;
   /** última resposta do servidor (entrega ou acionamento); null na preparação */
   resultado: NucleoResultado | null;
+  /** a última entrega que não fechou a partida (a rodada anterior, nas rodadas em etapas) */
+  tentativa?: NucleoResultado | null;
   /** prévia do look de agora (preparação) */
   previa: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
@@ -98,7 +101,7 @@ export function NucleoStage(props: NucleoStageProps) {
   const variante = salaDaFaseDeUso(definicao.codigo, momento, props.resultado) ?? props.variante;
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
-      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={variante} semente={props.semente}
+      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} anterior={props.tentativa} variante={variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
         zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem}
         andarLivre={andaAgora(definicao.codigo, definicao.acoes, momento, props.entreLances)}
@@ -108,7 +111,7 @@ export function NucleoStage(props: NucleoStageProps) {
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
       {props.recursos && <NucleoRodaAtributos recursos={props.recursos} reduzido={reduzido} efeitos={prefs.efeitos} />}
-      {props.usoDeRecursos && <NucleoRodaRecursos recursos={props.usoDeRecursos} reduzido={reduzido} efeitos={prefs.efeitos} />}
+      {props.usoDeRecursos && <NucleoRodaRecursos recursos={props.usoDeRecursos} reduzido={reduzido} efeitos={prefs.efeitos} codigo={definicao.codigo} desgaste={desgasteNaRoda(props.resultado, props.previa)} />}
       {props.cinema && <CinemaOverlay cinema={props.cinema} />}
       {naAcao && definicao.codigo === "DRESS_FIGHTER" && <NucleoBarrasDeVida resultado={props.resultado} />}
       {naAcao && <NucleoActionFx nucleo={definicao.codigo} variante={props.variante} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}
@@ -123,7 +126,8 @@ export function NucleoStage(props: NucleoStageProps) {
         }
         topoDireita={<NucleoScore momento={momento} resultado={props.resultado} previa={props.previa} prefs={prefs} onPref={props.onPref} />}
         baseEsquerda={
-          definicao.avatares ? (
+          // na fase de uso o canto é do painel dos lances (o elenco é o do ateliê, que ficou para trás)
+          definicao.avatares && variante !== SALA_DE_USO ? (
             <NucleoCast
               compacto
               avatares={avataresDaSala(definicao.avatares, salaDe(definicao.codigo, props.variante).personagens)}

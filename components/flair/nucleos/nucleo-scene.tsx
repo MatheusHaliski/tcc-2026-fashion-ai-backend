@@ -33,6 +33,8 @@ interface Props {
   protagonista: Protagonista;
   /** resultado da entrega (opcional): a cena toca a sequência automática do jogo e a reação do avatar */
   resultado?: NucleoResultado | null;
+  /** a última entrega que não fechou a partida (a rodada anterior da Batalha de Looks) */
+  anterior?: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
   variante?: string | null;
   /** semente da partida (os corpos das pessoas de cena) */

@@ -74,24 +74,36 @@ public final class Flair3dTinta implements Flair3dNucleo {
         Conta conta = conta(entrega, contexto);
         List<Evento> eventos = new ArrayList<>(r.eventos());
         eventos.add(conta.evento());
-        Recurso vida = Flair3dDesgaste.vidaDo(codigo());
-        int reserva = Math.min(Flair3dRecursoEstado.MAXIMO,
-                Flair3dRecursoEstado.de(contexto.andamento().usos()).get(vida) + conta.orcamento() * RESERVA_POR_LATA);
+        eventos.add(desgaste(conta, contexto).evento());
         if (conta.passou()) {
             // a tinta acabou antes da peça: nada sobra para a fase de uso, e a execução não começa
-            eventos.add(new Flair3dDesgaste(vida, reserva, Map.of(EVENTO, reserva)).evento());
             return Resultado.of(Math.min(r.pontos(), Flair3dExecucao.NOTA_DE_QUEM_ESGOTOU), SEM_TINTA, r.regras(), eventos).comCartas(r.cartas());
         }
-        eventos.add(new Flair3dDesgaste(vida, reserva, Map.of(EVENTO, conta.gasto() * RESERVA_POR_LATA)).evento());
         return new Resultado(r.pontos(), r.estrelas(), r.resultado(), r.regras(), eventos, r.cartas(), r.status());
     }
 
-    /** A prévia leva o orçamento: a pessoa vê quantas latas ainda tem enquanto pinta. */
+    /**
+     * O que a pintura deixa do recurso-vida para a fase de uso: a reserva (a do jogo mais o orçamento de latas) menos
+     * as latas gastas; passar do orçamento não deixa nada.
+     */
+    Flair3dDesgaste desgaste(Conta conta, Contexto contexto) {
+        Recurso vida = Flair3dDesgaste.vidaDo(codigo());
+        int reserva = Math.min(Flair3dRecursoEstado.MAXIMO,
+                Flair3dRecursoEstado.de(contexto.andamento().usos()).get(vida) + conta.orcamento() * RESERVA_POR_LATA);
+        return new Flair3dDesgaste(vida, reserva, Map.of(EVENTO, conta.passou() ? reserva : conta.gasto() * RESERVA_POR_LATA));
+    }
+
+    /**
+     * A prévia leva o orçamento e o que sobra do recurso: a pessoa vê, enquanto pinta, quantas latas ainda tem e quanto
+     * fôlego leva para a fase de uso (a roda de recursos).
+     */
     @Override
     public Resultado previa(Entrega entrega, Contexto contexto) {
         Resultado r = jogo.previa(entrega, contexto);
         List<Evento> eventos = new ArrayList<>(r.eventos());
-        eventos.add(conta(entrega, contexto).evento());
+        Conta conta = conta(entrega, contexto);
+        eventos.add(conta.evento());
+        eventos.add(desgaste(conta, contexto).evento());
         return new Resultado(r.pontos(), r.estrelas(), r.resultado(), r.regras(), eventos, r.cartas(), r.status());
     }
 

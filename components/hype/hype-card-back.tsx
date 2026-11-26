@@ -4,6 +4,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { displayScore, hypeViewState, levelTone } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
 import type { HypeEntity } from "@/lib/hype/types";
+import { useUnlocksDeepLink } from "@/lib/aura/use-unlocks-deep-link";
 import { CardFlipButton } from "@/components/fashion-card";
 import { cn } from "@/components/ui";
 import { HypeBreakdown } from "./hype-breakdown";
@@ -22,6 +23,7 @@ export function HypeCardBack({ type, id, name }: { type: HypeEntity; id: string;
   const { t, relative } = useI18n();
   const { summary, loading, error } = useHypeSummary(type, id);
   const [open, setOpen] = useState(false);
+  const deep = useUnlocksDeepLink(id, () => setOpen(true));
   const state = hypeViewState(summary, { loading, error });
   return (
     <article className={cn("fai-card hype-back", `art-${state.kind === "available" ? state.level.toLowerCase().replace("_", "-") : "none"}`)} aria-label={t("hype.card.back_label", { name })}>
@@ -54,7 +56,7 @@ export function HypeCardBack({ type, id, name }: { type: HypeEntity; id: string;
       <footer className="hype-back-foot">
         <button type="button" className="hype-back-more" onClick={() => setOpen(true)} aria-haspopup="dialog">{t("hype.card.full_analysis")} <span aria-hidden>→</span></button>
       </footer>
-      {open && <HypeAnalyticsDrawer type={type} id={id} name={name} open={open} onClose={() => setOpen(false)} />}
+      {open && <HypeAnalyticsDrawer type={type} id={id} name={name} open={open} onClose={() => setOpen(false)} focusUnlocks={deep} />}
     </article>
   );
 }
