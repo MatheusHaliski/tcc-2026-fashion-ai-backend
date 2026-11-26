@@ -2,6 +2,7 @@ package br.com.fashionai.application.piece3d;
 
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.GarmentAsset3d;
@@ -35,9 +36,10 @@ public class PieceCustomizationService {
     private final WardrobeItemRepository pieces;
     private final GarmentAsset3dRepository assets;
     private final Guard guard;
+    private final PieceModelKinds kinds;
 
-    public PieceCustomizationService(Piece3dCustomizationRepository customizations, WardrobeItemRepository pieces, GarmentAsset3dRepository assets, Guard guard) {
-        this.customizations = customizations; this.pieces = pieces; this.assets = assets; this.guard = guard;
+    public PieceCustomizationService(Piece3dCustomizationRepository customizations, WardrobeItemRepository pieces, GarmentAsset3dRepository assets, Guard guard, PieceModelKinds kinds) {
+        this.customizations = customizations; this.pieces = pieces; this.assets = assets; this.guard = guard; this.kinds = kinds;
     }
 
     @Transactional(readOnly = true)
@@ -53,6 +55,8 @@ public class PieceCustomizationService {
         if (cmd == null || cmd.requestId() == null || !cmd.requestId().matches("[a-zA-Z0-9_-]{8,80}")) throw ApiException.badRequest("IDEMPOTENCY_KEY_REQUIRED", "Envie uma chave de pedido válida.");
         String base = baseModel(w);
         if (base == null) throw ApiException.conflict("CUSTOMIZATION_NO_MODEL", "Esta peça ainda não tem modelo 3D compatível para editar.");
+        PieceModelKind kind = kinds.of(base);
+        if (!kind.editable()) throw ApiException.conflict(kind.blockedCode(), Msg.t(kind.blockedMessageKey()));
         CustomizationDocument document = (cmd.document() == null ? CustomizationDocument.empty() : cmd.document()).validated();
         Piece3dCustomization c = customizations.lockByPieceIdAndOwnerId(pieceId, user.id()).orElseGet(() -> {
             Piece3dCustomization fresh = new Piece3dCustomization();
@@ -80,7 +84,11 @@ public class PieceCustomizationService {
         out.put("pieceId", w.getId());
         out.put("baseModelUrl", base);
         out.put("modelAvailable", base != null);
-        out.put("editable", owner && base != null);
+        // só o GLB próprio (motor de peças) é editável; o relevo da foto e modelos de fora só se veem
+        PieceModelKind kind = base == null ? null : kinds.of(base);
+        out.put("editable", owner && kind != null && kind.editable());
+        out.put("modelKind", kind == null ? null : kind.name());
+        out.put("editBlockedReason", kind == null ? null : kind.blockedCode());
         out.put("viewOnly", !owner);
         out.put("assetApproval", approved != null ? "APPROVED" : other != null ? other.getStatus().name() : "NONE");
         out.put("quarantine", approved == null && other != null);

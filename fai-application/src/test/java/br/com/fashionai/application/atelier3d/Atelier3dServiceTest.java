@@ -40,4 +40,17 @@ class Atelier3dServiceTest {
   var saved=org.mockito.ArgumentCaptor.forClass(DesignSceneVersion.class);verify(versions).saveAndFlush(saved.capture());when(versions.findByProjectIdAndRequestId(project,"same-request")).thenReturn(Optional.of(saved.getValue()));
   assertThat(service.guestSave(invite,token,cmd).id()).isEqualTo(first.id());verify(versions,times(1)).saveAndFlush(any());
  }
+ @Test void photoReliefIsRefusedOnUploadAndGarmentEditsAreValidated(){
+  guest.setRole(DesignGuestInvite.Role.EDITOR);
+  var relief=GlbInspectorTest.glb(",\"materials\":[{\"name\":\"foto-da-peca\"}]");
+  assertThatThrownBy(()->service.guestUpload(invite,token,"relevo.glb",relief))
+   .isInstanceOfSatisfying(ApiException.class,e->assertThat(e.code()).isEqualTo("ATELIER_PHOTO_RELIEF"));
+  verify(assets,never()).saveAndFlush(any());
+  var i=new GlbInspector.Inspection(1,1,1,3,false,false,false,Map.of("n0.p0",3),List.of());
+  var tinted=new Atelier3dService.MaterialEdit("#ffffff",0.5,0d,List.of(1d,1d),0d,"#aa0000",true);
+  var logo=new br.com.fashionai.application.piece3d.CustomizationDecal("n0",null,"data:image/png;base64,AAAA",List.of(0d,0d,0d),List.of(0d,0d,1d),0.1,1d,0d,null,true);
+  Atelier3dService.validate(new Atelier3dService.Document(Map.of(),Map.of("n0.p0",tinted),Map.of(),Map.of("d1",logo)),i);
+  var badTint=new Atelier3dService.MaterialEdit("#ffffff",0.5,0d,List.of(1d,1d),0d,"red",null);
+  assertThatThrownBy(()->Atelier3dService.validate(new Atelier3dService.Document(Map.of(),Map.of("n0.p0",badTint),Map.of()),i)).isInstanceOf(ApiException.class);
+ }
 }
