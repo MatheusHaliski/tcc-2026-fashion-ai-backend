@@ -85,6 +85,8 @@ class Frame:
     symmetry: float            # IoU da máscara com o espelho dela no eixo: < 0,75 é pose de lado
     area: float                # fração da foto ocupada pela peça
 
+    chin: int | None = None    # linha do queixo (px), quando o rosto aparece inteiro
+
     @property
     def height(self) -> int:
         return self.hem - self.top
@@ -103,12 +105,16 @@ def frame_of(labels: np.ndarray, mask: np.ndarray, hooded: bool = False) -> Fram
     face = labels == FACE
     face_rows = np.nonzero(face.any(1))[0]
     face_h = float(face_rows.max() - face_rows.min() + 1) if face.sum() > 0.0015 * mask.size and len(face_rows) else None
+    if face_h and face_rows.min() <= 2:   # a foto corta a testa: a altura do rosto não serve de régua
+        face_h = None
+    chin = int(face_rows.max()) if face_h else None
     person = np.isin(labels, PERSON).sum() > 0.01 * mask.size
     hair = (labels == HAIR).sum() > 0.004 * mask.size
-    return Frame(top, hem, center, int(cols.min()), int(cols.max()), worn=bool(person or face_h),
+    frame = Frame(top, hem, center, int(cols.min()), int(cols.max()), worn=bool(person or face_h), chin=chin,
                  top_cut=top <= 1, hem_cut=hem >= h - 2, face_h=face_h,
                  back_view=bool(hair and face_h is None and person), symmetry=_symmetry(mask, center),
                  area=float(mask.mean()))
+    return frame
 
 
 def _shoulder_top(mask: np.ndarray, center: float, width: int, fallback: int) -> int:
@@ -176,6 +182,8 @@ def body_hints(labels: np.ndarray, mask: np.ndarray, frame: Frame) -> dict:
     if not frame.worn or not frame.face_h or frame.hem_cut or frame.top_cut or frame.back_view:
         return out
     out["comprimento_foto"] = round(frame.height / (frame.face_h / FACE_M), 3)
+    if frame.chin is not None:   # do queixo ao alto da peça: ~5–12 cm com alça ou manga, 17 cm ou mais no tomara que caia
+        out["topo_abaixo_queixo"] = round((frame.top - frame.chin) / (frame.face_h / FACE_M), 3)
     width = frame.right - frame.left
     cols = range(int(frame.center - 0.3 * width), int(frame.center + 0.3 * width))
     reach = max(3, int(0.04 * frame.height))

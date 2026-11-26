@@ -23,6 +23,9 @@ SHAPE = {
 V_DEPTH = {"sweater": 16, "cardigan": 20, "vest": 22}   # gola V fechada: o V desce isso do ombro (cm); 12 nas outras
 CROP = 0.72
 SHORT, LONG = 0.8, 1.25   # comprimento medido na foto que muda a base: abaixo de 80 % ou acima de 125 %
+MAX_LENGTH = 120.0   # cm: mais que isso pela foto é régua errada (rosto cortado, pose), não peça longa
+STRAPLESS_GAP = 0.14  # m do queixo ao alto da peça: com alça ou manga ~5–12 cm; no tomara que caia, o busto
+BANDEAU_DROP = 0.22   # do ombro ao alto do tubo sem alça (cava + 1 cm), m
 SKIN_BELOW = 0.3          # barriga aparecendo logo abaixo da barra em 30 % dela: cropped de verdade (não para dentro)
 
 
@@ -34,6 +37,8 @@ def measures(sub: str, sex: str, collar: str, cropped: bool) -> dict[str, float]
     """Medidas da base da subcategoria que a ficha leva em ``medidas_marca``."""
     full = base_length(sex)
     out = {k: round(full * v, 1) if k == "comprimento" else float(v) for k, v in SHAPE.get(sub, {}).items()}
+    if sub == "vest" and collar not in ("v", "lapela"):   # colete utilitário de gola de pé: sem o V da alfaiataria
+        out.pop("decote_frente", None)
     if collar == "v" and sub not in ("blazer", "coat"):
         out["decote_frente"] = float(max(out.get("decote_frente", 0), V_DEPTH.get(sub, 12)))
     if cropped:
@@ -64,15 +69,23 @@ def from_photo(spec: dict, photo: dict, sleeves_from_text: bool) -> list[str]:
     só quando o texto não disse, pela pele do braço à mostra."""
     changed = []
     measured = photo.get("comprimento_foto")
+    if measured and spec.get("sem_alca"):   # na foto o alto do tubo é o busto: o comprimento conta do ombro
+        measured += BANDEAU_DROP
     current = spec.get("medidas_marca", {}).get("comprimento", base_length(spec["sexo"]))
     if measured:
         cm = measured * 100
         if cm < SHORT * current and photo.get("pele_abaixo", 0) >= SKIN_BELOW:
             spec.setdefault("medidas_marca", {})["comprimento"] = round(max(cm, 0.5 * current), 1)
             changed.append("comprimento")
-        elif cm > LONG * current and spec["subcategoria"] not in ("bodysuit", "crop_top"):
+        elif cm > LONG * current and cm <= MAX_LENGTH and spec["subcategoria"] not in ("bodysuit", "crop_top"):
             spec.setdefault("medidas_marca", {})["comprimento"] = round(min(cm, 1.6 * current), 1)
             changed.append("comprimento")
+    gap = photo.get("topo_abaixo_queixo")
+    if gap is not None and gap > STRAPLESS_GAP and photo.get("em_modelo") and not spec.get("sem_alca") and \
+            spec["subcategoria"] in ("top", "crop_top", "tank_top", "blouse") and not sleeves_from_text:
+        spec.update(sem_alca=True, sem_manga=True, manga_curta=False)   # nada no ombro: tomara que caia
+        changed.append("sem_alca")
+        return changed
     sleeve = _sleeve_from_photo(photo) if not sleeves_from_text and photo.get("em_modelo") and \
         spec["subcategoria"] in AMBIGUOUS else None
     current = "sem" if spec["sem_manga"] else "curta" if spec["manga_curta"] else "longa"
@@ -85,17 +98,22 @@ def from_photo(spec: dict, photo: dict, sleeves_from_text: bool) -> list[str]:
 
 
 STRAPS = (   # (regra no nome/descrição, alça em cm, decote, fundo do decote em cm): a primeira que casar vale
-    (r"tomara que caia|strapless|bandeau|faixa no busto", 0.9, "quadrado", 14.0),
+
     (r"alcinha|alcas? finas?|alca fina|spaghetti|\bcami\b|camisole|thin straps?|strappy|alca de cordao", 1.0, "quadrado", 13.0),
     (r"alcas? largas?|wide straps?|alca larga", 5.5, None, None),
 )
 NECKS = ((r"decote reto|square neck|decote quadrado|reta no busto", "quadrado"), (r"decote u\b|scoop", "redondo"))
 
 
+STRAPLESS = re.compile(r"tomara que caia|strapless|bandeau|\btarja\b|faixa no busto|\btop faixa\b")
+
+
 def straps(text: str, sub: str) -> dict:
     """Alça e decote da peça sem manga pelo texto (minúsculo, sem acento): ``alca`` (cm), ``decote`` e o fundo dele
     em ``medidas_marca``. Vazio quando o texto não diz — vale a base da subcategoria (``strap_cut.DEFAULTS``)."""
     out: dict = {}
+    if STRAPLESS.search(text):   # sem alça: o tubo do busto para baixo (strapless.py)
+        return {"sem_alca": True}
     for rule, width, neck, depth in STRAPS:
         if re.search(rule, text):
             out["alca"] = width

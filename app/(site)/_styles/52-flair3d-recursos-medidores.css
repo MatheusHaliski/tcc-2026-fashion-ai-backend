@@ -107,3 +107,14 @@
 .n3d-recursos.is-calm .n3d-recurso-ganho {
   animation: none;
 }
+
+/* O que as decisões da partida já gastaram do recurso-vida (Flair3dDesgaste): o "−30" ao lado do valor. */
+.n3d-recurso-gasto {
+  color: #ffb3b3;
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.n3d-recurso.is-gasto .n3d-recurso-cheio {
+  background: linear-gradient(90deg, var(--n3d-recurso-cor, #fff), #e5484d);
+}

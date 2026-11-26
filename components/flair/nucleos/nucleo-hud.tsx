@@ -10,6 +10,7 @@ import { HudIcon } from "@/components/flair/nucleos/nucleo-icons";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { FxPrefs } from "@/lib/flair/nucleos/fx-sound";
 import type { Momento } from "@/lib/flair/nucleos/moments";
+import { valorDoEvento } from "@/lib/flair/nucleos/action-fx";
 import { passouDoOrcamento, tintaDe } from "@/lib/flair/nucleos/tinta";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -60,6 +61,8 @@ export function NucleoScore({ momento, resultado, previa = null, prefs, onPref }
   if (nota) estado = aoVivo ? "previa" : "final";
   // jogos de zonas: o orçamento de tinta, na prévia enquanto a pessoa pinta e no resultado
   const tinta = tintaDe(aoVivo ?? (momento === "RESULTADO" ? resultado : null));
+  // Batalha de Looks: as peças repetidas da rodada anterior, que não pontuam nesta (o servidor diz quantas)
+  const cansadas = Number((valorDoEvento(aoVivo, "CARTAS_CANSADAS") as { quantas?: number } | undefined)?.quantas ?? 0);
   return (
     <div className="n3d-score" data-testid="nucleo-score" data-estado={estado}>
       <p className="n3d-score-line" role="img" aria-label={rotulo}>
@@ -77,6 +80,7 @@ export function NucleoScore({ momento, resultado, previa = null, prefs, onPref }
           {tx.t(passouDoOrcamento(tinta) ? "flair3d.ui.tinta.passou" : "flair3d.ui.tinta.conta", { ...tinta })}
         </p>
       )}
+      {cansadas > 0 && <p className="n3d-score-tinta tabular" data-testid="nucleo-cansadas" data-passou>{tx.t("flair3d.ui.cansadas", { quantas: cansadas })}</p>}
       {atributos.length > 0 && (
         <dl className="n3d-score-attrs tabular" data-testid="nucleo-preview-attrs">
           {atributos.map((e) => (

@@ -62,4 +62,32 @@ describe("roda de recursos da partida", () => {
     expect(within(roda).getByRole("alert").textContent).toContain("Esta peça já foi usada.");
     expect(vida()?.getAttribute("aria-valuenow")).toBe("60");
   });
+
+  it("o que as decisões gastaram aparece no medidor do recurso-vida do jogo, com o nome dele na história", async () => {
+    loggedAs(ME, { "POST /api/flair/3d/nucleos/PASSARELA/efeitos": EFEITOS_COM_PERFIL, "GET /api/flair/3d/partidas/p1/recursos": INICIO });
+    const previa = { pontos: 40, estrelas: 0, resultado: "EM_PREPARO", regras: [], eventos: [{ codigo: "DESGASTE", valor: { recurso: "FOCO", reserva: 40, gasto: 20, restante: 20, motivos: { PECA_FORA_DO_TEMA: 20 } } }] };
+    renderApp(<NucleoGame definicao={definicao("PASSARELA")} cartas={CARTAS} entregando={false} erro={null} onEntregar={vi.fn()} partida={PARTIDA} previa={previa} />);
+    const roda = await screen.findByTestId("nucleo-roda-recursos");
+    const foco = await waitFor(() => {
+      const li = roda.querySelector('[data-recurso="FOCO"]');
+      expect(li).not.toBeNull();
+      return li as HTMLElement;
+    });
+    expect(foco.textContent).toContain("Confiança da modelo");
+    expect(foco.querySelector('[role="meter"]')?.getAttribute("aria-valuenow")).toBe("20");
+    expect(within(foco).getByTestId("nucleo-recurso-gasto").textContent).toContain("−20");
+    // os outros medidores ficam como o servidor mandou
+    expect(vida()?.getAttribute("aria-valuenow")).toBe("60");
+  });
+
+  it("jogo de zonas, sem peças para usar: a roda mostra o fôlego que a tinta deixou para a fase de uso", async () => {
+    loggedAs(ME, {});
+    const previa = { pontos: 100, estrelas: 3, resultado: "EM_PREPARO", regras: [], eventos: [{ codigo: "DESGASTE", valor: { recurso: "ENERGIA", reserva: 80, gasto: 30, restante: 50, motivos: { TINTA: 30 } } }] };
+    renderApp(<NucleoGame definicao={definicao("PILOTO_FAVORITO")} cartas={[]} entregando={false} erro={null} onEntregar={vi.fn()} previa={previa} />);
+    const roda = await screen.findByTestId("nucleo-roda-recursos");
+    expect(roda.querySelectorAll("[data-recurso]")).toHaveLength(1);
+    expect(roda.textContent).toContain("Combustível");
+    expect(roda.querySelector('[role="meter"]')?.getAttribute("aria-valuenow")).toBe("50");
+    expect(roda.textContent).toContain("−30");
+  });
 });
