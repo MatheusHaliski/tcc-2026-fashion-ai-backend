@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import styles from "./scheme-builder.module.css";
 import { Button } from "@/components/ui";
 import { PiecePreviewDialog } from "@/components/pieces/piece-preview-dialog";
 import { CardPreviewModeToggle } from "@/components/card-preview-mode-toggle";
@@ -45,5 +46,5 @@ export function SchemeBuilderPreview({ draft, canClear, undo, onClear, schemeId,
   if (inDialog) {
     return <PiecePreviewDialog title={t("scheme.card")}><div aria-label={t("common.pre_visualizacao")} className="card-preview">{body}</div></PiecePreviewDialog>;
   }
-  return <aside aria-label={t("common.pre_visualizacao")} className="card-preview scheme-builder-aside hidden lg:block">{body}</aside>;
+  return <aside aria-label={t("common.pre_visualizacao")} className={`card-preview ${styles.desktopPreview}`}>{body}</aside>;
 }

@@ -12,6 +12,7 @@ import { AiCompositionCard } from "@/components/ai-compositions";
 import { useSchemeArt } from "@/components/scheme-builder-art";
 import { SchemeBuilderPieces } from "@/components/scheme-builder-pieces";
 import { SchemeBuilderPreview } from "@/components/scheme-builder-preview";
+import styles from "./scheme-builder.module.css";
 import { CreatorWelcome, SuppressCreatorWelcome } from "@/components/creator-welcome";
 import type { BgConfig } from "@/components/background-studio";
 import dynamic from "next/dynamic";
@@ -165,10 +166,10 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const draft: SchemeView = { id: initial?.id ?? "preview", owner: initial?.owner ?? { id: "", username: t("common.voce"), displayName: "", profileType: "PESSOAL", verified: false, privateAccount: false }, title: form.title || t("schemeBuilder.sem_titulo"), creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", origin: "MANUAL", style: form.style, occasion: form.occasion, visibility: form.visibility, status: "DRAFT", disponivel: true, lookDoDia: form.lookDoDia, items: selected.map((s) => ({ wardrobeItemId: s.id, slot: s.slot, piece: byId.get(s.id) ?? null })), seals: [], tags: [], revalidationPending: false, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), cardSkin: skin, layoutAnatomy: anatomy, coverImageUrl: photo.url ?? null, season: form.season || null, containerColor: bg.container?.color ?? undefined, background: { ...bg, photo, pieces: { anatomy: pieceAnatomy }, selectedSeals: selectedSeals.selected } as Record<string, unknown> };
   const steps = [t("builder.step.mode"), t("builder.step.pieces"), t("builder.step.details"), `${t("builder.step.appearance")} · ${t("common.optional")}`, t("builder.step.review")];
   return (
-    <div className="grid gap-5">
+    <div className={styles.builder}>
       {!initial && <CreatorWelcome kind="scheme" onEntry />}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:items-start"><div className="min-w-0">
-        <div className="mb-4 flex justify-end lg:hidden"><SchemeBuilderPreview inDialog draft={draft} canClear={!artEmpty} undo={artUndo} onClear={clearArt} schemeId={initial?.id ?? null} /></div>
+      <div className={styles.workspace}><div className={styles.steps}>
+        <div className={styles.mobilePreview}><SchemeBuilderPreview inDialog draft={draft} canClear={!artEmpty} undo={artUndo} onClear={clearArt} schemeId={initial?.id ?? null} /></div>
         <Stepper steps={steps} current={step} onStep={go} label={t("builder.stepsLabel")} canGo={canGo} />
         {step === 0 && (
           <div className="surface p-4">
@@ -200,23 +201,23 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
           </div>
         )}
         {step === 2 && (
-          <div className="surface grid gap-x-4 p-4 sm:grid-cols-2">
-            <Field label={t("scheme.title")} id="title" required className="sm:col-span-2"><Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={80} required /></Field>
-            <Field label={t("common.descricao")} id="description" className="sm:col-span-2"><Textarea id="description" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={500} /></Field>
-            <SchemeTags k="occasion" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
-            <SchemeTags k="style" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
+          <div className={`surface ${styles.details}`}>
+            <Field label={t("scheme.title")} id="title" required className={styles.fullRow}><Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={80} required /></Field>
+            <Field label={t("common.descricao")} id="description" className={styles.fullRow}><Textarea id="description" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={500} /></Field>
+            <SchemeTags k="occasion" form={form} setForm={setForm} tax={tax} className={styles.fullRow} />
+            <SchemeTags k="style" form={form} setForm={setForm} tax={tax} className={styles.fullRow} />
             <SchemeDetailFields form={form} setForm={setForm} nivelTermicoNome={initial?.nivelTermico?.nome} />
             <Field label={t("common.visibility")} id="visibility"><Select id="visibility" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
 
-            <Field label={t("schemeBuilder.selos_do_look")} className="sm:col-span-2"><SealSuggestions {...sealVerification} {...selectedSeals} selectionOnly /></Field>
-            <Field label={t("schemeBuilder.foto_do_look_opcional_como")} className="sm:col-span-2" hint={t("schemeBuilder.foto_so_verificada")}>
+            <Field label={t("schemeBuilder.selos_do_look")} className={styles.fullRow}><SealSuggestions {...sealVerification} {...selectedSeals} selectionOnly /></Field>
+            <Field label={t("schemeBuilder.foto_do_look_opcional_como")} className={styles.fullRow} hint={t("schemeBuilder.foto_so_verificada")}>
               <div className="flex flex-wrap items-start gap-3">
                 <div className="h-40 w-32 overflow-hidden rounded-md border border-line-soft bg-surface-2">{photo.url ? <img src={mediaUrl(photo.url)} alt={t("schemeBuilder.foto_do_look")} className="h-full w-full object-cover" /> : <span className="flex h-full items-center justify-center p-2 text-center type-caption text-muted">{t("schemeBuilder.sem_foto_a_capa_usa")}</span>}</div>
                 <div className="flex flex-wrap gap-2"><label className="btn btn-sm cursor-pointer"><FaiIcon id="ACT-07" size={24} decorative />{t("schemeBuilder.enviar_foto")}<input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={t("schemeBuilder.enviar_foto_do_look")} onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} /></label>{photo.url && <Button size="sm" onClick={() => setPhoto({ url: null })}>{t("common.remove")}</Button>}</div>
               </div>
             </Field>
-            <div className="sm:col-span-2"><Switch checked={form.lookDoDia} onChange={(v) => setForm({ ...form, lookDoDia: v })} label={t("scheme.dailyLook")} /></div>
-            <div className="sm:col-span-2 flex flex-wrap justify-between gap-2"><Button onClick={() => go(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim()} onClick={() => go(4)}>{t("builder.step.review")}</Button></div>
+            <div className={styles.fullRow}><Switch checked={form.lookDoDia} onChange={(v) => setForm({ ...form, lookDoDia: v })} label={t("scheme.dailyLook")} /></div>
+            <div className={`${styles.fullRow} flex flex-wrap justify-between gap-2`}><Button onClick={() => go(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim()} onClick={() => go(4)}>{t("builder.step.review")}</Button></div>
           </div>
         )}
         {step === 3 && (<div>{artNote && <p className="mb-3 type-body-sm text-muted" aria-live="polite">{artNote}</p>}<SuppressCreatorWelcome active={!initial}><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} season={form.season || null} /></SuppressCreatorWelcome><div className="mt-3 flex flex-wrap justify-between gap-2"><Button onClick={() => go(2)}>{t("common.back")}</Button><Button variant="primary" onClick={() => go(4)}>{t("builder.step.review")}</Button></div></div>)}

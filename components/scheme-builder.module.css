@@ -1,0 +1,60 @@
+/* Fluxo do editor e prévia do look. As cores continuam no tema global. */
+.builder,
+.workspace {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.steps {
+  min-width: 0;
+}
+
+.mobilePreview {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.desktopPreview {
+  display: none;
+}
+
+.details {
+  display: grid;
+  column-gap: 1rem;
+  padding: 1rem;
+}
+
+/* A partir de 640 px, campos curtos dividem a linha. */
+@media (min-width: 40rem) {
+  .details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fullRow {
+    grid-column: 1 / -1;
+  }
+}
+
+/* A partir de 1.024 px, a prévia acompanha as etapas à direita. */
+@media (min-width: 64rem) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    align-items: start;
+  }
+
+  .mobilePreview {
+    display: none;
+  }
+
+  .desktopPreview {
+    display: block;
+    min-width: 0;
+    position: sticky;
+    /* A altura do cabeçalho vem do layout global. */
+    top: calc(var(--header-h) + 16px);
+    max-height: calc(100dvh - var(--header-h) - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
