@@ -37,11 +37,11 @@ def shell_height(kind: str, grid, noise) -> tuple[np.ndarray, float]:
         twill = 0.5 + 0.5 * np.sin(2 * np.pi * (x + y) * 90)
         return 0.6 * twill + 0.4 * noise(20, 160), 0.9
     if kind == "nylon":
-        return _nylon(grid, noise), 4.0
+        return _nylon(grid, noise), 1.6
     if kind == "acolchoado":   # gomos horizontais de 10 cm costurados na casca: a imagem cobre 2 × 2 repetições
         reps = REPEAT[kind]
         micro = np.tile(_nylon(grid, noise), (reps, reps))   # a tela na mesma resolução por cm das outras
         v = (np.arange(micro.shape[0]) + 0.5) / micro.shape[0]
         channel = np.abs(np.sin(np.pi * v)) ** CHANNEL
-        return 0.88 * channel[:, None] * np.ones_like(micro) + 0.12 * micro, 22.0
+        return 0.94 * channel[:, None] * np.ones_like(micro) + 0.06 * micro, 21.0
     raise KeyError(kind)

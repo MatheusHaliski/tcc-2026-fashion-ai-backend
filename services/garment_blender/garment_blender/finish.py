@@ -4,10 +4,13 @@ Uma tabela só, lida por ``blender_io``: o exportador glTF do Blender 4.2 grava 
 KHR_materials_specular, KHR_materials_sheen, KHR_materials_clearcoat e KHR_materials_anisotropy, então o provador
 (three.js, MeshPhysicalMaterial) recebe o mesmo acabamento da prévia.
 
-``specular`` é o Specular IOR Level do Blender (0,5 = F0 de 4 %, o de um plástico): pano de fibra espalha a luz, e o
-reflexo cinza de 4 % clareava e acinzentava os escuros (o preto saía grafite). ``sheen`` é a força do brilho rasante
-dos pelos, tingido pela cor do tecido (Sheen Tint = sheen × cor). Os números foram acertados contra o teste de
-calibração (``calibracao.py``): amostras lisas de preto a branco renderizadas a até 4 de L da ficha.
+``specular`` é o Specular IOR Level do Blender (0,5 = F0 de 4 %, o de um plástico; nunca acima de 0,5: o exportador
+trocaria o fator pela cor especular). Medido na prévia: o reflexo largo de 4 % soma ~3,5 % do branco em qualquer
+rugosidade — o preto saía grafite (+12 a +17 de L) e o marinho perdia um terço do croma. Por isso o pano fica em 0,05
+e o brilho de couro, nylon, acolchoado e cetim vem do verniz (``coat``), um lobo estreito: acende no ombro e na
+dobra e deixa o peito escuro. ``sheen`` é a força do brilho rasante dos pelos, tingido pela cor do tecido (Sheen Tint
+= sheen × cor, com Sheen Weight 1 — o peso não é exportado). Os números foram acertados contra o teste de calibração
+(``calibracao.py``): amostras lisas de preto a branco a até 4 de L da ficha (as cascas de verniz, até 5 no preto).
 """
 from __future__ import annotations
 
@@ -34,10 +37,10 @@ FINISH = {
     "denim": Finish(0.82),
     "tricoline": Finish(0.7),
     "la_plana": Finish(0.85, sheen=0.12, sheen_roughness=0.6),
-    "couro": Finish(0.5, specular=0.05, coat=0.22, coat_roughness=0.25),
+    "couro": Finish(0.5, specular=0.05, coat=0.16, coat_roughness=0.25),
     "camurca": Finish(0.95, specular=0.04, sheen=0.5, sheen_roughness=0.45),
-    "nylon": Finish(0.55, specular=0.05, coat=0.15, coat_roughness=0.3),
-    "acolchoado": Finish(0.5, specular=0.05, coat=0.22, coat_roughness=0.22),
+    "nylon": Finish(0.55, specular=0.05, coat=0.1, coat_roughness=0.3),
+    "acolchoado": Finish(0.5, specular=0.05, coat=0.16, coat_roughness=0.22),
     "veludo": Finish(0.8, specular=0.04, sheen=0.8, sheen_roughness=0.3),
     "cetim": Finish(0.3, specular=0.1, coat=0.12, coat_roughness=0.2, anisotropic=0.5),
 }
