@@ -36,6 +36,11 @@ public final class SealHypeAverages {
         this.cache = cache;
     }
 
+    /** Serviço de Hype (quando disponível) para os colaboradores que só leem a faixa atual, como o cupom por Hype. */
+    public Supplier<HypeQueryService> hypeQuery() {
+        return hypeQuery;
+    }
+
     /**
      * RF53 — "Hype do selo": {@code {avgScore, level, bonded}} = média do HypeScore v2 atual dos itens com vínculo
      * APROVADO e vigente (selo de LOOK: os looks; selo de PEÇA: as peças vinculadas). {@code bonded} conta os itens

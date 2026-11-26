@@ -16,6 +16,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { CardActions } from "@/components/interactions";
 
 import { HypeBadge } from "@/components/hype/hype-badge";
+import { AuraUnlocksDeepDrawer } from "@/components/hype/aura-unlocks-deep-drawer";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
 
@@ -126,6 +127,7 @@ export function ExpandedPiece({ id, from, context = "detail", headerExtra, onSch
   const studioInfo = (p.flatLayMetadata as { studio?: Partial<StudioInfo> } | undefined)?.studio;
   return (
     <>
+      <AuraUnlocksDeepDrawer type="PIECE" id={p.id} name={p.name} />
       <ExpandedPieceCard piece={p} context={context} seals={sealsOf(p.id)} onOpenPhoto={setFullscreen} slots={{
         headerControls: headerExtra,
         visibilityLabel: vis,

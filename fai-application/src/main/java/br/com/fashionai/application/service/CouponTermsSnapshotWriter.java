@@ -38,11 +38,13 @@ public final class CouponTermsSnapshotWriter {
 
     public static Map<String, Object> read(Map<String, Object> view, PromotionRedemption r) {
         CouponChannelSnapshotWriter.read(view, r.getCanalCupom(), r.getCanalCodigoSnapshot());
+        view.put("hypeLevelSnapshot", r.getHypeLevelSnapshot());   // Circuito Aura: a faixa do card na emissão, nunca a atual
         return minimum(view, r.getMinPurchaseSnapshot(), r.getMinPurchaseCurrencySnapshot(), r.getPromotion().getMinPurchase());
     }
 
     public static Map<String, Object> read(Map<String, Object> view, FlairRedemption r) {
         CouponChannelSnapshotWriter.read(view, r.getCanalCupom(), r.getCanalCodigoSnapshot());
+        view.put("hypeLevelSnapshot", r.getHypeLevelSnapshot());
         return minimum(view, r.getMinPurchaseSnapshot(), r.getMinPurchaseCurrencySnapshot(), r.getCombination().getMinPurchase());
     }
 

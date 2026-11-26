@@ -12835,5 +12835,18 @@
   "auraUnlocks.family.SPLASH": "Aura Splash",
   "auraUnlocks.family.HYPE": "Aura Hype",
   "auraUnlocks.family.METAMORPHOSE": "Metamorfose",
-  "auraUnlocks.family.IMPERSONATION": "Aura Impersonation"
+  "auraUnlocks.family.IMPERSONATION": "Aura Impersonation",
+  "coupons.hype.label": "Hype mínimo do card",
+  "coupons.hype.hint": "Só conta Hype público e atualizado, conquistado pela comunidade. Vazio = sem exigência.",
+  "coupons.hype.sem_exigencia": "Sem exigência de Hype",
+  "coupons.hype.na_emissao": "Emitido com o card em {level}",
+  "coupons.hype.travados": "Travados pelo Hype",
+  "coupons.hype.travados_hint": "Você já tem o selo ou o deck; falta o card chegar à faixa. O Hype vem só da comunidade.",
+  "coupons.hype.falta": "Falta chegar a {level}",
+  "coupons.hype.card_em": "Card em {level}",
+  "coupons.hype.sem_hype": "Sem Hype público e atualizado",
+  "coupons.hype.origem_selo": "Selo no seu card",
+  "coupons.hype.ver": "Ver Hype",
+  "coupons.hype.erro": "Não foi possível carregar os cupons travados pelo Hype.",
+  "coupons.hype.travado_curto": "Travado pelo Hype"
 }
