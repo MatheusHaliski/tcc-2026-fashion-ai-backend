@@ -2,7 +2,9 @@
 /**
  * O desfile jogável dentro da cena (lib/flair/nucleos/movimento/desfile.ts): a cada quadro confere as marcas que a
  * personagem alcançou; cada marca nova acende o flash e a plateia aplaude; □ na ponta faz a pose final, com flashes, e
- * depois avisa a tela (desfile-fim) para revelar o resultado. Publica o progresso para o painel da tela (desfile).
+ * depois avisa a tela (desfile-fim) para revelar o resultado. Publica o progresso para o painel da tela (desfile) e
+ * desenha as marcas no piso (marcas-do-percurso.tsx). Na fase de uso dos jogos de zonas, cada nota da execução vira o
+ * gesto do lance (o passe, o chute, o agudo, o golpe) e a reação de quem assiste.
  */
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
@@ -12,6 +14,8 @@ import { AVATAR, fig, luzId, Roteiro } from "@/lib/flair/nucleos/scene/script";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 import type { Jogador } from "@/components/flair/nucleos/scene/andarilho";
+import { MarcasDoPercurso } from "@/components/flair/nucleos/scene/marcas-do-percurso";
+import { faseDeUsoDe } from "@/lib/flair/nucleos/movimento/fase-de-uso";
 import { agora, useCena } from "@/components/flair/nucleos/scene/stage-context";
 
 /** Quanto a pose final fica na tela antes de revelar o resultado. */
@@ -27,12 +31,21 @@ export function DesfileJogavel({ codigo, sala, jogador, ativo }: { codigo: Nucle
   const marcas = useMemo(() => marcasDoDesfile(codigo, sala), [codigo, sala]);
   const estado = useRef(DESFILE_INICIO);
   const temFlash = sala.luzes.proprias.some((l) => l.id === "flash");
+  // a fase de uso só vale no lugar dela (no ateliê, a peça que não saiu de lá, fica a pose no tablado)
+  const uso = sala.zonas.avatar.marca === "tablado" ? null : faseDeUsoDe(codigo);
 
   useEffect(() => {
     estado.current = DESFILE_INICIO;
     if (!ativo) return;
     let timer = 0;
     const cancelar = assinarFx((e) => {
+      if (e.tipo === "desfile-nota" && e.nucleo === codigo && uso) {
+        const r = new Roteiro("lance");
+        r.junto(AVATAR, e.nota === "OUSADO" ? uso.gesto.ousado : e.nota === "ERROU" ? uso.gesto.erro : uso.gesto.seguro);
+        if (uso.publico) r.junto(fig(uso.publico), e.nota === "ERROU" ? "F_LAMENTA" : e.nota === "OUSADO" ? "F_COMEMORA" : "F_APLAUSO");
+        cena.diretor.tocar(r.fim(), agora(), cena.reduzido);
+        return;
+      }
       if (e.tipo !== "desfile-pose" || !estado.current.naPonta || timer) return;
       const r = new Roteiro("pose-final");
       r.depois(AVATAR, GESTO[codigo] ?? "POSE_1");
@@ -44,7 +57,7 @@ export function DesfileJogavel({ codigo, sala, jogador, ativo }: { codigo: Nucle
       cancelar();
       if (timer) window.clearTimeout(timer);
     };
-  }, [ativo, codigo, cena, temFlash]);
+  }, [ativo, codigo, cena, temFlash, uso]);
 
   useFrame(() => {
     if (!ativo) return;
@@ -54,12 +67,13 @@ export function DesfileJogavel({ codigo, sala, jogador, ativo }: { codigo: Nucle
     estado.current = depois;
     if (depois.alcancadas > antes.alcancadas) {
       const r = new Roteiro("marca");
-      const publico = PUBLICO[codigo];
+      const publico = uso ? null : PUBLICO[codigo];
       if (publico) r.junto(fig(publico), "F_APLAUSO");
       if (temFlash) r.junto(luzId("flash"), "L_FLASH");
       cena.diretor.tocar(r.fim(), agora(), cena.reduzido);
     }
     emitirFx({ tipo: "desfile", nucleo: codigo, alcancadas: depois.alcancadas, total: marcas.length, naPonta: depois.naPonta });
   });
-  return null;
+  if (!ativo) return null;
+  return <MarcasDoPercurso codigo={codigo} marcas={marcas} altura={sala.zonas.avatar.altura} alvo={uso?.alvo} reduzido={cena.reduzido} />;
 }

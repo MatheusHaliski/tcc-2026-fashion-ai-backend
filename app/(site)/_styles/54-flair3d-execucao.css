@@ -56,12 +56,17 @@
   background: rgb(224 176 77 / 40%);
 }
 
+.n3d-execucao i[data-nota="OUSADO"] {
+  background: rgb(122 92 255 / 60%);
+}
+
 .n3d-execucao i[data-nota="ERROU"] {
   background: rgb(229 72 77 / 50%);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .n3d-deixa::after {
+  .n3d-deixa::after,
+  .n3d-prazo span {
     animation: none;
   }
 }

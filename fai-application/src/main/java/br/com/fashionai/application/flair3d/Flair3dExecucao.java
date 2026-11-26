@@ -24,7 +24,8 @@ import java.util.Map;
  * A pessoa anda até cada marca e aperta o botão; o acionamento traz os toques. Perfeito soma {@value #PERFEITO}, bom
  * {@value #BOM}, e errar, chegar tarde ou antecipar tira {@value #ERRO} e drena o recurso-vida do jogo; recurso zerado
  * fecha a partida como {@value #ESGOTADO}. O servidor confere o que dá para conferir (marca, botão, reação humana
- * mínima, um toque por marca) e limita o ganho; o tempo vem do navegador. Decorator sobre o núcleo do jogo
+ * mínima, um toque por marca) e limita o ganho; o tempo vem do navegador. Nos jogos de zonas a execução é a fase de uso
+ * ({@link Flair3dFaseDeUso}): mais marcas, prazo e o lance ousado, que gasta o recurso. Decorator sobre o núcleo do jogo
  * (docs/refactoring/gof/R90-flair3d-nucleos.md).
  */
 public final class Flair3dExecucao implements Flair3dNucleo {
@@ -87,7 +88,9 @@ public final class Flair3dExecucao implements Flair3dNucleo {
         }
         Recurso recurso = recursoDo(codigo());
         int reserva = depoisDasDecisoes > 0 ? depoisDasDecisoes : Flair3dRecursoEstado.de(contexto.andamento().usos()).get(recurso);
-        Pedido pedido = new Pedido(botoes(contexto), janelaMs(atributoDaJanela(entrega, contexto)), recurso.name(), reserva, drenoDe(recurso));
+        List<String> botoes = botoes(contexto);
+        int janela = janelaMs(atributoDaJanela(entrega, contexto));
+        Pedido pedido = new Pedido(botoes, janela, recurso.name(), reserva, drenoDe(recurso), Flair3dFaseDeUso.riscoDe(codigo(), botoes, janela, contexto));
         List<Evento> eventos = new ArrayList<>(look.eventos());
         eventos.add(new Evento("EXECUCAO_PEDIDA", pedido.paraTela()));
         Execucao feita = daExecucao(entrega, contexto);
@@ -124,7 +127,11 @@ public final class Flair3dExecucao implements Flair3dNucleo {
     }
 
     /** O que o servidor pede: um botão por marca, a janela, o recurso que o erro drena, quanto há e quanto cada erro tira. */
-    public record Pedido(List<String> botoes, int janelaMs, String recurso, int reserva, int dreno) {
+    public record Pedido(List<String> botoes, int janelaMs, String recurso, int reserva, int dreno, Flair3dFaseDeUso.Risco risco) {
+        public Pedido(List<String> botoes, int janelaMs, String recurso, int reserva, int dreno) {
+            this(botoes, janelaMs, recurso, reserva, dreno, null);
+        }
+
         Map<String, Object> paraTela() {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("botoes", botoes);
@@ -132,6 +139,9 @@ public final class Flair3dExecucao implements Flair3dNucleo {
             m.put("recurso", recurso);
             m.put("reserva", reserva);
             m.put("dreno", dreno);
+            if (risco != null) {
+                risco.paraTela(m);
+            }
             return m;
         }
     }
@@ -149,6 +159,9 @@ public final class Flair3dExecucao implements Flair3dNucleo {
 
     /** Avalia cada marca pelo primeiro toque nela: PERFEITO (até meia janela), BOM, ou ERROU (outro botão, tarde, antes da hora ou sem toque). */
     public static Nota avaliar(Pedido pedido, Execucao feita) {
+        if (pedido.risco() != null) {
+            return Flair3dFaseDeUso.avaliar(pedido, feita);
+        }
         List<String> marcas = new ArrayList<>();
         int pontos = 0;
         int restante = pedido.reserva();
@@ -171,7 +184,7 @@ public final class Flair3dExecucao implements Flair3dNucleo {
         return toques.stream().filter(t -> t != null && t.marca() == marca).findFirst().orElse(null);
     }
 
-    private static String nota(Pedido pedido, Toque t, int i) {
+    static String nota(Pedido pedido, Toque t, int i) {
         if (t == null || !pedido.botoes().get(i).equals(t.botao()) || t.ms() < REACAO_MINIMA_MS || t.ms() > pedido.janelaMs()) {
             return "ERROU";
         }
@@ -180,7 +193,7 @@ public final class Flair3dExecucao implements Flair3dNucleo {
 
     private List<String> botoes(Contexto contexto) {
         List<String> out = new ArrayList<>();
-        for (int i = 0; i < MARCAS; i++) {
+        for (int i = 0; i < Flair3dFaseDeUso.marcasDo(codigo()); i++) {
             out.add(contexto.sortear("execucao-" + i, BOTOES));
         }
         return out;

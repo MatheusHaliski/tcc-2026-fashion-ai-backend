@@ -63,4 +63,40 @@ describe("desfile jogável", () => {
     expect(toques.map((t: { botao: string }) => t.botao)).toEqual(["VESTIR", "DESFILAR", "TROCAR_ABA"]);
     expect(onAcionar.mock.calls[0][0].tipo).toBe("EXECUCAO");
   });
+
+  it("fase de uso (jogos de zonas): a deixa mostra o lance seguro e o ousado; o ousado gasta o recurso; com as cinco marcas, os toques vão ao servidor", async () => {
+    loggedAs(ME, {});
+    const onAcionar = vi.fn();
+    const pedido = { botoes: ["VESTIR", "DESFILAR", "VESTIR", "DESFILAR", "VESTIR"], ousados: ["TROCAR_ABA", "VESTIR", "TROCAR_ABA", "VESTIR", "TROCAR_ABA"],
+      janelaMs: 1000, janelaOusadaMs: 600, prazoMs: 25000, custo: 12, recurso: "ENERGIA", reserva: 50, dreno: 15 };
+    const emAcao = { ...RESULTADO_PASSARELA, status: "EM_ACAO" as const, eventos: [{ codigo: "EXECUCAO_PEDIDA", valor: pedido }] };
+    renderApp(<NucleoGame definicao={definicao("PILOTO_FAVORITO")} cartas={[]} entregando={false} erro={null} onEntregar={vi.fn()} momento="ACAO" resultado={emAcao} onFimAcao={vi.fn()} onAcionar={onAcionar} />);
+    const hud = await screen.findByTestId("desfile-hud");
+    expect(hud.textContent).toContain("Volta de classificação: 0 de 5");
+    expect(hud.textContent).toContain("Combustível: 50");
+    // a cena é a do lugar de uso (a pista), não a do ateliê: quem publica as marcas é a cena 3D, aqui simulada
+    const teclas = [{ key: "i", code: "KeyI" }, { key: "f", code: "KeyF" }, { key: " ", code: "Space" }, { key: "f", code: "KeyF" }, { key: " ", code: "Space" }];
+    // o relógio da deixa: cada toque vem 300 ms depois de ela abrir (antes de 150 ms seria antecipar)
+    let relogio = 1000;
+    vi.spyOn(performance, "now").mockImplementation(() => relogio);
+    for (let i = 0; i < 5; i++) {
+      act(() => emitirFx({ tipo: "desfile", nucleo: "PILOTO_FAVORITO", alcancadas: i + 1, total: 5, naPonta: i === 4 }));
+      expect(hud.dataset.deixa).toBe(pedido.botoes[i]);
+      if (i === 0) {
+        const lances = screen.getByTestId("deixa-de-uso");
+        expect(lances.textContent).toContain("poupar");
+        expect(lances.textContent).toContain("acelerar −12");
+        expect(hud.textContent).toContain("✕ para poupar ou △ para acelerar (vale mais, gasta 12)");
+        expect(screen.getByTestId("prazo-da-fase")).toBeTruthy();
+      }
+      relogio += 300;
+      fireEvent.keyDown(window, teclas[i]);
+      // o primeiro toque foi o lance ousado (△): gastou 12 do combustível na hora
+      if (i === 0) expect(hud.textContent).toContain("Combustível: 38");
+    }
+    expect(eventos.flatMap((e) => (e.tipo === "desfile-nota" ? [e.nota] : []))).toEqual(["OUSADO", "PERFEITO", "PERFEITO", "PERFEITO", "PERFEITO"]);
+    expect(onAcionar).toHaveBeenCalledTimes(1);
+    const toques = onAcionar.mock.calls[0][0].execucao.toques;
+    expect(toques.map((t: { botao: string }) => t.botao)).toEqual(["TROCAR_ABA", "DESFILAR", "VESTIR", "DESFILAR", "VESTIR"]);
+  });
 });

@@ -2,11 +2,13 @@
 /**
  * O painel do desfile jogável na tela: quantas marcas faltam, a deixa da execução (o botão pedido com a janela de tempo
  * correndo, components/flair/nucleos/use-execucao-do-desfile.ts), a nota de cada marca, o recurso que o erro drena e,
- * na ponta com a execução feita, o botão da pose final (□). Avisa a tela quando a pose final acabou, para revelar o
+ * na ponta com a execução feita, o botão da pose final (□). Nos jogos de zonas é a fase de uso: a deixa traz o lance
+ * seguro e o ousado e a fase tem prazo (fase-de-uso-hud.tsx). Avisa a tela quando a pose final acabou, para revelar o
  * resultado. Lido pelo leitor de tela.
  */
 import { useEffect, useState, type CSSProperties } from "react";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { DeixaDeUso, PrazoDaFase, lancesDoJogo } from "@/components/flair/nucleos/fase-de-uso-hud";
 import { useExecucaoDoDesfile } from "@/components/flair/nucleos/use-execucao-do-desfile";
 import { assinarFx, emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { GLIFO, restanteDepois, type Toque } from "@/lib/flair/nucleos/movimento/execucao";
@@ -25,7 +27,8 @@ interface Props {
 export function DesfileHud({ codigo, onFim, resultado, onExecucao, reduzido = false }: Props) {
   const tx = useNucleoText();
   const [p, setP] = useState({ alcancadas: 0, total: 3, naPonta: false });
-  const { pedido, deixa, notas } = useExecucaoDoDesfile(codigo, resultado, reduzido, onExecucao);
+  const { pedido, deixa, notas, ousadias, prazo } = useExecucaoDoDesfile(codigo, resultado, reduzido, onExecucao);
+  const risco = pedido?.risco;
   const gesto = tx.ou(`flair3d.desfile.acao.${codigo}`, tx.t("flair3d.desfile.acao.padrao"));
   useEffect(() => assinarFx((e) => {
     if (e.nucleo !== codigo) return;
@@ -33,15 +36,20 @@ export function DesfileHud({ codigo, onFim, resultado, onExecucao, reduzido = fa
     if (e.tipo === "desfile-fim") onFim();
   }), [codigo, onFim]);
   const esperando = !!pedido && notas.length >= pedido.botoes.length;
+  const total = pedido?.botoes.length ?? p.total;
+  const fase = tx.ou(`flair3d.uso.titulo.${codigo}`, "");
   const texto = deixa
-    ? tx.t("flair3d.execucao.deixa", { botao: GLIFO[deixa.botao] })
+    ? deixa.ousado && risco
+      ? tx.t("flair3d.uso.deixa", { ...lancesDoJogo(tx, codigo), botaoSeguro: GLIFO[deixa.botao], botaoOusado: GLIFO[deixa.ousado], custo: risco.custo })
+      : tx.t("flair3d.execucao.deixa", { botao: GLIFO[deixa.botao] })
     : pedido
-      ? tx.t(esperando ? "flair3d.execucao.enviando" : "flair3d.desfile.marcas", { alcancadas: p.alcancadas, total: p.total })
-      : tx.t(p.naPonta ? "flair3d.desfile.ponta" : "flair3d.desfile.marcas", { alcancadas: p.alcancadas, total: p.total, acao: gesto });
+      ? tx.t(esperando ? "flair3d.execucao.enviando" : risco ? "flair3d.uso.marcas" : "flair3d.desfile.marcas", { alcancadas: p.alcancadas, total, fase })
+      : tx.t(p.naPonta ? "flair3d.desfile.ponta" : "flair3d.desfile.marcas", { alcancadas: p.alcancadas, total, acao: gesto });
   const janela = { "--n3d-janela": `${deixa?.janelaMs ?? 0}ms` } as CSSProperties;
   return (
-    <div className="n3d-desfile" data-testid="desfile-hud" data-ponta={p.naPonta || undefined} data-deixa={deixa?.botao}>
-      {deixa && <span key={deixa.marca} className="n3d-deixa" style={janela} aria-hidden>{GLIFO[deixa.botao]}</span>}
+    <div className="n3d-desfile" data-testid="desfile-hud" data-ponta={p.naPonta || undefined} data-deixa={deixa?.botao} data-uso={risco ? "" : undefined}>
+      {deixa && risco && <DeixaDeUso codigo={codigo} deixa={deixa} custo={risco.custo} />}
+      {deixa && !risco && <span key={deixa.marca} className="n3d-deixa" style={janela} aria-hidden>{GLIFO[deixa.botao]}</span>}
       <p role="status">{texto}</p>
       {pedido && (
         <span className="n3d-execucao" data-testid="execucao-notas">
@@ -49,7 +57,8 @@ export function DesfileHud({ codigo, onFim, resultado, onExecucao, reduzido = fa
           {!esperando && onExecucao && (
             <button type="button" className="n3d-desfile-seguir" onClick={() => onExecucao([])}>{tx.t("flair3d.execucao.seguir")}</button>
           )}
-          <b>{tx.t("flair3d.execucao.recurso", { recurso: nomeDoRecurso(tx.ou, codigo, pedido.recurso), n: restanteDepois(pedido, notas) })}</b>
+          <b>{tx.t("flair3d.execucao.recurso", { recurso: nomeDoRecurso(tx.ou, codigo, pedido.recurso), n: restanteDepois(pedido, notas, ousadias) })}</b>
+          <PrazoDaFase prazo={prazo} parado={esperando} />
         </span>
       )}
       {!pedido && p.naPonta && (
