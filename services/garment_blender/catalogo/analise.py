@@ -12,7 +12,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-from . import estampa, filtros, juncao, lugar, padrao
+from . import estampa, faixas, filtros, juncao, lugar, padrao
 from .recorte import decal_rgba
 from .cores import dominant_lab, lab_to_rgb, rgb_to_lab, to_hex
 from .mascara import background, body_hints, frame_of, garment_mask, image_score, pixels_per_meter
@@ -86,6 +86,9 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
         stripes["periodo"] = round(stripes.pop("periodo_px") / ppm, 4)
         out.update(padrao="listras", listras=stripes)
         return out
+    bands = faixas.sleeve_bands(dist, lab, mask, frame, ppm, sleeve)
+    if bands:
+        out["faixas_manga"] = bands
     found = estampa.groups(cand, frame, mask.sum(), dist, limit=12)
     if _all_over(lab, mask, frame, clues):
         piece = padrao.tile(rgb, lab, mask, frame, avoid_center)
