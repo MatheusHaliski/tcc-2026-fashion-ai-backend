@@ -14,7 +14,7 @@ from scipy import ndimage
 
 from . import estampa, faixas, filtros, juncao, lugar, padrao
 from .recorte import decal_rgba
-from .cores import dominant_lab, lab_to_rgb, rgb_to_lab, to_hex
+from .cores import dominant_lab, lab_to_rgb, rgb_to_lab, safe_gains, to_hex
 from .mascara import background, body_hints, frame_of, garment_mask, image_score, pixels_per_meter
 
 WORK = 900          # lado maior da imagem de análise (px)
@@ -63,6 +63,9 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
     ``neck``: a descida do decote na frente (m) — o fundo da gola aparecendo por dentro não é desenho."""
     rgb, labels, f = _work(rgb_full, labels_full)
     gains = white_balance(rgb, labels)
+    piece = rgb[np.isin(labels, (3, 4))]   # a peça sem os ganhos: o ganho não pode tirar a cor dela (cores.safe_gains)
+    if len(piece) > 200:
+        gains = safe_gains(gains, np.median(piece, 0))
     rgb = np.clip(rgb * gains, 0, 255).astype(np.uint8)
     lab = rgb_to_lab(rgb).astype(np.float32)
     mask = garment_mask(labels, lab)

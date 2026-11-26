@@ -25,6 +25,7 @@ from garment_blender.spec import parse
 from . import forma, pistas, produtos, texto
 from .analise import analyze
 from .baixar import fetch
+from .cores import lab_to_rgb, match_name, rgb_to_lab, to_hex
 from .ficha import button_color, spec_for
 from .nomes_cor import color_from_name
 
@@ -144,6 +145,10 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
         spec["tecido"]["cor"] = color
         best = {"padrao": "liso", "fonte_cor": "nome"}
     else:
+        best["cor_medida"] = best["cor"]   # a foto subexposta erra o preto, o marinho e o branco: o nome da cor acerta
+        named = color_from_name(p.get("color_name"), p.get("color"), p.get("product_name"))
+        measured = rgb_to_lab(np.array([int(best["cor"][i:i + 2], 16) for i in (1, 3, 5)]))
+        best["cor"] = to_hex(lab_to_rgb(match_name(measured, named, solid=best["padrao"] == "liso")))
         spec["tecido"]["cor"] = best["cor"]
         if spec.get("cor_botao"):
             spec["cor_botao"] = button_color(best["cor"], bool(texto.GOLD.search(texto.plain(p.get("product_name")))),
