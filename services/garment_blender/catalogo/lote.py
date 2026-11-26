@@ -22,7 +22,7 @@ from garment_blender.geometry import ellipse_semi_axes
 from garment_blender.sizes import top_measures
 from garment_blender.spec import parse
 
-from . import forma, produtos, texto
+from . import forma, pistas, produtos, texto
 from .analise import analyze
 from .baixar import fetch
 from .ficha import button_color, spec_for
@@ -123,6 +123,7 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
     spec = spec_for(p, "#808080", prior)
     length, chest_a, sleeve, neck = _measures(spec)
     avoid = spec["fechamento"] in ("botoes", "ziper_inteiro", "aberto")
+    clues = pistas.from_text(p.get("product_name"), p.get("description"), p.get("subcategory"), spec["fechamento"])
     best, best_url, photo = None, None, None
     for url, path, status in files:
         img = _open(path) if path else None
@@ -130,7 +131,7 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
             continue
         rgb = np.asarray(img)
         result = analyze(rgb, _labels(seg, img, path), length, chest_a, avoid, sleeve,
-                         hooded=spec["gola"] == "capuz", neck=neck)
+                         hooded=spec["gola"] == "capuz", neck=neck, clues=clues)
         if result["ok"] and (best is None or result["nota_foto"] > best["nota_foto"]):
             best, best_url, photo = result, url, img
         if best is not None and best["nota_foto"] >= 0.6:
