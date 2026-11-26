@@ -10836,7 +10836,7 @@
   "flair3d.ui.recurso.MOEDAS": "Moedas",
   "flair3d.ui.recurso.PERSONAGEM_FILME.FOCO": "Paciência do diretor",
   "flair3d.ui.result.resultado.DIRETOR_CORTOU": "O diretor cortou a cena",
-  "flair3d.ui.tinta.conta": "Tinta: {gasto} de {orcamento} latas (fosco 1, brilhante 2, metálico e espelhado 3); a sobra vira fôlego na estreia",
+  "flair3d.ui.tinta.conta": "Tinta: {gasto} de {orcamento} latas (fosco 1, brilhante 2, metálico e espelhado 3); a sobra paga os lances ousados da fase de uso (12 cada)",
   "flair3d.ui.tinta.passou": "Tinta: {gasto} de {orcamento} latas. Passou do orçamento: troque um acabamento caro por fosco",
   "flair3d.ui.evento.TINTA": "Tinta: {gasto} de {orcamento} latas, sobraram {sobra}",
   "flair3d.ui.result.resultado.SEM_TINTA": "A tinta acabou",
