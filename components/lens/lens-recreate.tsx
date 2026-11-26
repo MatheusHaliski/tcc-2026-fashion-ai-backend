@@ -55,7 +55,7 @@ function SlotCard({ slot, index, onIndex, locked, onLock, useAlt, onUseAlt }: {
           : <EmptyState title={t("lens.gap.title")} />
       ) : piece ? (
         <>
-          <PieceCard piece={piece} flip={false} />
+          <PieceCard piece={piece} allowFlip={false} />
           <div className="lens-slot-tools">
             {options.length > 1 && (
               <span className="lens-slot-cycle" role="group" aria-label={t("lens.recreate.alternatives", { slot: name })}>
