@@ -11,7 +11,7 @@ import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { DeixaDeUso, PrazoDaFase, lancesDoJogo } from "@/components/flair/nucleos/fase-de-uso-hud";
 import { useExecucaoDoDesfile } from "@/components/flair/nucleos/use-execucao-do-desfile";
 import { assinarFx, emitirFx } from "@/lib/flair/nucleos/fx-events";
-import { GLIFO, restanteDepois, type Toque } from "@/lib/flair/nucleos/movimento/execucao";
+import { GLIFO, notaDe, restanteDepois, type Toque } from "@/lib/flair/nucleos/movimento/execucao";
 import { nomeDoRecurso } from "@/lib/flair/recursos/desgaste";
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -38,16 +38,18 @@ export function DesfileHud({ codigo, onFim, resultado, onExecucao, reduzido = fa
   const esperando = !!pedido && notas.length >= pedido.botoes.length;
   const total = pedido?.botoes.length ?? p.total;
   const fase = tx.ou(`flair3d.uso.titulo.${codigo}`, "");
+  // a fase de uso em curso ou já conferida pelo servidor (no ateliê, sem ela, vale o painel comum)
+  const emUso = !!risco || (!!fase && !!notaDe(resultado));
   const texto = deixa
     ? deixa.ousado && risco
       ? tx.t("flair3d.uso.deixa", { ...lancesDoJogo(tx, codigo), botaoSeguro: GLIFO[deixa.botao], botaoOusado: GLIFO[deixa.ousado], custo: risco.custo })
       : tx.t("flair3d.execucao.deixa", { botao: GLIFO[deixa.botao] })
     : pedido
       ? tx.t(esperando ? "flair3d.execucao.enviando" : risco ? "flair3d.uso.marcas" : "flair3d.desfile.marcas", { alcancadas: p.alcancadas, total, fase })
-      : tx.t(p.naPonta ? "flair3d.desfile.ponta" : "flair3d.desfile.marcas", { alcancadas: p.alcancadas, total, acao: gesto });
+      : tx.t(p.naPonta ? "flair3d.desfile.ponta" : emUso ? "flair3d.uso.fim" : "flair3d.desfile.marcas", { alcancadas: p.alcancadas, total, acao: gesto, fase });
   const janela = { "--n3d-janela": `${deixa?.janelaMs ?? 0}ms` } as CSSProperties;
   return (
-    <div className="n3d-desfile" data-testid="desfile-hud" data-ponta={p.naPonta || undefined} data-deixa={deixa?.botao} data-uso={risco ? "" : undefined}>
+    <div className="n3d-desfile" data-testid="desfile-hud" data-ponta={p.naPonta || undefined} data-deixa={deixa?.botao} data-uso={emUso ? "" : undefined}>
       {deixa && risco && <DeixaDeUso codigo={codigo} deixa={deixa} custo={risco.custo} />}
       {deixa && !risco && <span key={deixa.marca} className="n3d-deixa" style={janela} aria-hidden>{GLIFO[deixa.botao]}</span>}
       <p role="status">{texto}</p>

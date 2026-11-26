@@ -256,7 +256,7 @@ do jogo com o servidor (o laboratório não chama a API; a ligação com o resul
 o prazo estourando; controle e toque.
 
 **O que ainda falta nestes quatro.** A conta da tinta avisa que a sobra paga os lances ousados, mas o objetivo do jogo ainda não descreve a fase de
-uso; a roda de recursos não mostra o desgaste; o avatar veste só a cor dominante (sem emblema, capa nem capacete
+uso; o avatar veste só a cor dominante (sem emblema, capa nem capacete
 pintados); não há adversário nem física (o cone não é driblado, o drone não atira); a pontuação não depende do caminho
 feito, só do lance e do tempo.
 
@@ -276,6 +276,22 @@ o andar do escritório, o rooftop e a estação do show. **Não visto:** a troca
 servidor (está no teste de `varianteDaCena`); os outros andares e estações (mesma fábrica, só muda a cor). **Falta:** o
 caminho continua uma reta sem ramos nem interagíveis, e as moedas ainda não pagam para pular a região.
 
+### Item 6 (feito): o desgaste na roda de recursos
+
+A roda de recursos mostrava só a reserva das peças; o que as decisões gastam aparecia no painel da execução e no
+resultado. Agora o medidor do recurso-vida do jogo mostra o que sobrou e o "−30" do que já se foi, com o nome que o
+recurso tem na história ("Combustível", "Confiança da modelo", "Paciência da cliente"): `desgasteNaRoda` lê o evento
+`DESGASTE` do resultado da vez ou da prévia e, depois da execução, o que ela deixou. Nos jogos de zonas, que não têm
+peça para usar, a roda aparece só com o que a tinta deixou; para isso a prévia da pintura passou a mandar o `DESGASTE`
+(`Flair3dTinta.previa`): a pessoa vê o fôlego da fase de uso cair enquanto escolhe um acabamento caro.
+
+**Visto na tela** (a tela do jogo de verdade, `/flair/3d/PILOTO_FAVORITO`, com a API simulada e "Continuar partida" numa
+partida EM_ACAO): a pista da fase de uso, o painel dos lances, a roda com "Combustível 50 −30", a deixa da primeira marca,
+o acionamento enviado e a roda com "0 −80" no fim. Achado e corrigido nessa prova: a folha de estilo da fase de uso não
+estava importada (o painel saía como a faixa comum, por cima da personagem); o painel foi para o canto de baixo, no
+lugar do elenco do ateliê. **Não visto:** a roda mudando durante a pintura (testes da tela); a roda não acompanha a
+execução marca a marca (o painel dos lances acompanha), só o começo e o fim.
+
 ### Nota projetada depois desta rodada
 
 Projeção de quem implementou, a conferir por auditor independente. Mudam os quatro jogos de zonas e o Around the
@@ -283,10 +299,10 @@ World; os outros dez ficam com a projeção anterior (ganharam as marcas desenha
 
 | Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Final | Projeção anterior | Reauditoria |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| CLUBE_CORACAO | 4,6 | 4,7 | 5,6 | 4,5 | 4,5 | 6,2 | 5 | **5,0** | 4,5 | 4,1 |
-| FAVORITE_SINGER | 4,6 | 4,4 | 5,8 | 4,5 | 4,3 | 5,3 | 5 | **4,8** | 4,3 | 3,9 |
-| PILOTO_FAVORITO | 4,6 | 4,4 | 5,4 | 4,8 | 3,5 | 5,3 | 5 | **4,7** | 4,2 | 3,9 |
-| SUPER_HEROI | 4,6 | 4,4 | 5,4 | 4,5 | 3,6 | 5,3 | 5 | **4,7** | 4,1 | 3,8 |
+| CLUBE_CORACAO | 4,6 | 5,0 | 5,6 | 4,5 | 4,5 | 6,2 | 5 | **5,1** | 4,5 | 4,1 |
+| FAVORITE_SINGER | 4,6 | 4,7 | 5,8 | 4,5 | 4,3 | 5,3 | 5 | **4,9** | 4,3 | 3,9 |
+| PILOTO_FAVORITO | 4,6 | 4,7 | 5,4 | 4,8 | 3,5 | 5,3 | 5 | **4,8** | 4,2 | 3,9 |
+| SUPER_HEROI | 4,6 | 4,7 | 5,4 | 4,5 | 3,6 | 5,3 | 5 | **4,8** | 4,1 | 3,8 |
 | AROUND_THE_WORLD | 3,9 | 5,3 | 6,6 | 5,2 | 5 | 6,5 | 5,5 | **5,4** | 5,2 | 5,0 |
 
 Média projetada dos 15: 5,2 (anterior: 5,1; reauditoria: 4,7). Nenhum jogo chega a 8 em nenhum critério.

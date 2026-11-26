@@ -1,9 +1,19 @@
 /* A fase de uso dos jogos de zonas (components/flair/nucleos/fase-de-uso-hud.tsx): os dois lances da deixa, o seguro e
    o ousado com o custo, e a barra do prazo da fase. */
 .n3d-desfile[data-uso] {
+  top: auto;
+  bottom: 8px;
+  left: 8px;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
+  max-width: min(520px, calc(100% - 240px));
+  padding: 8px 12px;
   border-radius: 14px;
+  transform: none;
+}
+
+.n3d-desfile[data-uso] > p {
+  flex: 1 1 100%;
 }
 
 .n3d-lances {

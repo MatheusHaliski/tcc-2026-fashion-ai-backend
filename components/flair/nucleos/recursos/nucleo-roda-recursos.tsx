@@ -2,38 +2,51 @@
 /**
  * A roda de recursos da partida (regra peça-recurso), no canto direito do palco: os medidores de vida, energia e foco
  * (0 a 100) e as moedas, e as peças do deck que ainda podem ser usadas como recurso. Usar uma peça faz o medidor subir
- * na hora com "+25 Vida"; a peça gasta fica apagada. Cada medidor é um `meter` para o leitor de tela.
+ * na hora com "+25 Vida"; a peça gasta fica apagada. O que as decisões da partida gastam (Flair3dDesgaste: a peça fora
+ * do tema, a tinta, o erro e o lance ousado da execução) aparece no medidor do recurso-vida do jogo, com o nome que ele
+ * tem na história ("Combustível", "Paciência da cliente") e o "−30" do que já se foi. Cada medidor é um `meter` para o
+ * leitor de tela.
  */
 import type { CSSProperties } from "react";
 import { cn } from "@/components/ui";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { RecursosNaTela } from "@/components/flair/nucleos/recursos/use-recursos-da-partida";
+import { nomeDoRecurso, type Desgaste } from "@/lib/flair/recursos/desgaste";
 import { COM_TETO, COR_DO_RECURSO, RECURSOS } from "@/lib/flair/recursos/types";
 
 interface Props {
   recursos: RecursosNaTela;
   reduzido: boolean;
   efeitos: boolean;
+  /** o jogo (o nome do recurso na história dele) e o que as decisões já gastaram do recurso-vida */
+  codigo?: string;
+  desgaste?: Desgaste | null;
 }
 
-export function NucleoRodaRecursos({ recursos, reduzido, efeitos }: Props) {
+export function NucleoRodaRecursos({ recursos, reduzido, efeitos, codigo, desgaste }: Props) {
   const tx = useNucleoText();
   const { estado, pecas, ganho, ocupado, erro, usar } = recursos;
-  if (!estado) return null;
-  const nome = (r: string) => tx.t(`flair3d.ui.recurso.${r}`);
+  // nos jogos de zonas não há peça para usar: a roda aparece só com o que a tinta deixou
+  if (!estado && !desgaste) return null;
+  const nome = (r: string) => (desgaste?.recurso === r && codigo ? nomeDoRecurso(tx.ou, codigo, r) : tx.t(`flair3d.ui.recurso.${r}`));
+  const medidores = estado ? RECURSOS : RECURSOS.filter((r) => r === desgaste?.recurso);
   return (
     <section className={cn("n3d-recursos", (reduzido || !efeitos) && "is-calm")} aria-label={tx.t("flair3d.ui.recurso.titulo")} data-testid="nucleo-roda-recursos">
       <ul className="n3d-recursos-medidores">
-        {RECURSOS.map((r) => {
-          const valor = estado.recursos[r] ?? 0;
+        {medidores.map((r) => {
+          const gasto = desgaste?.recurso === r ? desgaste.gasto : 0;
+          const valor = desgaste?.recurso === r ? desgaste.restante : estado?.recursos[r] ?? 0;
           const comTeto = COM_TETO.includes(r);
           return (
-            <li key={r} className={cn("n3d-recurso", ganho?.recurso === r && "is-up")} style={{ "--n3d-recurso-cor": COR_DO_RECURSO[r], "--n3d-recurso-nivel": `${comTeto ? valor : 100}%` } as CSSProperties} data-recurso={r}>
+            <li key={r} className={cn("n3d-recurso", ganho?.recurso === r && "is-up", gasto > 0 && "is-gasto")} style={{ "--n3d-recurso-cor": COR_DO_RECURSO[r], "--n3d-recurso-nivel": `${comTeto ? valor : 100}%` } as CSSProperties} data-recurso={r}>
               <span className="n3d-recurso-nome">{nome(r)}</span>
               {comTeto ? (
                 <span role="meter" aria-label={nome(r)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={valor} className="n3d-recurso-barra"><span className="n3d-recurso-cheio" /></span>
               ) : null}
-              <span className="n3d-recurso-valor">{valor}</span>
+              <span className="n3d-recurso-valor">
+                {valor}
+                {gasto > 0 && <b className="n3d-recurso-gasto" data-testid="nucleo-recurso-gasto" title={tx.t("flair3d.ui.recurso.gasto", { quantidade: gasto, recurso: nome(r) })}> −{gasto}</b>}
+              </span>
               {ganho?.recurso === r && <span key={ganho.chave} className="n3d-recurso-ganho" aria-hidden data-testid="nucleo-recurso-ganho">+{ganho.quantidade}</span>}
             </li>
           );
