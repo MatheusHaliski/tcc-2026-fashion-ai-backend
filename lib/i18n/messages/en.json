@@ -7014,6 +7014,8 @@
   "trends.creationHint": "Eligible publication awards 20 FAI Points, up to 3 times daily and 10 weekly. Limits do not prevent publication. Hype reflects real interactions.",
   "trends.retryHint": "The draft was saved. Retry publication to finish.",
   "trends.published": "Trend published · +{points} FAI Points",
+  "trends.kindUnknown": "Dynamic {kind}",
+  "trends.publishedOn": "Published on {date}",
   "trends.kind.PASSA_O_LOOK": "PASS THE LOOK",
   "trends.kind.COR_EM_COMUM": "Shared color",
   "trends.kind.REINTERPRETACAO": "Reinterpretation",

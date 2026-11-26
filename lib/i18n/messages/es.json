@@ -7014,6 +7014,8 @@
   "trends.creationHint": "Publicar una trend elegible otorga 20 FAI Points, hasta 3 veces al día y 10 por semana. Los límites no impiden publicar. El Hype refleja interacciones reales.",
   "trends.retryHint": "El borrador se guardó. Reintenta publicar para terminar.",
   "trends.published": "Trend publicada · +{points} FAI Points",
+  "trends.kindUnknown": "Dinámica {kind}",
+  "trends.publishedOn": "Publicada el {date}",
   "trends.kind.PASSA_O_LOOK": "PASA EL LOOK",
   "trends.kind.COR_EM_COMUM": "Color en común",
   "trends.kind.REINTERPRETACAO": "Reinterpretación",
