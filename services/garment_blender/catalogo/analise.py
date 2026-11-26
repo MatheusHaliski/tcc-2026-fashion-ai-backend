@@ -19,7 +19,8 @@ from .mascara import background, body_hints, frame_of, garment_mask, image_score
 
 WORK = 900          # lado maior da imagem de análise (px)
 SOLID = 0.0003      # menos que isso de desenho na peça: lisa (o "C" da manga da Champion tem ~0,05 %)
-ALL_OVER = 0.18     # desenho em mais que isso da peça, espalhado pelo tronco: estampa corrida
+ALL_OVER = 0.07     # traço (borda de luminosidade) em mais que isso do tronco, por toda a peça: estampa corrida
+SIDEWAYS = 0.68     # simetria da peça no eixo abaixo disso: pose de lado, o desenho cairia no lugar errado
 MAX_DECALS = 4      # desenhos por peça, os maiores depois do crivo
 MIN_PPM = 150       # foto com menos pixels por metro que isso não mostra desenho nenhum: só a cor
 
@@ -86,13 +87,13 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
         out.update(padrao="listras", listras=stripes)
         return out
     found = estampa.groups(cand, frame, mask.sum(), dist, limit=12)
-    if _all_over(cand, raw, mask, frame, coverage, found[:6]):
+    if _all_over(lab, mask, frame, clues):
         piece = padrao.tile(rgb, lab, mask, frame, avoid_center)
         if piece is not None:
             img, side = piece
             out.update(padrao="corrida", corrida={"imagem": img, "lado": round(2 * side / ppm, 4)})
             return out
-    if coverage <= SOLID or frame.symmetry < 0.72:   # de lado, o desenho cairia no lugar errado: só a cor
+    if coverage <= SOLID or frame.symmetry < SIDEWAYS:   # de lado, o desenho cairia no lugar errado: só a cor
         return out
     rgb_big = np.clip(rgb_full * gains, 0, 255).astype(np.uint8) if f > 1 else rgb
     for g, where in _decals(found, frame, mask, ppm, chest_a, sleeve, avoid_center, neck,
@@ -126,14 +127,12 @@ def _decals(found, frame, mask, ppm, chest_a, sleeve, avoid_center, neck, ruler,
     return juncao.merge([it for k, it in enumerate(items) if k not in pairs], ppm, place)[:MAX_DECALS]
 
 
-def _all_over(cand, raw, mask, frame, coverage: float, found: list) -> bool:
-    """Estampa corrida: desenho espalhado pelo tronco todo. A de traço fino (letras vazadas, nanquim) o filtro de
-    "fino" apaga: na peça sozinha (sem dobra de corpo) vale a cobertura antes dele. Poucos desenhos grandes (o "AX"
-    gigante no peito) são estampa localizada grande, não corrida."""
-    thin = not frame.worn and raw.sum() / mask.sum() > 0.05 and estampa.spread(raw, mask, frame) >= 0.89
-    wide = coverage > ALL_OVER and estampa.spread(cand, mask, frame) >= 0.67
-    if not (thin or wide):
+def _all_over(lab, mask, frame, clues: dict | None) -> bool:
+    """Estampa corrida: traço por toda a peça — nas casas do tronco e na beira (mangas, ombros, barra). O desenho
+    grande no peito (o cartaz, o "AX" gigante) deixa a beira lisa e é estampa localizada; o brilho do metalizado, do
+    paetê e do veludo dá traço por toda parte sem ser estampa (só vale se o nome do produto falar em estampa)."""
+    clues = clues or {}
+    if clues.get("brilho") and not clues.get("corrida"):
         return False
-    torso = 0.6 * (frame.right - frame.left) * 0.8 * frame.height
-    biggest = max(((g.box[1] - g.box[0]) * (g.box[3] - g.box[2]) for g in found), default=0) / max(torso, 1.0)
-    return not (len(found) <= 3 and biggest < 0.6)
+    edge, full, rim = padrao.texture(lab, mask, frame)
+    return edge >= ALL_OVER and full >= 0.8 and rim >= 0.75

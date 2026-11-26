@@ -50,7 +50,8 @@ def placement(box, frame, ppm: float, chest_a: float, sleeve: dict | None, half_
     spans = x0 < frame.center < x1 and abs(x) < zone   # o desenho largo que passa pelo eixo é da frente
     if abs(x) + width / 4 > zone and not spans:
         return on_sleeve(raw_x, below, width, height, sleeve) if sleeve else None
-    if below - height / 2 < 0.02 or below + height / 2 > 0.97 * frame.height / ppm:
+    big = spans and min(width, height) >= 0.15   # a estampa grande do peito pode encostar no ombro ou na barra
+    if not big and (below - height / 2 < 0.02 or below + height / 2 > 0.97 * frame.height / ppm):
         return None
     return {"x": round(x, 4), "abaixo_do_ombro": round(below, 4), "largura": round(width, 4),
             "altura": round(height, 4), "lado": "frente"}

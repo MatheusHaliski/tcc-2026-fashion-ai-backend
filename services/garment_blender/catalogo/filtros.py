@@ -117,6 +117,8 @@ def verdict(look: Looks, where: dict, frame, clues: dict | None, open_front: boo
             return 2
         if ink and look.contrast >= 35 and look.halo <= 0.2 and big >= LOGO:   # letra só de contorno, grande
             return 2
+        if min(w, h) >= 0.1 and look.contrast >= 35 and look.fill >= 0.25 and look.halo <= 0.3:   # estampa grande
+            return 2
         return 1 if look.contrast >= PIECE else 0
     if look.halo <= FLAT_HALO and (look.contrast >= 24 or big >= 0.04):
         return 2
