@@ -1,0 +1,22 @@
+/* Circuito Aura — painel "O que este card destrava" (análise do Hype) e a linha de Hype do cupom na carteira */
+.aura-unlocks { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); scroll-margin-top: 12px; }
+.aura-unlocks[data-focus="true"] { border-color: var(--accent); }
+.aura-unlocks-state { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
+.aura-unlocks-sub { margin: 0 0 6px; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.aura-unlocks-error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.aura-unlock-list { display: grid; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.aura-unlock { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); }
+.aura-unlock > .min-w-0 { display: grid; gap: 2px; }
+.aura-unlock-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.aura-unlock.is-met .aura-unlock-icon { background: var(--thread-soft); color: var(--thread-ink); }
+.aura-unlock.is-next { background: var(--surface-2); border-style: dashed; }
+.aura-unlock-title { font-weight: 600; overflow-wrap: anywhere; }
+.aura-unlock-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.aura-unlock-tags:empty { display: none; }
+@media (max-width: 480px) {
+  .aura-unlock { grid-template-columns: 34px minmax(0, 1fr); }
+  .aura-unlock > .btn { grid-column: 2; justify-self: start; }
+}
+/* cupom com Hype mínimo: travado (falta faixa) ou a faixa registrada na emissão */
+.coupon-hype-lock { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--surface-2); }
+.coupon-hype-lock > .min-w-0 { display: grid; gap: 2px; }
