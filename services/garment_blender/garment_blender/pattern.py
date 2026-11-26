@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from .fabric import SIZE, _noise, _normal, _rgb, _save, height_map
+from .fabric import SIZE, _normal, _rgb, _save, height_map, repeat, shade
 from .geometry import TILE as TILE_M
 
 MAX_TILES = 4         # estampa corrida: a imagem cresce nas duas direções
@@ -38,7 +38,7 @@ def _band(length: int, n: int, fraction: float) -> np.ndarray:
 
 def pattern_maps(kind: str, spec, out: Path) -> tuple[dict[str, Path], tuple[float, float]]:
     """Cor e normal map do corpo com a padronagem da ficha, e a escala do UV do corpo (u, v)."""
-    h, strength = height_map(kind)
+    h, strength = height_map(kind if repeat(kind) == 1 else "nylon")   # gomo do acolchoado: só a casca sob a estampa
     if spec.listras is not None:
         s = spec.listras
         m, n = fit_period(s.periodo)
@@ -59,5 +59,5 @@ def pattern_maps(kind: str, spec, out: Path) -> tuple[dict[str, Path], tuple[flo
         rgb = np.asarray(img, float)[:, ::-1] / 255
         reps, scale, tag = (m, m), (1.0 / m, 1.0 / m), f"corrida-{Path(a.imagem).stem}"
     hh = np.tile(h, reps)
-    rgb = rgb * (0.82 + 0.24 * hh[..., None]) * (0.96 + 0.08 * np.tile(_noise(11, 128), reps)[..., None])
+    rgb = shade(rgb, hh)   # a média de cada canal continua a da padronagem
     return _save(rgb, _normal(hh, strength), out, tag), scale
