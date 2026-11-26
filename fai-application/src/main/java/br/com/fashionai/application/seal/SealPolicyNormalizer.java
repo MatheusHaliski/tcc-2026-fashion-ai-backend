@@ -50,6 +50,9 @@ final class SealPolicyNormalizer {
                 }
                 int count = 1;
                 if (m.get("count") instanceof Number n) {
+                    if (n.doubleValue() != Math.rint(n.doubleValue())) {     // 2,5 não vira 2 em silêncio: a quantidade é inteira
+                        throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealPolicy.quantidade_invalida"));
+                    }
                     count = n.intValue();
                 } else if (m.get("count") != null && !String.valueOf(m.get("count")).isBlank()) {
                     try {

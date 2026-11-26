@@ -6197,6 +6197,7 @@
   "lookSeals.dnaHint": "Cada look é verificado separadamente. Os pedidos selecionados serão enviados ao salvar o DNA.",
   "lookSeals.status.APPROVED": "Aprovado",
   "lookSeals.status.PENDING_REVIEW": "Aguardando aprovação",
+  "lookSeals.counted": "{count, plural, one {# peça contou para a regra} other {# peças contaram para a regra}}",
   "tryOn.lookGender": "Look {gender}",
   "nav.group.store": "Loja",
   "publicProfile.kind": "Perfil pessoal",

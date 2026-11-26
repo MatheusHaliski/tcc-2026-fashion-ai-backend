@@ -6203,6 +6203,7 @@
   "lookSeals.dnaHint": "Cada look se verifica por separado. Las solicitudes seleccionadas se envían al guardar el ADN.",
   "lookSeals.status.APPROVED": "Aprobado",
   "lookSeals.status.PENDING_REVIEW": "Esperando aprobación",
+  "lookSeals.counted": "{count, plural, one {# prenda contó para la regla} other {# prendas contaron para la regla}}",
   "tryOn.lookGender": "Look {gender}",
   "nav.group.store": "Tienda",
   "publicProfile.kind": "Perfil personal",
