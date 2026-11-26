@@ -6,6 +6,7 @@ import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
 import { Badge } from "@/components/ui";
 import { mediaUrl } from "@/lib/api/client";
 import type { InstitutionalProfileSummary } from "@/lib/api/institutional";
+import { institutionalReferenceLine } from "@/lib/api/institutional-reference";
 import { label } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 
@@ -33,8 +34,10 @@ export function InstitutionalProfileCard({ profile, kind }: InstitutionalProfile
   const name = [profile.name, profile.brandName, profile.stageName, username].find((value) => value?.trim()) ?? kindLabel;
   const profileKey = profile.slug ?? profile.username ?? profile.user?.username ?? profile.userId ?? profile.id ?? "";
   const profileHref = `/brands/${encodeURIComponent(profileKey)}`;
-  const category = profile.category ?? profile.fashionCategory;
-  const categories = category ? [label(category)] : (profile.areas ?? []).map((area) => label(area));
+  // prefere a opção escolhida (nome atual da tabela); sem ela, o texto/lista legados do cadastro, sem conversão
+  const reference = institutionalReferenceLine(profile, celebrity);
+  const categories = reference.origem === "opcao" ? [reference.principal!, ...reference.outras.map((area) => label(area))]
+    : [reference.principal, ...reference.outras].filter((value): value is string => !!value).map((value) => label(value));
   const hashtag = profile.officialHashtag?.trim().replace(/^#+/, "");
   const visibility = profile.visibility
     ?? (profile.privateAccount === true ? "PRIVATE" : profile.privateAccount === false ? "PUBLIC" : null);
@@ -112,7 +115,7 @@ export function InstitutionalProfileCard({ profile, kind }: InstitutionalProfile
 
         {(categories.length > 0 || hashtag || country) && (
           <div className="institutional-profile-category type-body-sm">
-            {categories.length > 0 && <span>{categories.join(" · ")}</span>}
+            {categories.length > 0 && <span data-reference-origin={reference.origem ?? undefined}>{categories.join(" · ")}</span>}
             {hashtag && <span className="institutional-profile-hashtag">#{hashtag}</span>}
             {country && <span title={t("auth.country")}>{country}</span>}
           </div>

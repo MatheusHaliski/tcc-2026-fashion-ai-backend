@@ -56,6 +56,9 @@ export function cenaDoElenco(codigo: string): Cena {
   return CENA_DO_ELENCO[codigo] ?? CENA_RESERVA;
 }
 
+/** A tela sabe desenhar este cenário? "livre" é a cena neutra (a reserva), desenhada de propósito. */
+export const temCenaDoCenario = (cenario: string): boolean => cenario === "livre" || Object.hasOwn(CENA_DO_CENARIO, cenario);
+
 export function cenaDoCenario(cenario: string): Cena {
   return CENA_DO_CENARIO[cenario] ?? CENA_RESERVA;
 }

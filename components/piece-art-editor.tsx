@@ -8,6 +8,7 @@ import { Button, Chip, Dialog, SegmentPicker, Switch, useToast } from "@/compone
 import { ArtSegments, AuraMaterialPanel, CLEAR_CARTELA, ColorPanel, OptionStrip, SeasonalDialog, SkinPicker, useRecommendedSkins, type ArtSegment, type BgConfig } from "@/components/background-studio";
 import { useUndo } from "@/lib/hooks/use-undo";
 import { PieceContainerPanel } from "@/components/piece-container-panel";
+import { CardInfoGridPanel } from "@/components/card-info-grid-panel";
 import { CardBorderDesigner } from "@/components/card-border-designer";
 import { ART_INDEX } from "@/lib/card-art";
 import { PieceArtPreview } from "@/components/pieces/piece-art-preview";
@@ -153,7 +154,7 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
           </div>
         )}
 
-        {seg === "container" && <PieceContainerPanel art={art} skin={studio.skin ?? ""} onArt={(next) => emit(next)} mediaPanel={mediaPanel} />}
+        {seg === "container" && <><PieceContainerPanel art={art} skin={studio.skin ?? ""} onArt={(next) => emit(next)} mediaPanel={mediaPanel} /><CardInfoGridPanel kind="piece" value={studio.infoGrid} onChange={(infoGrid) => setStudio({ infoGrid })} /></>}
         {seg === "borda" && <CardBorderDesigner value={studio.border} background={value} onChange={(border) => setStudio({ border })} />}
 
         <SeasonalDialog open={!!seasonal} onClose={() => setSeasonal(null)} value={studio} onApply={applySeasonal} />

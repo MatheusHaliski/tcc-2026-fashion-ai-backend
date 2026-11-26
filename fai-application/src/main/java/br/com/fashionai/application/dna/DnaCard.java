@@ -31,10 +31,20 @@ import br.com.fashionai.domain.repository.StyleDnaRepository;
 public final class DnaCard {
     private final StyleDnaRepository dnas;
     private final MediaService media;
+    /** Fonte fixa por família lógica ("Serif", "SansSerif"); vazio = fontes lógicas da JVM, resolvidas pelo host. */
+    private Map<String, Font> fixedFonts = Map.of();
 
     public DnaCard(StyleDnaRepository dnas, MediaService media) {
         this.dnas = dnas;
         this.media = media;
+    }
+
+    /**
+     * Testes: fontes carregadas de arquivo no lugar das fontes lógicas. Estas viram as fontes instaladas no host
+     * (fontconfig no Linux), então o mesmo card sai com pixels diferentes em cada máquina.
+     */
+    public void useFonts(Map<String, Font> fontsByFamily) {
+        this.fixedFonts = Map.copyOf(fontsByFamily);
     }
 
     // ================================================================== card PNG com marca d'água (CA09 / RN07 / RN08)
@@ -62,9 +72,9 @@ public final class DnaCard {
         g.setColor(new Color(245, 235, 215, 235));
         g.fillRoundRect(60, 60, w - 120, h - 120, 48, 48);
         g.setColor(new Color(0x1E1B18));
-        g.setFont(new Font("Serif", Font.BOLD, 72));
+        g.setFont(font("Serif", Font.BOLD, 72));
         g.drawString(Msg.resolve(Msg.t("common.dna_de_estilo")), 110, 200);
-        g.setFont(new Font("SansSerif", Font.PLAIN, 34));
+        g.setFont(font("SansSerif", Font.PLAIN, 34));
         g.drawString(Msg.resolve(DnaViews.ARCHETYPE_LABEL.get(d.getArchetype()) + " · silhueta " + d.getSilhouette() + " · ousadia " + d.getBoldnessIndex()), 110, 260);
         int x = 110;
         for (String p : palette) {
@@ -76,9 +86,9 @@ public final class DnaCard {
             x += 172;
         }
         g.setColor(new Color(0x1E1B18));
-        g.setFont(new Font("Serif", Font.ITALIC, 44));
+        g.setFont(font("Serif", Font.ITALIC, 44));
         drawWrapped(g, "“" + DnaIdentityPhrase.legivel(d.getIdentityPhrase()) + "”", 110, 560, w - 220, 58);
-        g.setFont(new Font("SansSerif", Font.PLAIN, 32));
+        g.setFont(font("SansSerif", Font.PLAIN, 32));
         g.drawString(Msg.resolve(Msg.t("dna.peca_icone", (d.getIconPieceName() == null ? "—" : d.getIconPieceName()))), 110, 900);
         Map<String, Object> life = Json.map(d.getLifeIdentityJson());
         List<String> hidden = Json.strings(d.getLifePrivateFieldsJson());
@@ -96,11 +106,16 @@ public final class DnaCard {
             g.drawString(Msg.resolve(label + ": " + l.stream().map(String::valueOf).collect(Collectors.joining(" · "))), 110, y);
             y += 50;
         }
-        g.setFont(new Font("SansSerif", Font.BOLD, 30));
+        g.setFont(font("SansSerif", Font.BOLD, 30));
         g.setColor(new Color(0xF57C1F));
         g.drawString(Msg.resolve(Msg.t("dna.fashion_ai_fai")), w - 360, h - 110);
         g.dispose();
         return ImageOps.png(img);
+    }
+
+    private Font font(String family, int style, int size) {
+        Font fixed = fixedFonts.get(family);
+        return fixed == null ? new Font(family, style, size) : fixed.deriveFont(style, size);
     }
 
     static Color color(String c) {

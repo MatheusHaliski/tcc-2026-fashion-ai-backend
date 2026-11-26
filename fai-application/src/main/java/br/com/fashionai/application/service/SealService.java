@@ -72,7 +72,7 @@ public class SealService {
         issuers = new SealIssuers(brandProfiles, celebrityProfiles, guard);
         lookups = new SealHypeLookups(bonds, schemeItems, wardrobeItems, issuers, this::hype);
         SealHypeAverages averages = new SealHypeAverages(bonds, this::hype, () -> hypeCache);
-        views = new SealViews(seals, users, brandProfiles, averages);
+        views = new SealViews(seals, users, brandProfiles, averages, () -> sealBrands);
         forms = new SealFormWriter(seals, users, guard, audit, ownMedia, issuers, views, () -> sealInferenceLogs);
         drafts = new SealPolicyDraftFlow(seals, users, brandProfiles, celebrityProfiles, wardrobeItems, ai, audit, issuers,
                 () -> sealBrands, () -> sealBackgrounds);
@@ -387,12 +387,12 @@ public class SealService {
     // ================================================================== promoções (CA11–CA13, CA21–CA23, RNF12)
     public record PromotionForm(PromotionType type, String title, String description, String rules, Integer discountPercent,
                                 UUID sealId, String requiredSealKind, Instant startsAt, Instant expiresAt,
-                                Integer totalQuota, Integer perUserLimit, UUID partnerBrandUserId, Visibility visibility, String storeUrl) {
+                                Integer totalQuota, Integer perUserLimit, UUID partnerBrandUserId, Visibility visibility, String storeUrl, UUID canalCupomId, java.math.BigDecimal minPurchase, String minPurchaseCurrency) {
     }
 
-    /** Link http(s) de loja terceira (ou nulo); regra em {@link PromotionRules#storeUrl}. */
-    public static String storeUrl(String raw) {
-        return PromotionRules.storeUrl(raw);
+    @Autowired(required = false)
+    public void setCouponChannels(br.com.fashionai.domain.repository.CanalCupomRepository canais) {
+        promotionWriter.useChannels(new CouponChannelResolver(canais));
     }
 
     /** Link externo exibido ao usuário: só https com host; regra em {@link PromotionRules#httpsOnly}. */

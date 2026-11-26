@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import java.awt.Font;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -130,6 +131,11 @@ public class DnaService {
     @Transactional
     public Map<String, Object> shareCard(CurrentUser user) {
         return card.shareCard(user);
+    }
+
+    /** Testes: fontes fixas no card PNG, por família lógica ({@link DnaCard#useFonts}). */
+    void useCardFonts(Map<String, Font> fontsByFamily) {
+        card.useFonts(fontsByFamily);
     }
 
     // ================================================================== Esquemas de DNA (anatomias A1–A4, narrativas B1–B12)

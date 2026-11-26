@@ -2,6 +2,7 @@ package br.com.fashionai.application.seal;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -35,8 +36,19 @@ final class SealPolicyEvaluator {
     private SealPolicyEvaluator() {
     }
 
+    /**
+     * A mesma peça enviada duas vezes conta uma vez só: "no mínimo 2 peças azuis" pede duas peças distintas. A prévia e
+     * o pedido real passam por aqui, então contam igual.
+     */
     static Verdict evaluate(Policy p, SealTier tier, List<WardrobeItem> pieces, Collection<String> occasions, Collection<String> styles,
-                                   HypeLookup hype, Map<String, Object> background) {
+                            HypeLookup hype, Map<String, Object> background) {
+        Set<UUID> seen = new HashSet<>();
+        List<WardrobeItem> distinct = pieces.stream().filter(w -> w.getId() == null || seen.add(w.getId())).toList();
+        return evaluateDistinct(p, tier, distinct, occasions, styles, hype, background);
+    }
+
+    private static Verdict evaluateDistinct(Policy p, SealTier tier, List<WardrobeItem> pieces, Collection<String> occasions, Collection<String> styles,
+                                            HypeLookup hype, Map<String, Object> background) {
         HypeLookup h = hype == null ? HypeLookup.NONE : hype;
         if (p == null || pieces.isEmpty()) {
             return new Verdict(false, List.of(), null);
@@ -154,6 +166,9 @@ final class SealPolicyEvaluator {
             return false;
         }
         if (r.subcategory() != null && !r.subcategory().equalsIgnoreCase(String.valueOf(w.getSubcategory()))) {
+            return false;
+        }
+        if (r.brandReference() != null && !SealPolicyBrandMatch.matches(r.brandReference(), w)) {
             return false;
         }
         if (r.brand() != null) {

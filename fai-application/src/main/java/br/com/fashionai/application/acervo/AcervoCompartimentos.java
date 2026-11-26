@@ -46,6 +46,18 @@ class AcervoCompartimentos {
         return compartimentos.saveAndFlush(c);
     }
 
+    /** Nome padrão do compartimento pela posição entre os do mesmo tipo no móvel: a 2ª gaveta é "Gaveta 2". */
+    String nomePadrao(AcervoCompartimento c) {
+        List<AcervoCompartimento> doTipo = compartimentos.findByMovelIdOrderByOrdem(c.getMovelId()).stream()
+                .filter(outro -> outro.getTipo().equals(c.getTipo()))
+                .toList();
+        int posicao = 0;
+        while (posicao < doTipo.size() && !doTipo.get(posicao).getId().equals(c.getId())) {
+            posicao++;
+        }
+        return AcervoRegras.nomePadrao(c.getTipo(), posicao + 1);
+    }
+
     void apagar(AcervoCompartimento c) {
         for (AcervoPeca linha : linhas.findByCompartimentoIdIn(List.of(c.getId()))) {
             linha.setCompartimentoId(null);
