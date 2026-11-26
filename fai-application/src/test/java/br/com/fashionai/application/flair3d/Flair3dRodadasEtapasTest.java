@@ -346,4 +346,33 @@ class Flair3dRodadasEtapasTest {
         assertThat(dasCartas).isLessThanOrEqualTo(r.pontos() + 0.05);
         assertThat(r.cartas()).allSatisfy(c -> assertThat(c.pontos()).isPositive());
     }
+
+    @Test
+    void naBatalhaAPecaQueDesfilouNaRodadaAnteriorChegaCansadaENaoPontua() {
+        BatalhaLooksNucleo n = new BatalhaLooksNucleo();
+        CbcRules.Card sup = card("SUP", "color:blue");
+        CbcRules.Card inf = card("INF", "color:blue");
+        CbcRules.Card outraSup = card("SUP", "color:blue");
+        CbcRules.Card outraInf = card("INF", "color:blue");
+        // duas partidas iguais (mesma semente, mesmos desafios): numa repete o look, na outra troca as peças
+        Partida repete = new Partida(n, "BATALHA_DE_3_RODADAS", 21L, sup, inf, outraSup, outraInf);
+        Partida troca = new Partida(n, "BATALHA_DE_3_RODADAS", 21L, sup, inf, outraSup, outraInf);
+        repete.entregar(null, sup, inf);
+        troca.entregar(null, sup, inf);
+        // a prévia já avisa: as duas peças repetidas não valem nada nesta rodada
+        Resultado previa = repete.previa(null, sup, inf);
+        assertThat(previa.pontos()).isZero();
+        assertThat(mapa(previa, "CARTAS_CANSADAS")).containsEntry("quantas", 2);
+        Resultado cansado = repete.entregar(null, sup, inf);
+        assertThat(mapa(cansado, "CARTAS_CANSADAS")).containsEntry("quantas", 2);
+        assertThat(mapa(cansado, "RODADA_DA_BATALHA").get("voce")).isEqualTo(0L);
+        long esperado = troca.previa(null, outraSup, outraInf).pontos();
+        Resultado descansado = troca.entregar(null, outraSup, outraInf);
+        assertThat(descansado.eventos()).extracting(Resultado.Evento::codigo).doesNotContain("CARTAS_CANSADAS");
+        // as mesmas regras, com peças descansadas: a nota da rodada é a de sempre
+        assertThat(mapa(descansado, "RODADA_DA_BATALHA").get("voce")).isEqualTo(esperado);
+        // na terceira rodada, as da primeira já descansaram
+        Resultado terceira = troca.entregar(null, sup, inf);
+        assertThat(terceira.eventos()).extracting(Resultado.Evento::codigo).doesNotContain("CARTAS_CANSADAS");
+    }
 }

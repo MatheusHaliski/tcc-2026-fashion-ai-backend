@@ -21,6 +21,8 @@ import java.util.Map;
 public final class Flair3dPercurso {
     public static final String CUMPRIDA = "ETAPA_CUMPRIDA";
     public static final String NAO_CUMPRIDA = "ETAPA_NAO_CUMPRIDA";
+    /** Os eventos da etapa que a prévia mostra antes da entrega: as peças cansadas da Batalha de Looks. */
+    static final java.util.Set<String> AVISOS_DA_PREVIA = java.util.Set.of("CARTAS_CANSADAS");
 
     /** O que a etapa diz do look: se a partida avança, a nota da etapa (0 a 100), as regras e os eventos dela. */
     public record Avaliacao(boolean passa, double pontos, List<RegraResultado> regras, List<Evento> eventos) {
@@ -206,6 +208,8 @@ public final class Flair3dPercurso {
         Andado a = andar(contexto.andamento().anteriores(), contexto, etapas);
         int etapa = Math.min(a.etapa(), etapas.total());
         Avaliacao v = etapas.avaliar(new Look(etapa, a.tentativa(), contexto.vestidas(entrega), a.anterior(), entrega.resposta()));
-        return Resultado.of(v.pontos(), Resultado.EM_PREPARO, v.regras(), List.of());
+        // da etapa, a prévia leva só o aviso sobre o próprio look (o placar e a nota do adversário saem na entrega)
+        List<Evento> avisos = v.eventos().stream().filter(e -> AVISOS_DA_PREVIA.contains(e.codigo())).toList();
+        return Resultado.of(v.pontos(), Resultado.EM_PREPARO, v.regras(), avisos);
     }
 }

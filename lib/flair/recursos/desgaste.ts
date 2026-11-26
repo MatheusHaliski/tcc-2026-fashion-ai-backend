@@ -26,6 +26,18 @@ export function desgasteDe(r: NucleoResultado | null | undefined): Desgaste | nu
   return { recurso: v.recurso, reserva: Number(v.reserva ?? 0), gasto: Number(v.gasto ?? 0), restante: v.restante, motivos: v.motivos ?? {} };
 }
 
+/**
+ * O desgaste que a roda de recursos mostra: o do resultado da vez (a entrega, a execução pedida) ou, na preparação, o
+ * da prévia. Com a execução já avaliada, o que sobrou é o que ela deixou (os erros e os lances ousados gastam mais).
+ */
+export function desgasteNaRoda(resultado: NucleoResultado | null | undefined, previa: NucleoResultado | null | undefined): Desgaste | null {
+  const d = desgasteDe(resultado) ?? desgasteDe(previa);
+  if (!d) return null;
+  const nota = valorDoEvento(resultado, "EXECUCAO") as { restante?: unknown } | undefined;
+  if (typeof nota?.restante !== "number") return d;
+  return { ...d, restante: nota.restante, gasto: Math.max(0, d.reserva - nota.restante) };
+}
+
 type Ou = (chave: string, padrao: string) => string;
 
 /** O nome do recurso no jogo ("Reflexo" no Labirinto); sem nome próprio, o nome comum ("Energia"). */
