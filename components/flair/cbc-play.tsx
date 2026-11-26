@@ -14,6 +14,7 @@ import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { CbcPainel } from "@/components/flair/cbc-painel";
 import { CbcRewardDialog, Story, SubmissionView } from "@/components/flair/cbc-partes";
 import { CbcVagas } from "@/components/flair/cbc-vagas";
+import { CenaVestir } from "@/components/flair/cenas/cena-vestir";
 import { CenaViva } from "@/components/flair/cenas/cena-viva";
 import { Bandeja } from "@/components/flair/montagem/bandeja";
 import { useCbcControle } from "@/components/flair/use-cbc-controle";
@@ -22,6 +23,7 @@ import { useCbcLabels, windowOf } from "@/components/flair/use-cbc-labels";
 import { useCbcMesa } from "@/components/flair/use-cbc-mesa";
 import { HowItWorks } from "@/components/guide/guide";
 import { cenaDoCenario } from "@/lib/flair/cenas/catalogo";
+import { vestidos, vestirDoCenario } from "@/lib/flair/vestir/cenas";
 
 export function CbcPlay({ slug }: { slug: string }) {
   const { t } = useI18n();
@@ -35,6 +37,10 @@ export function CbcPlay({ slug }: { slug: string }) {
   if (m.detail.loading || !d) return <Skeleton className="h-96" />;
   const w = windowOf(d, t);
   const cena = cenaDoCenario(d.scenario);
+  const vestir = vestirDoCenario(d.scenario);
+  // "vestir a cena": o personagem troca de roupa quando o servidor aceita a carta da vaga dele (lib/flair/vestir)
+  const julgadas = m.check?.evaluation.slots;
+  const recusadas = new Set((julgadas ?? []).filter((r) => r.accepted === false && r.cardId === m.placed[r.slot]).map((r) => r.slot));
   const cartas = Object.fromEntries(m.available.map((c) => [c.id, c]));
   const postas: Record<string, FlairCollectionCard | undefined> = Object.fromEntries(Object.entries(m.placed).map(([k, v]) => [k, cartas[v]]));
   const sintonia = m.fresca && m.check ? Object.fromEntries(m.check.evaluation.slots.map((r) => [r.slot, r.sintonia])) : null;
@@ -59,15 +65,19 @@ export function CbcPlay({ slug }: { slug: string }) {
 
       {m.readOnly && delivered ? (
         <div className="grid gap-3">
-          <div className="cbc-stage-art is-done"><CenaViva cena={cena} pecas={d.slots.map(() => "verde")} completa /></div>
+          <div className={cn("cbc-stage-art is-done", vestir && "is-vestir")}>
+            {vestir ? <CenaVestir cena={vestir} nome={d.name} vestidos={vestir.pessoas.map(() => true)} /> : <CenaViva cena={cena} pecas={d.slots.map(() => "verde")} completa />}
+          </div>
           <SubmissionView s={delivered} scenario={d.scenario} slots={d.slots} />
         </div>
       ) : (
         <div className="cbc-play">
           <div className="cbc-play-stage">
             <div className="cbc-stage">
-              <div className="cbc-stage-art"><CenaViva cena={cena} pecas={j.pecas} completa={!!m.result} /></div>
-              <CbcVagas slots={d.slots} placed={postas} sintonia={sintonia} selecionada={j.atual?.key} labelOf={(s) => slotLabel(d.scenario, s)}
+              <div className={cn("cbc-stage-art", vestir && "is-vestir")}>
+                {vestir ? <CenaVestir cena={vestir} nome={d.name} vestidos={vestidos(vestir, m.placed, julgadas)} /> : <CenaViva cena={cena} pecas={j.pecas} completa={!!m.result} />}
+              </div>
+              <CbcVagas slots={d.slots} placed={postas} sintonia={sintonia} recusadas={recusadas} selecionada={j.atual?.key} labelOf={(s) => slotLabel(d.scenario, s)}
                 onVaga={m.readOnly ? undefined : j.selecionar} pegar={m.readOnly ? undefined : j.pegar} />
             </div>
             {semCartas && (
@@ -76,7 +86,7 @@ export function CbcPlay({ slug }: { slug: string }) {
             )}
             {m.check && m.check.story.length > 0 && <Story lines={m.check.story} text={storyText} />}
             {bandeja && j.atual && (
-              <Bandeja vagaId={j.atual.key} vaga={j.nomeDaVaga(j.atual.key)} aceita={posicao(j.atual.position)} opcoes={j.opcoes} estrita={false} foco={foco}
+              <Bandeja vagaId={j.atual.key} vaga={j.nomeDaVaga(j.atual.key)} aceita={j.atual.accepts && Object.keys(j.atual.accepts).length > 0 ? j.nomeDaVaga(j.atual.key) : posicao(j.atual.position)} opcoes={j.opcoes} estrita={false} foco={foco}
                 temCarta={!!m.placed[j.atual.key]} podeDesfazer={m.mesa.podeDesfazer} onEscolher={j.escolher} onTirar={() => j.atual && j.tirar(j.atual.key)}
                 onDesfazer={j.desfazer} onFechar={j.fechar} pegar={j.pegar} posicao={posicao} atributo={(a) => t(`flair3d.elencos.attr.${a}`)} aviso={j.aviso} />
             )}

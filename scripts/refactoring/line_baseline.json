@@ -389,7 +389,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/FlairChallengeService.java": {
-   "max": 987,
+   "max": 986,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/FlairCollectionService.java": {

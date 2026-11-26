@@ -24,7 +24,7 @@ export interface CbcSummary {
 export interface CbcGroup { code: string; name: string; description?: string | null; points: number; badgeCode?: string | null; challenges: { id: string; slug: string; name: string; done: boolean }[]; done: number; total: number; completed: boolean }
 export interface CbcList { now: CbcSummary[]; upcoming: CbcSummary[]; always: CbcSummary[]; memories: CbcSummary[]; groups: CbcGroup[]; season: string }
 
-export interface CbcSlot { key: string; position: CbcPosition; label?: string | null }
+export interface CbcSlot { key: string; position: CbcPosition; label?: string | null; accepts?: Record<string, unknown> | null }
 export interface CbcInterpretation { key: string; label?: string | null; styleTags: string[]; colorTags: string[] }
 
 /** Linha da história: chave + variáveis (ou texto por idioma no cenário livre). */
@@ -38,7 +38,8 @@ export interface CbcDetail extends CbcSummary {
   mySubmissions: CbcSubmission[]; communityOpen: boolean; community: CbcSubmission[]; memory: CbcMemory; group?: CbcGroup;
 }
 
-export interface CbcSlotResult { slot: string; position: string; cardId?: string | null; positionOk: boolean; neighbor: boolean; theme: boolean; sintonia: number }
+/** `accepted` = a carta é a que a vaga pede (`accepts`: subcategoria, cor…); `misses` = o que faltou nela */
+export interface CbcSlotResult { slot: string; position: string; cardId?: string | null; positionOk: boolean; neighbor: boolean; theme: boolean; sintonia: number; accepted?: boolean; misses?: string[] }
 export interface CbcRequirementResult { type: string; ok: boolean; have: number; need: number; args: Record<string, unknown> }
 export interface CbcPointsLine { action: string; points: number; ref: string; label: string; granted?: boolean; capReached?: boolean }
 export interface CbcCheck {
