@@ -74,12 +74,12 @@ class CouponChannelTest {
     }
 
     private static SealService.PromotionForm promo(UUID canalCupomId) {
-        return new SealService.PromotionForm(PromotionType.CUPOM_LOJA, "Cupom da loja", null, null, 10, null, null, null, null, null, null, null, null, null, canalCupomId, null, null);
+        return new SealService.PromotionForm(PromotionType.CUPOM_LOJA, "Cupom da loja", null, null, 10, null, null, null, null, null, null, null, null, null, canalCupomId, null, null, null);
     }
 
     private static FlairService.CombinationForm combo(UUID canalCupomId) {
         return new FlairService.CombinationForm("Combo de inverno", null, "COLECAO", List.of("full_body_piece"), List.of(), List.of(), 0, 0, null, 0,
-                "10% na loja", 10, null, new BigDecimal("100"), 30, 5, true, null, null, null, null, canalCupomId, "BRL");
+                "10% na loja", 10, null, new BigDecimal("100"), 30, 5, true, null, null, null, null, canalCupomId, "BRL", null);
     }
 
     @Test
