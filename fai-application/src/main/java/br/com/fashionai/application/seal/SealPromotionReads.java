@@ -145,6 +145,7 @@ public final class SealPromotionReads {
         m.put("partnerBrandUserId", p.getPartnerBrandUserId());
         m.put("status", p.getStatus());
         m.put("storeUrl", p.getStoreUrl());
+        m.put("canalCupom", br.com.fashionai.application.service.CouponChannelResolver.view(p.getCanalCupom()));
         m.put("eligible", eligible != null && unavailable(p, now) == null);
         m.put("unavailableReason", eligible == null ? Msg.t("seal.e_preciso_ter_um_selo") : unavailable(p, now));
         m.put("eligibleBondId", eligible == null ? null : eligible.getId());
@@ -166,7 +167,7 @@ public final class SealPromotionReads {
         m.put("status", r.getExpiresAt() != null && r.getExpiresAt().isBefore(Instant.now()) ? RedemptionStatus.EXPIRED : r.getStatus());
         m.put("redeemedAt", r.getRedeemedAt());
         m.put("expiresAt", r.getExpiresAt());
-        return m;
+        return br.com.fashionai.application.service.CouponChannelSnapshotWriter.read(m, r.getCanalCupom(), r.getCanalCodigoSnapshot());
     }
 
     /** Regra 7 — métricas por perfil emissor. */

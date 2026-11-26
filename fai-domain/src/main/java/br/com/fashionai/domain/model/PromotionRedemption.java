@@ -56,4 +56,13 @@ public class PromotionRedemption extends AuditableEntity {
 
     @Column(name = "expires_at")
     private Instant expiresAt;
+
+    /** Exercício 14 — canal da oferta copiado na emissão: mudar o canal da oferta depois não muda este cupom. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "canal_cupom_id")
+    private CanalCupom canalCupom;
+
+    /** Código do canal na hora da emissão (LOJA_FISICA, ECOMMERCE, AMBOS); nulo = cupom antigo, canal não informado. */
+    @Column(name = "canal_codigo_snapshot", length = 40)
+    private String canalCodigoSnapshot;
 }

@@ -56,7 +56,7 @@ class OpcoesConvencaoTest {
                 }
             }
         }
-        assertThat(rotas).contains("/api/opcoes/estados-conservacao", "/api/opcoes/marcas-politica");
+        assertThat(rotas).contains("/api/opcoes/estados-conservacao", "/api/opcoes/marcas-politica", "/api/opcoes/canais-cupom");
         assertThat(problemas).isEmpty();
     }
 

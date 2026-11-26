@@ -5,6 +5,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
 import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, Tabs, Textarea, useToast } from "@/components/ui";
 import { FaiCoupon, type Coupon, type CouponOwner } from "@/components/coupons/fai-coupon";
+import { CouponChannelField } from "@/components/coupons/coupon-channel-field";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
 
@@ -34,7 +35,7 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
   const [promoFilter, setPromoFilter] = useState<"ATIVAS" | "INATIVAS">("ATIVAS");
   const [code, setCode] = useState(""); const [checked, setChecked] = useState<Coupon | null>(null);
   const [chooser, setChooser] = useState(false);
-  const empty = { open: false, id: undefined as string | undefined, type: "DESCONTO_ECOMMERCE", title: "", description: "", rules: "", discountPercent: "", sealId: "", startsAt: "", expiresAt: "", totalQuota: "", perUserLimit: "1", storeUrl: "" };
+  const empty = { open: false, id: undefined as string | undefined, type: "DESCONTO_ECOMMERCE", title: "", description: "", rules: "", discountPercent: "", sealId: "", startsAt: "", expiresAt: "", totalQuota: "", perUserLimit: "1", storeUrl: "", canalCupomId: "" };
   const [form, setForm] = useState(empty);
   if (admin.error) return <ErrorState error={admin.error} onRetry={admin.reload} />;
   if (admin.loading || !admin.data) return <Skeleton className="h-64" />;
@@ -45,7 +46,7 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
   async function savePromo() {
     const iso = (v: string) => (v ? new Date(v).toISOString() : null);
     const body = { type: form.type, title: form.title, description: form.description || null, rules: form.rules || null, discountPercent: form.discountPercent ? Number(form.discountPercent) : null,
-      sealId: form.sealId || null, startsAt: iso(form.startsAt), expiresAt: iso(form.expiresAt), totalQuota: form.totalQuota ? Number(form.totalQuota) : null, perUserLimit: Number(form.perUserLimit || 1), storeUrl: form.storeUrl || null };
+      sealId: form.sealId || null, startsAt: iso(form.startsAt), expiresAt: iso(form.expiresAt), totalQuota: form.totalQuota ? Number(form.totalQuota) : null, perUserLimit: Number(form.perUserLimit || 1), storeUrl: form.storeUrl || null, canalCupomId: form.canalCupomId || null };
     try { if (form.id) await api.put(`/api/promotions/${form.id}`, body); else await api.post("/api/promotions", body); toast.success(t("coupons.brandCouponsTab.promocao_salva_quem_tiver_o")); setForm(empty); admin.reload(); } catch (e) { toast.fromError(e); }
   }
   async function toggleSeal(p: Promo) {
@@ -117,6 +118,7 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
             <Field label={t("coupons.brandCouponsTab.comeca_em")} id="pp-s"><Input id="pp-s" type="date" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} /></Field>
             <Field label={t("coupons.brandCouponsTab.termina_em")} id="pp-e"><Input id="pp-e" type="date" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} /></Field>
           </div>
+          <CouponChannelField value={form.canalCupomId} onChange={(canalCupomId) => setForm({ ...form, canalCupomId })} />
           <Field label={t("common.link_da_loja_onde_o")} id="pp-url" hint={t("common.opcional_sem_ele_vale_o")}><Input id="pp-url" type="url" placeholder="https://" value={form.storeUrl} onChange={(e) => setForm({ ...form, storeUrl: e.target.value })} /></Field>
           <Field label={t("common.regras")} id="pp-rules"><Textarea id="pp-rules" rows={2} value={form.rules} onChange={(e) => setForm({ ...form, rules: e.target.value })} /></Field>
         </div>

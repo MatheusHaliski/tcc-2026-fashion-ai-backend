@@ -98,4 +98,9 @@ public class Promotion extends VersionedAuditableEntity {
     /** Link da loja terceira onde o cupom é usado (sobrepõe o site da marca). */
     @Column(name = "store_url", length = 512)
     private String storeUrl;
+
+    /** Exercício 14 — canal em que o cupom desta oferta pode ser usado; nulo = não informado (oferta antiga). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "canal_cupom_id")
+    private CanalCupom canalCupom;
 }

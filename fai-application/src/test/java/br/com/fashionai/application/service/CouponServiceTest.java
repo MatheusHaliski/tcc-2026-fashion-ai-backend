@@ -99,7 +99,7 @@ class CouponServiceTest {
         // combinação FLAIR que o Look 6 (com peça inteira) completa
         flair.saveCombination(Kit.as(loja), null, new FlairService.CombinationForm("Peça inteira", null, "COMBINACAO", List.of("full_body_piece"),
                 List.of(), List.of(), 0, 0, null, null, "R$ 30 na loja", null, new BigDecimal("30"), new BigDecimal("150"), 30, 10, true, null, null,
-                null, "https://lojaz.example.com/flair"));
+                null, "https://lojaz.example.com/flair", null));
     }
 
     private List<CouponRight> rights() {

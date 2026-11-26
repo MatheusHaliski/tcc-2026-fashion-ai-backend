@@ -8,16 +8,17 @@ import { useAuth } from "@/lib/auth/session";
 import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast, ChipMultiSelect } from "@/components/ui";
 import { couponText, GAME_TYPE_LABEL, VoucherDialog, type Combination, type Voucher } from "@/components/flair/flair-shared";
 import { useI18n } from "@/lib/i18n/i18n";
+import { CouponChannelField, couponChannelText } from "@/components/coupons/coupon-channel-field";
 import { currentIntl } from "@/lib/i18n/state";
 
 interface Tab { admin: boolean; brandName: string; participating: boolean; combinations: Combination[]; redemptions?: Voucher[]; stats?: { issued: number; used: number }; gameTypes?: { id: string; label: string }[]; }
 interface Form {
   id?: string; name: string; description: string; gameType: string; requiredCategories: string[]; requiredStyles: string[]; requiredOccasions: string[];
   minBrandPieces: string; minDeckPower: string; minRarity: string; minWins: string; couponTitle: string; discountKind: "percent" | "amount"; discount: string;
-  minPurchase: string; validDays: string; stock: string; active: boolean; accentColor: string; storeUrl: string;
+  minPurchase: string; validDays: string; stock: string; active: boolean; accentColor: string; storeUrl: string; canalCupomId: string; canalCupomNome?: string | null;
 }
 const EMPTY: Form = { name: "", description: "", gameType: "COMBINACAO", requiredCategories: [], requiredStyles: [], requiredOccasions: [], minBrandPieces: "1", minDeckPower: "0", minRarity: "",
-  minWins: "2", couponTitle: "", discountKind: "percent", discount: "10", minPurchase: "", validDays: "30", stock: "100", active: true, accentColor: "#2D55C9", storeUrl: "" };
+  minWins: "2", couponTitle: "", discountKind: "percent", discount: "10", minPurchase: "", validDays: "30", stock: "100", active: true, accentColor: "#2D55C9", storeUrl: "", canalCupomId: "" };
 
 /**
  * RF14/RF22 — aba "Minhas combinações FLAIR" do perfil da loja: a loja participante define qual combinação de cartas
@@ -40,7 +41,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
     id: c.id, name: c.name, description: c.description ?? "", gameType: c.gameType, requiredCategories: c.requiredCategories, requiredStyles: c.requiredStyles, requiredOccasions: c.requiredOccasions,
     minBrandPieces: String(c.minBrandPieces), minDeckPower: String(c.minDeckPower), minRarity: c.minRarity ?? "", minWins: String(c.minWins || 2), couponTitle: c.coupon.title,
     discountKind: c.coupon.discountPercent !== "" ? "percent" : "amount", discount: String(c.coupon.discountPercent !== "" ? c.coupon.discountPercent : c.coupon.discountAmount),
-    minPurchase: c.coupon.minPurchase === "" ? "" : String(c.coupon.minPurchase), validDays: String(c.coupon.validDays), stock: c.stock == null ? "" : String(c.stock), active: c.active, accentColor: c.accentColor, storeUrl: (c as Combination & { storeUrl?: string | null }).storeUrl ?? "",
+    minPurchase: c.coupon.minPurchase === "" ? "" : String(c.coupon.minPurchase), validDays: String(c.coupon.validDays), stock: c.stock == null ? "" : String(c.stock), active: c.active, accentColor: c.accentColor, storeUrl: (c as Combination & { storeUrl?: string | null }).storeUrl ?? "", canalCupomId: c.canalCupom?.id ?? "", canalCupomNome: c.canalCupom?.nome,
   });
   async function save() {
     if (!form) return;
@@ -49,7 +50,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
     const body = { name: form.name, description: form.description || null, gameType: form.gameType, requiredCategories: form.requiredCategories, requiredStyles: form.requiredStyles,
       requiredOccasions: form.requiredOccasions, minBrandPieces: n(form.minBrandPieces), minDeckPower: n(form.minDeckPower), minRarity: form.minRarity || null, minWins: n(form.minWins),
       couponTitle: form.couponTitle, discountPercent: form.discountKind === "percent" ? n(form.discount) : null, discountAmount: form.discountKind === "amount" ? n(form.discount) : null,
-      minPurchase: n(form.minPurchase), validDays: n(form.validDays), stock: n(form.stock), active: form.active, accentColor: form.accentColor, storeUrl: form.storeUrl || null };
+      minPurchase: n(form.minPurchase), validDays: n(form.validDays), stock: n(form.stock), active: form.active, accentColor: form.accentColor, storeUrl: form.storeUrl || null, canalCupomId: form.canalCupomId || null };
     try {
       if (form.id) await api.put(`/api/flair/brand/combinations/${form.id}`, body); else await api.post("/api/flair/brand/combinations", body);
       toast.success(t("flair.brandFlairTab.combinacao_salva")); setForm(null); tab.reload();
@@ -97,6 +98,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
                 {c.gameType === "DUELO_PATROCINADO" && <Badge tone="thread">{t("flair.brandFlairTab.vitorias_na_semana", { minWins: c.minWins })}</Badge>}
               </div>
               <p className="type-caption text-faint mt-2">{t("flair.brandFlairTab.troca_s_cupom_valido_por", { redeemed: c.redeemed, value: c.stock != null ? t("flair.brandFlairTab.de", { stock: c.stock }) : "", validDays: c.coupon.validDays })}</p>
+              <p className="type-caption text-faint" data-offer-channel={c.canalCupom?.codigo ?? ""}>{couponChannelText({ canalCupom: c.canalCupom })}</p>
               {d.admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => edit(c)}>{t("common.edit")}</Button><Button size="sm" onClick={() => remove(c)}>{c.redeemed > 0 ? t("common.desativar") : t("common.delete")}</Button></div>}
               {!d.admin && c.redemption && <p className="type-caption mt-2">{rich("flair.brandFlairTab.voce_ja_trocou", { code: c.redemption.code }, { 0: ($c) => <code className="flair-code">{$c}</code> })}</p>}
             </div>
@@ -134,6 +136,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
             <Field label={t("flair.brandFlairTab.estoque_de_cupons")} id="fc-st" hint={t("common.vazio_ilimitado")}><Input id="fc-st" type="number" min={1} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></Field>
             <Field label={t("common.color")} id="fc-col"><Input id="fc-col" type="color" className="h-10 w-16 p-1" value={form.accentColor} onChange={(e) => setForm({ ...form, accentColor: e.target.value })} /></Field>
           </div>
+          <CouponChannelField value={form.canalCupomId} selectedName={form.canalCupomNome} onChange={(canalCupomId) => setForm({ ...form, canalCupomId })} />
           <Field label={t("common.link_da_loja_onde_o")} id="fc-url" hint={t("common.opcional_sem_ele_vale_o")}><Input id="fc-url" type="url" placeholder="https://" value={form.storeUrl} onChange={(e) => setForm({ ...form, storeUrl: e.target.value })} /></Field>
           <Switch checked={form.active} onChange={(v) => setForm({ ...form, active: v })} label={t("flair.brandFlairTab.ativa_visivel_no_flair")} />
         </div>}

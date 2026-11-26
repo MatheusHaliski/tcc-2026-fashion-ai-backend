@@ -10,6 +10,8 @@ import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.*;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.service.CouponChannelResolver;
+import br.com.fashionai.application.service.CouponChannelSnapshotWriter;
 import br.com.fashionai.application.service.FlairService;
 import br.com.fashionai.application.service.SealService.PromotionForm;
 import br.com.fashionai.domain.model.*;
@@ -30,6 +32,7 @@ public final class SealPromotionWriter {
     private final Audit audit;
     private final SealIssuers issuers;
     private final SealPromotionReads reads;
+    private CouponChannelResolver channels;
 
     public SealPromotionWriter(PromotionRepository promotions, PromotionRedemptionRepository redemptions, SealRepository seals, SealBondRepository bonds, UserRepository users, Guard guard, Audit audit, SealIssuers issuers, SealPromotionReads reads) {
         this.promotions = promotions;
@@ -41,6 +44,11 @@ public final class SealPromotionWriter {
         this.audit = audit;
         this.issuers = issuers;
         this.reads = reads;
+    }
+
+    /** Exercício 14 — canais de utilização do cupom (injetados depois da construção pelo SealService). */
+    public void useChannels(CouponChannelResolver channels) {
+        this.channels = channels;
     }
 
     public Map<String, Object> createPromotion(CurrentUser user, PromotionForm f) {
@@ -122,6 +130,7 @@ public final class SealPromotionWriter {
         }
         p.setVisibility(f.visibility() == null ? Visibility.PUBLIC : f.visibility());
         p.setStoreUrl(PromotionRules.storeUrl(f.storeUrl()));
+        p.setCanalCupom(CouponChannelResolver.resolve(channels, f.canalCupomId(), p.getCanalCupom()));
     }
 
     /**
@@ -180,6 +189,7 @@ public final class SealPromotionWriter {
         r.setPartnerBrandUserId(p.getPartnerBrandUserId());
         r.setRedeemedAt(now);
         r.setExpiresAt(p.getExpiresAt());
+        CouponChannelSnapshotWriter.issue(r, p);   // exercício 14: o cupom guarda o canal que a oferta tem agora
         redemptions.save(r);
         p.setRedeemedCount(p.getRedeemedCount() + 1);
         if (p.getTotalQuota() != null && p.getRedeemedCount() >= p.getTotalQuota()) {
