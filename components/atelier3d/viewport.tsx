@@ -23,6 +23,7 @@ import {
   type SceneDocument,
   type NodeEdit,
 } from "@/lib/atelier3d/document";
+import { assetIsPhotoRelief } from "@/lib/atelier3d/garment-parts";
 import { useI18n } from "@/lib/i18n/i18n";
 export type Tool = "translate" | "rotate" | "scale";
 export type View = "perspective" | "front" | "back" | "left" | "right" | "top";
@@ -132,7 +133,7 @@ function Scene(props: Props) {
         }}
       />
       {object && <Selection object={object} />}
-      {props.editable && object && (
+      {props.editable && object && !assetIsPhotoRelief(asset) && (
         <TransformControls
           object={object}
           mode={props.tool}

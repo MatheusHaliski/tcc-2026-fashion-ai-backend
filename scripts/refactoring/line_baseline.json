@@ -581,7 +581,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/atelier3d/document.ts": {
-   "max": 356,
+   "max": 313,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/avatar3d/body-spec.ts": {
