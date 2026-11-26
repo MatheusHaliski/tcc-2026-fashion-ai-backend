@@ -45,3 +45,8 @@ SET @ddl = IF((SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS tc JOIN
             AND (tc.CONSTRAINT_NAME = 'ck_fr_hype_snapshot' OR cc.CHECK_CLAUSE LIKE '%hype_level_snapshot%')) = 0,
     'ALTER TABLE flair_redemptions ADD CONSTRAINT ck_fr_hype_snapshot CHECK (hype_level_snapshot IS NULL OR hype_level_snapshot IN (''LOW_SIGNAL'',''NICHE'',''RELEVANT'',''HOT'',''TRENDING'',''VIRAL''))', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- marco de Hype que vale algo (elo 3): regra do extrato de FAI Points. Valor 0 aqui de propósito: os pontos de cada marco
+-- (Em alta 20, Tendência 50, Viral 120) vêm da configuração fai.hype.milestone-points.*; uma vez por card e marco.
+INSERT IGNORE INTO fai_points_rules (action_code, points, daily_cap, weekly_cap, once_per_ref, active, description)
+VALUES ('HYPE_MILESTONE', 0, NULL, NULL, TRUE, TRUE, 'Marco de Hype de um card (Em alta, Tendência, Viral): uma vez por card e marco; valor na configuração.');

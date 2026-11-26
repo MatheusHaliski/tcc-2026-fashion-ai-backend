@@ -28,9 +28,15 @@ ALTER TABLE flair_combinations ADD CONSTRAINT ck_flair_min_hype CHECK (min_hype_
 ALTER TABLE promotion_redemptions ADD CONSTRAINT ck_pr_hype_snapshot CHECK (hype_level_snapshot IS NULL OR hype_level_snapshot IN ('LOW_SIGNAL','NICHE','RELEVANT','HOT','TRENDING','VIRAL'));
 ALTER TABLE flair_redemptions ADD CONSTRAINT ck_fr_hype_snapshot CHECK (hype_level_snapshot IS NULL OR hype_level_snapshot IN ('LOW_SIGNAL','NICHE','RELEVANT','HOT','TRENDING','VIRAL'));
 
--- 5) Conferência final (só leitura): 4 colunas VARCHAR(20) anuláveis e 4 CHECKs.
+-- 5) Marco de Hype que vale algo: regra do extrato de FAI Points (os pontos vêm da configuração; valor 0 aqui).
+--    INSERT IGNORE: rodar de novo não duplica nem altera a regra.
+INSERT IGNORE INTO fai_points_rules (action_code, points, daily_cap, weekly_cap, once_per_ref, active, description)
+VALUES ('HYPE_MILESTONE', 0, NULL, NULL, TRUE, TRUE, 'Marco de Hype de um card (Em alta, Tendência, Viral): uma vez por card e marco; valor na configuração.');
+
+-- 6) Conferência final (só leitura): 4 colunas VARCHAR(20) anuláveis, 4 CHECKs e a regra HYPE_MILESTONE.
 SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE FROM information_schema.COLUMNS
  WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME IN ('min_hype_level', 'hype_level_snapshot') ORDER BY 1, 2;
 SELECT tc.TABLE_NAME, tc.CONSTRAINT_NAME, cc.CHECK_CLAUSE FROM information_schema.TABLE_CONSTRAINTS tc
  JOIN information_schema.CHECK_CONSTRAINTS cc ON cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA AND cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
  WHERE tc.CONSTRAINT_SCHEMA = DATABASE() AND tc.CONSTRAINT_NAME IN ('ck_promotion_min_hype', 'ck_flair_min_hype', 'ck_pr_hype_snapshot', 'ck_fr_hype_snapshot');
+SELECT action_code, points, once_per_ref, active FROM fai_points_rules WHERE action_code = 'HYPE_MILESTONE';
