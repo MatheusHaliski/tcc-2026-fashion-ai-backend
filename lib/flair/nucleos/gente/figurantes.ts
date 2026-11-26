@@ -53,14 +53,17 @@ export function ehGente(p: NucleoPersonagem): boolean {
   return !NAO_HUMANOS.has(p.papel) && p.postura !== "busto";
 }
 
-/** As pessoas dos figurantes humanos, pelo id de cena. */
-export function pessoasDosFigurantes(semente: number, lista: NucleoPersonagem[], esporte = false): Map<string, PessoaDoElenco> {
+/**
+ * As pessoas dos figurantes humanos, pelo id de cena. `roupas`: a roupa que o servidor deu a um papel nesta partida (o
+ * look da casa do adversário da Batalha de Looks), no lugar da roupa do papel; a pessoa (corpo, pele, cabelo) é a mesma.
+ */
+export function pessoasDosFigurantes(semente: number, lista: NucleoPersonagem[], esporte = false, roupas?: Record<string, Look3dPiece[]> | null): Map<string, PessoaDoElenco> {
   const out = new Map<string, PessoaDoElenco>();
   lista.forEach((p, i) => {
     if (!ehGente(p)) return;
     const id = idDoFigurante(lista, i);
     const sexo: Sex = sorteio(semente, `${id}:sexo`) < 0.5 ? "FEMININO" : "MASCULINO";
-    out.set(id, pessoaDaSemente(semente, id, sexo, roupaDoPapel(id, p.papel, p.cor, sexo, esporte)));
+    out.set(id, pessoaDaSemente(semente, id, sexo, roupas?.[p.papel] ?? roupaDoPapel(id, p.papel, p.cor, sexo, esporte)));
   });
   return out;
 }

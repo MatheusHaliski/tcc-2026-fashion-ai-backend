@@ -38,6 +38,12 @@ public final class Flair3dRecursoPerfil {
             Map.entry("PILOTO_FAVORITO", new PerfilDoJogo(Map.of(Atributo.AGILIDADE, 1, Atributo.RESISTENCIA, 1), Recurso.ENERGIA)),
             Map.entry("SUPER_HEROI", new PerfilDoJogo(Map.of(Atributo.FORCA, 1, Atributo.AGILIDADE, 1), Recurso.VIDA)));
 
+    /**
+     * A Batalha de Looks fica fora da tabela: o bônus dela entra na nota de cada rodada, para a pessoa e para o look da
+     * casa (BatalhaLooksPlacar), e não por cima da média final.
+     */
+    public static final PerfilDoJogo BATALHA = new PerfilDoJogo(Map.of(Atributo.CARISMA, 2, Atributo.AGILIDADE, 1), Recurso.FOCO);
+
     public static Optional<PerfilDoJogo> doJogo(String codigo) {
         return Optional.ofNullable(JOGOS.get(codigo));
     }

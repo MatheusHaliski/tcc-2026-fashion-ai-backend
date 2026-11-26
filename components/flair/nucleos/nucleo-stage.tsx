@@ -56,6 +56,8 @@ export interface NucleoStageProps {
   objetivoAberto: boolean;
   /** última resposta do servidor (entrega ou acionamento); null na preparação */
   resultado: NucleoResultado | null;
+  /** a última entrega que não fechou a partida (a rodada anterior, nas rodadas em etapas) */
+  tentativa?: NucleoResultado | null;
   /** prévia do look de agora (preparação) */
   previa: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
@@ -98,7 +100,7 @@ export function NucleoStage(props: NucleoStageProps) {
   const variante = salaDaFaseDeUso(definicao.codigo, momento, props.resultado) ?? props.variante;
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
-      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={variante} semente={props.semente}
+      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} anterior={props.tentativa} variante={variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
         zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem}
         andarLivre={andaAgora(definicao.codigo, definicao.acoes, momento, props.entreLances)}

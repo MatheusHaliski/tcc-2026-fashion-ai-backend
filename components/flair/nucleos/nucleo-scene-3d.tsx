@@ -24,6 +24,7 @@ import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { QualidadeDaCena } from "@/components/flair/nucleos/scene/scene-quality";
 import { CenaContexto } from "@/components/flair/nucleos/scene/stage-context";
 import { useSceneDirector } from "@/components/flair/nucleos/scene/use-scene-director";
+import { useBatalhaEmCena } from "@/components/flair/nucleos/scene/use-batalha-em-cena";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import { cameraEmUso, type MomentoDaCamera } from "@/lib/flair/nucleos/camera/jogos";
 import { poseDoRig } from "@/lib/flair/nucleos/camera/rigs";
@@ -63,6 +64,8 @@ export interface NucleoScene3DProps {
   /** a câmera escolhida no seletor do HUD ("AUTO" ou nula = a do momento) e o momento da partida */
   camera?: string | null;
   momento?: MomentoDaCamera;
+  /** a última entrega que não fechou a partida (a rodada anterior da Batalha: o look da casa segue no adversário) */
+  anterior?: NucleoResultado | null;
   /** onde a personagem está na sala, para quem precisa ler de fora (o laboratório); sem ele, a cena guarda o dela */
   jogadorDeFora?: React.MutableRefObject<Jogador>;
 }
@@ -78,7 +81,8 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
   return { dist, alvo: [0, altura + (sala?.zonas.avatar.altura ?? 0), 0] };
 }
 
-export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO", andarLivre = false, agilidade, desfileAtivo = false, jogadorDeFora }: NucleoScene3DProps) {
+export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO", andarLivre = false, agilidade, desfileAtivo = false, jogadorDeFora, anterior }: NucleoScene3DProps) {
+  const batalha = useBatalhaEmCena(config.codigo, resultado, anterior);
   const proprio = useRef<Jogador>({ pos: NA_MARCA, andando: false });
   const jogador = jogadorDeFora ?? proprio;
   // cada momento começa na marca; o desfile da Passarela parte do arco do backstage
@@ -105,9 +109,9 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
     <Canvas shadows camera={{ fov: 35, position: [1.7, 1.35, 3.8], near: 0.1, far: 60 }} dpr={[1, 2]} aria-label={rotulo}>
       <color attach="background" args={[sala.fundo]} />
       <CenaContexto.Provider value={cena}>
-        <Sala3D sala={sala} placar={placarDaCena(config.codigo, resultado)} />
+        <Sala3D sala={sala} placar={batalha.placar ?? placarDaCena(config.codigo, resultado)} />
         <Figurantes personagens={figurantes} prontos={prontos} />
-        <FigurantesHumanos codigo={config.codigo} semente={semente} personagens={figurantes} prontos={prontos} reduzido={reduzido}
+        <FigurantesHumanos codigo={config.codigo} semente={semente} personagens={figurantes} prontos={prontos} reduzido={reduzido} roupas={batalha.roupas}
           limite={() => corposCheiosDaCena(config.codigo, qualidade.current)} sombraAte={() => AJUSTES[qualidade.current].sombraDeFiguranteAte} />
         <LuzDeEfeito altura={sala.zonas.avatar.altura} />
         {manequim && zonasDaPeca && zonas && variante !== SALA_DE_USO && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
