@@ -158,15 +158,20 @@ public class AcervoEstruturaService {
     public Map<String, Object> criarCompartimento(CurrentUser user, UUID movelId, CompartimentoForm form) {
         AcervoMovel m = acesso.movel(user, movelId);
         String tipo = AcervoRegras.tipo(form == null ? null : form.tipo());
-        AcervoCompartimento c = partes.criar(m, tipo, AcervoRegras.opcional(form.nome(), 80));
+        AcervoCompartimento c = partes.criar(m, tipo, AcervoRegras.nomeOuPadrao(form.nome(), 80));
         return AcervoViews.compartimento(c, 0);
     }
 
+    /**
+     * Troca só o nome visível: o id do compartimento (o endereço que as peças guardam), o tipo, a ordem e as peças
+     * ficam como estão. Nome vazio volta ao nome padrão do tipo ("Gaveta 2").
+     */
     public Map<String, Object> renomearCompartimento(CurrentUser user, UUID id, NomeForm form) {
         AcervoCompartimento c = acesso.compartimento(user, id);
-        c.setNome(AcervoRegras.nome(form == null ? null : form.nome(), 80));
+        String nome = AcervoRegras.nomeOuPadrao(form == null ? null : form.nome(), 80);
+        c.setNome(nome != null ? nome : partes.nomePadrao(c));
         compartimentos.save(c);
-        return Map.of("id", c.getId(), "nome", c.getNome());
+        return AcervoViews.compartimento(c, partes.pecasEm(c));
     }
 
     public void apagarCompartimento(CurrentUser user, UUID id) {

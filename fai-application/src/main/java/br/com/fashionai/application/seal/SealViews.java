@@ -77,6 +77,24 @@ public final class SealViews {
                 && (s.getUsageLimit() == null || s.getUsageCount() < s.getUsageLimit());
     }
 
+    /**
+     * Estado do selo para quem lê (exercício 11), calculado no servidor a cada leitura e nunca gravado: INACTIVE,
+     * SCHEDULED (o início ainda não chegou), ENDED (o fim já passou), SOLD_OUT (teto de emissão atingido) ou OPEN.
+     * Segue a mesma ordem e os mesmos limites de {@link #available} e {@link #unavailableReason}.
+     */
+    public static String availabilityState(Seal s, Instant now) {
+        if (s.getStatus() != SealStatus.ACTIVE) {
+            return "INACTIVE";
+        }
+        if (s.getAvailableFrom() != null && s.getAvailableFrom().isAfter(now)) {
+            return "SCHEDULED";
+        }
+        if (s.getAvailableUntil() != null && !s.getAvailableUntil().isAfter(now)) {
+            return "ENDED";
+        }
+        return s.getUsageLimit() != null && s.getUsageCount() >= s.getUsageLimit() ? "SOLD_OUT" : "OPEN";
+    }
+
     public static String unavailableReason(Seal s, Instant now) {
         if (s.getStatus() != SealStatus.ACTIVE) {
             return Msg.t("seal.o_selo_esta_inativo");
@@ -116,8 +134,10 @@ public final class SealViews {
         m.put("usageLimit", s.getUsageLimit());
         m.put("usageCount", s.getUsageCount());
         m.put("grantValidityDays", s.getGrantValidityDays() != null ? s.getGrantValidityDays() : (int) SealService.DEFAULT_SEAL_VALIDITY.toDays());
-        m.put("available", available(s, Instant.now()));
-        m.put("unavailableReason", unavailableReason(s, Instant.now()));
+        Instant now = Instant.now();
+        m.put("available", available(s, now));
+        m.put("availabilityState", availabilityState(s, now));
+        m.put("unavailableReason", unavailableReason(s, now));
         return m;
     }
 

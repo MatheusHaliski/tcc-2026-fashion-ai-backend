@@ -1,5 +1,7 @@
 # Exercício 10 — Área artística principal da celebridade
 
+> **Implementado em 26/11/2026.** Tabela `areas_artisticas` e FK opcional `celebrity_profiles.area_artistica_principal_id` (`fk_celebrity_area_principal`, RESTRICT / RESTRICT) na migração `V115__areas_artisticas_exercicio_10.sql`; o SQL simples para o Railway está em `sql/railway/10-area-artistica.sql`. A lista `areas_json` continua como está e nenhuma área da lista vira principal sozinha. Código: `AreaArtistica`, `AreaArtisticaRepository`, `CelebrityAreaWriter` (400 `AREA_ARTISTICA_INVALIDA` / `AREA_ARTISTICA_INATIVA`), `GET /api/opcoes/areas-artisticas`, o mesmo campo do Editar perfil e `areaPrincipal` no cabeçalho do perfil (as outras áreas aparecem em "Também: …"). O PATCH aceita `areaArtisticaId` e, para limpar, `clearAreaArtistica: true`. Testes: os mesmos do exercício 09.
+
 **Situação na revisão `9f5512a77`:** Parcial: areas_json suporta lista; o modelo não distingue área principal por FK.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).
