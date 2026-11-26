@@ -23,7 +23,7 @@ FABRICS = ("malha_la", "malha_algodao", "jersey", "moletom", "sarja", "denim", "
 COLLARS = ("careca", "alta", "capuz", "colarinho", "v", "lapela", "polo", "vies", "faixa")   # colarinho: pé + folha virada; lapela: V + colarinho + lapelas
 CLOSURES = ("nenhum", "ziper_inteiro", "botao_ziper", "cordao", "botoes", "polo", "aberto")   # polo: vista curta; aberto: frente sem fecho
 NECKLINES = ("redondo", "quadrado", "reto", "v")   # decote da peça sem manga (reto = quadrado)
-POCKETS = ("canguru", "peito", "faca", "traseiro", "cargo", "joelho_duplo", "vivo", "lateral")   # joelho_duplo: reforço chapado
+POCKETS = ("canguru", "peito", "faca", "traseiro", "cargo", "joelho_duplo", "vivo", "lateral", "peito_lapela", "lapela")   # joelho_duplo: reforço chapado
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 

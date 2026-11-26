@@ -77,3 +77,23 @@ def test_faixa_da_vista_corre_pelo_decote_e_pelas_bordas(tmp_path):
     assert band and min(ys) < 0.1 and max(ys) > 0.5                                    # da barra até o decote
     assert "ribana" not in {m for f, m in zip(mesh.faces, mesh.mats) if min(mesh.verts[i][1] for i in f) > 0.45
                             and mesh.verts[f[0]][2] > 0.05}                            # a faixa ocupa o lugar da ribana do V
+
+
+def test_bolsos_de_lapela_no_peito_e_no_quadril():
+    raw = json.loads((SPECS / "asics-jaqueta-road-packable.json").read_text(encoding="utf-8"))
+    plain, _ = build_top(parse(raw))
+    flaps, _ = build_top(parse({**raw, "bolsos": ["peito_lapela", "lapela"]}))
+    assert flaps.mats.count("botao") > plain.mats.count("botao")          # a pressão de cada lapela
+    ys = sorted({round(min(flaps.verts[i][1] for i in f), 2) for f, p in zip(flaps.faces, flaps.parts) if p == "detalhe"})
+    assert ys[0] < 0.2 and ys[-1] > 0.35                                    # bolsos embaixo (quadril) e em cima (peito)
+
+
+def test_regras_do_texto_para_colete_utilitario_e_jaqueta_de_campo():
+    from catalogo.ficha import spec_for
+    prod = lambda sub, name: {"subcategory": sub, "product_name": name, "description": "", "brand": "X"}   # noqa: E731
+    vest = spec_for(prod("vest", "Colete Reto Dense Caqui"), "#b79b76", {})
+    assert (vest["gola"], vest["fechamento"], vest["bolsos"]) == ("alta", "ziper_inteiro", ["peito_lapela"])
+    assert spec_for(prod("vest", "Colete Alfaiataria"), "#222222", {})["fechamento"] == "botoes"
+    field = spec_for(prod("parka", "Men's parka pockets turtleneck"), "#34241b", {})
+    assert field["bolsos"] == ["peito_lapela", "lapela"] and field["tecido"]["tipo"] == "sarja"
+    assert spec_for(prod("parka", "Insulated Parka"), "#20232c", {})["tecido"]["tipo"] == "nylon"   # isolante ≠ gomos

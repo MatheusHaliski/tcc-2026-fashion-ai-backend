@@ -13,6 +13,7 @@ from .decals import add_decal
 from .edge_frame import edge_frame
 from .sleeve_decals import add_sleeve_decal
 from .details import chest_pocket, kangaroo
+from .flap_pockets import chest_flap_pockets, hip_flap_pockets
 from .geometry import ARMHOLE_HALF_ANGLE, COLUMNS, Mesh, build_torso
 from .hood import build_hood
 from .measure import measure_top
@@ -101,6 +102,10 @@ def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
         closure = buttons(mesh, front, spec.botoes, low, high)
     if "canguru" in spec.bolsos:
         kangaroo(mesh, rows, rib_top, zipped, "corpo")
+    if "peito_lapela" in spec.bolsos:
+        chest_flap_pockets(mesh, rows, rows[i_arm].y, "corpo")
+    if "lapela" in spec.bolsos:
+        hip_flap_pockets(mesh, rows, rib_top, "corpo")
     if "peito" in spec.bolsos:
         chest_pocket(mesh, rows, rows[i_arm].y, "corpo")
     # a fita métrica mede a manga ao longo do eixo x: com a manga caída, mede a mesma peça construída em pose T

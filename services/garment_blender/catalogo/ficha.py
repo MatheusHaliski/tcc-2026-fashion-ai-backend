@@ -26,7 +26,7 @@ BASES = {
     "jacket": ("alta", "ziper_inteiro", "sarja", 240, "longa", False, "regular", (), 6),
     "blazer": ("lapela", "botoes", "la_plana", 280, "longa", False, "regular", (), 2),
     "coat": ("lapela", "botoes", "la_plana", 450, "longa", False, "amplo", (), 4),
-    "parka": ("capuz", "ziper_inteiro", "nylon", 200, "longa", False, "amplo", ("peito",), 6),
+    "parka": ("capuz", "ziper_inteiro", "nylon", 200, "longa", False, "amplo", ("lapela",), 6),
     "windbreaker": ("capuz", "ziper_inteiro", "nylon", 110, "longa", False, "regular", (), 6),
     "kimono": ("faixa", "aberto", "tricoline", 140, "longa", False, "amplo", (), 6),
 }
@@ -105,6 +105,14 @@ def spec_for(product: dict, color: str, brand_prior: dict[str, str]) -> dict:
     found = tecido.fabric_of(product.get("product_name"), product.get("description"), sub)
     if found:
         kind, weight = found, WEIGHT[found] if found != kind else weight
+    if sub in ("jacket", "parka") and texto.FIELD.search(name + " " + desc):   # jaqueta militar, de campo, utilitária
+        collar = "alta" if collar == "capuz" and not texto.HOOD.search(name) else collar
+        pockets = ("peito_lapela", "lapela")
+        if not found:   # a de campo é de sarja lavada, não de nylon
+            kind, weight = "sarja", WEIGHT["sarja"]
+    if sub == "vest" and not texto.TAILORED.search(name + " " + desc) and kind not in ("la_plana", "tricoline") \
+            and not texto.first(texto.CLOSURES, name):   # colete sem alfaiataria: o utilitário (gola de pé, zíper)
+        collar, closure, pockets = "alta", "ziper_inteiro", ("peito_lapela",)
     if sub == "jacket" and (kind == "denim" or texto.SHIRT_JACKET.search(name)) and not texto.first(texto.CLOSURES, name):
         collar, closure, pockets = "colarinho", "botoes", ("peito",)   # jaqueta jeans, camisa-jaqueta: botões
     if texto.POCKET_KANGAROO.search(name + " " + desc) and sub in ("hoodie", "sweatshirt"):
