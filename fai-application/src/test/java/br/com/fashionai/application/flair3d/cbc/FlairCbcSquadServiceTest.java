@@ -43,50 +43,47 @@ class FlairCbcSquadServiceTest {
         service = kit.build(FlairCbcSquadService.class);
     }
 
-    /** O Primeiro Elenco cheio com cartas da pessoa, todas da mesma marca (todas as linhas verdes). */
-    FlairCbcSquadService.Pedido primeiro(CurrentUser dono, String marca) {
+    /** O Desafio do Fogo cheio com cartas da pessoa, todas da cor dada (vermelha completa o quebra-cabeça). */
+    FlairCbcSquadService.Pedido fogo(CurrentUser dono, String cor) {
         Map<String, UUID> cartas = new LinkedHashMap<>();
-        for (FlairCbcElenco.Vaga v : FlairCbcElencos.porCodigo("PRIMEIRO_ELENCO").orElseThrow().vagas()) {
+        for (FlairCbcElenco.Vaga v : FlairCbcElencos.porCodigo("DESAFIO_FOGO").orElseThrow().vagas()) {
             cartas.put(v.chave(), kit.save(FlairCardInstanceRepository.class,
-                    Flair3dFixtures.instance(dono.id(), v.posicao(), "brand:" + marca + v.chave())).getId());
+                    Flair3dFixtures.instance(dono.id(), "SUP", "brand:Farm", "color:" + cor)).getId());
         }
         return new FlairCbcSquadService.Pedido(cartas);
     }
 
-    FlairCbcSquadService.Pedido primeiroVerde(CurrentUser dono) {
-        Map<String, UUID> cartas = new LinkedHashMap<>();
-        for (FlairCbcElenco.Vaga v : FlairCbcElencos.porCodigo("PRIMEIRO_ELENCO").orElseThrow().vagas()) {
-            cartas.put(v.chave(), kit.save(FlairCardInstanceRepository.class,
-                    Flair3dFixtures.instance(dono.id(), v.posicao(), "brand:Farm")).getId());
-        }
-        return new FlairCbcSquadService.Pedido(cartas);
+    FlairCbcSquadService.Pedido fogoVermelho(CurrentUser dono) {
+        return fogo(dono, "red");
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    void formacaoTrazVagasLinhasERequisitos() {
-        Map<String, Object> f = service.formacao("primeiro_elenco");
-        assertThat((List<FlairCbcElenco.Vaga>) f.get("vagas")).first().isEqualTo(new FlairCbcElenco.Vaga("acessorio", "ACE", 0, 0));
-        assertThat((List<Map<String, Object>>) f.get("linhas")).hasSize(5).first().isEqualTo(Map.of("a", "acessorio", "b", "cima"));
-        assertThat((List<Map<String, Object>>) f.get("requisitos")).first().isEqualTo(Map.of("tipo", "QUIMICA", "alvo", 40));
+    void formacaoTrazVagasComOQueCadaPecaPedeERequisitos() {
+        Map<String, Object> f = service.formacao("desafio_fogo");
+        assertThat((List<FlairCbcElenco.Vaga>) f.get("vagas")).hasSize(4).first()
+                .isEqualTo(new FlairCbcElenco.Vaga("p1", "ANY", Map.of("color", List.of("red"))));
+        assertThat(f).doesNotContainKey("linhas");
+        assertThat((List<Map<String, Object>>) f.get("requisitos")).containsExactly(Map.of("tipo", "COR", "alvo", 4, "valor", "red"),
+                Map.of("tipo", "CARTAS", "alvo", 4));
         assertThat(catchThrowableOfType(ApiException.class, () -> service.formacao("XADREZ")).status()).isEqualTo(404);
     }
 
     @Test
     void conferirSoComCartasDaPessoa() {
-        FlairCbcSquadService.Pedido daBia = primeiroVerde(bia);
-        ApiException e = catchThrowableOfType(ApiException.class, () -> service.conferir(ana, "PRIMEIRO_ELENCO", daBia));
+        FlairCbcSquadService.Pedido daBia = fogoVermelho(bia);
+        ApiException e = catchThrowableOfType(ApiException.class, () -> service.conferir(ana, "DESAFIO_FOGO", daBia));
         assertThat(e.status()).isEqualTo(422);
         assertThat(e.code()).isEqualTo("CARTA_ALHEIA");
-        assertThat(service.conferir(bia, "PRIMEIRO_ELENCO", daBia)).containsEntry("ok", true).containsEntry("quimica", 67);
-        FlairCbcSquadService.Pedido vagaErrada = new FlairCbcSquadService.Pedido(Map.of("goleiro", daBia.cartas().get("cima")));
-        assertThat(catchThrowableOfType(ApiException.class, () -> service.conferir(bia, "PRIMEIRO_ELENCO", vagaErrada)).code())
+        assertThat(service.conferir(bia, "DESAFIO_FOGO", daBia)).containsEntry("ok", true).containsEntry("completas", 4);
+        FlairCbcSquadService.Pedido vagaErrada = new FlairCbcSquadService.Pedido(Map.of("goleiro", daBia.cartas().get("p1")));
+        assertThat(catchThrowableOfType(ApiException.class, () -> service.conferir(bia, "DESAFIO_FOGO", vagaErrada)).code())
                 .isEqualTo("ENTREGA_INVALIDA");
     }
 
     @Test
     void entregaComRequisitoFalhandoE422ENaoGrava() {
-        ApiException e = catchThrowableOfType(ApiException.class, () -> service.entregar(ana, "PRIMEIRO_ELENCO", primeiro(ana, "M")));
+        ApiException e = catchThrowableOfType(ApiException.class, () -> service.entregar(ana, "DESAFIO_FOGO", fogo(ana, "blue")));
         assertThat(e.status()).isEqualTo(422);
         assertThat(e.code()).isEqualTo("REQUISITOS_NAO_CUMPRIDOS");
         assertThat(e.details()).containsKey("requisitos");
@@ -96,16 +93,16 @@ class FlairCbcSquadServiceTest {
     @Test
     @SuppressWarnings("unchecked")
     void edicaoEhAOrdemDeConclusaoERepetirNaoCriaNova() {
-        assertThat(service.entregar(ana, "PRIMEIRO_ELENCO", primeiroVerde(ana))).containsEntry("edicao", 1).containsEntry("ok", true);
-        assertThat(service.entregar(bia, "PRIMEIRO_ELENCO", primeiroVerde(bia))).containsEntry("edicao", 2);
-        assertThat(service.entregar(ana, "PRIMEIRO_ELENCO", primeiroVerde(ana))).containsEntry("edicao", 1);
+        assertThat(service.entregar(ana, "DESAFIO_FOGO", fogoVermelho(ana))).containsEntry("edicao", 1).containsEntry("ok", true);
+        assertThat(service.entregar(bia, "DESAFIO_FOGO", fogoVermelho(bia))).containsEntry("edicao", 2);
+        assertThat(service.entregar(ana, "DESAFIO_FOGO", fogoVermelho(ana))).containsEntry("edicao", 1);
         List<FlairCbcSquadEntrega> salvas = MemoryRepository.rows(kit.dep(FlairCbcSquadEntregaRepository.class));
         assertThat(salvas).hasSize(3).extracting(FlairCbcSquadEntrega::getEdicao).containsExactly(1, 2, 1);
-        assertThat(salvas.get(0).getQuimica()).isEqualTo(67);
+        assertThat(salvas.get(0).getQuimica()).isEqualTo(100);
 
         List<Map<String, Object>> lista = (List<Map<String, Object>>) service.lista(bia).get("elencos");
-        assertThat(lista).hasSize(5);
-        assertThat(lista.get(0)).containsEntry("codigo", "PRIMEIRO_ELENCO").containsEntry("vagas", 5).containsEntry("linhas", 5)
+        assertThat(lista).hasSize(FlairCbcElencos.TODOS.size());
+        assertThat(lista.get(0)).containsEntry("codigo", "DESAFIO_FOGO").containsEntry("pecas", 4)
                 .containsEntry("concluido", true).containsEntry("edicao", 2);
         assertThat(lista.get(1)).containsEntry("concluido", false).containsEntry("edicao", null);
     }
@@ -114,28 +111,28 @@ class FlairCbcSquadServiceTest {
     void edicaoSaiDoContadorDoElencoMesmoQuandoALeituraDasConclusoesEstaAtrasada() {
         FlairCbcSquadEntregaRepository entregas = kit.dep(FlairCbcSquadEntregaRepository.class);
         FlairCbcSquadEdicaoRepository edicoes = kit.dep(FlairCbcSquadEdicaoRepository.class);
-        assertThat(service.entregar(ana, "PRIMEIRO_ELENCO", primeiroVerde(ana))).containsEntry("edicao", 1);
+        assertThat(service.entregar(ana, "DESAFIO_FOGO", fogoVermelho(ana))).containsEntry("edicao", 1);
         // a conclusão da Ana ainda não aparece para a transação da Bia: pela maior edição gravada, a Bia também levaria a 1
         entregas.deleteAll();
-        assertThat(service.entregar(bia, "PRIMEIRO_ELENCO", primeiroVerde(bia))).containsEntry("edicao", 2);
-        assertThat(service.entregar(bia, "PRIMEIRO_ELENCO", primeiroVerde(bia))).containsEntry("edicao", 2);
-        assertThat(edicoes.findByElenco("PRIMEIRO_ELENCO").orElseThrow().getUltima()).isEqualTo(2);
-        assertThat(edicoes.findByElenco("PALETA_ATELIE")).isEmpty();
+        assertThat(service.entregar(bia, "DESAFIO_FOGO", fogoVermelho(bia))).containsEntry("edicao", 2);
+        assertThat(service.entregar(bia, "DESAFIO_FOGO", fogoVermelho(bia))).containsEntry("edicao", 2);
+        assertThat(edicoes.findByElenco("DESAFIO_FOGO").orElseThrow().getUltima()).isEqualTo(2);
+        assertThat(edicoes.findByElenco("DESAFIO_VERDE_FLORESTAL")).isEmpty();
     }
 
     @Test
     void elencoSemContadorComecaDaMaiorEdicaoJaDada() {
         FlairCbcSquadEntrega antiga = new FlairCbcSquadEntrega();
         antiga.setUserId(UUID.randomUUID());
-        antiga.setElenco("PRIMEIRO_ELENCO");
+        antiga.setElenco("DESAFIO_FOGO");
         antiga.setCartasJson("{}");
         antiga.setOk(true);
         antiga.setEdicao(5);
         kit.save(FlairCbcSquadEntregaRepository.class, antiga);
-        assertThat(service.entregar(ana, "PRIMEIRO_ELENCO", primeiroVerde(ana))).containsEntry("edicao", 6);
+        assertThat(service.entregar(ana, "DESAFIO_FOGO", fogoVermelho(ana))).containsEntry("edicao", 6);
         List<FlairCbcSquadEdicao> contadores = MemoryRepository.rows(kit.dep(FlairCbcSquadEdicaoRepository.class));
         assertThat(contadores).hasSize(1);
-        assertThat(contadores.get(0).getElenco()).isEqualTo("PRIMEIRO_ELENCO");
+        assertThat(contadores.get(0).getElenco()).isEqualTo("DESAFIO_FOGO");
         assertThat(contadores.get(0).getUltima()).isEqualTo(6);
     }
 }

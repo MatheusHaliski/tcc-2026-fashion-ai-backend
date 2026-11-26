@@ -20,13 +20,13 @@ export interface Recorte {
 }
 
 /** Sentido do encaixe entre a célula (c, r) e a da direita (+1 = saliência para a direita) e a de baixo. */
-const ladoDireito = (c: number, r: number) => ((c + r) % 2 === 0 ? 1 : -1);
-const ladoDeBaixo = (c: number, r: number) => ((c + r) % 2 === 0 ? -1 : 1);
+export const ladoDireito = (c: number, r: number) => ((c + r) % 2 === 0 ? 1 : -1);
+export const ladoDeBaixo = (c: number, r: number) => ((c + r) % 2 === 0 ? -1 : 1);
 
-const n2 = (v: number) => Math.round(v * 100) / 100;
+export const n2 = (v: number) => Math.round(v * 100) / 100;
 
 /** Borda horizontal de (xa, y) a (xb, y) com o encaixe deslocado `o` em y (0 = borda reta). */
-function bordaH(xa: number, xb: number, y: number, o: number): string {
+export function bordaH(xa: number, xb: number, y: number, o: number): string {
   if (o === 0) return `L${n2(xb)} ${n2(y)}`;
   const v = xb - xa;
   const a = xa + v * 0.36;
@@ -35,7 +35,7 @@ function bordaH(xa: number, xb: number, y: number, o: number): string {
   return `L${n2(a)} ${n2(y)}C${n2(a - e)} ${n2(y + o)} ${n2(b + e)} ${n2(y + o)} ${n2(b)} ${n2(y)}L${n2(xb)} ${n2(y)}`;
 }
 
-function bordaV(ya: number, yb: number, x: number, o: number): string {
+export function bordaV(ya: number, yb: number, x: number, o: number): string {
   if (o === 0) return `L${n2(x)} ${n2(yb)}`;
   const v = yb - ya;
   const a = ya + v * 0.36;

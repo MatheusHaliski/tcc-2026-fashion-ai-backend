@@ -1,158 +1,40 @@
-/* ── FLAIR Card Building Challenge · elencos (components/flair/elencos/*) ───────────────────────────────────────────
-   Sem cenário 3D: o quebra-cabeça da arte em cima (.el-jigsaw; as peças e o encaixe estão em
-   39-flair-elencos-quebra-cabeca.css) e o tabuleiro embaixo (.el-board: linhas em SVG na cor do nível e as vagas por cima).
-   Movimento reduzido: as transições somem pela regra global de 01. */
-.el-game {
+/* ── FLAIR Card Building Challenge · elencos em quebra-cabeça (components/flair/elencos/*) ─────────────────────────
+   A lista (.ep-list), a tela do elenco (.ep-game: quebra-cabeça, requisitos, vagas) e o modal de conclusão
+   (.ep-complete). As peças do quebra-cabeça estão em 39-flair-elencos-quebra-cabeca.css e as vagas em
+   48-flair-elencos-vagas.css. Movimento reduzido: as transições somem pela regra global de 01. */
+.ep-game {
   display: grid;
   gap: 12px;
+  /* a bandeja fica presa ao pé da tela: o fim da página não fica atrás dela */
+  padding-bottom: 12px;
 }
 
-.el-jigsaw {
-  position: relative;
-  /* em tela larga a arte não passa de 38% da altura da tela: as vagas do tabuleiro ficam na primeira dobra */
-  width: min(100%, calc(38dvh * 1.6));
-  margin: 0 auto;
-  aspect-ratio: 16 / 10;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: #1b1b1f;
-}
-
-.el-reveal {
-  position: absolute;
-  inset: 0;
-}
-
-.el-photo {
-  position: absolute;
-  width: 14%;
-  transform: translate(-50%, -50%);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background: #fffe;
-  box-shadow: 0 4px 14px #0007;
-  font-size: var(--text-caption);
-  text-align: center;
-}
-
-.el-photo img {
-  display: block;
-  width: 100%;
-}
-
-.el-edition {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: #c6275e;
-  color: #fff;
-  font-weight: 700;
-}
-
-.el-board {
-  --el-pitch: clamp(78px, 21vw, 104px);
-  position: relative;
-  height: calc(var(--el-rows, 4) * var(--el-pitch));
-  border-radius: var(--radius);
-  border: 1px solid var(--line-soft);
-  background: var(--surface-2);
-}
-
-.el-lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.el-line {
-  stroke-width: 4;
-  stroke: var(--line-soft);
-  stroke-dasharray: 6 6;
-}
-
-/* as duas cartas estão postas e o servidor ainda julga o link */
-.el-line.is-pending {
-  stroke: var(--muted);
-  stroke-dasharray: 2 6;
-  animation: el-line-wait 0.9s linear infinite;
-}
-
-.el-line.is-red {
-  stroke: #d93a3a;
-}
-
-.el-line.is-orange {
-  stroke: #f08a24;
-}
-
-.el-line.is-green {
-  stroke: #2e9e5b;
-}
-
-/* a linha julgada se desenha de uma vaga à outra */
-.el-line:is(.is-red, .is-orange, .is-green) {
-  stroke-dasharray: none;
-  transform-box: view-box;
-  animation: el-line-in 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes el-line-in {
-  from {
-    transform: scale(0);
-  }
-}
-
-@keyframes el-line-wait {
-  to {
-    stroke-dashoffset: -16;
-  }
-}
-
-.el-attrs {
-  position: absolute;
-  display: flex;
-  gap: 2px;
-  transform: translate(-50%, -50%);
-}
-
-.el-attrs i {
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--line-soft);
-  font-size: 0.75rem;
-  font-style: normal;
-  font-weight: 700;
-}
-
-.el-meter {
+.ep-meter {
   height: 10px;
   border-radius: 999px;
   background: var(--surface-3);
   overflow: hidden;
 }
 
-.el-meter span {
+.ep-meter span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #c6275e, #1f7a76);
+  background: linear-gradient(90deg, #f08a24, #c6275e);
+  transition: width 0.4s ease;
 }
 
-.el-list {
+.ep-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.el-list-item {
+.ep-list-item {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   padding: 10px;
   border-radius: var(--radius);
   border: 1px solid var(--line-soft);
@@ -160,59 +42,72 @@
   color: var(--ink);
 }
 
-.el-list-name {
+.ep-list-item:hover,
+.ep-list-item:focus-visible {
+  border-color: var(--line);
+}
+
+.ep-list-thumb {
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #16161a;
+}
+
+.ep-list-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* ainda a montar: a imagem aparece apagada, como o fundo do quebra-cabeça */
+  filter: grayscale(0.6) brightness(0.8);
+}
+
+.ep-list-item.is-done .ep-list-thumb img {
+  filter: none;
+}
+
+.ep-list-name {
   font-weight: 700;
 }
 
-/* Legenda das linhas do tabuleiro (cor = quantos atributos as duas cartas têm em comum; letras = quais). */
-.el-legend {
+.ep-complete {
   display: grid;
-  gap: 4px;
-  margin-top: 6px;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
 }
 
-.el-legend-cores {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 12.5px;
+.ep-complete-video {
+  display: block;
+  width: 100%;
+  max-height: 60dvh;
+  border-radius: var(--radius);
+  background: #000;
 }
 
-.el-legend-cores li {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.ep-complete .ep-puzzle {
+  width: min(100%, 52dvh);
 }
 
-/* tela larga: o quebra-cabeça e os requisitos à esquerda, o tabuleiro à direita, tudo à vista de uma vez */
+/* tela larga: o quebra-cabeça e os requisitos à esquerda, as vagas à direita, tudo à vista de uma vez */
 @media (min-width: 1100px) {
-  .el-game {
+  .ep-game {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
   }
 
-  .el-game > * {
+  .ep-game > * {
     grid-column: 1 / -1;
   }
 
-  .el-game > .el-jigsaw {
+  .ep-game > .ep-puzzle {
     grid-column: 1;
-    width: 100%;
+    grid-row: 1 / span 2;
   }
 
-  .el-game > .el-board {
-    grid-column: 2;
-    grid-row: span 2;
-  }
-
-  .el-game > .el-req {
-    grid-column: 1;
-  }
-
-  .el-game > .el-legend {
+  .ep-game > .ep-req,
+  .ep-game > .ep-vagas {
     grid-column: 2;
   }
 }
