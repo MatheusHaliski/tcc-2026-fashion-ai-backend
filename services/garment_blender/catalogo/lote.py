@@ -158,6 +158,13 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
         _write_prints(spec, best, folder)
         said = texto.first(texto.SLEEVES, texto.plain(p.get("product_name")), texto.plain(p.get("description")))
         best["recorte"] = forma.from_photo(spec, best, said is not None)
+        if best.get("faixa_barra"):   # a altura da faixa pela fração da peça, no comprimento final da ficha
+            length = top_measures("M", spec["sexo"], spec["caimento"], spec.get("medidas_marca")).comprimento / 100
+            spec["faixa_barra"] = {"cor": best["faixa_barra"]["cor"],
+                                   "altura": round(best["faixa_barra"]["fracao"] * length, 4)}
+        if best.get("faixas_manga") and not spec["sem_manga"]:
+            spec["faixas_manga"] = [{"lado": b["lado"], "distancia": b["distancia_m"], "largura": b["largura_m"],
+                                     "cor": b["cor"]} for b in best["faixas_manga"]]
         thumb = photo.copy(); thumb.thumbnail((512, 512)); thumb.save(folder / "foto.jpg", quality=85)
     folder.mkdir(parents=True, exist_ok=True)
     summary = {k: v for k, v in best.items() if k not in ("decalques", "corrida", "listras")}

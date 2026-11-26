@@ -82,3 +82,38 @@ def sleeve_bands(dist: np.ndarray, lab: np.ndarray, mask: np.ndarray, frame, ppm
                     out.append({"lado": side, **{k: v for k, v in band.items() if k != "_lab"}})
                 break
     return out
+
+
+def hem_band(lab, mask, frame, base) -> dict | None:
+    """Faixa de outra cor que desce até a barra (o top bege com a barra amarela, o moletom com o cós contrastante):
+    ``{"fracao": altura da faixa / altura da peça, "cor"}``; None sem faixa. Linha a linha, no meio do tronco (±20 %
+    da largura), da barra para cima: a faixa é o trecho de linhas longe da cor do tecido e perto umas das outras; ela
+    precisa cruzar a peça de lado a lado (o desenho no pé da frente não é faixa)."""
+    w = frame.right - frame.left
+    xs = slice(max(0, int(frame.center - 0.2 * w)), int(frame.center + 0.2 * w))
+    rows = []
+    for y in range(frame.hem - int(0.02 * frame.height), frame.top + int(0.5 * frame.height), -1):
+        m = mask[y, xs]
+        if m.sum() < 0.3 * (xs.stop - xs.start):   # a barra arredondada: linhas com pouco pano não contam
+            rows.append(None)
+            continue
+        rows.append((y, np.median(lab[y, xs][m], 0)))
+    run = []
+    for r in rows:
+        if r is None:
+            if run:
+                break
+            continue
+        if np.linalg.norm(r[1] - base) <= THRESHOLD:
+            break
+        if run and np.linalg.norm(r[1] - np.median([c for _, c in run], 0)) > 12:
+            break
+        run.append(r)
+    if not run or len(run) < 0.03 * frame.height:
+        return None
+    color = np.median([c for _, c in run], 0)
+    mid = run[len(run) // 2][0]
+    across = mask[mid]
+    if across.sum() < 10 or (np.linalg.norm(lab[mid][across] - color, axis=1) < THRESHOLD).mean() < 0.7:
+        return None
+    return {"fracao": round((frame.hem - run[-1][0]) / frame.height, 3), "cor": to_hex(lab_to_rgb(color))}

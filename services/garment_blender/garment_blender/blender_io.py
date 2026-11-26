@@ -87,6 +87,12 @@ def fabric_materials(spec, tex_dir: Path) -> dict:
                                    tint=tint)
     else:   # gola de pé, gola careca do tecido plano: o próprio tecido, liso (sem a padronagem do corpo)
         mats["ribana"] = _tiled(_material("ribana", write_maps(kind, color, tex_dir), fin, tint=tint), kind)
+    if spec.faixa_barra is not None:   # o mesmo tecido na cor da faixa da barra
+        band = spec.faixa_barra.cor
+        mats["faixa_barra"] = _tiled(_material("faixa_barra", write_maps(kind, band, tex_dir), fin, tint=_rgb(band)), kind)
+    for k, b in enumerate(spec.faixas_manga):   # anéis da manga: o mesmo tecido na cor de cada faixa
+        mats[f"faixa_manga_{k}"] = _tiled(_material(f"faixa_manga_{k}", write_maps(kind, b.cor, tex_dir), fin,
+                                                    tint=_rgb(b.cor)), kind)
     if spec.calca:   # cós: elástico em ribana no jogger/moletom, o próprio tecido nas outras
         mats["cos"] = mats["ribana"] if spec.fechamento == "cordao" else mats["corpo"]
     if spec.fechamento != "nenhum" or kind == "denim":   # o denim leva rebites de metal mesmo sem zíper

@@ -121,7 +121,7 @@ def resolve(spec, m: TopMeasures) -> tuple[StrapCut, TopMeasures]:
     w_cm, centro, shape, d_front, d_back, R_f, R_b = DEFAULTS.get(spec.subcategoria, DEFAULTS["tank_top"])
     if "cava" not in brand:   # a cava sem manga desce abaixo da axila: o braço caído não prensa o pano no tronco
         m = replace(m, cava=m.cava + SLEEVELESS_DROP)
-    w = min(9.0, max(1.5, spec.alca if spec.alca is not None else w_cm)) * CM
+    w = min(9.0, max(0.8, spec.alca if spec.alca is not None else w_cm)) * CM
     centro = min(0.8, max(0.2, spec.alca_centro if spec.alca_centro is not None else centro))
     H = m.comprimento * CM
     a_c, b_c = ellipse_semi_axes(m.torax * CM, 0.68)
@@ -134,8 +134,8 @@ def resolve(spec, m: TopMeasures) -> tuple[StrapCut, TopMeasures]:
     x_in, x_out = x_s - w / 2, x_s + w / 2
     x_in = max(x_in, neck_a + 0.008)
     x_out = min(x_out, sh_half - 0.01, 0.92 * a_c)
-    if x_out - x_in < 0.015:   # tórax estreito: a alça encolhe, mas não some
-        x_in = x_out - 0.015
+    if x_out - x_in < min(w, 0.015):   # tórax estreito: a alça encolhe, mas não some
+        x_in = x_out - min(w, 0.015)
     w, x_s = x_out - x_in, (x_in + x_out) / 2
     if spec.gola == "v":
         shape = "v"

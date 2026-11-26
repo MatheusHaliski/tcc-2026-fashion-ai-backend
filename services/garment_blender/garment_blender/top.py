@@ -18,6 +18,7 @@ from .hood import build_hood
 from .measure import measure_top
 from .sleeves import build_sleeve, extend, fold_edge, inset
 from .spec import GarmentSpec
+from .bands import paint_hem, paint_sleeves
 from .stitches import ring_line, stitch_line
 from .strap_cut import SLEEVELESS_ARMHOLE, STRAP_GOLAS, legacy_sleeveless, resolve
 from .tank import build_sleeveless_torso
@@ -114,6 +115,9 @@ def build_top(spec: GarmentSpec) -> tuple[Mesh, dict]:
                       gap + 0.004 if gap else 0.0, gap_from, (lambda y: cut.armhole_x(y, 1)) if cut else None)
         elif decal.lado in sleeve_of:   # peça sem manga: o desenho de manga não tem onde ir
             add_sleeve_decal(mesh, sleeve_of[decal.lado], decal, f"estampa_{k}")
+    if spec.faixa_barra is not None:   # o tronco abaixo da altura da faixa (barra dobrada incluída) na cor dela
+        paint_hem(mesh, spec.faixa_barra.altura)
+    paint_sleeves(mesh, spec.faixas_manga)
     used = {k: getattr(m, k) for k in m.__dataclass_fields__}
     if body:             # medido antes: as medidas da blusa contam a partir da barra, que agora sobe
         used |= add_brief(mesh, hem, m.barra * 0.01, thick)

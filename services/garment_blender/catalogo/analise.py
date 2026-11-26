@@ -89,6 +89,10 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
         stripes["periodo"] = round(stripes.pop("periodo_px") / ppm, 4)
         out.update(padrao="listras", listras=stripes)
         return out
+    hem = faixas.hem_band(lab, mask, frame, base)
+    if hem:   # a faixa da barra é pano de outra cor, não desenho
+        out["faixa_barra"] = hem
+        cand[frame.hem - int(hem["fracao"] * frame.height) - 2:] = False
     bands = faixas.sleeve_bands(dist, lab, mask, frame, ppm, sleeve)
     if bands:
         out["faixas_manga"] = bands

@@ -137,6 +137,6 @@ def test_recorte_pela_foto_encurta_so_com_a_barriga_aparecendo_e_manga_pelo_brac
     tucked = spec("shirt", "Camisa Social")                  # para dentro da calça: a barra some, não é cropped
     assert forma.from_photo(tucked, {"comprimento_foto": 0.45, "pele_abaixo": 0.0, "em_modelo": True}, True) == []
     blouse = spec("blouse", "Blusa Básica")                  # o texto não diz a manga; o braço à mostra diz
-    assert forma.from_photo(blouse, {"bracos": 0.12, "em_modelo": True}, False) == ["manga"] and blouse["manga_curta"]
+    assert forma.from_photo(blouse, {"braco_alto": 0.0, "braco_baixo": 0.12, "em_modelo": True}, False) == ["manga"] and blouse["manga_curta"]
     told = spec("blouse", "Blusa Manga Longa")
-    assert forma.from_photo(told, {"bracos": 0.12, "em_modelo": True}, True) == []
+    assert forma.from_photo(told, {"braco_alto": 0.0, "braco_baixo": 0.12, "em_modelo": True}, True) == []

@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .prints import AllOver, Decal, Stripes, parse_prints
+from .prints import AllOver, Decal, HemBand, SleeveBand, Stripes, parse_prints
 from .sizes import EASE, LETTERS, TopMeasures, check, top_measures
 from .sizes_pants import CUTS, NUMBERS, PantsMeasures, check_pants, pants_measures
 
@@ -70,6 +70,8 @@ class GarmentSpec:
     estampas: tuple[Decal, ...] = ()  # desenhos colados no tronco (prints.py)
     listras: Stripes | None = None
     estampa_corrida: AllOver | None = None
+    faixa_barra: HemBand | None = None   # faixa de outra cor da barra para cima
+    faixas_manga: tuple[SleeveBand, ...] = ()   # anéis de outra cor na manga
 
     @property
     def calca(self) -> bool:
@@ -99,7 +101,7 @@ def parse(raw: dict, size: str | None = None, base_dir: Path | None = None) -> G
     de onde as imagens das estampas são lidas (a pasta da ficha)."""
     known = {"produto", "marca", "subcategoria", "tamanho", "sexo", "caimento", "tecido", "gola", "fechamento",
              "bolsos", "ribana", "manga_curta", "angulo_manga", "cor_ziper", "passantes", "capuz_abaixado", "medidas_marca", "url_oficial", "observacao",
-             "botoes", "cor_botao", "cor_linha", "pregas", "sem_manga", "estampas", "listras", "estampa_corrida", "origem",
+             "botoes", "cor_botao", "cor_linha", "pregas", "sem_manga", "estampas", "listras", "estampa_corrida", "origem", "faixa_barra", "faixas_manga",
              "alca", "alca_centro", "decote", "decote_costas_forma"}
     unknown = set(raw) - known
     if unknown:

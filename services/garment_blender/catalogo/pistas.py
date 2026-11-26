@@ -17,7 +17,8 @@ ALL_OVER = re.compile(r"xadrez|\bplaid|tartan|\bcheck(ed|ered)?\b|vichy|gingham|
                       r"polka|bolinha|\brenda\b|\blace\b|\bjacquard|monogram|toile|ikat|batik|\bfolhagem|tropical")
 SHINY = re.compile(r"\bcouro\b|leather|\bpu\b|verniz|patent|metaliz|metallic|\bpaete|sequin|lantejoula|\bcetim\b|"
                    r"\bsatin\b|puffer|acolchoad|matelass|quilted|\bvinil|\bvinyl|\bpelo\b|\bpelucia|"
-                   r"\bfur\b|shearling|sherpa|teddy|\bfleece\b|plush|veludo|velvet")
+                   r"\bfur\b|shearling|sherpa|teddy|\bfleece\b|plush|veludo|velvet|tornasol|furta[- ]?cor|iridesc|"
+                   r"\blurex|brilhos?\b|glitter|\bshiny\b|\bshine\b|perolad")
 OUTER = {"jacket", "coat", "blazer", "parka", "vest", "windbreaker", "cardigan"}
 
 

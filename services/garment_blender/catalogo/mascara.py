@@ -169,7 +169,10 @@ SKIN, ARMS = 16, 12
 def body_hints(labels: np.ndarray, mask: np.ndarray, frame: Frame) -> dict:
     """O que a pessoa na foto diz da peça: o comprimento dela (pela altura do rosto), se a barriga aparece logo abaixo
     da barra (cropped de verdade, não para dentro da calça) e quanto braço aparece (manga curta ou longa)."""
-    out = {"bracos": round(float((labels == ARMS).sum() / max(1, mask.sum())), 4)}
+    arms, area = labels == ARMS, max(1, mask.sum())
+    split = frame.top + int(0.3 * frame.height)   # alto do braço (ombro até um pouco abaixo da axila) e o resto
+    out = {"bracos": round(float(arms.sum() / area), 4), "braco_alto": round(float(arms[:split].sum() / area), 4),
+           "braco_baixo": round(float(arms[split:].sum() / area), 4)}
     if not frame.worn or not frame.face_h or frame.hem_cut or frame.top_cut or frame.back_view:
         return out
     out["comprimento_foto"] = round(frame.height / (frame.face_h / FACE_M), 3)
