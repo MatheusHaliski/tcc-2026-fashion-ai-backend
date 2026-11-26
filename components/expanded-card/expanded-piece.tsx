@@ -47,7 +47,7 @@ function LookHype({ id }: { id: string }) {
   return <HypeBadge state={hypeViewState(summary, { loading, error })} summary={summary} className="shrink-0" />;
 }
 
-export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }: { id: string; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {
+export function ExpandedPiece({ id, from, context = "detail", headerExtra, onScheme, startEditing }: { id: string; context?: "detail" | "modal"; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {
   const { t, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const { data, loading, error, reload, setData } = useApi<PieceDetail>((signal) => api.get(`/api/pieces/${id}${from ? `?fromScheme=${from}` : ""}`, { signal, anonymous: !user }), [id, from, !!user]);
   const [editImage, setEditImage] = useState(false); const [editArt, setEditArt] = useState(false);
@@ -124,10 +124,14 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const studioInfo = (p.flatLayMetadata as { studio?: Partial<StudioInfo> } | undefined)?.studio;
   return (
     <>
-      <ExpandedPieceCard piece={p} headerExtra={headerExtra} sub={vis} seals={sealsOf(p.id)} primary={primary}
-        actions={<CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} reactions />}
-        mediaNotice={studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>} onOpenPhoto={setFullscreen}
-        detailsExtra={<dl className="c-facts">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}>
+      <ExpandedPieceCard piece={p} context={context} seals={sealsOf(p.id)} onOpenPhoto={setFullscreen} slots={{
+        headerControls: headerExtra,
+        visibilityLabel: vis,
+        primaryAction: primary,
+        interactionBar: <CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} reactions />,
+        photoNotice: studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>,
+        extraFacts: <dl className="c-facts">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>,
+      }}>
         {usedIn.length > 0 && (
           <section className="pd-section" aria-labelledby={`pd-looks-${p.id}`}>
             <h3 id={`pd-looks-${p.id}`} className="pd-h">{t("common.looks_com_esta_peca")}</h3>

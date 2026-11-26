@@ -116,7 +116,7 @@ function Closet() {
             </div>
           )}
           <div className="grid-cards is-pieces social-card-grid">{data.items.map((p) => selectMode
-            ? <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} selectable selected={picked.includes(p.id)} onSelect={togglePick} />
+            ? <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} mode="selection" selected={picked.includes(p.id)} onSelect={togglePick} />
             : <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div>
           <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={(p) => set("page", p)} />
         </>

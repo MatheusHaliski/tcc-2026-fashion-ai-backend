@@ -73,16 +73,16 @@ it("retains the real conservation object in the feed piece card", () => {
   mockApi({});
   // estado de conservação é opcional no card do feed: fica de fora por padrão e entra quando ligado no Background Studio
   const piece = { ...PIECE, estadoConservacao, tipoLavagem };
-  const { unmount } = renderApp(<PieceCard piece={piece} flip={false} />);
+  const { unmount } = renderApp(<PieceCard piece={piece} allowFlip={false} />);
   expect(within(screen.getByRole("tabpanel")).queryByText(estadoConservacao.nome)).toBeNull();
   unmount();
-  renderApp(<PieceCard piece={{ ...piece, background: { infoGrid: { fields: ["brand", "condition"] } } }} flip={false} />);
+  renderApp(<PieceCard piece={{ ...piece, background: { infoGrid: { fields: ["brand", "condition"] } } }} allowFlip={false} />);
   expect(within(screen.getByRole("tabpanel")).getByText(estadoConservacao.nome)).toBeTruthy();
 });
 
 it("the expanded piece card shows the conservation in Info and the washing type in Detalhes", () => {
   mockApi({});
-  const { container } = renderApp(<ExpandedPieceCard piece={{ ...PIECE, estadoConservacao, tipoLavagem }} preview />);
+  const { container } = renderApp(<ExpandedPieceCard piece={{ ...PIECE, estadoConservacao, tipoLavagem }} context="preview" />);
   expect(within(screen.getByRole("tabpanel")).getByText(estadoConservacao.nome)).toBeTruthy();
   expect(container.querySelector(".pd-section .c-facts")?.textContent).toContain(tipoLavagem.nome);
 });

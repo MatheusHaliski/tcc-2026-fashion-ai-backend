@@ -76,7 +76,7 @@ describe("PieceCard — \"Para doar\" e tags essenciais", () => {
 
   it("sem estilo não há linha de tags; peça comum não mostra \"Para doar\"; na seleção (montar look) as tags somem", () => {
     mockApi(HYPE);
-    const { container } = renderApp(<><PieceCard piece={{ ...PIECE, style: [] }} /><PieceCard piece={donated} selectable onSelect={vi.fn()} /></>);
+    const { container } = renderApp(<><PieceCard piece={{ ...PIECE, style: [] }} /><PieceCard piece={donated} mode="selection" onSelect={vi.fn()} /></>);
     const [plain, selectable] = Array.from(container.querySelectorAll<HTMLElement>(".piece-card"));
     expect(plain.querySelector(".pc-tags")).toBeNull();
     expect(plain.textContent).not.toContain("Para doar");

@@ -83,7 +83,7 @@ export function DetailModalProvider({ children }: { children: ReactNode }) {
           <div ref={dialogRef} tabIndex={-1} onKeyDown={trap} role="dialog" aria-modal="true" aria-label={top.kind === "scheme" ? t("detailModal.detalhe_do_esquema") : t("detailModal.detalhe_da_peca")} className={`dialog dialog-card ${top.kind === "piece" ? "is-piece" : ""}`}>
             <Suspense fallback={<div className="skeleton h-40" aria-busy="true" />} >{top.kind === "scheme"
               ? <ExpandedScheme key={top.id} id={top.id} headerExtra={controls} />
-              : <ExpandedPiece key={top.id} id={top.id} from={top.from} headerExtra={controls} onScheme={openScheme} />}</Suspense>
+              : <ExpandedPiece context="modal" key={top.id} id={top.id} from={top.from} headerExtra={controls} onScheme={openScheme} />}</Suspense>
           </div>
         </div>
       )}

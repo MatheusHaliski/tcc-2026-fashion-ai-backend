@@ -120,7 +120,7 @@ function FlairCardsDemo() {
   const { t } = useI18n();
   return (
     <div className="gd-convert">
-      <div className="gd-card-frame"><PieceCard piece={demoPiece()} flip={false} /></div>
+      <div className="gd-card-frame"><PieceCard piece={demoPiece()} allowFlip={false} /></div>
       <div className="gd-convert-arrow" aria-hidden><span className="btn btn-sm">{t("flairCollection.convert")}</span><span className="gd-arrow">→</span></div>
       <div className="gd-anim-show"><FlairGameCard card={demoCard()} size="sm" flip={false} /></div>
     </div>
@@ -221,8 +221,8 @@ function SchemeSealDemo() {
   const { t } = useI18n();
   return (
     <div className="gd-compare">
-      <figure><div className="gd-card-frame"><PieceCard piece={demoPiece()} flip={false} /></div><figcaption>{t("guide.demo.seal.without")}</figcaption></figure>
-      <figure><div className="gd-card-frame"><PieceCard piece={demoPiece()} flip={false} seals={[DEMO_SCHEME_SEAL]} /></div><figcaption>{t("guide.demo.seal.with")}</figcaption></figure>
+      <figure><div className="gd-card-frame"><PieceCard piece={demoPiece()} allowFlip={false} /></div><figcaption>{t("guide.demo.seal.without")}</figcaption></figure>
+      <figure><div className="gd-card-frame"><PieceCard piece={demoPiece()} allowFlip={false} seals={[DEMO_SCHEME_SEAL]} /></div><figcaption>{t("guide.demo.seal.with")}</figcaption></figure>
     </div>
   );
 }

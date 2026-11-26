@@ -1,9 +1,7 @@
 "use client";
 import Link from "next/link";
-import { MediaImage } from "@/components/media-image";
 import { Price } from "@/components/price";
 import type { PieceView } from "@/lib/api/types";
-import { mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
 import { CardSealSummary, SealSlot, type SealBadge } from "@/components/scheme-card";
@@ -25,59 +23,47 @@ import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { infoGridOf } from "@/lib/cards/info-grid";
-import { DefaultGarmentPhoto } from "@/components/catalog/default-garment-photo";
-import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource } from "@/components/catalog/catalog-photo";
-import { catalogWholeFrame, resolveFraming, usePhotoFraming, type PhotoFraming } from "@/lib/photo-framing";
-import type { CatalogCardImage } from "@/lib/api/catalog";
-import { ImpersonationMedia, impersonationMedia } from "@/components/impersonation-media";
+import { resolveFraming, usePhotoFraming, type PhotoFraming } from "@/lib/photo-framing";
 import { useFashionDepth } from "@/lib/hype/use-fashion-depth";
 import { FashionMotionButton } from "@/components/hype/fashion-motion-button";
 import { FashionCardStats } from "@/components/hype/fashion-card-panel";
 import { PieceCardPanels } from "@/components/piece-card-panels";
 import { fashionCardLevel } from "@/lib/hype/fashion-card";
+import { PieceCardPhoto } from "@/components/pieces/piece-card-photo";
 import { conservationLabel } from "@/lib/api/piece-references";
 
-export function pieceWholeSources(piece: PieceView): { image: CatalogCardImage | null; sources: string[] } {
-  const ci = (piece.flatLayMetadata as { catalogImage?: CatalogCardImage } | undefined)?.catalogImage;
-  const image = ci?.url && ci.url === piece.imageUrl ? ci : null;
-  const sources = [thumbUrl(piece.imageUrl?.trim(), 640), piece.imageUrl, piece.studioImageUrl, piece.thumbnailUrl]
-    .map((url) => url?.trim()).filter((url): url is string => !!url);
-  return { image, sources: Array.from(new Set(sources)) };
-}
+export { pieceCardImage, pieceWholeSources } from "@/components/pieces/piece-card-photo";
 
-export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: string; cover: boolean } {
-  const studio = [piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl].map(url => mediaUrl(url?.trim())).find(Boolean);
-  if (studio) return { src: studio, cover: true };
-  const raw = piece.thumbnailUrl?.trim() || piece.imageUrl?.trim();
-  return { src: thumbUrl(raw, 640), srcSet: thumbSrcSet(raw), cover: false };
-}
-
-export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true, framing: forcedFraming }: {
-  piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
+type PieceCardProps = {
+  piece: PieceView;
+  seals?: SealBadge[];
+  anatomy?: string | null;
   extra?: ReactNode;
-  flip?: boolean;
-  framing?: PhotoFraming;
-}) {
+  photoFraming?: PhotoFraming;
+} & (
+  | { mode?: "feed"; href?: string; allowFlip?: boolean }
+  | { mode: "preview" }
+  | { mode: "selection"; selected?: boolean; onSelect: (piece: PieceView) => void }
+);
+
+export function PieceCard(props: PieceCardProps) {
+  const { piece, seals: brandSeals, anatomy, extra, photoFraming } = props;
+  const isPreview = props.mode === "preview";
+  const isSelection = props.mode === "selection";
+  const href = !isPreview && !isSelection ? props.href : undefined;
+  const flippable = !isPreview && !isSelection && (props.allowFlip ?? true);
   const detail = useDetailModal();
   const { t } = useI18n(); const { user } = useAuth();
-  const preview = href === "#";
-  const flippable = flip && !preview && !selectable;
   const auraMode = piece.background?.auraHype as string | undefined;
-  const { auraEnabled, hype, hypeState, live } = useAuraLive("PIECE", piece.id, auraMode, !selectable);
-  const tilt = auraEnabled && !flippable && !preview;
+  const { auraEnabled, hype, hypeState, live } = useAuraLive("PIECE", piece.id, auraMode, !isSelection);
+  const tilt = auraEnabled && !flippable && !isPreview;
   const depth = useFashionDepth(tilt);
   const seals = withHypeSeals(brandSeals, hypeSealCodes(hype.summary));
   const openModal = (e: React.MouseEvent) => { if (!detail || href || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openPiece(piece.id); };
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
-  const img = pieceCardImage(piece);
   const [defaultFraming] = usePhotoFraming();
-  const framing = forcedFraming ?? resolveFraming(piece.background?.photoFraming, defaultFraming);
-  const whole = framing === "WHOLE" ? pieceWholeSources(piece) : null;
-  const wholeImage = whole?.image && (!preview || catalogWholeFrame(whole.image)) ? whole.image : null;
-  // prévia com o recorte da foto que a pessoa acabou de escolher (blob:): a peça inteira, não um zoom no tecido
-  const fillFrame = preview && framing === "FABRIC" && !img.src?.startsWith("blob:");
+  const framing = photoFraming ?? resolveFraming(piece.background?.photoFraming, defaultFraming);
   const mediaStyle = { aspectRatio: "4 / 3" };
-  const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);
   const surface = artSurfaceProps(piece.background, art, "compact");
   const skin = (piece.background?.skin as string | undefined) ?? null;
@@ -97,9 +83,9 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
 
   const media = (
     <>
-      {impersonationMedia(piece.background, piece.owner.id) ? <ImpersonationMedia background={piece.background} ownerId={piece.owner.id}/> : piece.defaultImage ? <DefaultGarmentPhoto category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} framing={framing} alt=""/> : whole && (whole.image || whole.sources.length) ? <CatalogPhoto requiredFrame={!!wholeImage} category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} framing="WHOLE" image={wholeImage} fallbackUrl={whole.sources[0]} alternatives={whole.sources.slice(1)} alt="" /> : crop ? <CatalogPhoto category={piece.category} subcategory={piece.subcategory} colorHex={piece.colorHex} color={piece.color} requiredFrame image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 100vw, 620px" alt="" loading="lazy" decoding="async" className={img.cover || fillFrame ? "is-cover" : "is-contain"} /> : null}
-      <AuraMetamorphose mode={piece.background?.auraMetamorphose as string | undefined} presetId={piece.background?.auraMetamorphosePreset as string | undefined} preview live={live}/>{auraEnabled && <AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview} showScore={false} />}
-      {selectable && (zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
+      <PieceCardPhoto piece={piece} framing={framing} isPreview={isPreview} />
+      <AuraMetamorphose mode={piece.background?.auraMetamorphose as string | undefined} presetId={piece.background?.auraMetamorphosePreset as string | undefined} preview live={live}/>{auraEnabled && <AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={isPreview} showScore={false} />}
+      {isSelection && (zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">
           {piece.aiGeneratedImage && <span className="pc-flag" title={t("pieceCard.gerada_por_ia")}><span aria-hidden>{t("multiPiece.selo_ia_curto")}</span><span className="sr-only">{t("pieceCard.gerada_por_ia")}</span></span>}
@@ -114,24 +100,24 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const name = <span className="pc-name">{piece.name}</span>;
   const identity = <div className="pc-window is-identity">
     <span className="seal-row">
-      {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
+      {isPreview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
     </span>
     {!!seals?.length && <CardSealSummary seals={seals} />}
     {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular"><Price value={piece.price} /></b></span>}
   </div>;
   
   const card = (
-    <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode="feed" className={`fai-card piece-card ${selectable ? "" : "is-social"} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
+    <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode="feed" className={`fai-card piece-card ${isSelection ? "" : "is-social"} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${isSelection && props.selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
       <CardBorder entityId={`PIECE:${piece.id}`} background={piece.background} auraHype={auraEnabled} hype={hypeState} live={live}/>
       {tilt && <span className="fashion-depth-glare" aria-hidden/>}
-      <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} animate={preview} />
+      <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} animate={isPreview} />
       <div className="pc-frame">
         <div className="pc-content">
-          {!selectable && <CardHeader owner={piece.owner} sub={visibility} linked={!preview} className="pc-header" trailing={flippable ? <CardFlipButton side="front" /> : undefined} />}
+          {!isSelection && <CardHeader owner={piece.owner} sub={visibility} linked={!isPreview} className="pc-header" trailing={flippable ? <CardFlipButton side="front" /> : undefined} />}
           {tilt && <FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={() => void depth.toggleSensor()}/>}
 
-          {selectable ? (
-            <button type="button" className="pc-select text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>
+          {isSelection ? (
+            <button type="button" className="pc-select text-left" aria-pressed={props.selected} onClick={() => props.onSelect(piece)}>
               <span className="pc-media" data-photo-framing={framing} style={mediaStyle}>{media}</span>
               <span className="pc-id">
                 {name}
@@ -141,7 +127,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
             </button>
           ) : (
             <>
-              {preview
+              {isPreview
                 ? <div className="pc-media" data-photo-framing={framing} style={mediaStyle}>{media}</div>
                 : <Link href={link} onClick={openModal} className="pc-media" data-photo-framing={framing} style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
               <div className="pc-id">
@@ -151,7 +137,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
             </>
           )}
           {extra && <div className="c-extra">{extra}</div>}
-          {!selectable && <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={preview} />}
+          {!isSelection && <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={isPreview} />}
         </div>
       </div>
     </article>

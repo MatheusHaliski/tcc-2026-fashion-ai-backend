@@ -403,7 +403,7 @@ export function MultiPieceReview({ file, detection, subtitle, onClose, onSaved, 
               onMakeAi={() => makeAi(r)} onUseAi={(useAi) => update(r.index, { useAi })} />
           ))}
           {currentStep === "art" && rows.filter((r) => r.index === active).map((r) => <fieldset key={r.index} disabled={saving || r.status === "saved" || !r.include}>
-            <PieceArtEditor value={r.value.background ?? { skin: "atelier" }} onChange={(background) => setValue(r.index, { ...r.value, background })}
+            <PieceArtEditor background={r.value.background ?? { skin: "atelier" }} onBackgroundChange={(background) => setValue(r.index, { ...r.value, background })}
               piece={photoPreview(r, user, tax)} styles={r.value.style} occasions={r.value.occasion} />
           </fieldset>)}
           {currentStep === "review" && <ul className="grid gap-3" aria-label={t("builder.step.review")}>
@@ -417,7 +417,7 @@ export function MultiPieceReview({ file, detection, subtitle, onClose, onSaved, 
           {problem && <p role="alert" className="error-text">{problem}</p>}
         </div>
         {currentStep !== "art" && rows.filter((r) => r.index === active).map((r) => <aside key={r.index} aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start">
-          <p className="label">{t("scheme.card")}</p><PieceCard piece={photoPreview(r, user, tax)} href="#" />
+          <p className="label">{t("scheme.card")}</p><PieceCard piece={photoPreview(r, user, tax)} mode="preview" />
         </aside>)}
       </div>
       {footer}
