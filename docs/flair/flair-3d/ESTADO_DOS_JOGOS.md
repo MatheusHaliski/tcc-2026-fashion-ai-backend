@@ -255,7 +255,7 @@ mudarem, chegar à ponta. Fotos em `scratchpad/shots/jogos/<jogo>-uso-*.png`. **
 do jogo com o servidor (o laboratório não chama a API; a ligação com o resultado do servidor está nos testes da tela);
 o prazo estourando; controle e toque.
 
-**O que ainda falta nestes quatro.** O briefing não avisa, antes de pintar, que a tinta que sobra é o fôlego da fase de
+**O que ainda falta nestes quatro.** A conta da tinta avisa que a sobra paga os lances ousados, mas o objetivo do jogo ainda não descreve a fase de
 uso; a roda de recursos não mostra o desgaste; o avatar veste só a cor dominante (sem emblema, capa nem capacete
 pintados); não há adversário nem física (o cone não é driblado, o drone não atira); a pontuação não depende do caminho
 feito, só do lance e do tempo.
