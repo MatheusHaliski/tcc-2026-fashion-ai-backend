@@ -183,7 +183,10 @@ public class Flair3dNucleoService {
         }
         Flair3dMatch m = matches.findById(pedido.partida()).filter(x -> x.getUserId().equals(user.id()) && x.getNucleo().equals(n.codigo()))
                 .orElseThrow(() -> Flair3dErros.naoEncontrado("PARTIDA_NAO_ENCONTRADA", "partida_nao_encontrada"));
-        return base.comSemente(m.getSemente()).comAndamento(Andamento.ler(m.getEstadoJson()));
+        // como na prévia: a entrega já feita conta como etapa passada, e o selo vale para o pedido da vez
+        Andamento a = Andamento.ler(m.getEstadoJson());
+        boolean aberta = Flair3dMatch.ABERTA.equals(m.getStatus());
+        return base.comSemente(m.getSemente()).comAndamento(aberta ? a.proximaTentativa(Json.read(m.getEntregaJson(), Entrega.class)) : a);
     }
 
     /** A partida da pessoa (404, 403) no status que a operação pede (409). */

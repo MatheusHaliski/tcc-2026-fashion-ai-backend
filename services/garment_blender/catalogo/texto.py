@@ -110,3 +110,7 @@ def skip_reason(name: str, url: str = "", brand: str = "", sub: str = "") -> str
 def sex_of(text: str) -> str | None:
     f, m = bool(FEMALE.search(text)), bool(MALE.search(text))
     return "FEMININO" if f and not m else "MASCULINO" if m and not f else None
+FIELD = _rx(r"\bfield\b", r"militar", r"military", r"\bm-?65\b", r"utility", r"utilitari", r"safari", r"cargo",
+            r"\bpockets\b", r"\bbolsos\b", r"\bworkwear\b")
+TAILORED = _rx(r"alfaiataria", r"tailored", r"\bsuit", r"social", r"blazer", r"classic", r"classico", r"\bterno\b")
+HOOD = _rx(r"\bcapuz", r"\bhood")

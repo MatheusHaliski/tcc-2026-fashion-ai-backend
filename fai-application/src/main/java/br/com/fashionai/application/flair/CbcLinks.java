@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * FLAIR CBC — os links do elenco (docs/flair/cbc/CINCO_ELENCOS.md), puro. Cada linha da formação liga duas vagas; com
+ * FLAIR CBC — os links do elenco (docs/flair/cbc/FLAIR_CBC.md §2), puro. Cada linha da formação liga duas vagas; com
  * as duas preenchidas, a força é a soma dos atributos em comum: marca 2, subcategoria 2, categoria 1, estilo 1, cor 1
  * (mesma cor ou mesma família; neutro só com neutro) e ocasião 1. Força 0 = vermelha, 1 = laranja, 2+ = verde. Carta
  * fora da posição da vaga tem química 0 e todas as linhas dela ficam vermelhas. Química da carta: verde vale 1, laranja

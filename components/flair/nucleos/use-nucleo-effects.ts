@@ -14,8 +14,8 @@ import type { PerfilDaPeca } from "@/lib/flair/recursos/types";
 export function useNucleoEffects(codigo: NucleoCodigo, cartas: FlairCollectionCard[], ligado = true, onde: OndeDosEfeitos = {}) {
   const ids = useMemo(() => cartas.map((c) => c.id), [cartas]);
   const chave = ids.join(",");
-  const { rodada = null, partida = null } = onde;
-  const efeitos = useApi((signal) => efeitosDasCartas(codigo, ids, signal, { rodada, partida }), [codigo, chave, rodada, partida], { enabled: ligado && ids.length > 0 });
+  const { rodada = null, partida = null, vez = null } = onde;
+  const efeitos = useApi((signal) => efeitosDasCartas(codigo, ids, signal, { rodada, partida }), [codigo, chave, rodada, partida, vez], { enabled: ligado && ids.length > 0 });
   const carregado = !!efeitos.data;
   const porCarta = useMemo(() => {
     const lista = efeitos.data?.efeitos ?? [];

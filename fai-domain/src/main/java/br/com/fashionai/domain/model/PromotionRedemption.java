@@ -72,4 +72,8 @@ public class PromotionRedemption extends AuditableEntity {
 
     @Column(name = "min_purchase_currency_snapshot", length = 3, columnDefinition = "char(3)")
     private String minPurchaseCurrencySnapshot;
+
+    /** Circuito Aura (fase 1) — faixa de Hype do card na hora da emissão; nulo = oferta sem exigência (ou cupom antigo). */
+    @Column(name = "hype_level_snapshot", length = 20)
+    private String hypeLevelSnapshot;
 }

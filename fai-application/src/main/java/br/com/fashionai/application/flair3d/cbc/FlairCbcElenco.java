@@ -1,25 +1,23 @@
 package br.com.fashionai.application.flair3d.cbc;
 
-import br.com.fashionai.application.flair.CbcLinks;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * FLAIR Card Building Challenge — um dos cinco elencos (Strategy, docs/refactoring/gof/R90-flair3d-nucleos.md): a
- * formação (vagas com posição e coordenada), as linhas entre vagas e os requisitos (BASE_NUCLEOS.md, "FLAIR Card Building
- * Challenge"). Links e química vêm de {@link CbcLinks}; a avaliação mora em {@link FlairCbcAvaliacao}.
+ * FLAIR Card Building Challenge — um elenco em quebra-cabeça (Strategy, docs/refactoring/gof/R90-flair3d-nucleos.md): a
+ * imagem do elenco é cortada em peças, uma por vaga. A carta da pessoa que cumpre o que a vaga pede ({@code pede}: cor,
+ * estilo ou ocasião; vazio = qualquer carta) encaixa a peça; o deck inteiro com os requisitos completa o quebra-cabeça
+ * (docs/flair/cbc/CINCO_ELENCOS.md). A avaliação mora em {@link FlairCbcAvaliacao}.
  */
 public interface FlairCbcElenco {
     String codigo();
 
+    /** As vagas na ordem das peças da imagem (leitura: da esquerda para a direita, de cima para baixo). */
     List<Vaga> vagas();
 
-    List<CbcLinks.Edge> linhas();
-
-    /** Os requisitos da tabela do contrato. */
+    /** Os requisitos do deck. */
     List<Requisito> requisitos();
 
     /** Os requisitos com "todas as vagas preenchidas" (CARTAS = número de vagas) quando o elenco não pede outro número. */
@@ -31,53 +29,55 @@ public interface FlairCbcElenco {
         return List.copyOf(out);
     }
 
-    /** Vaga da formação: chave, posição da carta e coordenada (coluna, linha; linha 0 é a de cima). */
-    record Vaga(String chave, String posicao, int coluna, int linha) {
-    }
-
-    static CbcLinks.Edge linha(String a, String b) {
-        return new CbcLinks.Edge(a, b);
+    /**
+     * Vaga = peça da imagem: chave, posição da carta ("ANY" = qualquer) e o que a carta precisa ter para encaixar a peça,
+     * nas chaves do motor ({@code color}, {@code style}, {@code occasion}: lista de valores aceitos).
+     */
+    record Vaga(String chave, String posicao, Map<String, Object> pede) {
+        public Vaga {
+            pede = pede == null ? Map.of() : Map.copyOf(pede);
+        }
     }
 
     /**
-     * Requisito: QUIMICA (alvo 0–100), LINHAS_VERDES, LINHAS_POR (atributo: MARCA, COR, OCASIAO...), SEM_LINHA_VERMELHA
-     * (vaga opcional; alvo 0), CARTAS, MARCAS (distintas) e NIVEL_CARTA (nível mínimo da carta, alvo = quantas).
+     * Requisito do deck: COR, ESTILO e OCASIAO (pelo menos {@code alvo} cartas com o {@code valor}), CARTAS, MARCAS
+     * (distintas) e NIVEL_CARTA (nível mínimo da carta, alvo = quantas).
      */
-    record Requisito(String tipo, int alvo, String atributo, String vaga, String nivel) {
-        public static final String QUIMICA = "QUIMICA";
-        public static final String LINHAS_VERDES = "LINHAS_VERDES";
-        public static final String LINHAS_POR = "LINHAS_POR";
-        public static final String SEM_LINHA_VERMELHA = "SEM_LINHA_VERMELHA";
+    record Requisito(String tipo, int alvo, String valor, String nivel) {
+        public static final String COR = "COR";
+        public static final String ESTILO = "ESTILO";
+        public static final String OCASIAO = "OCASIAO";
         public static final String CARTAS = "CARTAS";
         public static final String MARCAS = "MARCAS";
         public static final String NIVEL_CARTA = "NIVEL_CARTA";
 
         public static Requisito de(String tipo, int alvo) {
-            return new Requisito(tipo, alvo, null, null, null);
+            return new Requisito(tipo, alvo, null, null);
         }
 
-        public static Requisito linhasPor(String atributo, int alvo) {
-            return new Requisito(LINHAS_POR, alvo, atributo, null, null);
+        public static Requisito cor(String cor, int alvo) {
+            return new Requisito(COR, alvo, cor, null);
         }
 
-        public static Requisito semLinhaVermelha(String vaga) {
-            return new Requisito(SEM_LINHA_VERMELHA, 0, null, vaga, null);
+        public static Requisito estilo(String estilo, int alvo) {
+            return new Requisito(ESTILO, alvo, estilo, null);
+        }
+
+        public static Requisito ocasiao(String ocasiao, int alvo) {
+            return new Requisito(OCASIAO, alvo, ocasiao, null);
         }
 
         public static Requisito nivelCarta(String nivel, int alvo) {
-            return new Requisito(NIVEL_CARTA, alvo, null, null, nivel);
+            return new Requisito(NIVEL_CARTA, alvo, null, nivel);
         }
 
-        /** {tipo, alvo} e só os campos usados (atributo, vaga, nivel). */
+        /** {tipo, alvo} e só os campos usados (valor, nivel). */
         public Map<String, Object> toMap() {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("tipo", tipo);
             m.put("alvo", alvo);
-            if (atributo != null) {
-                m.put("atributo", atributo);
-            }
-            if (vaga != null) {
-                m.put("vaga", vaga);
+            if (valor != null) {
+                m.put("valor", valor);
             }
             if (nivel != null) {
                 m.put("nivel", nivel);

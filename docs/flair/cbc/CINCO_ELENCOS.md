@@ -1,93 +1,85 @@
-# FLAIR CBC: os cinco elencos
+# FLAIR CBC: elencos em quebra-cabeça
 
-O FLAIR Card Building Challenge passa a ter cinco desafios oficiais, em dificuldade crescente. Cada um é um **elenco**
-de cartas numa formação, como o elenco do FIFA 21: as cartas vizinhas são ligadas por linhas, e cada linha acende
-conforme o que as duas cartas têm em comum. As regras de link e química estão em `FLAIR_CBC.md` §2; aqui ficam a
-formação, o objetivo, os requisitos e a imagem de cada elenco.
+Os cinco elencos de linhas e química (Primeiro Elenco, Paleta do Ateliê, Casa da Marca, Noite de Estreia e Elenco
+Lendário) foram **retirados** (front, servidor, testes e textos). O histórico de entregas e os contadores de edição já
+gravados continuam no banco; nenhuma migration apaga nada. O nome deste arquivo ficou por causa das referências.
 
-**Os 16 Desafios de Montagem oficiais de hoje** saem da lista e ficam arquivados (o histórico de entregas fica). Os
-desafios criados pela comunidade continuam como estão [decidir].
+Agora cada elenco é um **quebra-cabeça com uma imagem do FashionAI**. A imagem é cortada em peças, uma por vaga. A
+pessoa põe as próprias cartas nas vagas; a carta que cumpre o que a vaga pede (cor, estilo ou ocasião) **encaixa a
+peça** e a parte da imagem aparece no lugar. Com o deck inteiro certo, o quebra-cabeça se completa, a entrega sai
+sozinha (com a edição numerada, pela ordem de conclusão) e abre o modal **"Parabéns, você completou!"**.
 
-## A formação
+## O catálogo, do mais simples ao mais difícil
 
-A formação desenha uma silhueta de cima para baixo: acessórios no alto, partes de cima, partes de baixo (ou peça
-inteira no centro) e calçados embaixo. Cada carta liga às vizinhas da mesma fileira e às de cima e de baixo na mesma
-coluna. Carta fora da posição da vaga fica com química 0, e as linhas dela apagam.
+| Código | Imagem (`public/flair/elencos`) | Recorte | Peças | O que as vagas pedem | Requisitos do deck |
+| --- | --- | --- | --- | --- | --- |
+| `DESAFIO_FOGO` | `fogo.webp` (cena do fogo de 10.webp) | grade 2 × 2 | 4 | as 4 vermelhas | todas as peças vermelhas |
+| `DESAFIO_VERDE_FLORESTAL` | `verde-florestal.webp` | grade 2 × 2 | 4 | 3 verdes, 1 livre | pelo menos 3 verdes |
+| `DESAFIO_AZUL_TECH` | `azul-tech.webp` | grade 2 × 2 | 4 | 1 azul, 3 livres | pelo menos 1 azul |
+| `DESAFIO_FASHIONAI_TECH` | `fai-tech.webp` (circuito laranja) | grade 2 × 2 | 4 | as 4 de estilo moderno | todas com o estilo moderno |
+| `CELEBRACAO_ARENA` | `arena.webp` (11.webp) | grade 3 × 2 | 6 | 3 para festa, 3 livres | pelo menos 3 para festa |
+| `LOGO_QUEBRA_CABECA` | `logo-quebra-cabeca.webp` (12) | jigsaw 4 × 3 | 12 | 6 laranja (xadrez), 6 livres | pelo menos 6 laranja |
+| `LOGO_SETORES` | `logo-3d.webp` (13) | 12 setores circulares iguais | 12 | ciclo preta, laranja, livre | 4 pretas e 4 laranja |
+| `LOGO_TEAL` | `logo-teal.webp` (14) | jigsaw 4 × 3 | 12 | coluna esquerda azul, direita verde | 3 azuis e 3 verdes |
+| `LOGO_CACOS` | `logo-cacos.webp` (15) | 12 cacos de vidro | 12 | ciclo rosa, roxa, livre | 4 rosa e 4 roxas |
+| `LOGO_PECAS_FALTANDO` | `logo-pecas-faltando.webp` (16) | jigsaw 4 × 4 | 16 | cantos pretos, borda laranja, miolo livre | 6 laranja, 4 pretas e 3 marcas |
 
-**Força da linha**: soma dos atributos em comum entre as duas cartas: marca 2, subcategoria 2, categoria 1, estilo 1,
-cor 1 (mesma família ou harmonia) e ocasião 1. Com 0 a linha fica vermelha; com 1, laranja; com 2 ou mais, verde.
+Todo elenco também pede o deck cheio (`CARTAS` = número de peças). As vagas aceitam carta de qualquer posição (`ANY`):
+o que conta é a cor, o estilo ou a ocasião. As cores valem pela família da taxonomia (carmim conta como vermelha,
+marinho como azul). Os requisitos de cor dos logos seguem as cores de cada imagem (o laranja e o preto do logo, o azul
+e o verde do 14, o rosa e o roxo dos cacos); o 16, o mais difícil, pede também marcas variadas.
 
-**Química** de cada carta de 0 a 3 (linha verde vale 1 e laranja vale 0,5); química do elenco de 0 a 100.
+**Os recortes** (`lib/flair/elencos/recortes.ts`, contornos SVG aplicados com `clipPath`):
 
-## A imagem que se constrói
+- **grade**: as quatro cenas de 10.webp viram quatro imagens; cada uma é cortada em quatro quadrados iguais, pelo
+  centro da largura e da altura. A arena é cortada em 3 × 2 partes iguais.
+- **jigsaw** (12, 14 e 16): peças com encaixe, saliência de um lado e reentrância do vizinho; a borda de fora é reta.
+- **setores** (13): 12 fatias iguais do círculo do logo, começando no alto, no sentido horário.
+- **cacos** (15): 12 polígonos entre as rachaduras principais da imagem, que saem do ponto de impacto perto do centro
+  até a borda. São uma aproximação dos cacos visíveis (não um traçado pixel a pixel); juntos cobrem a imagem inteira.
 
-Cada elenco tem uma **arte exclusiva do FashionAI**, dividida em regiões, uma por linha da formação.
+## Como a peça encaixa
 
-- Enquanto o jogador monta, a arte aparece atrás da formação: região de linha **verde** em cor, de linha **laranja** só
-  no traço, e de linha **vermelha** escura.
-- Ao completar o elenco, a arte se revela inteira e recebe as **peças do próprio jogador**, recortadas e posicionadas
-  como na formação, com a luz da arte. Por isso cada imagem final é única.
-- A imagem final vira uma obra numerada no perfil e na coleção (`Elenco Lendário · edição 37 de 500 · @pessoa ·
-  química 100`), com download.
-- As artes são originais do FashionAI, feitas por designer ou pela dona do projeto [decidir]. Nada é gerado por IA paga.
+Cada vaga mostra o número da peça, o que ela pede, a carta e o estado. No quebra-cabeça:
 
-## 1 · Primeiro Elenco (fácil)
+- **vazia**: só o contorno tracejado sobre a imagem apagada;
+- **conferindo**: a carta foi posta e o servidor ainda não julgou; a peça aparece fraca, pulsando;
+- **não encaixou**: a carta não cumpre o pedido; a peça fica torta, fora do lugar e sem cor;
+- **encaixou**: a peça voa de fora até o lugar e aparece em cor.
 
-- **Formação "Silhueta"**, 5 cartas: acessório no alto; parte de cima; bolsa ao lado; parte de baixo; calçado.
-  Linhas: acessório–cima, cima–bolsa, cima–baixo, bolsa–baixo e baixo–calçado (5 linhas).
-- **Objetivo**: montar a primeira silhueta com as linhas acesas.
-- **Requisitos**: química do elenco 40 ou mais, 2 linhas verdes, 5 cartas.
-- **Imagem**: "Silhueta", uma ilustração de figurino em cinco regiões.
-- **Recompensa**: 20 FAI Points e o pôster Silhueta para o quarto.
+A tela nunca encaixa uma peça que o servidor não julgou. A bandeja mostra primeiro as cartas que parecem combinar com
+a peça em destaque (pelas etiquetas da carta), só para ajudar; quem julga é o servidor.
 
-## 2 · Paleta de Ateliê (médio)
+## O modal de conclusão
 
-- **Formação "2-2-2-1"**, 7 cartas: dois acessórios; duas partes de cima; duas partes de baixo; um calçado (9 linhas).
-- **Objetivo**: fazer o elenco conversar pela cor.
-- **Requisitos**: química 60 ou mais, 4 linhas ligadas por cor, no máximo 3 famílias de cor e 7 cartas.
-- **Imagem**: "Paleta", um estudo de cor; a arte final ganha os tons das peças do jogador.
-- **Recompensa**: 35 FAI Points, um item de decoração e um cupom de desconto numa loja parceira.
+Título "Parabéns, você completou!", a edição ganha e:
 
-## 3 · Casa de Marca (médio-difícil)
+- **cenas** (fogo, verde, azul, FashionAI tech): o vídeo `cenas-firefly.mp4` (o vídeo de 10.webp);
+- **arena**: o vídeo `arena-celebracao.mp4`;
+- **logos**: não há vídeo próprio. O modal mostra o próprio quebra-cabeça **se montando em CSS**, peça a peça (cada
+  uma voa até o lugar com um atraso pela ordem), e a imagem brilha no fim. Escolhemos isso em vez de reaproveitar o
+  vídeo das cenas porque mostra o logo daquele elenco, é leve e respeita o movimento reduzido.
 
-- **Formação "Vitrine 3-3-2-1"**, 9 cartas: três acessórios; três partes de cima; duas de baixo; um calçado (12 linhas).
-- **Objetivo**: montar a vitrine de uma casa de moda com marcas que se reconhecem.
-- **Requisitos**: química 70 ou mais, 3 linhas ligadas por marca, ao menos 2 marcas e 1 carta Ouro ou Especial.
-- **Imagem**: "Vitrine da Casa"; as peças do jogador aparecem na vitrine da arte.
-- **Recompensa**: 50 FAI Points, cupom de desconto da marca e uma peça ou acessório exclusivo da marca enquanto houver
-  estoque.
+Os vídeos tocam sem som, em laço, na própria página do celular e com os controles (`autoplay muted loop playsInline
+controls`). Foram comprimidos com ffmpeg (H.264, CRF 26, sem áudio, `faststart`): 7,4 MB → 2,5 MB e 5,1 MB → 2,0 MB.
+Fechar o modal deixa a imagem completa e um botão "Ver a conclusão".
 
-## 4 · Noite de Estreia (difícil)
+## API
 
-- **Formação "Estreia 2-3-2-2"**, 9 cartas: dois acessórios; parte de cima, peça inteira no centro e parte de cima;
-  duas partes de baixo; dois calçados (13 linhas). A peça inteira liga às quatro vizinhas.
-- **Objetivo**: vestir uma noite de estreia em que tudo gira em torno da peça central.
-- **Requisitos**: química 80 ou mais, 5 linhas ligadas por ocasião (festa ou formal), Hype médio de Relevante ou mais
-  e nenhuma linha vermelha na peça central.
-- **Imagem**: "Tapete de Estreia", o cartaz de uma estreia com o look do jogador no tapete.
-- **Recompensa**: 70 FAI Points, cupom e um item promocional de celebridade (ingresso para show ou meet and greet), com
-  estoque e regras de idade.
+- `GET /api/flair/elencos`: `{elencos:[{codigo, pecas, concluido, edicao}]}` (logado).
+- `GET /api/flair/elencos/{codigo}`: `{codigo, vagas:[{chave, posicao, pede}], requisitos:[{tipo, alvo, valor?, nivel?}]}`;
+  `pede` usa as chaves do motor (`color`, `style`, `occasion`) com a lista de valores aceitos, ou `{}`.
+- `POST /api/flair/elencos/{codigo}/conferir` com `{cartas:{vaga:cardId}}`: `{pecas:{vaga:boolean}, completas, total,
+  requisitos:[{tipo, ok, valor, alvo}], ok}`. Só cartas da própria pessoa (422).
+- `POST /api/flair/elencos/{codigo}/entrega`: o mesmo corpo; 422 se alguma peça ou requisito falha; grava a entrega e
+  devolve o mesmo resultado mais `{edicao}`. Repetir não cria nova edição (contador `flair_cbc_squad_edicoes`).
 
-## 5 · Elenco Lendário (lendário)
+Requisitos: `COR`, `ESTILO` e `OCASIAO` (pelo menos `alvo` cartas com o `valor`, a tag do motor `CbcRules`), `CARTAS`,
+`MARCAS` (distintas) e `NIVEL_CARTA`. A avaliação (`FlairCbcAvaliacao`) passa cada vaga ao motor como `accepts`: a
+peça encaixa quando a vaga tem carta e a carta cumpre o pedido.
 
-- **Formação "Cápsula 3-3-3-2"**, 11 cartas: três acessórios; três partes de cima; três de baixo; dois calçados
-  (17 linhas).
-- **Objetivo**: o elenco perfeito, como o time de química 100 do FIFA.
-- **Requisitos**: química 100 (todas as cartas com 3), nenhuma linha vermelha, 2 cartas Especial, 3 cartas com Hype Em
-  alta ou mais e ao menos 4 marcas.
-- **Imagem**: "Obra Lendária", a fotografia de arte exclusiva do FashionAI, em edição numerada, com as 11 peças.
-- **Recompensa**: 100 FAI Points, a obra numerada no perfil e uma peça exclusiva de marca ou celebridade enquanto houver
-  estoque.
+## Capturas
 
-## Erros e o que custam
-
-- Carta fora da posição: química 0 na carta, linhas vermelhas e a região da arte escura.
-- Troca que quebra uma linha: a linha pisca vermelho e a região da arte volta a escurecer.
-- Requisito não cumprido: a entrega fica bloqueada e a lista mostra o que falta.
-- Nada sai da carteira. As cartas entregues ficam travadas 72 horas naquele elenco [decidir].
-
-## Prêmios reais
-
-Cupons usam as combinações das lojas de marca que já existem (estoque, validade e um por pessoa). Itens promocionais
-seguem as regras de `FLAIR_CBC.md` §4: entrega por ordem de conclusão enquanto houver estoque, sem sorteio, e
-ingresso ou meet and greet só com 18 anos ou consentimento do responsável.
+Em `capturas/` (API simulada no navegador): a lista (`elencos-01-lista.webp`), o fogo em andamento com uma peça que não
+encaixou, completo e o modal com o vídeo, o modal da arena, os setores em andamento e o modal com o logo se montando,
+e os cacos em andamento e completos.

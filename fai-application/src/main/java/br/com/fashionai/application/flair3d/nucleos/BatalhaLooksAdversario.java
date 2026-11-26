@@ -56,12 +56,17 @@ final class BatalhaLooksAdversario {
         return (int) Math.round(BatalhaLooksRodadas.pontos(BatalhaLooksRodadas.regras(desafio, look)));
     }
 
-    /** {nota, familia, look:{SUP:{subcategoria, familia}}}: o que a tela mostra e veste no figurante ADVERSARIO. */
-    static Map<String, Object> paraTela(Map<String, CbcRules.Card> look, int nota) {
+    /**
+     * {nota, conta:{regra, look, recurso}, familia, look:{SUP:{subcategoria, familia, cor}}}: o que a tela mostra e veste
+     * no figurante ADVERSARIO (a cor é a etiqueta da peça, a mesma das cartas da pessoa).
+     */
+    static Map<String, Object> paraTela(Map<String, CbcRules.Card> look, BatalhaLooksPlacar.Nota nota) {
         Map<String, Object> pecas = new LinkedHashMap<>();
-        look.forEach((vaga, c) -> pecas.put(vaga, Map.of("subcategoria", c.subcategory(), "familia", Flair3dPecas.familias(c).iterator().next())));
+        look.forEach((vaga, c) -> pecas.put(vaga, Map.of("subcategoria", c.subcategory(), "familia", Flair3dPecas.familias(c).iterator().next(),
+                "cor", c.colors().iterator().next())));
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("nota", nota);
+        m.put("nota", nota.total());
+        m.put("conta", nota.paraTela());
         m.put("familia", Flair3dPecas.maiorGrupo(look.values(), Flair3dPecas::familias).getKey());
         m.put("look", pecas);
         return m;
