@@ -123,9 +123,12 @@ class Group:
         return self.contrast >= 26 or (self.contrast >= 19 and max(h, w) <= 2.5 * min(h, w))
 
 
-def groups(cand: np.ndarray, frame, mask_area: float, dist: np.ndarray, limit: int = 4) -> list[Group]:
+def groups(cand: np.ndarray, frame, mask_area: float, dist: np.ndarray, limit: int = 4,
+           fill: tuple[np.ndarray, np.ndarray] | None = None) -> list[Group]:
     """Desenhos: candidatos juntados (letra com letra, peça com peça) pela dilatação de ~1,2 % da largura da peça.
-    ``dist``: a distância de cada pixel ao tecido (Lab, sem a sombra), para o contraste de cada desenho."""
+    ``dist``: a distância de cada pixel ao tecido (Lab, sem a sombra), para o contraste de cada desenho;
+    ``fill``: para o miolo claro (``fill_inside``), a distância que vale e o mapa de onde o pano tem outra cor de
+    verdade; sem ele vale ``dist``."""
     r = max(2, int(0.012 * (frame.right - frame.left)))
     joined = ndimage.binary_dilation(cand, iterations=r)
     lab, n = ndimage.label(joined)
@@ -142,24 +145,36 @@ def groups(cand: np.ndarray, frame, mask_area: float, dist: np.ndarray, limit: i
         g = Group((y0, y1, x0, x1), area, alpha, float(dist[y0:y1, x0:x1][alpha].mean()))
         if g.sure() and alpha.mean() >= 0.08:   # só contorno ralo (o pesponto do bolso) não é desenho
             if g.contrast >= FILL_FROM:
-                g.fill = fill_inside(alpha, dist[y0:y1, x0:x1], max(1, r // 2))
+                weak, real = (dist, None) if fill is None else fill
+                g.fill = fill_inside(alpha, weak[y0:y1, x0:x1], max(1, r // 2), touching=not frame.worn,
+                                     real=None if real is None else real[y0:y1, x0:x1])
             out.append(g)
     return sorted(out, key=lambda g: -g.area)[:limit]
 
 
-def fill_inside(alpha: np.ndarray, dist: np.ndarray, close: int) -> np.ndarray:
+def fill_inside(alpha: np.ndarray, dist: np.ndarray, close: int, touching: bool = False,
+                real: np.ndarray | None = None) -> np.ndarray:
     """O miolo de pouco contraste dentro de um contorno forte (o "91" bege de contorno preto na camiseta branca): os
     pixels que fogem um pouco do tecido (``FILL_MIN``) e ficam presos no contorno fechado. O miolo da cor do próprio
-    tecido (o vão do "A", do "9") continua vazado; pontinho solto de ruído não entra."""
+    tecido (o vão do "A", do "9") continua vazado; pontinho solto de ruído não entra. ``touching`` (foto da peça
+    sozinha, sem dobra de corpo): vale também o miolo que só encosta no traço forte, dentro da caixa do desenho — o
+    contorno de um pixel do lado de lá some na análise e não fecha o "9". ``real``: onde o pano tem outra cor de
+    verdade; o pedaço de miolo que não é quase todo assim (o pano do próprio tecido dentro da letra vazada) sai."""
     pad = close + 1
     hull = np.pad(alpha, pad)
     hull = ndimage.binary_fill_holes(ndimage.binary_closing(hull, iterations=close))[pad:-pad, pad:-pad]
-    low = hull & ~alpha & (dist > FILL_MIN)
-    comps, n = ndimage.label(low)
+    weak = ~alpha & (dist > FILL_MIN)
+    comps, n = ndimage.label(weak if touching else weak & hull)
     if n == 0:
-        return low
-    sizes = ndimage.sum(low, comps, range(1, n + 1))
-    return np.isin(comps, np.flatnonzero(sizes >= 12) + 1)
+        return weak & hull
+    idx = range(1, n + 1)
+    keep = ndimage.sum(weak, comps, idx) >= 12
+    if touching:   # preso no contorno, ou encostado no traço forte
+        near = ndimage.binary_dilation(alpha, iterations=2)
+        keep &= (ndimage.maximum(near, comps, idx) > 0) | (ndimage.mean(hull, comps, idx) > 0.9)
+    if real is not None:
+        keep &= ndimage.mean(real, comps, idx) >= 0.8
+    return np.isin(comps, np.flatnonzero(keep) + 1)
 
 
 def spread(cand: np.ndarray, mask: np.ndarray, frame) -> float:

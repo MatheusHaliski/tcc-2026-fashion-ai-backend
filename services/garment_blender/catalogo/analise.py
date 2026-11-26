@@ -89,7 +89,7 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
     bands = faixas.sleeve_bands(dist, lab, mask, frame, ppm, sleeve)
     if bands:
         out["faixas_manga"] = bands
-    found = estampa.groups(cand, frame, mask.sum(), dist, limit=12)
+    found = estampa.groups(cand, frame, mask.sum(), dist, limit=12, fill=_fill_maps(lab, base, dist, mask))
     if _all_over(lab, mask, frame, clues):
         piece = padrao.tile(rgb, lab, mask, frame, avoid_center)
         if piece is not None:
@@ -106,6 +106,17 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
         out["padrao"] = "localizada"
         out["decalques"].append(where)
     return out
+
+
+def _fill_maps(lab, base, dist, mask) -> tuple[np.ndarray, np.ndarray]:
+    """Para o miolo claro de um desenho (``estampa.fill_inside``): a distância que vale — a menor entre a com sombra
+    e a sem, e só dentro da peça, longe da beira que mistura com o fundo — e onde o pano tem outra cor de verdade
+    (croma, ou luminosidade bem diferente). O pano igual ao tecido, só um pouco mais claro junto do traço branco (o
+    vão do "A" na camiseta preta), não é miolo."""
+    off = lab - base
+    real = (np.hypot(off[..., 1], off[..., 2]) >= 2.5) | (np.abs(off[..., 0]) >= 10)
+    inside = ndimage.binary_erosion(mask, iterations=2)
+    return np.where(inside, np.minimum(dist, np.linalg.norm(off, axis=-1)), 0.0), real
 
 
 def _decals(found, frame, mask, ppm, chest_a, sleeve, avoid_center, neck, ruler, clues) -> list:
