@@ -7,6 +7,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+from PIL import Image
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import process_photo_sets as pps  # noqa: E402
@@ -76,9 +78,15 @@ def record(i, **over):
     return base
 
 
-def ready_set(rec):
+# Evidências que o postflight (photo_set_quality, FAI_PHOTO_SET_POSTFLIGHT_V1) exige para um READY continuar READY.
+ATTESTED = {"preflight": {"status": "PASS"},
+            "fashnOpen": {"personDetected": False, "attestations": {"complete": True, "occluded": False, "measurement_verified": True}},
+            "cleanup": {"cleanupMode": "STRICT"}, "whole": {"ghostPixels": 0, "width": 900, "height": 1200}}
+
+
+def ready_set(rec, metrics=ATTESTED):
     return json.dumps({"photoSet": {"version": pps.PHOTO_SET_VERSION, "sourceUrl": rec["image_url"], "sourceSha256": None, "category": rec["category"],
-                                    "subcategory": rec["subcategory"], "color": rec["color"], "status": "READY"}})
+                                    "subcategory": rec["subcategory"], "color": rec["color"], "status": "READY", "metrics": metrics}})
 
 
 class ExportRowsTest(unittest.TestCase):
@@ -95,18 +103,25 @@ class ExportRowsTest(unittest.TestCase):
             self.assertEqual(pps.export_rows(conn, out, force=True), 3)
             self.assertEqual(pps.export_rows(conn, out, limit=1), 1)
 
+    def test_ready_antigo_sem_evidencia_do_postflight_volta_para_o_lote(self):
+        r2 = record(2); r2["assets_json"] = ready_set(r2, metrics={"preflight": {"status": "PASS"}})
+        conn = FakeConn([record(1), r2])
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(pps.export_rows(conn, Path(tmp) / "rows.json"), 2)
+
 
 def write_set(lot, folder, result, images=True):
     d = Path(lot) / "photo-sets" / folder
     d.mkdir(parents=True)
     (d / "set.json").write_text(json.dumps(result), encoding="utf-8")
-    if images:
-        (d / "whole.png").write_bytes(b"WHOLE-" + folder.encode()); (d / "fabric.png").write_bytes(b"FABRIC-" + folder.encode())
+    if images:  # PNGs de verdade: o import confere formato e o quadro 900×1200 do whole (photo_set_artifacts.ready_files)
+        tone = (ord(folder[0]) % 256, 90, 180)
+        Image.new("RGB", (900, 1200), tone).save(d / "whole.png"); Image.new("RGB", (48, 64), tone).save(d / "fabric.png")
 
 
 class ImportLotTest(unittest.TestCase):
     def lot(self, tmp):
-        base = {"version": pps.PHOTO_SET_VERSION, "category": "upper_piece", "subcategory": "t_shirt", "color": None, "metrics": {"preflight": {"status": "PASS"}}}
+        base = {"version": pps.PHOTO_SET_VERSION, "category": "upper_piece", "subcategory": "t_shirt", "color": None, "metrics": ATTESTED}
         write_set(tmp, "a", {**base, "imageId": "img-1", "productId": "p-1", "sourceUrl": "https://hering.com.br/1.jpg", "status": "READY",
                              "files": {"whole": "whole.png", "fabric": "fabric.png"}})
         write_set(tmp, "b", {**base, "imageId": "img-2", "productId": "p-2", "sourceUrl": "https://hering.com.br/2.jpg", "status": "REVIEW", "reason": "GARMENT_OCCLUSION_UNCERTAIN"}, images=False)
@@ -130,8 +145,9 @@ class ImportLotTest(unittest.TestCase):
             ready = commits[0][1]
             self.assertEqual(ready["color"], "blue", "a cor vem do banco na hora do commit")
             self.assertNotIn("imageId", ready); self.assertNotIn("files", ready)
-            self.assertEqual(ready["wholeUrl"], "https://media.example/catalog/photo-sets/CATALOG_PHOTO_SET_V2/" + hashlib.sha256(b"WHOLE-a").hexdigest() + ".png")
-            self.assertTrue(ready["fabricUrl"].endswith(hashlib.sha256(b"FABRIC-a").hexdigest() + ".png"))
+            folder = Path(tmp) / "photo-sets" / "a"
+            self.assertEqual(ready["wholeUrl"], "https://media.example/catalog/photo-sets/CATALOG_PHOTO_SET_V2/" + hashlib.sha256((folder / "whole.png").read_bytes()).hexdigest() + ".png")
+            self.assertTrue(ready["fabricUrl"].endswith(hashlib.sha256((folder / "fabric.png").read_bytes()).hexdigest() + ".png"))
             self.assertEqual(len(storage.objects), 2)
             self.assertNotIn("wholeUrl", commits[1][1], "REVIEW não sobe imagem")
             lines = [json.loads(l) for l in audit.getvalue().splitlines()]

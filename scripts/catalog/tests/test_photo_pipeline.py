@@ -23,11 +23,15 @@ class Downloader:
     def __init__(self,rows):self.rows=rows
     async def get(self,url):return self.rows[url]
 class PhotoPipelineTests(unittest.TestCase):
-    def test_semantic_mask_removes_human_other_garment_and_exterior_scratches(self):
+    def test_semantic_mask_removes_forbidden_region_other_garment_and_exterior_scratches(self):
         image=Image.new('RGB',(400,500),'white');d=ImageDraw.Draw(image);d.rectangle((100,100,300,350),fill='blue');d.rectangle((100,350,300,450),fill='green');d.rectangle((150,20,250,100),fill='pink');d.line((100,100,350,30),fill='black',width=1)
         target=Image.new('L',image.size);t=ImageDraw.Draw(target);t.rectangle((100,100,300,350),fill=255);t.line((100,100,350,30),fill=255,width=1)
         forbidden=Image.new('L',image.size);f=ImageDraw.Draw(forbidden);f.rectangle((100,350,300,450),fill=255);f.rectangle((150,20,250,100),fill=255);f.line((101,99,350,30),fill=255,width=1)
-        out=process_photo(image,'upper_piece','shirt',masks=PhotoMasks(target,forbidden,verified=True,target_category='upper_piece',target_subcategory='shirt',human_present=True,measurement_verified=True,isolation_verified=True,complete=True,occluded=False,source='synthetic'))
+        masks=lambda human:PhotoMasks(target,forbidden,verified=True,target_category='upper_piece',target_subcategory='shirt',human_present=human,measurement_verified=True,isolation_verified=True,complete=True,occluded=False,source='synthetic')
+        # peça vestida (pessoa na foto) não é publicada sozinha: vai para revisão humana (FAI_PHOTO_SET_POSTFLIGHT_V1)
+        on_person=process_photo(image,'upper_piece','shirt',masks=masks(True))
+        self.assertEqual(('REVIEW','HUMAN_SOURCE_REVIEW_REQUIRED'),(on_person.status,on_person.reason));self.assertIsNone(on_person.whole)
+        out=process_photo(image,'upper_piece','shirt',masks=masks(False))
         self.assertEqual('READY',out.status);whole=Image.open(io.BytesIO(out.whole));fabric=Image.open(io.BytesIO(out.fabric));self.assertEqual((900,1200),whole.size)
         pixels=np.asarray(fabric);self.assertTrue((pixels[:,:,2]>200).all());self.assertTrue((pixels[:,:,1]<30).all());self.assertGreater(out.metrics['removedPixels'],0)
     def test_two_separate_legs_survive_and_unknown_masks_fail_closed(self):
