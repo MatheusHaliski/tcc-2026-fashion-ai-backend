@@ -48,6 +48,18 @@ class DetetivePerseguicaoTest {
     }
 
     @Test
+    void pegaSemNenhumaVidaAcabaOCasoEmDerrota() {
+        DetetiveEstado e = naPortaDoSalao(0);
+        e.vida = 1;
+        DetetivePerseguicao.pegar(e, "SEG_ENTRADA");
+        assertThat(e.vida).isZero();
+        assertThat(e.fim).isEqualTo(br.com.fashionai.application.flair3d.nucleos.FashionDetectiveAcusacao.Final.CAPTURADO);
+        assertThat(e.cutscene).isEqualTo("FINAL:CAPTURADO");
+        assertThat(e.avisos).containsExactly("PEGO:SEG_ENTRADA", "SEM_VIDA");
+        assertThat(e.retrato(List.of(), 0)).containsEntry("final", "CAPTURADO");
+    }
+
+    @Test
     void esconderQuebraALinhaDeVisaoOVigiaProcuraEVoltaARonda() {
         DetetiveEstado e = naPortaDoSalao(0);
         DetetivePerseguicao.depoisDoPasso(e);

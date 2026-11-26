@@ -2,6 +2,7 @@ package br.com.fashionai.application.flair3d.detetive;
 
 import br.com.fashionai.application.flair3d.detetive.DetetiveSala.Ponto;
 import br.com.fashionai.application.flair3d.detetive.DetetiveSala.Vigia;
+import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveAcusacao;
 
 /**
  * Ronda, perseguição e volta dos vigias (pedido da dona: inimigos com movimento e mecânica de confronto, sem arma e sem
@@ -144,7 +145,10 @@ final class DetetivePerseguicao {
         return new Ponto(de.id(), de.x() + (para.x() - de.x()) * k, de.z() + (para.z() - de.z()) * k, false);
     }
 
-    /** Pega: uma marca de vida, 30 segundos e de volta à porta da sala; sem vida, o fôlego volta com mais tempo perdido. */
+    /**
+     * Pega: uma marca de vida, 30 segundos e de volta à porta da sala; sem vida, a detetive é levada para fora da gala e
+     * o caso fecha em derrota (reauditoria de 25/11/2026: antes, o fôlego voltava e não havia derrota).
+     */
     static void pegar(DetetiveEstado e, String quem) {
         e.penalidades++;
         e.tempo += DetetivePartida.SEGUNDOS_DE_PENALIDADE;
@@ -153,9 +157,10 @@ final class DetetivePerseguicao {
         e.ponto = e.chegada;
         e.escondido = false;
         if (e.vida <= 0) {
-            e.vida = e.doLook.vidaMaxima();
-            e.tempo += 2 * DetetivePartida.SEGUNDOS_DE_PENALIDADE;
+            e.vida = 0;
             e.avisos.add("SEM_VIDA");
+            e.fim = FashionDetectiveAcusacao.Final.CAPTURADO;
+            e.cutscene = "FINAL:" + e.fim.name();
         }
     }
 }

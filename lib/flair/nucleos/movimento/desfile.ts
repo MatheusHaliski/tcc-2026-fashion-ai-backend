@@ -20,7 +20,8 @@ const ATELIE: Ponto[] = [[0.6, 0.5], [-0.6, 0.5], [-0.7, -0.7]];
  * deixa: andar até cada uma é parte da habilidade.
  */
 const PERCURSOS: Partial<Record<NucleoCodigo, (sala: Sala) => Ponto[]>> = {
-  PASSARELA: (s) => zigueZague(0.4, 0.8, s),
+  // a passarela inteira: do arco do backstage (INICIO_DO_DESFILE) até a ponta (reauditoria: antes, 2 m dos 10,6 m)
+  PASSARELA: (s) => zigueZague(0.4, -4.5, s),
   DRESS_THE_STAR: () => [[-0.7, -0.7], [0.7, -0.7], [0, 1.0]],
   BATALHA_LOOKS: () => [[-0.45, -0.8], [0.45, -0.8], [0, 0.8]],
   LABIRINTO: () => [[-0.8, -0.5], [LABIRINTO_ESPELHO[0] * 0.5, -1.3], [LABIRINTO_ESPELHO[0], LABIRINTO_ESPELHO[1] + 0.7]],
@@ -43,6 +44,9 @@ function zigueZague(lado: number, inicio: number, sala: Sala): Ponto[] {
 }
 
 export const DESFILE_JOGAVEL = new Set<NucleoCodigo>(Object.keys(PERCURSOS) as NucleoCodigo[]);
+
+/** Onde a ação começa quando não é na marca do avatar: na Passarela, no arco do backstage, de frente para a plateia. */
+export const INICIO_DO_DESFILE: Partial<Record<NucleoCodigo, Posicao>> = { PASSARELA: { x: 0, z: -7.5, giro: 0 } };
 /** Quão perto do ponto conta como alcançado. */
 export const ALCANCE = 0.5;
 

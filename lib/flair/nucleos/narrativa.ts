@@ -9,7 +9,7 @@ export type Desfecho = "BOM" | "MEDIO" | "RUIM";
 
 const BONS = new Set(["VITORIA", "FAVORAVEL", "ABRE", "CONCLUIDO"]);
 const MEDIOS = new Set(["EMPATE", "PARCIAL"]);
-const RUINS = new Set(["DERROTA", "DESFAVORAVEL", "NAO_ABRE", "REPROVADO", "INCOMPLETO", "ESGOTADO", "CLIENTE_FOI_EMBORA", "SEM_TINTA"]);
+const RUINS = new Set(["DERROTA", "DESFAVORAVEL", "NAO_ABRE", "REPROVADO", "INCOMPLETO", "ESGOTADO", "CLIENTE_FOI_EMBORA", "SEM_TINTA", "CAPTURADO", "DIRETOR_CORTOU"]);
 
 /** O desfecho da partida: o resultado do servidor quando ele diz (vitória, empate, derrota); senão, as estrelas. */
 export function desfechoDe(r: Pick<NucleoResultado, "resultado" | "estrelas">): Desfecho {

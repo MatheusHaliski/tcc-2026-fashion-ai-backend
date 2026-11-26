@@ -23,7 +23,8 @@ import java.util.function.Predicate;
 /**
  * Rodadas da BATALHA_LOOKS (docs/flair/flair-3d/JOGOS.md, jogo 15): a Batalha de 3 rodadas, cada uma com um objetivo de
  * regra clara sorteado, e os treinos de um objetivo só (Dress Code do Convite e Vista o Clima). O objetivo de cada
- * rodada, a nota do adversário da casa e o voto da plateia no empate saem da semente.
+ * rodada, o look do adversário da casa ({@link BatalhaLooksAdversario}, avaliado pelas mesmas regras) e o voto da
+ * plateia no empate saem da semente. A nota do adversário só aparece depois da entrega da rodada.
  */
 final class BatalhaLooksRodadas {
     static final String BATALHA = "BATALHA_DE_3_RODADAS";
@@ -33,7 +34,6 @@ final class BatalhaLooksRodadas {
     static final double POR_PECA = 25;
     static final double PROIBIDA = -25;
     static final List<String> VAGAS = BatalhaLooksNucleo.VAGAS;
-    static final List<Integer> NOTAS_DO_ADVERSARIO = List.of(25, 50, 75);
 
     /** Um objetivo de regra clara: a peça que entra na regra e a que o convite proíbe. */
     record Desafio(String codigo, Predicate<CbcRules.Card> naRegra, Predicate<CbcRules.Card> proibida) {
@@ -88,8 +88,15 @@ final class BatalhaLooksRodadas {
         return contexto.sortear("desafio", CONVITE.equals(contexto.rodada()) ? CONVITES : CLIMAS);
     }
 
-    static int adversario(Contexto contexto, int rodada) {
-        return contexto.sortear("adversario" + rodada, NOTAS_DO_ADVERSARIO);
+    /** A nota do adversário da casa na rodada: o look dele, tirado da semente, pelas regras do desafio. */
+    static int adversario(Contexto contexto, int rodada, Desafio desafio) {
+        return BatalhaLooksAdversario.nota(desafio, BatalhaLooksAdversario.look(contexto, rodada));
+    }
+
+    /** O que a tela mostra do adversário depois da entrega da rodada: a nota, a família dominante e as peças. */
+    static Map<String, Object> adversarioNaTela(Contexto contexto, int rodada, Desafio desafio) {
+        Map<String, CbcRules.Card> look = BatalhaLooksAdversario.look(contexto, rodada);
+        return BatalhaLooksAdversario.paraTela(look, BatalhaLooksAdversario.nota(desafio, look));
     }
 
     /** Os 3 desafios da batalha: um de cada tipo, em ordem sorteada, cada um com a variação sorteada. */
@@ -120,11 +127,15 @@ final class BatalhaLooksRodadas {
 
             @Override
             public Avaliacao avaliar(Look look) {
-                List<RegraResultado> regras = regras(desafios.get(look.etapa() - 1), look.pecas());
+                Desafio desafio = desafios.get(look.etapa() - 1);
+                List<RegraResultado> regras = regras(desafio, look.pecas());
+                Map<String, Object> adversario = adversarioNaTela(contexto, look.etapa(), desafio);
                 Map<String, Object> placar = new LinkedHashMap<>();
                 placar.put("rodada", look.etapa());
                 placar.put("voce", Math.round(pontos(regras)));
-                placar.put("adversario", adversario(contexto, look.etapa()));
+                placar.put("adversario", adversario.get("nota"));
+                placar.put("familia", adversario.get("familia"));
+                placar.put("look", adversario.get("look"));
                 return new Avaliacao(true, pontos(regras), regras, List.of(new Evento("RODADA_DA_BATALHA", placar)));
             }
 
@@ -133,7 +144,7 @@ final class BatalhaLooksRodadas {
             }
 
             private int somaDoAdversario(List<Passo> passos) {
-                return passos.stream().mapToInt(p -> adversario(contexto, p.etapa())).sum();
+                return passos.stream().mapToInt(p -> adversario(contexto, p.etapa(), desafios.get(p.etapa() - 1))).sum();
             }
 
             /** No empate, o voto da plateia (da semente) decide. */

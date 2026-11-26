@@ -25,3 +25,13 @@ export function usoOtimista(estado: RecursosDaPartida, cardId: string, perfil: P
 export function usosRestantes(estado: RecursosDaPartida | null, cardId: string, perfil: PerfilDaPeca): number {
   return Math.max(0, perfil.usos - (estado?.usados[cardId] ?? 0));
 }
+
+/**
+ * As cartas que dá para usar como recurso: as do deck; nos jogos sem deck (o Road to Glory veste do guarda-roupa
+ * inteiro), só as vestidas na partida, como o servidor confere (Flair3dRecursoUso.usaveis).
+ */
+export function cartasUsaveis<T extends { id: string }>(cartas: T[], soVestidas?: Record<string, string>): T[] {
+  if (!soVestidas) return cartas;
+  const vestidas = new Set(Object.values(soVestidas));
+  return cartas.filter((c) => vestidas.has(c.id));
+}

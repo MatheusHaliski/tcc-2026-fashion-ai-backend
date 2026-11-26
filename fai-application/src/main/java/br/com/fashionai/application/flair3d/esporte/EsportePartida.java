@@ -47,6 +47,8 @@ public final class EsportePartida {
     int bonus;
     /** o ajuste do duelo da jogada pela posição da capitã (EsportePosicao) */
     int posicionamento;
+    /** o acerto na barra de tempo do chute ou do desarme desta jogada (EsporteTempo), ou SEM */
+    int tempo = EsporteTempo.SEM;
     boolean goleiroPronto;
     int lances;
     /** O reinício que o último lance deixou para depois (saída de bola, tiro de meta, escanteio, lateral). */
@@ -162,8 +164,10 @@ public final class EsportePartida {
             if (posicionamento != 0) {
                 eventos.add(new Evento("POSICIONAMENTO", posicionamento));
             }
+            tempo = EsporteTempo.faixa(a == null ? null : a.alvo());
             new EsporteLance(this, carta).resolver();
             posicionamento = 0;
+            tempo = EsporteTempo.SEM;
             jogada++;
             Runnable pendente = reinicio;
             reinicio = null;
