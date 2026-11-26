@@ -18,6 +18,7 @@ import { Andarilho, NA_MARCA, type Jogador } from "@/components/flair/nucleos/sc
 import { DesfileJogavel } from "@/components/flair/nucleos/scene/desfile-jogavel";
 import { DistanciaDaLuta } from "@/components/flair/nucleos/scene/distancia-da-luta";
 import { INICIO_DO_DESFILE } from "@/lib/flair/nucleos/movimento/desfile";
+import { SALA_DE_USO } from "@/lib/flair/nucleos/movimento/fase-de-uso";
 import { FigurantesHumanos } from "@/components/flair/nucleos/gente/figurantes-humanos";
 import { Sala3D } from "@/components/flair/nucleos/scene/room";
 import { QualidadeDaCena } from "@/components/flair/nucleos/scene/scene-quality";
@@ -62,6 +63,8 @@ export interface NucleoScene3DProps {
   /** a câmera escolhida no seletor do HUD ("AUTO" ou nula = a do momento) e o momento da partida */
   camera?: string | null;
   momento?: MomentoDaCamera;
+  /** onde a personagem está na sala, para quem precisa ler de fora (o laboratório); sem ele, a cena guarda o dela */
+  jogadorDeFora?: React.MutableRefObject<Jogador>;
 }
 
 /**
@@ -75,17 +78,18 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
   return { dist, alvo: [0, altura + (sala?.zonas.avatar.altura ?? 0), 0] };
 }
 
-export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO", andarLivre = false, agilidade, desfileAtivo = false }: NucleoScene3DProps) {
-  const jogador = useRef<Jogador>({ pos: NA_MARCA, andando: false });
+export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO", andarLivre = false, agilidade, desfileAtivo = false, jogadorDeFora }: NucleoScene3DProps) {
+  const proprio = useRef<Jogador>({ pos: NA_MARCA, andando: false });
+  const jogador = jogadorDeFora ?? proprio;
   // cada momento começa na marca; o desfile da Passarela parte do arco do backstage
   useEffect(() => {
     jogador.current = { pos: (momento === "ACAO" && desfileAtivo && INICIO_DO_DESFILE[config.codigo]) || NA_MARCA, andando: false };
-  }, [momento, desfileAtivo, config.codigo]);
+  }, [momento, desfileAtivo, config.codigo, jogador]);
   const rosto = useMemo(() => maquiagemNoRosto(maquiagem), [maquiagem]);
   const manequim = config.personagens.find((p) => p.papel === "MANEQUIM");
   const sala = salaDe(config.codigo, variante);
   // a abertura toca no começo da partida (e a cada salão da gala); quem volta a uma partida já na ação não a revê
-  const abertura = momento === "PREPARO" ? variante ?? config.codigo : variante;
+  const abertura = variante === SALA_DE_USO ? null : momento === "PREPARO" ? variante ?? config.codigo : variante;
   const cena = useSceneDirector({ codigo: config.codigo, avatar, resultado, reduzido, abertura });
   // onde a abertura do salão termina: a câmera do preparo, parada
   const fim = useMemo(() => {
@@ -106,7 +110,7 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
         <FigurantesHumanos codigo={config.codigo} semente={semente} personagens={figurantes} prontos={prontos} reduzido={reduzido}
           limite={() => corposCheiosDaCena(config.codigo, qualidade.current)} sombraAte={() => AJUSTES[qualidade.current].sombraDeFiguranteAte} />
         <LuzDeEfeito altura={sala.zonas.avatar.altura} />
-        {manequim && zonasDaPeca && zonas && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
+        {manequim && zonasDaPeca && zonas && variante !== SALA_DE_USO && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
         <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} maquiagem={rosto} jogador={jogador} />
         <Andarilho sala={sala} jogador={jogador} agilidade={agilidade} livre={andarLivre} />
         <DesfileJogavel codigo={config.codigo} sala={sala} jogador={jogador} ativo={desfileAtivo} />

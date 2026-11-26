@@ -216,6 +216,64 @@ Média projetada: 5,1 (reauditoria: 4,7). Nenhum jogo chega a 8 em nenhum crité
 - **Jogos de zonas:** sem fase de uso própria (estreia em campo, show, volta de classificação, missão com drones); o
   avatar veste só a cor dominante, sem emblema, capa nem capacete pintados.
 
+## Rodada de 26/11/2026: fase de uso dos jogos de zonas
+
+Continuação da lista que a rodada anterior deixou, na ordem de maior ganho da reauditoria. Desta vez a cena foi vista
+no navegador (Chromium com WebGL por software); o que foi e o que não foi visto está dito em cada item.
+
+### Item 1 (feito): fase de uso jogável em Clube do Coração, My Favorite Singer, Meu Piloto Favorito e Meu Super-Herói
+
+**Regra (servidor).** `Flair3dFaseDeUso`, dentro da mesma `Flair3dExecucao` (sem sistema paralelo; decisão em
+`docs/refactoring/gof/2026-11-26-fase-de-uso.md`). Com a peça pronta e dentro do orçamento de tinta, a partida fica
+EM_ACAO com cinco marcas (eram três), prazo de 25 s para a fase e, em cada marca, dois lances:
+
+| Lance | Botão | Janela | Pontos | Recurso |
+| --- | --- | --- | --- | --- |
+| seguro (passe curto, nota segura, poupar, desviar) | o pedido | inteira (650 a 1350 ms, pelo atributo do look) | 2 perfeito, 1 bom | não gasta |
+| ousado (drible, agudo, acelerar, golpe) | outro, sorteado da semente | 60% da janela | 4 | gasta 12, acerte ou erre |
+| erro (outro botão, tarde, antecipado, sem toque ou fora do prazo) | | | −4 | drena (15 de energia ou foco, 22 de vida) |
+
+O teto continua 15: para chegar lá é preciso ousar em pelo menos três marcas. O recurso é o que sobrou da tinta
+(`Flair3dTinta`): quem pintou caro tem menos fôlego para ousar. Recurso zerado fecha `ESGOTADO`, com no máximo 30
+pontos. Os tempos vêm do navegador, como na execução comum; o servidor confere botão, marca, reação mínima e um toque
+por marca. Testes: `Flair3dFaseDeUsoTest` (6) e os de zonas que já existiam.
+
+**Tela e cena.** A personagem sai do ateliê: o campo com o gol e a torcida (Clube), o palco com o telão e a plateia
+(Singer), a reta dos boxes com a chicane de pneus e a faixa de chegada (Piloto), o terraço com as caixas e a cidade
+(Super-Herói), em `scene/salas/fase-de-uso.ts`. As marcas passam a ser desenhadas no piso (a próxima acesa, as tocadas
+na cor da nota), em todos os jogos de percurso: antes não havia nada no piso mostrando aonde ir. Cada jogo tem o alvo
+dele (cone, feixe de luz, portão, drone), o gesto de cada lance e a reação de quem assiste. O painel mostra os dois
+lances com o custo, a barra do prazo e o recurso caindo na hora. Câmera nova "Percurso" (do alto, de frente, parada na
+direção).
+
+**Correção achada jogando.** O andar recebia as caixas dos móveis com a folga da lente (o cache de `obstaculosDaSala`
+era por sala e valia a folga de quem chamasse primeiro): a personagem batia a 20 cm dos móveis.
+
+**Visto na tela.** As quatro fases jogadas do começo ao fim com o teclado em `/lab/jogo?fase=uso` (a cena 3D e o painel
+de verdade, com um pedido de exemplo): andar até as cinco marcas, escolher o lance, ver a nota, o recurso e a marca
+mudarem, chegar à ponta. Fotos em `scratchpad/shots/jogos/<jogo>-uso-*.png`. **Não visto:** a partida inteira pela tela
+do jogo com o servidor (o laboratório não chama a API; a ligação com o resultado do servidor está nos testes da tela);
+o prazo estourando; controle e toque.
+
+**O que ainda falta nestes quatro.** O briefing não avisa, antes de pintar, que a tinta que sobra é o fôlego da fase de
+uso; a roda de recursos não mostra o desgaste; o avatar veste só a cor dominante (sem emblema, capa nem capacete
+pintados); não há adversário nem física (o cone não é driblado, o drone não atira); a pontuação não depende do caminho
+feito, só do lance e do tempo.
+
+### Nota projetada depois desta rodada
+
+Projeção de quem implementou, a conferir por auditor independente. Só mudam os quatro jogos de zonas; os outros onze
+ficam com a projeção anterior (ganharam as marcas desenhadas no piso, sem mudança de nota).
+
+| Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Final | Projeção anterior | Reauditoria |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CLUBE_CORACAO | 4,6 | 4,7 | 5,6 | 4,5 | 4,5 | 6,2 | 5 | **5,0** | 4,5 | 4,1 |
+| FAVORITE_SINGER | 4,6 | 4,4 | 5,8 | 4,5 | 4,3 | 5,3 | 5 | **4,8** | 4,3 | 3,9 |
+| PILOTO_FAVORITO | 4,6 | 4,4 | 5,4 | 4,8 | 3,5 | 5,3 | 5 | **4,7** | 4,2 | 3,9 |
+| SUPER_HEROI | 4,6 | 4,4 | 5,4 | 4,5 | 3,6 | 5,3 | 5 | **4,7** | 4,1 | 3,8 |
+
+Média projetada dos 15: 5,2 (anterior: 5,1; reauditoria: 4,7). Nenhum jogo chega a 8.
+
 ## Resumo
 
 | Nº | Jogo | Estado ao escrever este documento | Mais incompleto primeiro (ordem de trabalho) |

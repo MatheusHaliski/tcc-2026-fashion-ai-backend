@@ -28,7 +28,9 @@ export type FxEvento =
   | { tipo: "desfile-pose"; nucleo: NucleoCodigo }
   | { tipo: "desfile-fim"; nucleo: NucleoCodigo }
   /** um dos quatro botões na ação do desfile (✕ ○ □ △): a resposta à deixa da execução ou, sem deixa, □ faz a pose final */
-  | { tipo: "desfile-botao"; nucleo: NucleoCodigo; botao: "VESTIR" | "TIRAR" | "DESFILAR" | "TROCAR_ABA" };
+  | { tipo: "desfile-botao"; nucleo: NucleoCodigo; botao: "VESTIR" | "TIRAR" | "DESFILAR" | "TROCAR_ABA" }
+  /** a nota de uma marca da execução, dada na hora (a do servidor vem depois): a cena pinta a marca e a personagem faz o gesto */
+  | { tipo: "desfile-nota"; nucleo: NucleoCodigo; marca: number; nota: "PERFEITO" | "BOM" | "ERROU" | "OUSADO" };
 
 export type FxAssinante = (evento: FxEvento) => void;
 

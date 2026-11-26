@@ -8,15 +8,21 @@ import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
 import type { Posicao } from "@/lib/flair/nucleos/movimento/andar";
 import { LABIRINTO_ESPELHO } from "@/lib/flair/nucleos/scene/salas/labirinto";
+import { FASES_DE_USO } from "@/lib/flair/nucleos/movimento/fase-de-uso";
 
 type Ponto = [number, number];
 
-/** Do canto da plateia ao outro e até o manequim: as três marcas da estreia, dentro do tablado. */
+/** Do canto da plateia ao outro e até o manequim: as três marcas da pose no ateliê, dentro do tablado. */
 const ATELIE: Ponto[] = [[0.6, 0.5], [-0.6, 0.5], [-0.7, -0.7]];
+/**
+ * Jogos de zonas: no lugar da fase de uso (o campo, o palco, a pista, o terraço), as cinco marcas dela; no ateliê (a
+ * peça que não saiu de lá), as três do tablado.
+ */
+const zonas = (codigo: NucleoCodigo) => (sala: Sala): Ponto[] => (sala.zonas.avatar.marca === "tablado" ? ATELIE : FASES_DE_USO[codigo]?.marcas ?? ATELIE);
 
 /**
- * Os pontos de cada jogo (x, z), na ordem; o último é onde o gesto final vale. São sempre três (o servidor pede um
- * botão por marca, Flair3dExecucao.MARCAS), a mais de ALCANCE da marca de saída e entre si, em zigue-zague onde a sala
+ * Os pontos de cada jogo (x, z), na ordem; o último é onde o gesto final vale. São três (o servidor pede um botão
+ * por marca, Flair3dExecucao.MARCAS) ou, na fase de uso dos jogos de zonas, cinco; a mais de ALCANCE da marca de saída e entre si, em zigue-zague onde a sala
  * deixa: andar até cada uma é parte da habilidade.
  */
 const PERCURSOS: Partial<Record<NucleoCodigo, (sala: Sala) => Ponto[]>> = {
@@ -29,11 +35,11 @@ const PERCURSOS: Partial<Record<NucleoCodigo, (sala: Sala) => Ponto[]>> = {
   PERSONAGEM_FILME: () => [[-0.8, -0.6], [0.8, -1.2], [0, -1.6]],
   AROUND_THE_WORLD: () => [[0, 1], [0, 2], [0, 3]],
   ROAD_TO_GLORY: () => [[-0.8, -0.5], [0.8, -0.9], [0, -1.5]],
-  // jogos de zonas (ateliê): pelo tablado até a beira, diante do manequim com a peça pintada — a estreia do traje
-  CLUBE_CORACAO: () => ATELIE,
-  FAVORITE_SINGER: () => ATELIE,
-  PILOTO_FAVORITO: () => ATELIE,
-  SUPER_HEROI: () => ATELIE,
+  // jogos de zonas: a fase de uso (lib/flair/nucleos/movimento/fase-de-uso.ts)
+  CLUBE_CORACAO: zonas("CLUBE_CORACAO"),
+  FAVORITE_SINGER: zonas("FAVORITE_SINGER"),
+  PILOTO_FAVORITO: zonas("PILOTO_FAVORITO"),
+  SUPER_HEROI: zonas("SUPER_HEROI"),
 };
 
 /** Três marcas da marca do avatar até a ponta da passarela, alternando os lados (x = ±lado), a partir de `inicio`. */

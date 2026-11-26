@@ -23,6 +23,7 @@ import type { RecursosNaTela } from "@/components/flair/nucleos/recursos/use-rec
 import { CinemaOverlay } from "@/components/flair/cinema/cinema-overlay";
 import { andaAgora } from "@/lib/flair/nucleos/movimento/quando-anda";
 import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
+import { salaDaFaseDeUso } from "@/lib/flair/nucleos/movimento/fase-de-uso";
 import { DesfileHud } from "@/components/flair/nucleos/desfile-hud";
 import { AnalogicoDeToque } from "@/components/flair/nucleos/analogico-de-toque";
 import type { Toque } from "@/lib/flair/nucleos/movimento/execucao";
@@ -93,9 +94,11 @@ export function NucleoStage(props: NucleoStageProps) {
   const naAcao = momento === "ACAO" || momento === "RESULTADO";
   const desfileNaAcao = momento === "ACAO" && DESFILE_JOGAVEL.has(definicao.codigo);
   const [camera, setCamera] = useState<string>(CAMERA_AUTOMATICA);
+  // nos jogos de zonas, a peça pronta sai do ateliê: a fase de uso é no campo, no palco, na pista ou no terraço
+  const variante = salaDaFaseDeUso(definicao.codigo, momento, props.resultado) ?? props.variante;
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
-      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} semente={props.semente}
+      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
         zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem}
         andarLivre={andaAgora(definicao.codigo, definicao.acoes, momento, props.entreLances)}

@@ -2,8 +2,10 @@
  * A execução no percurso (decisão da dona de 25/11/2026: a habilidade conta na nota). Depois do look avaliado, o
  * servidor manda EXECUCAO_PEDIDA: um botão por marca (✕ ○ □ △), a janela de tempo (da AGILIDADE do look), o recurso que
  * o erro drena, quanto há dele e quanto cada erro tira. A pessoa anda até cada marca e aperta o botão pedido antes de a
- * janela fechar; o acionamento leva os toques e o servidor dá a nota (Flair3dExecucao.java). Aqui só se mostra na hora
- * o que o servidor vai dizer, com as mesmas regras. Puro.
+ * janela fechar; o acionamento leva os toques e o servidor dá a nota (Flair3dExecucao.java). Nos jogos de zonas é a fase
+ * de uso (Flair3dFaseDeUso.java): em cada marca há também o lance ousado, outro botão com a janela curta, que vale mais e
+ * gasta o recurso, e a fase inteira tem prazo. Aqui só se mostra na hora o que o servidor vai dizer, com as mesmas
+ * regras. Puro.
  */
 import { valorDoEvento } from "@/lib/flair/nucleos/action-fx";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
@@ -20,6 +22,8 @@ export interface PedidoDaExecucao {
   recurso: string;
   reserva: number;
   dreno: number;
+  /** a fase de uso (jogos de zonas): o botão do lance ousado de cada marca, o que ele gasta, a janela dele e o prazo */
+  risco?: { ousados: BotaoDaExecucao[]; custo: number; janelaMs: number; prazoMs: number };
 }
 
 export interface Toque {
@@ -28,7 +32,7 @@ export interface Toque {
   ms: number;
 }
 
-export type NotaDoToque = "PERFEITO" | "BOM" | "ERROU";
+export type NotaDoToque = "PERFEITO" | "BOM" | "ERROU" | "OUSADO";
 
 export interface NotaDaExecucao {
   marcas: NotaDoToque[];
@@ -41,9 +45,27 @@ const ehBotao = (b: unknown): b is BotaoDaExecucao => typeof b === "string" && (
 /** O pedido do servidor enquanto a execução espera os toques (EM_ACAO, sem a nota ainda); nulo fora dela. */
 export function pedidoDe(r: NucleoResultado | null | undefined): PedidoDaExecucao | null {
   if (r?.status !== "EM_ACAO" || valorDoEvento(r, "EXECUCAO")) return null;
-  const v = valorDoEvento(r, "EXECUCAO_PEDIDA") as Partial<PedidoDaExecucao> | undefined;
+  const v = valorDoEvento(r, "EXECUCAO_PEDIDA") as (Partial<PedidoDaExecucao> & RiscoDoServidor) | undefined;
   if (!v || !Array.isArray(v.botoes) || !v.botoes.every(ehBotao) || typeof v.janelaMs !== "number") return null;
-  return { botoes: v.botoes, janelaMs: v.janelaMs, recurso: String(v.recurso ?? "FOCO"), reserva: Number(v.reserva ?? 0), dreno: Number(v.dreno ?? 0) };
+  const pedido: PedidoDaExecucao = { botoes: v.botoes, janelaMs: v.janelaMs, recurso: String(v.recurso ?? "FOCO"), reserva: Number(v.reserva ?? 0), dreno: Number(v.dreno ?? 0) };
+  const ousados = v.ousados;
+  if (Array.isArray(ousados) && ousados.length === v.botoes.length && ousados.every(ehBotao)) {
+    pedido.risco = { ousados, custo: Number(v.custo ?? 0), janelaMs: Number(v.janelaOusadaMs ?? v.janelaMs), prazoMs: Number(v.prazoMs ?? 0) };
+  }
+  return pedido;
+}
+
+/** Os campos da fase de uso como o servidor manda no EXECUCAO_PEDIDA. */
+interface RiscoDoServidor {
+  ousados?: unknown[];
+  custo?: number;
+  janelaOusadaMs?: number;
+  prazoMs?: number;
+}
+
+/** O botão é o lance ousado da marca (gasta o custo, acerte ou erre). */
+export function ehOusado(p: PedidoDaExecucao, marca: number, botao: BotaoDaExecucao | null): boolean {
+  return !!botao && p.risco?.ousados[marca] === botao;
 }
 
 /** A nota que o servidor deu à execução, depois do acionamento. */
@@ -54,11 +76,12 @@ export function notaDe(r: NucleoResultado | null | undefined): NotaDaExecucao | 
 
 /** A nota de um toque na hora (as regras do servidor); sem botão, a janela fechou. */
 export function notaDoToque(p: PedidoDaExecucao, marca: number, botao: BotaoDaExecucao | null, ms: number): NotaDoToque {
+  if (p.risco && ehOusado(p, marca, botao)) return ms >= REACAO_MINIMA_MS && ms <= p.risco.janelaMs ? "OUSADO" : "ERROU";
   if (!botao || p.botoes[marca] !== botao || ms < REACAO_MINIMA_MS || ms > p.janelaMs) return "ERROU";
   return ms <= p.janelaMs / 2 ? "PERFEITO" : "BOM";
 }
 
-/** O recurso depois das notas dadas até aqui (cada erro drena). */
-export function restanteDepois(p: PedidoDaExecucao, notas: readonly NotaDoToque[]): number {
-  return Math.max(0, p.reserva - notas.filter((n) => n === "ERROU").length * p.dreno);
+/** O recurso depois das notas dadas até aqui: cada erro drena e cada lance ousado tentado gasta o custo. */
+export function restanteDepois(p: PedidoDaExecucao, notas: readonly NotaDoToque[], ousadias = 0): number {
+  return Math.max(0, p.reserva - notas.filter((n) => n === "ERROU").length * p.dreno - ousadias * (p.risco?.custo ?? 0));
 }
