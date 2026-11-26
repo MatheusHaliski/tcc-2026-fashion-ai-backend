@@ -1,5 +1,27 @@
 # Exercício 19 — Modalidade visual da peça na AURA
 
+> **Conferido e completado em 26/11/2026 (Implementado em 26/11/2026).** A modalidade visual continua sendo
+> `aura.format` (`IMAGEM_UNICA` | `MOSAICO`) dentro de `wardrobe_items.background_config_json`; nenhum campo paralelo
+> foi criado. **Sem mudança de schema** (a V124 ficou sem uso): nada a rodar no Railway.
+> - **Falha corrigida:** `PUT /api/pieces/{id}/background` gravava qualquer coisa em `aura` (o formato só era
+>   conferido na arte do look). Agora `StudioArtworkRules` recusa com 400 antes de gravar: `aura` que não é objeto ou
+>   `variantId` que não é texto (`AURA_INVALIDA`), formato fora da lista ou de outro tipo (`FORMATO_INVALIDO`), formato
+>   sem preset (`FORMATO_INVALIDO`) e preset que não existe no catálogo (`PRESET_INVALIDO`). No look, formato de tipo
+>   errado também passou a ser 400 (antes o cast derrubava em 500).
+> - **Preset retirado do catálogo:** o `variantId` que já estava gravado na peça é aceito de novo, para a pessoa poder
+>   trocar o formato ou o resto da arte sem perder o que tinha. Nada é substituído em silêncio.
+> - **Mantido:** `requireAuraAccess`, dono da peça, revisão (`baseRev` → 409) e a gravação da configuração inteira (o
+>   editor manda borda, material e preset junto do formato). Configuração antiga sem `aura` ou sem `format` segue válida.
+> - **Tela (já existia, conferida no navegador):** o seletor "Formato" fica em Aura & Material → AURA comum; a recusa do
+>   servidor aparece no editor e o rascunho é conservado; depois de recarregar, o detalhe e a lista "Minhas peças"
+>   mostram a mesma arte em mosaico, lida do `background` devolvido pelo GET.
+> - **Não feito:** não há CHECK de formato no banco (dados antigos sem `aura` continuam aceitos, como o texto abaixo
+>   recomenda); na peça o formato não exige material (sem material o card mostra a Aura sem mosaico).
+> - Testes: `BackgroundStudioServiceTest.modalidadeVisualDaAuraDaPecaEValidadaEPersistidaComORestoDaArte` (os dois
+>   formatos, tipos errados, formato sem preset, preset desconhecido, preset retirado já gravado, peça alheia, borda e
+>   material preservados); na tela, `background-studio.test.tsx` e `card-art-camadas.test.ts` já cobriam o seletor e o
+>   desenho do mosaico.
+
 **Situação na revisão `9f5512a77`:** Parcial: existe aura.format no contrato da Aura comum; explicitar validação/persistência sem criar modalidade paralela.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).
