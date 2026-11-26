@@ -149,7 +149,7 @@ describe("BrandFlairTab — loja", () => {
     expect(await screen.findByText("Combinação salva.")).toBeTruthy();
     expect(calls.find((c) => c.method === "POST" && c.path === "/api/flair/brand/combinations")?.body).toEqual({
       name: "Duelo Azul", description: "Ganhe 3 duelos", gameType: "DUELO_PATROCINADO", requiredCategories: ["upper_piece"], requiredStyles: ["casual"], requiredOccasions: ["trabalho"],
-      minBrandPieces: 2, minDeckPower: null, minRarity: "LIMITED", minWins: 4, couponTitle: "R$ 40 off", discountPercent: null, discountAmount: 40, minPurchase: "200", minPurchaseCurrency: "BRL", validDays: 20, stock: null,
+      minBrandPieces: 2, minDeckPower: null, minRarity: "LIMITED", minWins: 4, couponTitle: "R$ 40 off", discountPercent: null, discountAmount: 40, minPurchase: "200", minPurchaseCurrency: "BRL", minHypeLevel: null, validDays: 20, stock: null,
       active: false, accentColor: "#ff0000", storeUrl: "https://azul.example", canalCupomId: null,
     });
   });
