@@ -8,6 +8,7 @@ import { Card, ErrorState, PageHeader, Skeleton, UiIcon } from "@/components/ui"
 import { FaiIcon } from "@/components/fai-icon";
 import { FlairHubIcon } from "@/components/flair/hub-icons";
 import { HowItWorks } from "@/components/guide/guide";
+import { FaiStore } from "@/components/fai-store/fai-store";
 
 export type PointsSectionId = "saldo" | "ganhar" | "loja";
 
@@ -23,7 +24,7 @@ function hrefFor(action: string): string | null {
 
 /**
  * Sub-rotas de FAI Points (/points/saldo, /ganhar, /loja): cada uma é uma parte da antiga página única, com o caminho
- * de volta à central, o nome do modo e "Como funciona". A loja é a loja física (a loja do quarto saiu com o Meu Quarto).
+ * de volta à central, o nome do modo e "Como funciona". A loja é a Loja FAI Points: itens do app, só com FAI Points.
  */
 export function PointsSection({ section }: { section: PointsSectionId }) {
   const { t, fmtNumber, rich } = useI18n();
@@ -78,6 +79,7 @@ export function PointsSection({ section }: { section: PointsSectionId }) {
               <p className="type-caption text-muted">{t("points.pontos_por_usar_o_que")}</p>
             </div>
           )}
+          {section === "loja" && <FaiStore onChanged={acc.reload} />}
         </>
       )}
     </>

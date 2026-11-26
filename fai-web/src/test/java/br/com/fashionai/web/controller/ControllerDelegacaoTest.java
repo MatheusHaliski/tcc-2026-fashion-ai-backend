@@ -46,7 +46,7 @@ class ControllerDelegacaoTest {
             AutopilotController.class, FlairController.class,
             FlairCollectionController.class, Avatar3dController.class, TryOnController.class, GuideController.class,
             MomentController.class, BackgroundController.class, TryOnPersonPhotoController.class,
-            AnatomicalTryOnController.class, HypeController.class,
+            FaiStoreController.class, AnatomicalTryOnController.class, HypeController.class,
             HighlightsController.class, AuthController.class, LensController.class, CatalogController.class,
             IssuerReviewController.class, AccountController.class, CouponController.class, DiscoveryController.class,
             ChallengeController.class, MomentAdminController.class, AuraMotionController.class,
@@ -136,7 +136,7 @@ class ControllerDelegacaoTest {
         if (type == ClientIpResolver.class) return new ClientIpResolver("", "X-Edge-Secret");
         if (type == boolean.class) return false;
         if (type.isInterface()) return Fk.proxy(type);
-        for (Class<?> fake : ServiceFakes.class.getDeclaredClasses()) {
+        for (Class<?> fake : Fk.fakeClasses()) {
             if (fake.getSuperclass() == type) {
                 try {
                     Constructor<?> k = fake.getDeclaredConstructor();

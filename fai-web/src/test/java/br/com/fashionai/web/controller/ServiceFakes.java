@@ -3359,17 +3359,6 @@ final class ServiceFakes {
         }
     }
 
-    static final class FakeBrandCatalogProductsService extends br.com.fashionai.application.catalog.BrandCatalogProductsService {
-        FakeBrandCatalogProductsService() {
-            super((br.com.fashionai.domain.repository.CatalogProductRepository) Fk.arg(br.com.fashionai.domain.repository.CatalogProductRepository.class), (br.com.fashionai.domain.repository.BrandRepository) Fk.arg(br.com.fashionai.domain.repository.BrandRepository.class), (br.com.fashionai.application.catalog.CatalogService) Fk.arg(br.com.fashionai.application.catalog.CatalogService.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class));
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> sellerProducts(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "sellerProducts", java.util.List.class, new Object[]{a0, a1});
-        }
-    }
-
     static final class FakePreferencesService extends br.com.fashionai.application.service.PreferencesService {
         FakePreferencesService() {
             super((br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.UserPreferencesRepository) Fk.arg(br.com.fashionai.domain.repository.UserPreferencesRepository.class), (br.com.fashionai.application.assets.AssetCatalogService) Fk.arg(br.com.fashionai.application.assets.AssetCatalogService.class), (br.com.fashionai.application.service.IdentityService) Fk.arg(br.com.fashionai.application.service.IdentityService.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class));

@@ -20,6 +20,9 @@ public interface FaiPointsLedgerEntryRepository extends JpaRepository<FaiPointsL
 
     List<FaiPointsLedgerEntry> findTop100ByUserIdOrderByCreatedAtDesc(UUID userId);
 
+    /** Compras da pessoa numa loja (ex.: {@code FAI_STORE}): o lançamento é a prova de posse do item. */
+    List<FaiPointsLedgerEntry> findByUserIdAndRefTypeOrderByCreatedAtDesc(UUID userId, String refType);
+
     long countByUserIdAndActionCodeAndCreatedAtAfter(UUID userId, String actionCode, Instant since);
 
     @Query("select coalesce(sum(e.delta), 0) from FaiPointsLedgerEntry e where e.userId = :u") long balance(@Param("u") UUID userId);

@@ -1,0 +1,39 @@
+/* ── Loja FAI Points (components/fai-store): grade de cards clicáveis, filtros por tipo e card de loja expandido.
+   As amostras (aura, guarda-roupa, item do Acervo, moldura de card) são desenhadas com as cores do próprio item. */
+.fai-store-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.fai-store-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); margin: 0; padding: 0; list-style: none; }
+.fai-store-cell { min-width: 0; }
+.fai-store-card { display: grid; grid-template-rows: auto 1fr; width: 100%; height: 100%; padding: 0; overflow: hidden; text-align: left; color: var(--ink); background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); cursor: pointer; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.fai-store-card:hover { transform: translateY(-2px); border-color: var(--line); box-shadow: 0 8px 24px #0000001f; }
+.fai-store-card:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fai-store-photo { display: grid; place-items: center; aspect-ratio: 4 / 5; overflow: hidden; background: var(--surface-2); }
+.fai-store-card-body { display: grid; align-content: start; gap: 6px; padding: 12px 14px 14px; min-width: 0; }
+.fai-store-card-kicker { color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.fai-store-card-name { overflow-wrap: anywhere; }
+.fai-store-card-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fai-store-card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin-top: 4px; }
+.fai-store-price { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-data); }
+.fai-store-price-lg b { font-size: 24px; line-height: 1.2; }
+.fai-store-svg { width: 78%; height: 78%; }
+
+/* aura: anel em gradiente cônico com as cores do preset */
+.fai-store-aura { position: relative; width: 100%; height: 100%; display: grid; place-items: center; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--aura-b) 25%, transparent), transparent 70%), #101014; }
+.fai-store-aura-ring { position: absolute; width: 62%; aspect-ratio: 1; border-radius: 50%; background: conic-gradient(var(--aura-a), var(--aura-b), var(--aura-c), var(--aura-a)); filter: blur(2px); animation: fai-store-spin 9s linear infinite; }
+.fai-store-aura-core { position: absolute; width: 44%; aspect-ratio: 1; border-radius: 50%; background: #101014; box-shadow: 0 0 32px var(--aura-b); }
+@keyframes fai-store-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .fai-store-aura-ring { animation: none; } }
+
+/* moldura de card de peça (um quadro) e de look (grade de quatro) */
+.fai-store-frame { width: 66%; aspect-ratio: 3 / 4; padding: 6px; border-radius: 14px; background: linear-gradient(135deg, var(--frame-a), var(--frame-b)); box-shadow: 0 10px 24px #00000033; }
+.fai-store-frame-inner { display: grid; gap: 6px; width: 100%; height: 100%; padding: 10px; border-radius: 10px; background: var(--frame-surface); }
+.fai-store-frame[data-kind="look"] .fai-store-frame-inner { grid-template-columns: 1fr 1fr; }
+.fai-store-frame-inner i { display: block; border-radius: 6px; background: color-mix(in srgb, var(--frame-a) 35%, transparent); }
+
+/* card de loja expandido */
+.fai-store-expanded { display: grid; gap: 16px; }
+.fai-store-expanded-photo { display: grid; place-items: center; aspect-ratio: 4 / 5; max-height: 52vh; overflow: hidden; border-radius: var(--radius); background: var(--surface-2); }
+.fai-store-expanded-info { display: grid; align-content: start; gap: 8px; min-width: 0; }
+.fai-store-error { padding: 8px 12px; border-radius: var(--radius-sm); color: var(--ink); background: color-mix(in srgb, var(--mark) 18%, transparent); border: 1px solid var(--mark); }
+@media (min-width: 720px) {
+  .fai-store-expanded { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+}
