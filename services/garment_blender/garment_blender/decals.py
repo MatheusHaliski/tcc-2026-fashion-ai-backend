@@ -52,9 +52,10 @@ def place(decal, aspect: float, height: float, neck_front: float, floor: float) 
 
 
 def add_decal(mesh: Mesh, rows: list[Row], decal, mat: str, neck_front: float, floor: float,
-              gap: float = 0.0, gap_from: float = -1.0) -> int:
+              gap: float = 0.0, gap_from: float = -1.0, limit=None) -> int:
     """Cola um desenho; devolve quantas faces entraram. ``gap``: meia largura do vão no meio da frente (0 sem vão),
-    acima da altura ``gap_from`` (a vista curta da polo só abre em cima)."""
+    acima da altura ``gap_from`` (a vista curta da polo só abre em cima). ``limit(y)``: meia largura do pano na altura
+    y (a cava da peça sem manga): o desenho não passa dela."""
     with Image.open(decal.imagem) as im:
         aspect = im.height / im.width
     y_c, w, h = place(decal, aspect, rows[-1].y, neck_front, floor)
@@ -67,6 +68,9 @@ def add_decal(mesh: Mesh, rows: list[Row], decal, mat: str, neck_front: float, f
         y = y_c + h / 2 - h * j / nv
         th_tab, arc_tab = _arc(rows, y)
         half = float(arc_tab[0])
+        if limit is not None:   # até a cava: o arco no ângulo em que o anel tem a meia largura do pano
+            a = float(surface(rows, 0.0, y)[0][0])
+            half = min(half, float(np.interp(math.acos(min(1.0, limit(y) / a)), th_tab, arc_tab)))
         for i in range(nu + 1):
             s = float(np.clip(decal.x - w / 2 + w * i / nu, -half * 0.97, half * 0.97))
             th = float(np.interp(s, arc_tab[::-1], th_tab[::-1]))

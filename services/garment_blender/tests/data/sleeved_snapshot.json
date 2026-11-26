@@ -1,0 +1,239 @@
+{
+ "abercrombie-classic-suiting-blazer": {
+  "medido_cm": {
+   "altura_total": 73.7,
+   "barra": 100.0,
+   "biceps": 33.8,
+   "manga": 59.0,
+   "punho": 20.3,
+   "torax": 103.9
+  },
+  "sha256": "10cdedb770dd24102e3e580757f764d760b423de7dc950f5f87cf07a1b4669e0",
+  "verts": 8866
+ },
+ "allsaints-astra-tailored-vest+faixa": {
+  "medido_cm": {
+   "altura_total": 58.1,
+   "barra": 102.5,
+   "torax": 103.3
+  },
+  "sha256": "4826ced819508240c0dcf19e8e1b16e4e84367cfa52e2fd1fc64efe645c49c19",
+  "verts": 6149
+ },
+ "allsaints-astra-tailored-vest+lapela": {
+  "medido_cm": {
+   "altura_total": 61.6,
+   "barra": 99.9,
+   "torax": 102.3
+  },
+  "sha256": "6bbacea659e90d85fa4f45d2c6caedaa250b5981e522524e19e2645c4d24f1d0",
+  "verts": 6525
+ },
+ "allsaints-effie-cocoon-coat": {
+  "medido_cm": {
+   "altura_total": 110.0,
+   "barra": 106.6,
+   "biceps": 36.6,
+   "manga": 59.0,
+   "punho": 20.5,
+   "torax": 110.1
+  },
+  "sha256": "363013ab8bec3c5c9c46a3785a7fdbf18e37cc94cbd332490e3e7e7cd1497dfe",
+  "verts": 10753
+ },
+ "amaro-top-costura-contrastante+colarinho": {
+  "medido_cm": {
+   "altura_total": 39.5,
+   "barra": 95.9,
+   "torax": 96.2
+  },
+  "sha256": "23c8fb7beca0d0b659d307a4210f1aeebce4122ffa1ae2ee6207825776ebba43",
+  "verts": 5860
+ },
+ "aramis-polo-piquet-vermelho-carmim": {
+  "medido_cm": {
+   "altura_total": 72.6,
+   "barra": 105.4,
+   "biceps": 39.8,
+   "manga": 21.2,
+   "punho": 37.2,
+   "torax": 110.0
+  },
+  "sha256": "8a6e3fabba9436203608e03720f6eb1c071b2fed79f20b60ab6d80f9f704d180",
+  "verts": 7072
+ },
+ "asics-jaqueta-road-packable": {
+  "medido_cm": {
+   "altura_total": 76.1,
+   "barra": 105.8,
+   "biceps": 39.8,
+   "manga": 63.0,
+   "punho": 22.7,
+   "torax": 110.2
+  },
+  "sha256": "6fa248c93a4ff782c0ab2993b440413f9298964a5e722e54fb38621d89b55806",
+  "verts": 12303
+ },
+ "burberry-cashmere-cardigan": {
+  "medido_cm": {
+   "altura_total": 63.7,
+   "barra": 101.8,
+   "biceps": 33.8,
+   "manga": 59.0,
+   "punho": 18.9,
+   "torax": 103.0
+  },
+  "sha256": "b90618114d0b37bdfb7b4ffc2381fad0fa762abb244dc61444b663c7839427a2",
+  "verts": 7707
+ },
+ "chambray-shirt-jacket": {
+  "medido_cm": {
+   "altura_total": 58.7,
+   "barra": 107.4,
+   "biceps": 36.6,
+   "manga": 59.0,
+   "punho": 20.6,
+   "torax": 110.1
+  },
+  "sha256": "0d7773459c2526bcbe91683ac8b85116c690fbea14a184b9a9b3a0c675282dfa",
+  "verts": 9461
+ },
+ "everlane-air-muscle-tank+capuz": {
+  "medido_cm": {
+   "altura_total": 95.1,
+   "barra": 99.1,
+   "torax": 101.8
+  },
+  "sha256": "f398925867616edc2624110ea107e8ae48125e416d54b792c6700f2e443282a5",
+  "verts": 4788
+ },
+ "fila-blusa-bio-iii": {
+  "medido_cm": {
+   "altura_total": 63.9,
+   "barra": 99.0,
+   "biceps": 33.8,
+   "manga": 59.0,
+   "punho": 20.3,
+   "torax": 102.0
+  },
+  "sha256": "d18efd468aded4f8653d0373615ba03f2e25e58ab770715ec2a0bede7b580262",
+  "verts": 6208
+ },
+ "gymshark-training-cropped-hoodie": {
+  "medido_cm": {
+   "altura_total": 76.1,
+   "barra": 99.1,
+   "biceps": 33.8,
+   "manga": 59.0,
+   "punho": 18.9,
+   "torax": 102.0
+  },
+  "sha256": "4f4e829a4c2f4431130efba639a753478ba681d4671bcca6d3d1753d2fbd3d32",
+  "verts": 5420
+ },
+ "hooded-world-tour": {
+  "medido_cm": {
+   "altura_total": 102.1,
+   "barra": 104.5,
+   "biceps": 39.8,
+   "manga": 63.0,
+   "punho": 20.9,
+   "torax": 110.0
+  },
+  "sha256": "9f32b780c6590a5366f9e65b6cee47add3c9e55d74afc7281ea61159d966e95f",
+  "verts": 6885
+ },
+ "hope-body-modelador-microfibra+polo": {
+  "medido_cm": {
+   "altura_total": 65.6,
+   "barra": 93.1,
+   "torax": 95.8
+  },
+  "sha256": "d572fa4b2c1508b20083630b233b4eb643c3bb2254d0a136c3544d963fb37de5",
+  "verts": 6162
+ },
+ "le-lis-kimono-eliane-tricot": {
+  "medido_cm": {
+   "altura_total": 80.1,
+   "barra": 108.4,
+   "biceps": 51.7,
+   "manga": 50.0,
+   "punho": 48.2,
+   "torax": 112.3
+  },
+  "sha256": "4120db81b244867598f377a33b922d8ae86dc4a79c91888fc67f7fef72c413ba",
+  "verts": 8892
+ },
+ "nike-sportswear-windrunner": {
+  "medido_cm": {
+   "altura_total": 102.3,
+   "barra": 105.8,
+   "biceps": 39.8,
+   "manga": 63.0,
+   "punho": 22.7,
+   "torax": 110.2
+  },
+  "sha256": "f670331776df97b5cd4fe5ea37d45c1b141d8b66d4678f311d67e3c0f3c6f2d4",
+  "verts": 12803
+ },
+ "sacai-hoodie": {
+  "medido_cm": {
+   "altura_total": 102.8,
+   "barra": 113.1,
+   "biceps": 42.6,
+   "manga": 63.0,
+   "punho": 20.9,
+   "torax": 118.7
+  },
+  "sha256": "e88b747f95ab9caa51b7f16efeb394359938b0ced1367f2e818fa9784628d5bf",
+  "verts": 12904
+ },
+ "sacai-tshirt": {
+  "medido_cm": {
+   "altura_total": 71.8,
+   "barra": 113.4,
+   "biceps": 42.6,
+   "manga": 22.1,
+   "punho": 39.9,
+   "torax": 118.0
+  },
+  "sha256": "ea088691a72901a07551b4735b1bcef629e63c8dc74703bf6e9faccdec813a40",
+  "verts": 5788
+ },
+ "script-embroidery-sweatshirt": {
+  "medido_cm": {
+   "altura_total": 71.8,
+   "barra": 104.5,
+   "biceps": 39.8,
+   "manga": 63.0,
+   "punho": 20.9,
+   "torax": 110.0
+  },
+  "sha256": "86c23d2f74366a67c4ca333073ed663eb9a9cfa397d010e51867ba47cc9c9aa0",
+  "verts": 5680
+ },
+ "skechers-goshield-traverse-parka": {
+  "medido_cm": {
+   "altura_total": 116.8,
+   "barra": 113.2,
+   "biceps": 42.6,
+   "manga": 63.0,
+   "punho": 22.9,
+   "torax": 118.0
+  },
+  "sha256": "734accbbcd95b5eb583873346af88bf54eb7a09e896db5a45d33ae9e1e12c6fe",
+  "verts": 14640
+ },
+ "stockton-sweater": {
+  "medido_cm": {
+   "altura_total": 71.8,
+   "barra": 104.5,
+   "biceps": 39.8,
+   "manga": 63.0,
+   "punho": 20.9,
+   "torax": 110.0
+  },
+  "sha256": "3f0fecca0037060d7392b84f80d0bf10644b6cc0631afc57d8134fad976f99b9",
+  "verts": 5680
+ }
+}

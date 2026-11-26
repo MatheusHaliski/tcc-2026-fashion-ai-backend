@@ -12,6 +12,8 @@
  },
  "ribana": false,
  "sem_manga": true,
+ "alca": 6,
+ "alca_centro": 0.55,
  "medidas_marca": {
   "cava": 25,
   "decote_frente": 9

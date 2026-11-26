@@ -22,9 +22,10 @@ from garment_blender.geometry import ellipse_semi_axes
 from garment_blender.sizes import top_measures
 from garment_blender.spec import parse
 
-from . import forma, produtos, texto
+from . import forma, pistas, produtos, texto
 from .analise import analyze
 from .baixar import fetch
+from .cores import lab_to_rgb, match_name, rgb_to_lab, to_hex
 from .ficha import button_color, spec_for
 from .nomes_cor import color_from_name
 
@@ -123,6 +124,7 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
     spec = spec_for(p, "#808080", prior)
     length, chest_a, sleeve, neck = _measures(spec)
     avoid = spec["fechamento"] in ("botoes", "ziper_inteiro", "aberto")
+    clues = pistas.from_text(p.get("product_name"), p.get("description"), p.get("subcategory"), spec["fechamento"])
     best, best_url, photo = None, None, None
     for url, path, status in files:
         img = _open(path) if path else None
@@ -130,7 +132,7 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
             continue
         rgb = np.asarray(img)
         result = analyze(rgb, _labels(seg, img, path), length, chest_a, avoid, sleeve,
-                         hooded=spec["gola"] == "capuz", neck=neck)
+                         hooded=spec["gola"] == "capuz", neck=neck, clues=clues)
         if result["ok"] and (best is None or result["nota_foto"] > best["nota_foto"]):
             best, best_url, photo = result, url, img
         if best is not None and best["nota_foto"] >= 0.6:
@@ -143,6 +145,10 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
         spec["tecido"]["cor"] = color
         best = {"padrao": "liso", "fonte_cor": "nome"}
     else:
+        best["cor_medida"] = best["cor"]   # a foto subexposta erra o preto, o marinho e o branco: o nome da cor acerta
+        named = color_from_name(p.get("color_name"), p.get("color"), p.get("product_name"))
+        measured = rgb_to_lab(np.array([int(best["cor"][i:i + 2], 16) for i in (1, 3, 5)]))
+        best["cor"] = to_hex(lab_to_rgb(match_name(measured, named, solid=best["padrao"] == "liso")))
         spec["tecido"]["cor"] = best["cor"]
         if spec.get("cor_botao"):
             spec["cor_botao"] = button_color(best["cor"], bool(texto.GOLD.search(texto.plain(p.get("product_name")))),
@@ -152,6 +158,13 @@ def process(p: dict, files: list[tuple[str, Path | None, str]], seg, prior: dict
         _write_prints(spec, best, folder)
         said = texto.first(texto.SLEEVES, texto.plain(p.get("product_name")), texto.plain(p.get("description")))
         best["recorte"] = forma.from_photo(spec, best, said is not None)
+        if best.get("faixa_barra"):   # a altura da faixa pela fração da peça, no comprimento final da ficha
+            length = top_measures("M", spec["sexo"], spec["caimento"], spec.get("medidas_marca")).comprimento / 100
+            spec["faixa_barra"] = {"cor": best["faixa_barra"]["cor"],
+                                   "altura": round(best["faixa_barra"]["fracao"] * length, 4)}
+        if best.get("faixas_manga") and not spec["sem_manga"]:
+            spec["faixas_manga"] = [{"lado": b["lado"], "distancia": b["distancia_m"], "largura": b["largura_m"],
+                                     "cor": b["cor"]} for b in best["faixas_manga"]]
         thumb = photo.copy(); thumb.thumbnail((512, 512)); thumb.save(folder / "foto.jpg", quality=85)
     folder.mkdir(parents=True, exist_ok=True)
     summary = {k: v for k, v in best.items() if k not in ("decalques", "corrida", "listras")}

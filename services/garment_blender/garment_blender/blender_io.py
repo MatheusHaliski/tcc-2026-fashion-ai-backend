@@ -6,16 +6,17 @@ provador (Y para cima, frente +Z); no Blender (Z para cima) ela entra como (x, �
 """
 from __future__ import annotations
 
-import math
 from pathlib import Path
 
 import bpy  # noqa: I001 - o bpy registra bmesh e mathutils: vem antes deles
 import bmesh
 from mathutils import Vector
 
-from .fabric import write_maps
+from .fabric import repeat, write_maps
+from .finish import METAL, PLASTIC, TRIM, Finish, finish
 from .geometry import Mesh
 from .pattern import pattern_maps
+from .previa import render_preview  # noqa: F401 - a prévia mora em previa.py; o cli a chama por aqui
 
 SEAM_DEPTH = 0.0009   # profundidade do vinco da costura (m)
 # Rótulo da parte em cada vértice (COLOR_0, canal R): o provador encaixa cada parte no osso certo sem adivinhar pela
@@ -27,13 +28,24 @@ def reset() -> None:
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
-def _material(name: str, maps: dict[str, Path], roughness: float, metal: float = 0.0):
+def _material(name: str, maps: dict[str, Path], fin: Finish, metal: float = 0.0, tint=(1.0, 1.0, 1.0)):
+    """Principled BSDF com o acabamento ``fin`` (finish.py); ``tint``: cor linear do tecido, que tinge o sheen."""
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     bsdf = nodes["Principled BSDF"]
-    bsdf.inputs["Roughness"].default_value = roughness
+    bsdf.inputs["Roughness"].default_value = fin.roughness
     bsdf.inputs["Metallic"].default_value = metal
+    bsdf.inputs["Specular IOR Level"].default_value = fin.specular
+    if fin.sheen:   # Weight 1 e a força no Tint: o glTF (sheenColorFactor) e o Cycles veem o mesmo brilho
+        bsdf.inputs["Sheen Weight"].default_value = 1.0
+        bsdf.inputs["Sheen Tint"].default_value = (*(fin.sheen * c for c in tint), 1.0)
+        bsdf.inputs["Sheen Roughness"].default_value = fin.sheen_roughness
+    if fin.coat:
+        bsdf.inputs["Coat Weight"].default_value = fin.coat
+        bsdf.inputs["Coat Roughness"].default_value = fin.coat_roughness
+    if fin.anisotropic:
+        bsdf.inputs["Anisotropic"].default_value = fin.anisotropic
     if "cor" in maps:
         tex = nodes.new("ShaderNodeTexImage"); tex.image = bpy.data.images.load(str(maps["cor"]))
         links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
@@ -45,37 +57,55 @@ def _material(name: str, maps: dict[str, Path], roughness: float, metal: float =
     return mat
 
 
-def solid_material(name: str, rgb: tuple[float, float, float], roughness: float, metal: float = 0.0):
-    mat = _material(name, {}, roughness, metal)
+def solid_material(name: str, rgb: tuple[float, float, float], fin: Finish, metal: float = 0.0):
+    mat = _material(name, {}, fin, metal)
     mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*rgb, 1.0)
+    return mat
+
+
+def _tiled(mat, kind: str):
+    """O tecido cuja imagem cobre mais de uma repetição de 5 cm (o gomo do acolchoado): o UV encolhe junto."""
+    if repeat(kind) > 1:
+        mat["uv_scale"] = (1.0 / repeat(kind), 1.0 / repeat(kind))
     return mat
 
 
 def fabric_materials(spec, tex_dir: Path) -> dict:
     """Materiais da peça: tecido, ribana, cadarço do zíper (sarja um tom abaixo) e dentes (metal)."""
     kind, color = spec.tecido.tipo, spec.tecido.cor
-    rough = {"denim": 0.82, "sarja": 0.75, "tricoline": 0.7}.get(kind, 0.9)
+    fin, tint = finish(kind), _rgb(color)
     if spec.listras is not None or spec.estampa_corrida is not None:   # a padronagem é a cor do corpo
         maps, scale = pattern_maps(kind, spec, tex_dir)
-        mats = {"corpo": _material("corpo", maps, rough)}
+        mats = {"corpo": _material("corpo", maps, fin, tint=tint)}
         mats["corpo"]["uv_scale"] = scale
     else:
-        mats = {"corpo": _material("corpo", write_maps(kind, color, tex_dir), rough)}
-    rib_kind = kind if kind.startswith("malha") or kind in ("moletom", "jersey") else "malha_algodao"
-    mats["ribana"] = _material("ribana", write_maps(rib_kind, color, tex_dir, rib=spec.ribana), rough)
+        mats = {"corpo": _tiled(_material("corpo", write_maps(kind, color, tex_dir), fin, tint=tint), kind)}
+    knit = kind.startswith("malha") or kind in ("moletom", "jersey")
+    if knit or spec.ribana:   # malha: a ribana do próprio fio; tecido plano com punho de ribana (bomber): algodão
+        rib_kind = kind if knit else "malha_algodao"
+        mats["ribana"] = _material("ribana", write_maps(rib_kind, color, tex_dir, rib=spec.ribana), finish(rib_kind),
+                                   tint=tint)
+    else:   # gola de pé, gola careca do tecido plano: o próprio tecido, liso (sem a padronagem do corpo)
+        mats["ribana"] = _tiled(_material("ribana", write_maps(kind, color, tex_dir), fin, tint=tint), kind)
+    if spec.faixa_barra is not None:   # o mesmo tecido na cor da faixa da barra
+        band = spec.faixa_barra.cor
+        mats["faixa_barra"] = _tiled(_material("faixa_barra", write_maps(kind, band, tex_dir), fin, tint=_rgb(band)), kind)
+    for k, b in enumerate(spec.faixas_manga):   # anéis da manga: o mesmo tecido na cor de cada faixa
+        mats[f"faixa_manga_{k}"] = _tiled(_material(f"faixa_manga_{k}", write_maps(kind, b.cor, tex_dir), fin,
+                                                    tint=_rgb(b.cor)), kind)
     if spec.calca:   # cós: elástico em ribana no jogger/moletom, o próprio tecido nas outras
         mats["cos"] = mats["ribana"] if spec.fechamento == "cordao" else mats["corpo"]
     if spec.fechamento != "nenhum" or kind == "denim":   # o denim leva rebites de metal mesmo sem zíper
         darker = "#" + "".join(f"{int(int(color[i:i + 2], 16) * 0.8):02x}" for i in (1, 3, 5))
-        mats["cadarco"] = _material("cadarco", write_maps("sarja", darker, tex_dir), 0.7)
-        mats["dentes"] = _material("dentes", write_maps("dentes", spec.cor_ziper, tex_dir), 0.35, metal=0.85)
+        mats["cadarco"] = _material("cadarco", write_maps("sarja", darker, tex_dir), TRIM)
+        mats["dentes"] = _material("dentes", write_maps("dentes", spec.cor_ziper, tex_dir), METAL, metal=0.85)
     # linha: a da ficha; no denim, a dourada clássica do jeans; nas outras, um tom abaixo do tecido
     thread = spec.cor_linha or ("#c58a3b" if kind == "denim" else
                                 "#" + "".join(f"{int(int(color[i:i + 2], 16) * 0.72):02x}" for i in (1, 3, 5)))
-    mats["linha"] = solid_material("linha", _rgb(thread), 0.6)
+    mats["linha"] = solid_material("linha", _rgb(thread), Finish(0.6, specular=0.15))
     if spec.fechamento in ("botoes", "polo") or "vivo" in spec.bolsos:   # botão da vista ou do bolso embutido
-        mats["botao"] = solid_material("botao", _rgb(spec.cor_botao), 0.35)
-        mats["furo"] = solid_material("furo", tuple(c * 0.35 for c in _rgb(spec.cor_botao)), 0.8)
+        mats["botao"] = solid_material("botao", _rgb(spec.cor_botao), PLASTIC)
+        mats["furo"] = solid_material("furo", tuple(c * 0.35 for c in _rgb(spec.cor_botao)), Finish(0.8))
     for k, decal in enumerate(spec.estampas):
         mats[f"estampa_{k}"] = decal_material(f"estampa_{k}", Path(decal.imagem))
     return mats
@@ -83,7 +113,7 @@ def fabric_materials(spec, tex_dir: Path) -> dict:
 
 def decal_material(name: str, png: Path):
     """Desenho com recorte: a cor da imagem e o alfa arredondado (o exportador glTF vira ``alphaMode: MASK``)."""
-    mat = _material(name, {"cor": png}, 0.65)
+    mat = _material(name, {"cor": png}, Finish(0.65, specular=0.15))
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
     tex = next(n for n in nodes if n.type == "TEX_IMAGE")
     cut = nodes.new("ShaderNodeMath"); cut.operation = "ROUND"
@@ -172,35 +202,3 @@ def export_glb(path: Path) -> None:
     bpy.ops.export_scene.gltf(filepath=str(path), export_format="GLB", export_yup=True, export_apply=True,
                               export_image_format="AUTO", export_jpeg_quality=88, export_materials="EXPORT",
                               export_vertex_color="ACTIVE")
-
-
-def render_preview(path: Path, views=((0, "frente"), (35, "tres-quartos"))) -> list[Path]:
-    """Prévia em Cycles (CPU): manequim nenhum, fundo neutro, luz de estúdio. Uma imagem por ângulo."""
-    scene = bpy.context.scene
-    scene.render.engine = "CYCLES"; scene.cycles.device = "CPU"; scene.cycles.samples = 48
-    scene.render.resolution_x, scene.render.resolution_y = 900, 640
-    scene.view_settings.view_transform = "Standard"   # sem o AgX: a cor do tecido sai como a da ficha
-    world = bpy.data.worlds.new("estudio"); scene.world = world
-    world.use_nodes = True; world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.93, 0.92, 0.9, 1)
-    world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.35
-    for loc, energy in (((2, -3, 3), 260), ((-3, -2, 2), 120), ((0, 3, 2.5), 120)):
-        light = bpy.data.objects.new("luz", bpy.data.lights.new("luz", "AREA"))
-        light.data.energy, light.data.size = energy, 2.5
-        light.location = loc; light.rotation_euler = (Vector((0, 0, 0.4)) - Vector(loc)).to_track_quat("-Z", "Y").to_euler()
-        scene.collection.objects.link(light)
-    cam = bpy.data.objects.new("camera", bpy.data.cameras.new("camera"))
-    pts = [o.matrix_world @ Vector(c) for o in scene.objects if o.type == "MESH" for c in o.bound_box]
-    lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
-    hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
-    mid = (lo + hi) / 2
-    cam.data.type = "ORTHO"; cam.data.ortho_scale = max(hi.x - lo.x, (hi.z - lo.z) * 900 / 640) * 1.15
-    scene.collection.objects.link(cam); scene.camera = cam
-    out = []
-    for yaw, label in views:
-        a = math.radians(yaw)
-        cam.location = (mid.x + 4 * math.sin(a), mid.y - 4 * math.cos(a), mid.z)
-        cam.rotation_euler = (math.radians(90), 0, a)
-        scene.render.filepath = str(path.with_name(f"{path.stem}-{label}.png"))
-        bpy.ops.render.render(write_still=True)
-        out.append(Path(scene.render.filepath))
-    return out

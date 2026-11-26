@@ -39,6 +39,22 @@ class AllOver:
     lado: float              # quantos metros de pano o pedaço cobre
 
 
+@dataclass(frozen=True)
+class HemBand:
+    """Faixa de outra cor da barra para cima (o top bege com a barra amarela): o mesmo tecido, outra cor."""
+    cor: str
+    altura: float            # m, da barra para cima
+
+
+@dataclass(frozen=True)
+class SleeveBand:
+    """Anel de outra cor em volta da manga, a ``distancia`` m da ponta do ombro (meio da faixa), ``largura`` m."""
+    lado: str
+    distancia: float
+    largura: float
+    cor: str
+
+
 def _image(value, base_dir: Path | None) -> str:
     p = Path(str(value))
     p = p if p.is_absolute() or base_dir is None else base_dir / p
@@ -75,6 +91,18 @@ def parse_prints(raw: dict, base_dir: Path | None) -> dict:
         out["estampa_corrida"] = AllOver(_image(a["imagem"], base_dir), float(a["lado"]))
         if not 0.02 <= out["estampa_corrida"].lado <= 1.0:
             raise ValueError("estampa_corrida.lado fora de 2 cm–1 m")
+    if raw.get("faixa_barra"):
+        b = raw["faixa_barra"]
+        out["faixa_barra"] = HemBand(str(b["cor"]).lower(), float(b["altura"]))
+        if not HEX.match(out["faixa_barra"].cor) or not 0.01 <= out["faixa_barra"].altura <= 0.6:
+            raise ValueError(f"faixa_barra inválida: {b}")
+    bands = tuple(SleeveBand(str(b["lado"]), float(b["distancia"]), float(b["largura"]), str(b["cor"]).lower())
+                  for b in raw.get("faixas_manga") or [])
+    for b in bands:
+        if b.lado not in SIDES[1:] or not HEX.match(b.cor) or not 0.003 <= b.largura <= 0.4 or not 0 < b.distancia < 1:
+            raise ValueError(f"faixa de manga inválida: {b}")
+    if bands:
+        out["faixas_manga"] = bands
     if "listras" in out and "estampa_corrida" in out:
         raise ValueError("listras e estampa corrida ao mesmo tempo")
     return out
