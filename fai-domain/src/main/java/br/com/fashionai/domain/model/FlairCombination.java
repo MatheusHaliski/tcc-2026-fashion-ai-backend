@@ -68,6 +68,10 @@ public class FlairCombination extends VersionedAuditableEntity {
     @Column(name = "min_purchase", precision = 10, scale = 2)
     private BigDecimal minPurchase;
 
+    /** Exercício 15 — moeda contratada do mínimo de compra; nula nas combinações antigas (moeda não confirmada). */
+    @Column(name = "min_purchase_currency", length = 3, columnDefinition = "char(3)")
+    private String minPurchaseCurrency;
+
     @Column(name = "valid_days", nullable = false)
     private int validDays;
 

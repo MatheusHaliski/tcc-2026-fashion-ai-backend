@@ -190,7 +190,7 @@ class SealServiceFacadeCharacterizationTest {
     }
 
     private static SealService.PromotionForm promo(String title, PromotionType type) {
-        return new SealService.PromotionForm(type, title, null, null, 10, null, null, null, null, null, null, null, null, null, null);
+        return new SealService.PromotionForm(type, title, null, null, 10, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private Seal seal() {

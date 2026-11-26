@@ -9,7 +9,8 @@ import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.seal.PromotionRules;
 import br.com.fashionai.application.service.CouponChannelResolver;
-import br.com.fashionai.application.service.CouponChannelSnapshotWriter;
+import br.com.fashionai.application.service.CouponMinimumRules;
+import br.com.fashionai.application.service.CouponTermsSnapshotWriter;
 import br.com.fashionai.application.service.FlairService.CombinationForm;
 import br.com.fashionai.domain.model.FlairCombination;
 import br.com.fashionai.domain.model.FlairRedemption;
@@ -18,9 +19,9 @@ import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.repository.FlairRedemptionRepository;
 
 /**
- * FLAIR — o cupom da combinação: os campos de cupom da oferta (título, desconto, validade, canal, loja) e a emissão
- * do cupom de quem completou o jogo. Extraído do FlairService (exercício 14), que continua dono da transação, da
- * autorização e das regras do jogo.
+ * FLAIR — o cupom da combinação: os campos de cupom da oferta (título, desconto, compra mínima, validade, canal, loja)
+ * e a emissão do cupom de quem completou o jogo, com as condições da hora copiadas para ele. Extraído do FlairService
+ * (exercício 14), que continua dono da transação, da autorização e das regras do jogo.
  */
 public final class FlairCouponWriter {
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -44,7 +45,9 @@ public final class FlairCouponWriter {
         }
         c.setDiscountPercent(f.discountPercent() == null ? null : Math.max(1, Math.min(90, f.discountPercent())));
         c.setDiscountAmount(f.discountAmount());
-        c.setMinPurchase(f.minPurchase());
+        CouponMinimumRules.Minimum minimum = CouponMinimumRules.resolve(f.minPurchase(), f.minPurchaseCurrency(), c.getMinPurchase(), c.getMinPurchaseCurrency());
+        c.setMinPurchase(minimum.amount());
+        c.setMinPurchaseCurrency(minimum.currency());
         c.setValidDays(Math.max(7, Math.min(120, f.validDays() == null ? 30 : f.validDays())));
         c.setCanalCupom(CouponChannelResolver.resolve(channels, f.canalCupomId(), c.getCanalCupom()));
         c.setStoreUrl(PromotionRules.storeUrl(f.storeUrl()));
@@ -64,7 +67,7 @@ public final class FlairCouponWriter {
         r.setStatus("EMITIDO");
         r.setDeckPower(deckPower);
         r.setExpiresAt(Instant.now().plus(c.getValidDays(), ChronoUnit.DAYS));
-        CouponChannelSnapshotWriter.issue(r, c);
+        CouponTermsSnapshotWriter.issue(r, c);
         redemptions.save(r);
         c.setRedeemed(c.getRedeemed() + 1);
         return r;

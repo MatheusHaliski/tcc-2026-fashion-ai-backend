@@ -11,7 +11,8 @@ import br.com.fashionai.application.common.*;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.service.CouponChannelResolver;
-import br.com.fashionai.application.service.CouponChannelSnapshotWriter;
+import br.com.fashionai.application.service.CouponMinimumRules;
+import br.com.fashionai.application.service.CouponTermsSnapshotWriter;
 import br.com.fashionai.application.service.FlairService;
 import br.com.fashionai.application.service.SealService.PromotionForm;
 import br.com.fashionai.domain.model.*;
@@ -131,6 +132,9 @@ public final class SealPromotionWriter {
         p.setVisibility(f.visibility() == null ? Visibility.PUBLIC : f.visibility());
         p.setStoreUrl(PromotionRules.storeUrl(f.storeUrl()));
         p.setCanalCupom(CouponChannelResolver.resolve(channels, f.canalCupomId(), p.getCanalCupom()));
+        CouponMinimumRules.Minimum minimum = CouponMinimumRules.resolve(f.minPurchase(), f.minPurchaseCurrency(), p.getMinPurchase(), p.getMinPurchaseCurrency());
+        p.setMinPurchase(minimum.amount());
+        p.setMinPurchaseCurrency(minimum.currency());
     }
 
     /**
@@ -189,7 +193,7 @@ public final class SealPromotionWriter {
         r.setPartnerBrandUserId(p.getPartnerBrandUserId());
         r.setRedeemedAt(now);
         r.setExpiresAt(p.getExpiresAt());
-        CouponChannelSnapshotWriter.issue(r, p);   // exercício 14: o cupom guarda o canal que a oferta tem agora
+        CouponTermsSnapshotWriter.issue(r, p);   // exercícios 14 e 15: o cupom guarda o canal e o mínimo que a oferta tem agora
         redemptions.save(r);
         p.setRedeemedCount(p.getRedeemedCount() + 1);
         if (p.getTotalQuota() != null && p.getRedeemedCount() >= p.getTotalQuota()) {

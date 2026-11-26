@@ -57,4 +57,11 @@ public class FlairRedemption extends VersionedAuditableEntity {
     /** Código do canal na hora da emissão (LOJA_FISICA, ECOMMERCE, AMBOS); nulo = cupom antigo, canal não informado. */
     @Column(name = "canal_codigo_snapshot", length = 40)
     private String canalCodigoSnapshot;
+
+    /** Exercício 15 — compra mínima e moeda contratadas na hora da emissão; nulos = sem registro (cupom antigo ou oferta sem mínimo). */
+    @Column(name = "min_purchase_snapshot", precision = 10, scale = 2)
+    private java.math.BigDecimal minPurchaseSnapshot;
+
+    @Column(name = "min_purchase_currency_snapshot", length = 3, columnDefinition = "char(3)")
+    private String minPurchaseCurrencySnapshot;
 }

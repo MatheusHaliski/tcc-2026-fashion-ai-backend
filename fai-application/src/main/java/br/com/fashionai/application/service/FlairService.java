@@ -93,7 +93,6 @@ public class FlairService {
     private final AtelierRewardSystem atelier;
     private final br.com.fashionai.application.flair.FlairCouponWriter coupons;
 
-    /** Exercício 14 — canais de utilização do cupom; por setter, para o construtor do serviço não mudar. */
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     public void setCouponChannels(CanalCupomRepository canais) {
         coupons.useChannels(new CouponChannelResolver(canais));
@@ -777,7 +776,7 @@ public class FlairService {
                                   List<String> requiredStyles, List<String> requiredOccasions, Integer minBrandPieces,
                                   Integer minDeckPower, String minRarity, Integer minWins, String couponTitle,
                                   Integer discountPercent, BigDecimal discountAmount, BigDecimal minPurchase, Integer validDays,
-                                  Integer stock, Boolean active, Instant startsAt, Instant endsAt, String accentColor, String storeUrl, UUID canalCupomId) {
+                                  Integer stock, Boolean active, Instant startsAt, Instant endsAt, String accentColor, String storeUrl, UUID canalCupomId, String minPurchaseCurrency) {
     }
 
     @Transactional
@@ -911,7 +910,8 @@ public class FlairService {
         m.put("minRarity", c.getMinRarity());
         m.put("minWins", c.getMinWins());
         m.put("coupon", Map.of("title", c.getCouponTitle(), "discountPercent", c.getDiscountPercent() == null ? "" : c.getDiscountPercent(),
-                "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(), "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "validDays", c.getValidDays()));
+                "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(), "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "validDays", c.getValidDays(),
+                "minPurchaseCurrency", c.getMinPurchaseCurrency() == null ? "" : c.getMinPurchaseCurrency()));
         m.put("stock", c.getStock());
         m.put("redeemed", c.getRedeemed());
         m.put("active", c.isActive());
@@ -1012,8 +1012,8 @@ public class FlairService {
         m.put("user", Views.user(r.getUser()));
         m.put("combination", Map.of("id", c.getId(), "name", c.getName(), "brandName", brandNameOf(c.getBrand()), "coupon", c.getCouponTitle(),
                 "discountPercent", c.getDiscountPercent() == null ? "" : c.getDiscountPercent(), "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(),
-                "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor()));
-        return CouponChannelSnapshotWriter.read(m, r.getCanalCupom(), r.getCanalCodigoSnapshot());
+                "minPurchase", r.getMinPurchaseSnapshot() == null ? "" : r.getMinPurchaseSnapshot(), "accentColor", c.getAccentColor() == null ? "#2D55C9" : c.getAccentColor()));
+        return CouponTermsSnapshotWriter.read(m, r);   // o mínimo acima é o da emissão, não o atual da combinação
     }
 
     @Transactional(readOnly = true)

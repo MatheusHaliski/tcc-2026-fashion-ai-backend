@@ -99,6 +99,13 @@ public class Promotion extends VersionedAuditableEntity {
     @Column(name = "store_url", length = 512)
     private String storeUrl;
 
+    /** Exercício 15 — compra mínima do cupom (nulo = sem mínimo; zero é um mínimo declarado) e a moeda contratada. */
+    @Column(name = "min_purchase", precision = 10, scale = 2)
+    private java.math.BigDecimal minPurchase;
+
+    @Column(name = "min_purchase_currency", length = 3, columnDefinition = "char(3)")
+    private String minPurchaseCurrency;
+
     /** Exercício 14 — canal em que o cupom desta oferta pode ser usado; nulo = não informado (oferta antiga). */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "canal_cupom_id")

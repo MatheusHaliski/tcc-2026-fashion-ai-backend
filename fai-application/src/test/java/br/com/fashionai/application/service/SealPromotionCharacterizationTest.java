@@ -88,12 +88,12 @@ class SealPromotionCharacterizationTest {
     void formularioValidoNormalizaLimiteSeloExigidoVisibilidadeELink() {
         Instant now = Instant.now();
         Map<String, Object> b = seals.createPromotion(Kit.as(brand), new SealService.PromotionForm(PromotionType.CUPOM_LOJA, "  Cupom  ", null, null, 1,
-                null, null, now, now, null, 0, null, null, "  https://loja.example.com/x  ", null));
+                null, null, now, now, null, 0, null, null, "  https://loja.example.com/x  ", null, null, null));
         assertThat(b).containsEntry("requiredSealKind", "BRAND_SEAL").containsEntry("perUserLimit", 1)
                 .containsEntry("storeUrl", "https://loja.example.com/x").containsEntry("discountPercent", 1);
         assertThat(promotions().get(0).getVisibility()).isEqualTo(Visibility.PUBLIC);
         Map<String, Object> c = seals.createPromotion(Kit.as(celeb), new SealService.PromotionForm(PromotionType.MEET_GREET, "Encontro", null, null, 90,
-                null, null, null, null, 5, 3, null, Visibility.FOLLOWERS, null, null));
+                null, null, null, null, 5, 3, null, Visibility.FOLLOWERS, null, null, null, null));
         assertThat(c).containsEntry("requiredSealKind", "PREMIUM_SEAL").containsEntry("perUserLimit", 3).containsEntry("remaining", 5)
                 .containsEntry("storeUrl", null).containsEntry("eligible", false)
                 .containsEntry("unavailableReason", Msg.t("seal.e_preciso_ter_um_selo"));
@@ -112,7 +112,7 @@ class SealPromotionCharacterizationTest {
     void seloDaPromocaoPrecisaEstarAtivo() {
         Seal s = seal(brand, SealStatus.INACTIVE);
         assertThat(code(() -> seals.createPromotion(Kit.as(brand), new SealService.PromotionForm(PromotionType.CUPOM_LOJA, "Cupom", null, null, 10,
-                s.getId(), null, null, null, null, null, null, null, null, null)))).isEqualTo("SELO_INATIVO");
+                s.getId(), null, null, null, null, null, null, null, null, null, null, null)))).isEqualTo("SELO_INATIVO");
     }
 
     // ------------------------------------------------------------------ links
@@ -246,7 +246,7 @@ class SealPromotionCharacterizationTest {
     }
 
     private static SealService.PromotionForm form(PromotionType type, Integer pct, Instant starts, Instant ends, UUID partnerId, String store) {
-        return new SealService.PromotionForm(type, "Promo", "desc", "regras", pct, null, null, starts, ends, null, null, partnerId, null, store, null);
+        return new SealService.PromotionForm(type, "Promo", "desc", "regras", pct, null, null, starts, ends, null, null, partnerId, null, store, null, null, null);
     }
 
     private static User institutional(String username, ProfileType type) {

@@ -6,13 +6,14 @@ import { useI18n, tr } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
 import { fmtOriginal } from "@/lib/i18n/money";
 import { couponChannelText, type CouponChannel } from "@/components/coupons/coupon-channel-field";
+import type { CouponMinimumSnapshot } from "@/components/coupons/coupon-minimum";
 
 /** Tipos e utilitários do FLAIR compartilhados entre a página /flair e a aba da loja (RF14/RF22). */
 export interface Check { kind: string; value: string; label: string; ok: boolean; }
 
-export interface Coupon { title: string; discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | ""; validDays: number; }
+export interface Coupon { title: string; discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | ""; validDays: number; minPurchaseCurrency?: string | null; }
 
-export interface Voucher extends CouponChannel { id: string; code: string; status: string; expiresAt: string; usedAt?: string | null; createdAt: string; deck?: string | null; deckPower?: number | null; user: UserCard; combination: { id: string; name: string; brandName: string; coupon: string; discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | ""; accentColor: string }; }
+export interface Voucher extends CouponChannel, CouponMinimumSnapshot { id: string; code: string; status: string; expiresAt: string; usedAt?: string | null; createdAt: string; deck?: string | null; deckPower?: number | null; user: UserCard; combination: { id: string; name: string; brandName: string; coupon: string; discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | ""; accentColor: string }; }
 
 export interface Combination {
   id: string; brand: UserCard; brandName: string; brandSlug?: string | null; name: string; description?: string | null; gameType: "COMBINACAO" | "COLECAO" | "DUELO_PATROCINADO";
@@ -24,9 +25,9 @@ export interface Combination {
 
 export const GAME_TYPE_LABEL: Record<string, string> = { get COMBINACAO() { return tr("flair.flairShared.combinacao_um_deck"); }, get COLECAO() { return tr("common.colecao_guarda_roupa"); }, get DUELO_PATROCINADO() { return tr("common.duelo_patrocinado"); } };
 
-export function couponText(c: { discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | "" }) {
+export function couponText(c: { discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | ""; /** moeda contratada do mínimo; ausente = oferta antiga, em reais */ minPurchaseCurrency?: string | null }) {
   const off = c.discountPercent !== "" ? `${c.discountPercent}% off` : c.discountAmount !== "" ? `${fmtOriginal(Number(c.discountAmount), "BRL", 0)} off` : "";
-  return `${off}${c.minPurchase !== "" ? tr("flair.flairShared.compra_minima_r", { value: fmtOriginal(Number(c.minPurchase), "BRL", 0) }) : ""}`;
+  return `${off}${c.minPurchase !== "" ? tr("flair.flairShared.compra_minima_r", { value: fmtOriginal(Number(c.minPurchase), c.minPurchaseCurrency || "BRL", 0) }) : ""}`;
 }
 
 export function checkLabel(c: Check) {
@@ -44,7 +45,7 @@ export function VoucherDialog({ voucher, onClose }: { voucher: Voucher | null; o
     <Dialog open={!!voucher} onClose={onClose} title={voucher ? t("flair.flairShared.cupom", { brandName: voucher.combination.brandName }) : ""} footer={<Button variant="primary" onClick={onClose}>{t("common.close")}</Button>}>
       {voucher && <div className="text-center">
         <p className="type-h3">{voucher.combination.coupon}</p>
-        <p className="type-caption text-muted">{couponText(voucher.combination)}</p>
+        <p className="type-caption text-muted">{couponText({ ...voucher.combination, minPurchaseCurrency: voucher.minPurchaseCurrencySnapshot })}</p>
         <p className="type-caption text-muted" data-coupon-channel={voucher.canalCodigoSnapshot ?? ""}>{couponChannelText(voucher)}</p>
         <p className="flair-code flair-code-lg my-4" aria-label={t("flair.flairShared.codigo", { join: voucher.code.split("").join(" ") })}>{voucher.code}</p>
         <p className="type-body-sm">{rich("flair.flairShared.mostre_este_codigo_no_caixa", { status: voucher.status, value: voucher.expiresAt ? t("flair.flairShared.valido_ate", { toLocaleDateString: new Date(voucher.expiresAt).toLocaleDateString(currentIntl()) }) : "" }, { 0: ($c) => <b>{$c}</b> })}</p>
