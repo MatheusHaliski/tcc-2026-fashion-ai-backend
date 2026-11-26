@@ -47,7 +47,7 @@ export function ElencoPuzzle({ qc, nome, estados, chaves, selecionada, completo,
           const voo = { ["--dx" as string]: `${((p.cx - w / 2) * 0.7).toFixed(2)}px`, ["--dy" as string]: `${((p.cy - 50) * 0.7).toFixed(2)}px`, ["--i" as string]: i };
           return (
             <g key={chave} className={cn("ep-peca", `is-${estado}`)} data-state={estado} style={voo}>
-              <g className="ep-arte" clipPath={`url(#${base}-${i})`}>{imagem}</g>
+              <g className="ep-arte" clipPath={`url(#${base}-${i})`} style={{ transformOrigin: `${p.cx}px ${p.cy}px` }}>{imagem}</g>
               <path d={p.d} className={cn("ep-contorno", selecionada === chave && "is-selected")} data-slot={onPeca ? chave : undefined}
                 onClick={onPeca ? () => onPeca(chave) : undefined} aria-hidden vectorEffect="non-scaling-stroke" />
             </g>

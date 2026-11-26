@@ -25,6 +25,7 @@
 
 .ep-arte {
   opacity: 0;
+  /* gira em torno do centro da peça (transform-origin inline, em unidades da imagem) */
   transform-box: view-box;
   transition: opacity 0.3s ease, filter 0.3s ease;
 }
@@ -53,7 +54,7 @@
 .is-fora .ep-arte {
   opacity: 0.7;
   filter: grayscale(1) brightness(0.6);
-  transform: translate(calc(var(--dx) * 0.25), calc(var(--dy) * 0.25)) rotate(-4deg);
+  transform: translate(calc(var(--dx) * 0.12), calc(var(--dy) * 0.12)) rotate(-5deg);
 }
 
 .is-fora .ep-contorno {
