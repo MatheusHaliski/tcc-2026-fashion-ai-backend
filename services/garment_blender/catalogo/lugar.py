@@ -47,7 +47,8 @@ def placement(box, frame, ppm: float, chest_a: float, sleeve: dict | None, half_
         zone = 0.85 * chest_a
     else:
         x, zone = raw_x, 0.85 * FLAT_HALF * chest_a
-    if abs(x) + width / 4 > zone:
+    spans = x0 < frame.center < x1 and abs(x) < zone   # o desenho largo que passa pelo eixo é da frente
+    if abs(x) + width / 4 > zone and not spans:
         return on_sleeve(raw_x, below, width, height, sleeve) if sleeve else None
     if below - height / 2 < 0.02 or below + height / 2 > 0.97 * frame.height / ppm:
         return None
@@ -70,14 +71,27 @@ def on_sleeve(x: float, below: float, width: float, height: float, sleeve: dict)
 def keep(where: dict, frame, avoid_center: bool, neck: float) -> bool:
     """Desenho que é mesmo desenho e está no pano: nem lasca, nem cordão do capuz ou cadarço do zíper no meio, nem o
     fundo da gola aparecendo pelo decote (o V), nem o que aparece pela frente aberta vestida (o meio e o V mostram a
-    roupa de baixo)."""
+    roupa de baixo), nem botão da vista."""
     w, h, x = where["largura"], where["altura"], where["x"]
     if min(w, h) < 0.008 or w * h < 0.0002:
         return False
     if where["lado"] != "frente":
         return True
-    if h > 2.5 * w and abs(x) < 0.08:
+    if h > 2.5 * w and abs(x) < 0.08 and w < 0.03:
         return False
     if abs(x) < 0.05 and where["abaixo_do_ombro"] - h / 2 < neck + 0.02:
         return False
-    return not (avoid_center and frame.worn and (abs(x) < w / 2 or (abs(x) < 0.08 and where["abaixo_do_ombro"] < 0.35)))
+    if avoid_center and abs(x) < 0.04 and max(w, h) < 0.04:
+        return False
+    return not (avoid_center and frame.worn and (abs(x) < w / 2 + 0.01 or (abs(x) < 0.04 and
+                                                                         where["abaixo_do_ombro"] < 0.35)))
+
+
+def open_front(mask: np.ndarray, frame) -> bool:
+    """A peça está vestida aberta: no eixo, do peito à cintura, mais de um terço das linhas não é a peça (aparece a
+    roupa de baixo ou a pele)."""
+    c = int(round(frame.center))
+    if not frame.worn or not 2 <= c < mask.shape[1] - 2:
+        return False
+    rows = slice(int(frame.top + 0.15 * frame.height), int(frame.top + 0.7 * frame.height))
+    return bool((~mask[rows, c - 2:c + 3].any(1)).mean() > 0.33)

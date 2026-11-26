@@ -12,15 +12,16 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-from . import estampa, filtros, lugar, padrao
+from . import estampa, filtros, juncao, lugar, padrao
 from .recorte import decal_rgba
 from .cores import dominant_lab, lab_to_rgb, rgb_to_lab, to_hex
-from .mascara import body_hints, frame_of, garment_mask, image_score, pixels_per_meter
+from .mascara import background, body_hints, frame_of, garment_mask, image_score, pixels_per_meter
 
 WORK = 900          # lado maior da imagem de análise (px)
 SOLID = 0.0003      # menos que isso de desenho na peça: lisa (o "C" da manga da Champion tem ~0,05 %)
 ALL_OVER = 0.18     # desenho em mais que isso da peça, espalhado pelo tronco: estampa corrida
 MAX_DECALS = 4      # desenhos por peça, os maiores depois do crivo
+MIN_PPM = 150       # foto com menos pixels por metro que isso não mostra desenho nenhum: só a cor
 
 
 def white_balance(rgb: np.ndarray, labels: np.ndarray) -> np.ndarray:
@@ -60,13 +61,13 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
     a manga da base (``meia_ombro``, ``queda``, ``comprimento``, em m), None sem manga; ``hooded``: com capuz;
     ``neck``: a descida do decote na frente (m) — o fundo da gola aparecendo por dentro não é desenho."""
     rgb, labels, f = _work(rgb_full, labels_full)
-    mask = garment_mask(labels)
-    frame = frame_of(labels, mask, hooded)
-    if frame is None:
-        return {"ok": False, "motivo": "sem peça de cima na foto"}
     gains = white_balance(rgb, labels)
     rgb = np.clip(rgb * gains, 0, 255).astype(np.uint8)
     lab = rgb_to_lab(rgb).astype(np.float32)
+    mask = garment_mask(labels, lab)
+    frame = frame_of(labels, mask, hooded)
+    if frame is None:
+        return {"ok": False, "motivo": "sem peça de cima na foto"}
     inner = ndimage.binary_erosion(mask, iterations=3)
     base = dominant_lab(lab[inner if inner.sum() > 100 else mask])
     ppm, how = pixels_per_meter(frame, length_m)
@@ -95,7 +96,8 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
         return out
     rgb_big = np.clip(rgb_full * gains, 0, 255).astype(np.uint8) if f > 1 else rgb
     for g, where in _decals(found, frame, mask, ppm, chest_a, sleeve, avoid_center, neck,
-                            filtros.Ruler(lab, shade, base, dist, cand, mask), clues):
+                            filtros.Ruler(lab, shade, base, dist, cand, mask, background(labels, lab)),
+                            clues):
         where["imagem"] = decal_rgba(rgb_big, lab, shade, base, g, f)
         out["padrao"] = "localizada"
         out["decalques"].append(where)
@@ -103,18 +105,25 @@ def analyze(rgb_full: np.ndarray, labels_full: np.ndarray, length_m: float, ches
 
 
 def _decals(found, frame, mask, ppm, chest_a, sleeve, avoid_center, neck, ruler, clues) -> list:
-    """Os desenhos que ficam, cada um com o lugar: todos os achados passam pelo lugar e pelo crivo antes do corte nos
-    ``MAX_DECALS`` maiores (o corte antes do crivo deixava a faixa da manga recusada tomar a vaga de uma linha de texto
-    do peito)."""
+    """Os desenhos que ficam, cada um com o lugar: todos os achados passam pelo lugar e pelo crivo, os pares de feitio
+    saem, os pedaços vizinhos viram um desenho só e só então vem o corte nos ``MAX_DECALS`` maiores (o corte antes do
+    crivo deixava a faixa da manga recusada tomar a vaga de uma linha de texto do peito)."""
+    if ppm < MIN_PPM:
+        return []
     half = lugar.torso_half(mask, frame) if frame.worn else None
-    kept = []
+    opened = avoid_center and lugar.open_front(mask, frame)
+
+    def place(box):
+        where = lugar.placement(box, frame, ppm, chest_a, sleeve, half)
+        return where if where and lugar.keep(where, frame, avoid_center, neck) else None
+    items = []
     for g in found:
-        where = lugar.placement(g.box, frame, ppm, chest_a, sleeve, half)
-        if where is None or not lugar.keep(where, frame, avoid_center, neck):
-            continue
-        if filtros.accept(ruler.looks(g), where, frame, clues):
-            kept.append((g, where))
-    return kept[:MAX_DECALS]
+        where = place(g.box)
+        v = filtros.verdict(ruler.looks(g), where, frame, clues, opened) if where else 0
+        if v:
+            items.append((g, where, v))
+    pairs = juncao.mirrored(items)
+    return juncao.merge([it for k, it in enumerate(items) if k not in pairs], ppm, place)[:MAX_DECALS]
 
 
 def _all_over(cand, raw, mask, frame, coverage: float, found: list) -> bool:
