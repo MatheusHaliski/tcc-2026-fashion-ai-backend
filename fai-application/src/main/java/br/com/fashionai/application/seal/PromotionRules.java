@@ -119,7 +119,7 @@ public final class PromotionRules {
     }
 
     /** Primeiro vínculo aprovado, ainda válido em {@code now} e do selo exigido pela promoção (se houver). */
-    static SealBond eligibleBond(Promotion p, List<SealBond> candidates, Instant now) {
+    public static SealBond eligibleBond(Promotion p, List<SealBond> candidates, Instant now) {
         return candidates.stream().filter(b -> b.getStatus() == SealBondStatus.APPROVED)
                 .filter(b -> b.getExpiresAt() == null || b.getExpiresAt().isAfter(now))
                 .filter(b -> p.getSeal() == null || (b.getSeal() != null && b.getSeal().getId().equals(p.getSeal().getId())))

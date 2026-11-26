@@ -78,12 +78,15 @@
   text-align: center;
 }
 
+/* o quadro tem a proporção do próprio vídeo (--ep-ar): ocupa a largura toda que cabe em 60dvh de altura, sem faixas */
 .ep-complete-video {
   display: block;
-  width: 100%;
-  max-height: 60dvh;
+  width: min(100%, calc(60dvh * var(--ep-ar, 1)));
+  aspect-ratio: var(--ep-ar, 1);
+  height: auto;
+  object-fit: cover;
   border-radius: var(--radius);
-  background: #000;
+  background: transparent;
 }
 
 .ep-complete .ep-puzzle {
