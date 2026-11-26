@@ -12,7 +12,7 @@ import { MomentCountdown, MomentIcon, MomentThemed, MomentTypeBadge, pointsBonus
  * (criar look, usar o guarda-roupa, pedir ao Copilot, ver a comunidade). Tema como camada; texto sempre com contraste.
  */
 export function MomentNowHero({ m, receivedAt, interpretations, onJoin, joined }: { m: MomentCardData; receivedAt: number; interpretations?: Interpretation[]; onJoin?: () => void; joined?: boolean }) {
-  const { t, fmtNumber } = useI18n(); const range = useLocalRange(); const now = useMomentClock();
+  const { t } = useI18n(); const range = useLocalRange(); const now = useMomentClock();
   const bonus = pointsBonusLabel(t, m); const elapsed = elapsedAt(m.time, receivedAt, now);
   const chips = (interpretations?.length ? interpretations.map((i) => i.label ?? i.key) : m.styleTags.map(taxLabel)).slice(0, 8);
   const ask = encodeURIComponent(t("moments.copilot_prompt", { name: m.name }));
@@ -30,7 +30,7 @@ export function MomentNowHero({ m, receivedAt, interpretations, onJoin, joined }
         </div>
         <div className="moment-hero-facts">
           {bonus && <span className="moment-fact"><b>{bonus}</b></span>}
-          {m.participantCount != null && m.participantCount > 0 && <span className="moment-fact">{t("moments.participants_count", { n: fmtNumber(m.participantCount) })}</span>}
+          {m.participantCount != null && m.participantCount > 0 && <span className="moment-fact">{t("moments.participants_count", { n: m.participantCount })}</span>}
           <span className="moment-fact"><MomentTypeBadge m={m} /></span>
         </div>
         <div className="moment-timebar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(elapsed * 100)} aria-label={t("moments.time.elapsed_label")}><i style={{ width: `${Math.round(elapsed * 100)}%` }} /></div>

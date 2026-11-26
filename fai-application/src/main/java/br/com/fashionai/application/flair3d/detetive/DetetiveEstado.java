@@ -30,6 +30,8 @@ final class DetetiveEstado {
     String ultimaCobertura;
     boolean escondido;
     int vida = VIDA;
+    /** o que o look da gala muda no corpo da detetive (DetetiveDoLook) */
+    DetetiveDoLook doLook = DetetiveDoLook.NEUTRO;
     int tempo;
     int passo;
     int penalidades;
@@ -43,6 +45,9 @@ final class DetetiveEstado {
     final Set<String> resolvidas = new LinkedHashSet<>();
     final Set<String> visitadas = new LinkedHashSet<>(List.of(FashionDetectiveMundo.INICIO));
     final Map<String, Integer> erros = new HashMap<>();
+    /** os vigias fora da ronda (perseguindo, procurando, voltando) na sala de agora ({@link DetetivePerseguicao}) */
+    final Map<String, DetetivePerseguicao.Alerta> alertas = new LinkedHashMap<>();
+    String salaDosAlertas = FashionDetectiveMundo.INICIO;
     /** a cutscene que a tela mostra agora ("ABERTURA:SALAO", "RESOLUCAO:CAMARIM", "ALIBI:4", "FINAL:COMPLETO") */
     String cutscene = "ABERTURA:" + FashionDetectiveMundo.INICIO;
     /** o que acabou de acontecer (VISTO, BOLSO_OK, CHAVE:K1, PISTA:P3...) */
@@ -65,6 +70,11 @@ final class DetetiveEstado {
         return (int) pistas.values().stream().filter(Boolean::booleanValue).count();
     }
 
+    /** A acusação abre com as pistas bastantes achadas (inteiras ou pela metade) ou com o tempo esgotado. */
+    boolean podeAcusar() {
+        return pistas.size() >= FashionDetectiveAcusacao.PISTAS_PARA_ACUSAR || tempo >= LIMITE_DE_TEMPO;
+    }
+
     /** O retrato para a tela: tudo o que a pessoa pode ver, mais a sala em que está. */
     Map<String, Object> retrato(List<UUID> mao, int baralho) {
         DetetiveSala s = salaAtual();
@@ -85,10 +95,14 @@ final class DetetiveEstado {
         r.put("avisos", List.copyOf(avisos));
         r.put("dica", erros.getOrDefault(sala, 0) > 0);
         r.put("tentativas", tentativas);
+        r.put("podeAcusar", podeAcusar());
+        r.put("pistasParaAcusar", FashionDetectiveAcusacao.PISTAS_PARA_ACUSAR);
         r.put("final", fim == null ? null : fim.name());
         r.put("mao", mao.stream().map(UUID::toString).toList());
         r.put("baralho", baralho);
-        r.put("alcance", DetetiveVigias.ALCANCE);
+        r.put("alcance", doLook.alcance());
+        r.put("vidaMaxima", doLook.vidaMaxima());
+        r.put("doLook", doLook.paraTela());
         r.put("meiaAbertura", DetetiveVigias.MEIA_ABERTURA);
         r.put("passoMaximo", DetetiveSala.PASSO);
         r.put("layout", layout(s));
@@ -117,16 +131,17 @@ final class DetetiveEstado {
             return m;
         }).toList());
         l.put("vigias", s.vigias().stream().map(v -> {
-            Ponto onde = DetetiveVigias.onde(s, v, passo);
+            Ponto onde = DetetivePerseguicao.onde(this, s, v);
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", v.id());
             m.put("papel", v.papel());
             m.put("ponto", onde.id());
             m.put("x", onde.x());
             m.put("z", onde.z());
-            m.put("olhar", DetetiveVigias.olhar(s, v, passo));
-            Ponto depois = DetetiveVigias.onde(s, v, passo + 1);
+            m.put("olhar", DetetivePerseguicao.olhar(this, s, v));
+            Ponto depois = alertas.containsKey(v.id()) ? onde : DetetiveVigias.onde(s, v, passo + 1);
             m.put("proximo", List.of(depois.x(), depois.z()));
+            m.put("modo", DetetivePerseguicao.modo(this, v));
             m.put("vigia", v.barra() == null);
             m.put("barra", v.barra());
             m.put("convencido", convencidos.contains(v.id()));

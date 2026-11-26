@@ -3,10 +3,13 @@ import { useState } from "react";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { UserCard } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
+import { useAuth } from "@/lib/auth/session";
 import { Avatar, Button, Dialog, Field, Select, Textarea, useToast } from "@/components/ui";
 
 /** Conta na lista do admin: o cartão público mais o papel e o estado, que só o painel recebe. */
 export type AdminUser = UserCard & { role?: string | null; status?: string | null };
+
+const PROFILE_KEY: Record<string, string> = { PESSOAL: "auth.profilePersonal", MARCA: "auth.profileBrand", CELEBRIDADE: "auth.profileCelebrity" };
 
 /**
  * Linha de uma conta: mostra se está suspensa e só o botão que faz sentido (Suspender ou Reativar). Suspender abre uma
@@ -14,6 +17,9 @@ export type AdminUser = UserCard & { role?: string | null; status?: string | nul
  */
 export function AdminUserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }) {
   const { t } = useI18n();
+  const { me } = useAuth();
+  // a própria conta de administração não se suspende nem perde o papel por engano na lista
+  const own = me?.user.id === user.id;
   const toast = useToast();
   const [asking, setAsking] = useState(false);
   const [reason, setReason] = useState("");
@@ -44,18 +50,19 @@ export function AdminUserRow({ user, onChanged }: { user: AdminUser; onChanged: 
           <b>{user.displayName}</b> · @{user.username}
           {suspended && <span className="badge badge-mark ml-2">{t("admin.users.estado_suspenso")}</span>}
         </p>
-        <p className="type-caption text-muted">{user.profileType}{user.verified && t("admin.users.verificado")}{user.country ? ` · ${user.country}` : ""}</p>
+        <p className="type-caption text-muted">{t(PROFILE_KEY[user.profileType] ?? "auth.profilePersonal")}{user.verified && t("admin.users.verificado")}{user.country ? ` · ${user.country}` : ""}</p>
       </div>
       <Select
         aria-label={t("admin.users.papel")}
         className="w-auto py-1"
         defaultValue={user.role === "ADMIN" ? "ADMIN" : "USER"}
+        disabled={own}
         onChange={(e) => run(() => api.put(`/api/admin/users/${user.id}/role`, { role: e.target.value }), t("admin.users.papel_atualizado"))}
       >
-        <option>USER</option>
-        <option>ADMIN</option>
+        <option value="USER">{t("admin.users.papel_usuario")}</option>
+        <option value="ADMIN">{t("admin.users.papel_admin")}</option>
       </Select>
-      {suspended ? (
+      {own ? <span className="type-caption text-muted">{t("admin.users.sua_conta")}</span> : suspended ? (
         <Button size="sm" loading={busy} onClick={() => run(() => setStatus(false, ""), t("admin.users.reativado"))}>{t("common.reativar")}</Button>
       ) : (
         <Button size="sm" variant="danger" aria-haspopup="dialog" onClick={() => setAsking(true)}>{t("admin.users.suspender")}</Button>

@@ -29,7 +29,7 @@ export interface PieceView {
   seals: string[]; price?: number | null; imageUrl?: string | null; originalImageUrl?: string | null; thumbnailUrl?: string | null; defaultImage: boolean;
   /** RF4 · a foto da peça foi recriada por IA a pedido da pessoa: o card mostra o selo "IA" */ aiGeneratedImage?: boolean;
   visibility: string; disponivel: boolean; availabilityStatus: string; condition?: string | null; favorite: boolean; forSale: boolean; wearCount: number;
-  estadoConservacao?: ReferenceOption | null; colecao?: ReferenceOption | null; intensidadeTermica?: ReferenceOption | null; tipoLavagem?: ReferenceOption | null; careInstructions?: string | null;
+  estadoConservacao?: ReferenceOption | null; origem?: ReferenceOption | null; corte?: ReferenceOption | null; colecao?: ReferenceOption | null; intensidadeTermica?: ReferenceOption | null; tipoLavagem?: ReferenceOption | null; careInstructions?: string | null;
   /** "Para doar" (estado público, como "à venda"; os dois são exclusivos — o backend limpa o outro) */ forDonation?: boolean;
   /** variação da subcategoria e quem a escreveu: AI_SUGGESTED/AI até a pessoa trocar ou confirmar (USER_CONFIRMED/USER) */
   variation?: string | null; variationStatus?: string | null; variationSource?: string | null; attributes?: Record<string, string[]>;
@@ -56,7 +56,7 @@ export interface SchemeView {
   coverImageUrl?: string | null; mannequinImageUrl?: string | null; mannequinImageFace?: string | null; background?: Record<string, unknown>; cardSkin?: string | null; layoutAnatomy?: string | null; containerOrigin?: string;
   containerColor?: string; items: SchemeItemView[]; totalPrice?: number | null; seals: string[]; sealBadges?: { tier: string; owner: string; premium: boolean; name?: string | null; iconUrl?: string | null; design?: import("@/components/seal-medallion").SealDesign | null; linkedPieceIds?: string[] }[]; tags: string[]; renderingStatus?: string;
   virtualTryOnUrl?: string | null; remixedFromId?: string | null; revalidationPending: boolean;
-  hypeScore?: number | null; hypeScoreGlobal?: number | null;
+  hypeScore?: number | null; hypeScoreGlobal?: number | null; nivelTermico?: ReferenceOption | null;
   counters: Counters; viewer: ViewerState; publishedAt?: string | null; createdAt: string; updatedAt: string;
 }
 export interface Page<T> { items: T[]; page: number; size: number; total: number; hasMore: boolean; }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
+import { cleanup, fireEvent, mockApi, renderApp, screen, waitFor, within } from "@/test-utils/render";
 import { PieceCardPanels } from "./piece-card-panels";
 import { PIECE } from "@/test-utils/fixtures";
 
@@ -36,4 +36,15 @@ it("moves keyboard focus and the selected tab together using the arrow keys", ()
   fireEvent.keyDown(hype, { key: "ArrowLeft" });
   expect(document.activeElement).toBe(info);
   expect(info.getAttribute("aria-selected")).toBe("true");
+});
+
+it("keeps detailed content inside Info and shows Hype when selected", () => {
+  mockApi({});
+  renderApp(<PieceCardPanels piece={PIECE} infoContent={<p>Detalhes da peça</p>} replaceInfoRows />);
+  expect(within(screen.getByRole("tabpanel")).getByText("Detalhes da peça")).toBeTruthy();
+  fireEvent.click(screen.getByRole("tab", { name: /^Hype/ }));
+  expect(screen.queryByText("Detalhes da peça")).toBeNull();
+  expect(screen.getByRole("tabpanel").querySelector(".fashion-hype-matrix")).toBeTruthy();
+  fireEvent.click(screen.getByRole("tab", { name: /info/i }));
+  expect(within(screen.getByRole("tabpanel")).getByText("Detalhes da peça")).toBeTruthy();
 });

@@ -1,0 +1,44 @@
+{
+  "versao": 1,
+  "categoria": "shoes_piece",
+  "subcategoria": "training_shoes",
+  "slot": "feet",
+  "attach": "rigid",
+  "osso": "Foot",
+  "giroY": 1.5708,
+  "centro": [
+    -0.00027,
+    -0.00174,
+    -0.00046
+  ],
+  "caixa": [
+    0.7071,
+    0.8303,
+    1.9028
+  ],
+  "escalaNominal": 0,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 0,
+    "bracosAbertos": false,
+    "aberto": false,
+    "sola": 0.03
+  },
+  "tamanhos": {
+    "grade": "shoes",
+    "porPasso": {
+      "largura": 0.012,
+      "comprimento": 0.027,
+      "manga": 0
+    },
+    "limite": [
+      -4,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "veste"
+}

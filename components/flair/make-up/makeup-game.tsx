@@ -4,6 +4,9 @@
  * grupos Roupas (vestir a vaga) e Maquiagem (maquiar a área), os comandos (os do contrato, menos desfilar) e a entrega.
  * Reaproveita a janela de recursos, os controles e o estado da tela dos núcleos.
  */
+import { NucleoAvisoDaRodada } from "@/components/flair/nucleos/nucleo-aviso-da-rodada";
+import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects";
+import { viabilidade } from "@/lib/flair/nucleos/viabilidade";
 import { useMemo, useReducer, useState } from "react";
 import { cn } from "@/components/ui";
 import type { ApiError } from "@/lib/api/client";
@@ -16,6 +19,7 @@ import { NucleoCast } from "@/components/flair/nucleos/nucleo-cast";
 import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoResourceWindow } from "@/components/flair/nucleos/nucleo-resource-window";
 import { useNucleoControls } from "@/components/flair/nucleos/use-nucleo-controls";
+import { lerRascunho, useRascunho } from "@/components/flair/nucleos/use-rascunho";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { MAKEUP_ACOES } from "@/lib/flair/make-up/briefs";
 import { normalizarPaleta } from "@/lib/flair/make-up/palette";
@@ -24,7 +28,7 @@ import { protagonistaEfetiva } from "@/lib/flair/nucleos/avatares";
 import { boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import { pecasDoLook } from "@/lib/flair/nucleos/look";
-import { buildTabs, temEscolha, type ResourceTab, type Selecao } from "@/lib/flair/nucleos/selection";
+import { buildTabs, SELECAO_VAZIA, temEscolha, type ResourceTab, type Selecao } from "@/lib/flair/nucleos/selection";
 import type { AvatarTipo } from "@/lib/flair/nucleos/types";
 
 const ACEITOS: AvatarTipo[] = ["PROPRIO", "MODELO_CASA"];
@@ -42,7 +46,9 @@ interface Props {
 export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Props) {
   const tx = useNucleoText();
   const tabs = useMemo(() => buildTabs({ recursos: ["CARTAS", "MAQUIAGEM"], vagas: brief.vagas, zonas: [], areas: brief.areas, opcoes: [], paleta: normalizarPaleta(brief.paleta) }, cartas), [brief, cartas]);
-  const [estado, dispatch] = useReducer(boardReducer, undefined, () => boardInicial(2, 0));
+  // o rascunho do brief (look e maquiagem) volta ao recarregar a página ou sair e voltar
+  const rascunho = `makeup.${brief.codigo}`;
+  const [estado, dispatch] = useReducer(boardReducer, undefined, () => ({ ...boardInicial(2, 0), sel: lerRascunho<Selecao>(rascunho) ?? SELECAO_VAZIA }));
   const perfil = useMirrorAvatar();
   const [escolha, setEscolha] = useState<AvatarTipo | null>(null);
   const efetiva = protagonistaEfetiva(ACEITOS, escolha, !!perfil.avatar);
@@ -50,6 +56,10 @@ export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Prop
   const pecas = useMemo(() => pecasDoLook(estado.sel.cartas, cartas), [estado.sel.cartas, cartas]);
   const grupo = grupoDe(tabs[estado.aba]);
   const pronto = temEscolha(estado.sel);
+  // os selos de cada carta neste brief (o brief é uma rodada do Road to Glory) e o aviso das regras de roupa sem carta
+  const efeitos = useNucleoEffects("ROAD_TO_GLORY", cartas, true, { rodada: brief.codigo });
+  const aviso = viabilidade(brief.regras.map((r) => r.codigo), cartas.map((c) => efeitos.itens(c.id)), true);
+  useRascunho(rascunho, !entregando, estado.sel, !pronto);
 
   const entregar = () => {
     if (pronto && !entregando) onEntregar(estado.sel);
@@ -65,7 +75,7 @@ export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Prop
   };
 
   return (
-    <div className="n3d-game" data-testid="makeup-game">
+    <div className="n3d-game mk-game" data-testid="makeup-game">
       <div className="n3d-top">
         <MakeUpScene avatar={estado.avatar} pecas={pecas} maquiagem={estado.sel.maquiagem} protagonista={protagonista} />
         <NucleoCast avatares={{ solo: [{ tipo: efetiva, papel: "protagonista", quantidade: 1 }], online: null }} efetiva={efetiva} aceitos={ACEITOS}
@@ -73,6 +83,7 @@ export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Prop
       </div>
       <div className="n3d-bottom">
         <MakeUpObjective brief={brief} aberto={estado.objetivo} onToggle={() => disparar({ acao: "VER_OBJETIVO" })} />
+        <NucleoAvisoDaRodada codigo="ROAD_TO_GLORY" escopo="colecao" viabilidade={aviso} />
         <div className="mk-resources">
           <div className="mk-groups" role="group" aria-label={tx.t("flair3d.makeup.groups")}>
             {(["ROUPAS", "MAQUIAGEM"] as Grupo[]).map((g) => (
@@ -82,7 +93,7 @@ export function MakeUpGame({ brief, cartas, entregando, erro, onEntregar }: Prop
             ))}
           </div>
           <p className="mk-effect">{tx.t(`flair3d.makeup.effect.${grupo}`)}</p>
-          <NucleoResourceWindow nucleo="ROAD_TO_GLORY" tabs={tabs} aba={estado.aba} item={estado.item} sel={estado.sel} mostrar={(t) => grupoDe(t) === grupo}
+          <NucleoResourceWindow nucleo="ROAD_TO_GLORY" tabs={tabs} aba={estado.aba} item={estado.item} sel={estado.sel} mostrar={(t) => grupoDe(t) === grupo} efeitos={efeitos.itens}
             onAba={(index) => dispatch({ type: "aba", index })} onItem={(aba, item) => dispatch({ type: "aplicar", aba, item, tabs })} />
         </div>
         <NucleoControls acoes={MAKEUP_ACOES} gamepad={gamepad} onComando={(c) => disparar(c)} />

@@ -1,5 +1,22 @@
 # Exercício 14 — Canal de utilização do cupom
 
+> **Implementado em 26/11/2026.** Migração `V119__canal_cupom_exercicio_14.sql` (idempotente) e SQL simples para o
+> Railway em [`sql/railway/14-canal-cupom.sql`](sql/railway/14-canal-cupom.sql), com os mesmos nomes.
+> - **Schema:** tabela `canais_cupom` (LOJA_FISICA, ECOMMERCE, AMBOS; `uq_canais_cupom_codigo`) e `canal_cupom_id` com FK
+>   RESTRICT/RESTRICT em `promotions`, `flair_combinations`, `promotion_redemptions` e `flair_redemptions`
+>   (`fk_<tabela>_canal_cupom`). Os dois resgates têm também `canal_codigo_snapshot`. `coupon_rights` não recebe canal.
+> - **Oferta:** `canalCupomId` no POST/PUT de promoção (`/api/promotions`) e de combinação FLAIR
+>   (`/api/flair/brand/combinations`). Sem o campo, a oferta fica "não informado". UUID inexistente volta 400
+>   `CANAL_CUPOM_INVALIDO`; canal desativado volta 400 `CANAL_CUPOM_INATIVO`, a não ser que a oferta já o tivesse.
+> - **Emissão:** o cupom copia a FK e o código do canal da oferta naquele momento (`CouponChannelSnapshotWriter`). Trocar o
+>   canal da oferta depois não altera cupom emitido. Nenhum cupom antigo foi preenchido: fica "não informado".
+> - **Leitura:** `canalCupom` na oferta; `canalCupom` e `canalCodigoSnapshot` no cupom (`GET /api/me/coupons`,
+>   `GET /api/flair/vouchers`, aba da loja). Opções em `GET /api/opcoes/canais-cupom`.
+> - **Não feito:** a FK `flair_redemptions → flair_combinations` continua CASCADE (V34); o serviço só desativa a combinação
+>   que já emitiu cupom. A lista "Todas as promoções" da aba de cupons ainda não mostra o canal de cada oferta.
+> - Extração: os campos de cupom e a emissão saíram do `FlairService` para `FlairCouponWriter` (1084 → 1063 linhas).
+>   Testes: `CouponChannelTest`, `FlairServiceTest`, `SealPromotionCharacterizationTest`, `coupon-channel-field.test.tsx`.
+
 **Situação na revisão `9f5512a77`:** Proposta: há cupons de promoções e de FLAIR; canal precisa cobrir os dois fluxos sem tratar CouponRight como cupom emitido.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

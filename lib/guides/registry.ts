@@ -10,7 +10,7 @@
  */
 export type GuideDemo =
   | "games" | "cbc" | "calendar" | "challenge" | "feed" | "schemeSeal" | "seal" | "copilot" | "autopilot" | "explore" | "hype"
-  | "brandVisitor" | "brandOperator" | "points" | "shop" | "pointsEarn" | "highlights" | "flairMatch" | "flairCards" | "flairDecks" | "flairShops" | "flairWallet" | "flairQuests";
+  | "brandVisitor" | "brandOperator" | "points" | "pointsEarn" | "highlights" | "flairMatch" | "flairCards" | "flairDecks" | "flairShops" | "flairWallet" | "flairQuests";
 
 export interface GuideDef {
   key: string;
@@ -55,7 +55,6 @@ export const GUIDES: Record<string, GuideDef> = Object.fromEntries([
   g("points.balance", "points", 2, false, 1, "balance"),
   g("points.earn", "pointsEarn", 3, true, 1, "earn"),
   g("points.statement", "points", 2, false, 1, "statement"),
-  g("shop.room", "shop", 3, true, 1, "store"),
   g("highlights.score", "highlights", 3),
 ].map((d) => [d.key, d]));
 

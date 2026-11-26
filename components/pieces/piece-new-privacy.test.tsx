@@ -31,11 +31,12 @@ async function fillAndReview() {
   fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: "Camiseta branca" } });
   pick("subcategory", "Camiseta");
   pick("color", "Branco");
+  next();                                                   // "2 · Mais detalhes": material, preço, ocasião e estilo
   pick("material", "Algodão");
   fireEvent.change(document.getElementById("price") as HTMLInputElement, { target: { value: "50" } });
   fireEvent.click(screen.getByRole("button", { name: "Casual" }));
   fireEvent.click(screen.getByRole("button", { name: "Básico" }));
-  for (let i = 0; i < 3; i++) next();
+  for (let i = 0; i < 2; i++) next();
   await screen.findByRole("heading", { name: "Depois de salvar" });
 }
 

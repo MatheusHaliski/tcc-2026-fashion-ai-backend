@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { NUCLEO_CODIGOS } from "@/lib/flair/nucleos/types";
 import { Diretor, duracaoDaSequencia } from "@/lib/flair/nucleos/scene/director";
 import { ABERTURA_S, ENTRADA_Z, cameraDaAbertura, sequenciaDeAbertura, temAbertura, tomadasDaAbertura, type Tomada } from "@/lib/flair/nucleos/scene/opening";
-import { VARIANTES } from "@/lib/flair/nucleos/scene/registry";
+import { salaDe, VARIANTES } from "@/lib/flair/nucleos/scene/registry";
 import { limiteDaCamera } from "@/lib/flair/nucleos/scene/zones";
 
 /** Abertura animada de cada salão do Fashion Detective: o travelling da câmera e a entrada dos personagens. */
@@ -9,10 +10,17 @@ describe("abertura do salão", () => {
   const saloes = Object.values(VARIANTES.FASHION_DETECTIVE ?? {});
   const fim: Tomada = { pos: [0, 1.12, 4.2], alvo: [0, 1, 0] };
 
-  it("só o Fashion Detective tem abertura", () => {
-    expect(temAbertura("FASHION_DETECTIVE")).toBe(true);
-    expect(sequenciaDeAbertura("PASSARELA")).toBeNull();
-    expect(sequenciaDeAbertura("FASHION_SPORTS")).toBeNull();
+  it("todo jogo tem abertura: o avatar entra até a marca e cada papel recebe quem chega (critério da dona: o começo)", () => {
+    for (const codigo of NUCLEO_CODIGOS) {
+      expect(temAbertura(codigo), codigo).toBe(true);
+      const seq = sequenciaDeAbertura(codigo)!;
+      const entrada = seq.passos.find((p) => p.ator === "avatar" && p.clip === "CAMINHAR")!;
+      expect(entrada.mover, codigo).toEqual({ z: 0 });
+      expect(entrada.de!.z!, codigo).toBeLessThanOrEqual(salaDe(codigo).zonas.avatar.z[1]);
+    }
+    const passarela = sequenciaDeAbertura("PASSARELA")!;
+    expect(passarela.passos.find((p) => p.ator === "fig:PLATEIA:*")?.clip).toBe("F_APLAUSO");
+    expect(sequenciaDeAbertura("DRESS_FIGHTER")!.passos.find((p) => p.ator === "fig:OPONENTE:*")?.clip).toBe("F_GUARDA");
   });
 
   it("câmera: começa no plano aberto, passa pela lateral e termina exatamente no enquadramento do avatar", () => {

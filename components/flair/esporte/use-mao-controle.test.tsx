@@ -33,7 +33,7 @@ describe("mão no teclado", () => {
 });
 
 describe("mão no controle", () => {
-  it("direcional escolhe, A e Start jogam, B segue sem carta; o que já estava apertado não conta", () => {
+  it("direcional escolhe, ✕ (A) joga, ○ (B) segue sem carta, Start não joga; o que já estava apertado não conta", () => {
     const frames: FrameRequestCallback[] = [];
     vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => frames.push(cb));
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
@@ -62,7 +62,8 @@ describe("mão no controle", () => {
     // os botões que não são da mão (posar, trocar de aba) não fazem nada aqui
     apertados = [2, 4];
     quadro(90);
-    expect(registro).toEqual(["mover:1", "mover:-1", "jogar", "jogar", "seguir"]);
+    // Start agora é a pausa (padrão de console): só ✕ (A) joga
+    expect(registro).toEqual(["mover:1", "mover:-1", "jogar", "seguir"]);
     unmount();
     expect(window.cancelAnimationFrame).toHaveBeenCalled();
   });

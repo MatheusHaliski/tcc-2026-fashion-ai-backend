@@ -40,7 +40,8 @@ async function vestirEEntregar() {
   fireEvent.click(within(deck).getByRole("button", { name: "Entrar na partida" }));
   await screen.findByTestId("nucleo-game");
   // o uniforme inteiro: parte de cima, de baixo e calçado (uma aba por vaga)
-  for (const tecla of [" ", "e", " ", "e", " ", "Enter"]) fireEvent.keyDown(window, { key: tecla });
+  // ✕ veste, △ (I) passa à aba seguinte, Enter entrega
+  for (const tecla of [" ", "i", " ", "i", " ", "Enter"]) fireEvent.keyDown(window, { key: tecla });
 }
 
 describe("partida jogada por cartas", () => {
@@ -96,14 +97,18 @@ describe("partida jogada por cartas", () => {
     fireEvent.keyDown(window, { key: "ArrowRight" });
     fireEvent.keyDown(window, { key: "ArrowLeft" });
     fireEvent.keyDown(window, { key: "Enter" });
-    await waitFor(() => expect(calls.filter((c) => c.path.endsWith("/acionar")).map((c) => c.body)).toEqual([{ carta: "m1" }, { carta: "m2" }]), LONGO);
+    // o chute abre a barra de tempo: Enter de novo aperta a barra e a faixa do acerto vai junto da carta
+    expect((await screen.findByTestId("esporte-tempo")).textContent).toContain("Agora!");
+    fireEvent.keyDown(window, { key: "Enter" });
+    const chute = { carta: "m2", alvo: expect.stringMatching(/^TEMPO:[012]$/) };
+    await waitFor(() => expect(calls.filter((c) => c.path.endsWith("/acionar")).map((c) => c.body)).toEqual([{ carta: "m1" }, chute]), LONGO);
     await waitFor(() => expect(screen.getByTestId("esporte-placar").textContent).toContain("1 × 0"), LONGO);
     expect(screen.getByTestId("esporte-narracao").textContent).toBe("5' Gol! Téo finaliza e marca");
 
     // sem a bola: seguir sem carta manda a jogada vazia
     await waitFor(() => expect(screen.getByTestId("esporte-situacao").textContent).toContain("O adversário tem a bola no meio-campo"), LONGO);
     fireEvent.click(screen.getByRole("button", { name: "Seguir sem carta" }));
-    await waitFor(() => expect(calls.filter((c) => c.path.endsWith("/acionar")).map((c) => c.body)).toEqual([{ carta: "m1" }, { carta: "m2" }, {}]), LONGO);
+    await waitFor(() => expect(calls.filter((c) => c.path.endsWith("/acionar")).map((c) => c.body)).toEqual([{ carta: "m1" }, chute, {}]), LONGO);
 
     const result = await screen.findByTestId("nucleo-result", undefined, { timeout: 8000 });
     expect(result.textContent).toContain("Vitória");

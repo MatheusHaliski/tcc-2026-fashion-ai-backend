@@ -21,6 +21,8 @@ public interface BrandProfileRepository extends JpaRepository<BrandProfile, UUID
 
     Optional<BrandProfile> findBySlug(String slug);
 
+    List<BrandProfile> findByBrandNameIgnoreCaseAndApprovalStatus(String brandName, ApprovalStatus status);
+
     boolean existsByLogoUrlEndingWithOrActivityProofUrlEndingWith(String logoSuffix, String proofSuffix);
 
     List<BrandProfile> findByApprovalStatus(ApprovalStatus status);
@@ -28,6 +30,9 @@ public interface BrandProfileRepository extends JpaRepository<BrandProfile, UUID
     List<BrandProfile> findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus status);
 
     List<BrandProfile> findTop100ByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus status);
+
+    /** Exercício 13: perfis de marca aprovados como opção da política do selo (até 50, por trecho do nome). */
+    List<BrandProfile> findTop50ByApprovalStatusAndBrandNameContainingIgnoreCaseOrderByBrandNameAsc(ApprovalStatus status, String term);
 
     /** Política de verificação: já existe outro perfil oficial (aprovado) com este nome de marca? */
     boolean existsByBrandNameIgnoreCaseAndApprovalStatusAndOwner_IdNot(String brandName, ApprovalStatus status, UUID ownerId);

@@ -1,10 +1,9 @@
 package br.com.fashionai.application.flair3d.detetive;
 
 import br.com.fashionai.application.flair3d.Acionamento;
+import br.com.fashionai.application.flair3d.Andamento;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Flair3dErros;
-import br.com.fashionai.application.flair3d.detetive.DetetiveSala.Ponto;
-import br.com.fashionai.application.flair3d.detetive.DetetiveSala.Vigia;
 import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveAcusacao;
 import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveMundo;
 
@@ -19,7 +18,8 @@ import java.util.UUID;
  * "BOLSO:vigia", "CONFRONTO:vigia", "VIDA", "COMPLETAR:pista", "MERCADO:acao", "TROCAR", "ENIGMA:opcao", "ACUSAR:numero") e, quando
  * a ação pede, a carta da cor certa (verde abre, preto esconde e tira do bolso, azul vence o confronto, amarelo devolve
  * vida, branco completa a pista, vermelho paga o mercado; trocar descarta qualquer carta para girar a mão). Andar, resolver o enigma e acusar não gastam carta. Depois de
- * cada passo os vigias andam; quem é visto perde uma marca de vida e 30 segundos e volta ao último esconderijo. Tudo sai
+ * cada passo os vigias andam: quem é visto é perseguido até se esconder ou sair do alcance, e quem é pego perde uma marca
+ * de vida e 30 segundos e volta à porta da sala ({@link DetetivePerseguicao}). Tudo sai
  * da semente, do look e dos passos, na ordem: refazer a partida dá sempre o mesmo estado.
  */
 public final class DetetivePartida {
@@ -31,14 +31,38 @@ public final class DetetivePartida {
     private final DetetiveMao mao;
 
     public DetetivePartida(Contexto contexto, Collection<UUID> noLook) {
+        this(contexto, noLook, DetetiveDoLook.NEUTRO);
+    }
+
+    /** Com o que o look muda no corpo da detetive: vida máxima, cone dos vigias e tempo do passo. */
+    public DetetivePartida(Contexto contexto, Collection<UUID> noLook, DetetiveDoLook doLook) {
         mao = new DetetiveMao(contexto, noLook);
+        e.doLook = doLook;
+        e.vida = doLook.vidaMaxima();
     }
 
     public DetetivePartida jogar(List<Acionamento> passos) {
-        for (Acionamento a : passos) {
-            passo(a);
+        return jogar(passos, List.of());
+    }
+
+    /**
+     * Os passos na ordem, com as peças usadas como recurso entre eles: cada uso de VIDA devolve uma marca de vida (até a
+     * máxima do look) antes do passo seguinte, nunca para trás. Sem vida, a detetive é pega e o caso acaba.
+     */
+    public DetetivePartida jogar(List<Acionamento> passos, List<Andamento.UsoDeRecurso> usos) {
+        for (int i = 0; i < passos.size(); i++) {
+            recuperar(usos, i);
+            passo(passos.get(i));
+        }
+        if (e.fim == null) {
+            recuperar(usos, passos.size());
         }
         return this;
+    }
+
+    private void recuperar(List<Andamento.UsoDeRecurso> usos, int lance) {
+        long vidas = usos.stream().filter(u -> u.lance() == lance && "VIDA".equals(u.recurso())).count();
+        e.vida = (int) Math.min(e.doLook.vidaMaxima(), e.vida + vidas);
     }
 
     public boolean encerrada() {
@@ -90,26 +114,11 @@ public final class DetetivePartida {
         boolean andam = DetetiveAcoes.fazer(verbo, arg, e, mao);
         if (andam) {
             e.passo++;
-            vigiar();
+            DetetivePerseguicao.depoisDoPasso(e);
         }
         if (e.tempo >= DetetiveEstado.LIMITE_DE_TEMPO && !"PASSARELA".equals(e.sala) && e.fim == null) {
             DetetiveAcoes.entrar(e, FashionDetectiveMundo.FINAL);
             e.avisos.add("TEMPO_ESGOTADO");
-        }
-    }
-
-    /** Depois do passo: algum vigia da sala vê a pessoa? */
-    private void vigiar() {
-        DetetiveSala s = e.salaAtual();
-        Ponto p = e.pontoAtual();
-        if (p.esconderijo() && e.escondido) {
-            e.ultimaCobertura = p.id();
-        }
-        for (Vigia v : s.vigias()) {
-            if (!e.convencidos.contains(v.id()) && DetetiveVigias.ve(s, v, e.passo, p, e.escondido)) {
-                DetetiveAcoes.visto(e, v.id());
-                return;
-            }
         }
     }
 

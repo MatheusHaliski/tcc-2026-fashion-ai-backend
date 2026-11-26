@@ -225,7 +225,7 @@ describe("ExpandedScheme — ações do dono do look", () => {
 });
 
 describe("ExpandedPiece — o dono", () => {
-  const routes = (p: PieceView, extra: Record<string, unknown> = {}) => ({ ...HYPE, "GET /api/taxonomy": TAXONOMY, "GET /api/pieces/p1": { piece: p, location: { label: "Gaveta 2" }, originSchemes: [{ schemeId: "s1", title: "Look de sábado", coverImageUrl: "/media/s.png" }, { schemeId: "s2", title: "null" }] }, ...extra });
+  const routes = (p: PieceView, extra: Record<string, unknown> = {}) => ({ ...HYPE, "GET /api/taxonomy": TAXONOMY, "GET /api/me/acervo/pecas/p1/lugar": { pieceId: "p1", guardada: true, compartimentoId: "c1", compartimento: "Gaveta 2", movel: "Armário 01", ambiente: "Closet" }, "GET /api/pieces/p1": { piece: p, originSchemes: [{ schemeId: "s1", title: "Look de sábado", coverImageUrl: "/media/s.png" }, { schemeId: "s2", title: "null" }] }, ...extra });
 
   it("mostra os dados úteis, a ação principal e os looks com a peça; clicar no look navega", async () => {
     loggedAs(undefined, routes(piece({ forSale: false, forDonation: true, disponivel: false, visibility: "FOLLOWERS" })));
@@ -235,7 +235,7 @@ describe("ExpandedPiece — o dono", () => {
     expect(facts.map(([k]) => k)).toEqual(["Categoria", "Cor", "Tamanho", "Material", "Ocasião", "Estilo", "Estado de conservação", "Preço", "Usos", "Situação", "Onde está"]);
     expect(Object.fromEntries(facts)["Estado de conservação"]).toBe("Novo");   // condição "NEW" do fixture vira rótulo
     expect(Object.fromEntries(facts)["Situação"]).toBe("Indisponível · Para doar");
-    expect(Object.fromEntries(facts)["Onde está"]).toBe("Gaveta 2");
+    expect((await screen.findByText("Gaveta 2")).closest("[data-acervo-lugar]")?.getAttribute("data-endereco")).toBe("c1");   // lugar lido do ACERVO (ex. 08)
     expect(Object.fromEntries(facts)["Material"]).toBe(label("cotton"));
     expect(Object.fromEntries(facts)["Usos"]).toMatch(/^Usada 5× · último uso: /);
     expect(container.textContent).toContain("Seguidores");
@@ -355,7 +355,7 @@ describe("ExpandedPiece — o dono", () => {
     expect(await within(modal).findByRole("img", { name: `selos: ${badge.name}` })).toBeTruthy();
     expect(modal.querySelector(`.card-seals .seal-medallion[title="${badge.name} · @${badge.owner} · PECA"]`)).toBeTruthy();
     expect(within(modal).queryByText("SUSTAINABLE")).toBeNull();
-    expect(within(modal).queryByText("nao-aprovada")).toBeNull();
+    expect(within(modal).getByText("nao-aprovada")).toBeTruthy();
     expect(api.calls.some(call => call.path === "/api/pieces/seals?ids=p1")).toBe(true);
     fireEvent.click(within(modal).getByRole("button", { name: "Fechar" }));
     fireEvent.click(screen.getByRole("button", { name: "Abrir peça azul" }));

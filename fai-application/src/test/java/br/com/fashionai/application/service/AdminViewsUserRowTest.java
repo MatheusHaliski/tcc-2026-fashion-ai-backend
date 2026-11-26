@@ -1,11 +1,13 @@
 package br.com.fashionai.application.service;
 
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.admin.AdminViews;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
-import org.junit.jupiter.api.Test;
-
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

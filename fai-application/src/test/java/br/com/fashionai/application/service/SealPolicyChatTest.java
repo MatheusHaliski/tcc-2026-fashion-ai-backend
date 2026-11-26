@@ -1,28 +1,27 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.AiCallResult;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.SealStatus;
-import br.com.fashionai.domain.model.enums.SealTier;
-import br.com.fashionai.domain.repository.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.ai.AiOutcome;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.OwnMedia;
+import br.com.fashionai.application.seal.SealPolicyCopilot;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.BrandProfile;
+import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -80,7 +79,7 @@ class SealPolicyChatTest {
     void ordinaryCopilotRoutePassesTheSealContextInsteadOfDiscardingIt() {
         SealService sealDrafts = mock(SealService.class);
         CopilotService copilot = new CopilotService(null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null);
         copilot.setSealPolicyService(sealDrafts);
         var history = List.of(new SealPolicyCopilot.Message("user", "#createsealpolicy Peça azul"));
         var previous = Map.<String, Object>of("match", "ALL");

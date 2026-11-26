@@ -1,45 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.audit.AuditActions;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Hashing;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.identity.PasswordHasherPort;
-import br.com.fashionai.application.imaging.ImageOps;
-import br.com.fashionai.application.ports.EmailSenderPort;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.ports.RateLimitPort;
-import br.com.fashionai.application.ports.TokenIssuerPort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.CelebrityProfile;
-import br.com.fashionai.domain.model.RefreshToken;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.UserPreferences;
-import br.com.fashionai.domain.model.VerificationCode;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.ApprovalStatus;
-import br.com.fashionai.domain.model.enums.MannequinSex;
-import br.com.fashionai.domain.model.enums.NotificationType;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.VerificationPurpose;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.CelebrityProfileRepository;
-import br.com.fashionai.domain.repository.RefreshTokenRepository;
-import br.com.fashionai.domain.model.enums.UiLanguage;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.VerificationCodeRepository;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -54,6 +14,27 @@ import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.audit.AuditActions;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.identity.PasswordHasherPort;
+import br.com.fashionai.application.identity.RegistrationFormChain;
+import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.ports.*;
+import br.com.fashionai.application.seal.IssuerVerificationPolicy;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF1 (cadastro Pessoal, Marca, Celebridade), RF2 (login) e RNF2 (JWT + refresh rotativo e recuperação

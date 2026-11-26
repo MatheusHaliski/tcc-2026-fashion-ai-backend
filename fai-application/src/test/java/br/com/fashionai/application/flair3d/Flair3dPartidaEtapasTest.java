@@ -72,52 +72,49 @@ class Flair3dPartidaEtapasTest {
     }
 
     @Test
-    void lutaAndaRoundARoundComUmaEspecialDoDeck() {
+    void lutaAndaLanceALanceComCartasDoDeckEUmaEspecial() {
         FlairCardInstance sup = carta(ana, "SUP");
         FlairCardInstance inf = carta(ana, "INF");
         FlairCardInstance cal = carta(ana, "CAL", "sub:casual_sneakers");
-        FlairCardInstance ace = carta(ana, "ACE");
+        FlairCardInstance ace = carta(ana, "ACE", "color:red");
         FlairCardInstance especial = carta(ana, "ACE", "tier:ESPECIAL", "ovr:90");
         FlairCardInstance especialForaDoDeck = carta(ana, "ACE", "tier:ESPECIAL", "ovr:90");
         FlairCardInstance daBia = carta(bia, "ACE", "tier:ESPECIAL");
         UUID id = abrir("DRESS_FIGHTER", sup, inf, cal, ace, especial);
         assertThat(erro(() -> service.acionar(ana, id, null)).code()).isEqualTo("PARTIDA_SEM_ACAO");
 
-        Resultado round1 = service.entregar(ana, id, vestir(sup, inf, cal, ace));
-        assertThat(round1.status()).isEqualTo("EM_ACAO");
-        assertThat(round1.eventos()).hasSize(1);
+        Resultado inicio = service.entregar(ana, id, vestir(sup, inf, cal, ace));
+        assertThat(inicio.status()).isEqualTo("EM_ACAO");
+        assertThat(inicio.eventos()).extracting(Resultado.Evento::codigo).containsExactly("LUTA");
         assertThat(partida(id).getStatus()).isEqualTo("EM_ACAO");
         assertThat(partida(id).getPontos()).isNull();
-        assertThat(partida(id).getResultadoJson()).isNull();
         assertThat(erro(() -> service.entregar(ana, id, vestir(sup))).status()).isEqualTo(409);
-        assertThat(erro(() -> service.previa(ana, id, vestir(sup))).status()).isEqualTo(409);
-
         assertThat(erro(() -> service.acionar(bia, id, null)).status()).isEqualTo(403);
         assertThat(erro(() -> service.acionar(ana, UUID.randomUUID(), null)).status()).isEqualTo(404);
         assertThat(erro(() -> service.acionar(ana, id, new Acionamento(daBia.getId(), null))).code()).isEqualTo("CARTA_ALHEIA");
         assertThat(erro(() -> service.acionar(ana, id, new Acionamento(especialForaDoDeck.getId(), null))).code()).isEqualTo("CARTA_FORA_DO_DECK");
-        ApiException comum = erro(() -> service.acionar(ana, id, new Acionamento(ace.getId(), null)));
-        assertThat(comum.status()).isEqualTo(422);
-        assertThat(comum.code()).isEqualTo("CARTA_NAO_ESPECIAL");
-        assertThat(Andamento.ler(partida(id).getEstadoJson()).acionamentos()).isEmpty();
 
-        Resultado round2 = service.acionar(ana, id, new Acionamento(especial.getId(), null));
-        assertThat(round2.status()).isEqualTo("EM_ACAO");
-        assertThat(round2.eventos()).extracting(Resultado.Evento::codigo).containsExactly("ROUND", "ESPECIAL", "ROUND");
+        Resultado lance1 = service.acionar(ana, id, new Acionamento(ace.getId(), null));
+        assertThat(lance1.status()).isEqualTo("EM_ACAO");
+        assertThat(lance1.eventos()).extracting(Resultado.Evento::codigo).containsExactly("LANCE_DA_LUTA", "LUTA");
+        ApiException cansada = erro(() -> service.acionar(ana, id, new Acionamento(ace.getId(), null)));
+        assertThat(cansada.status()).isEqualTo(422);
+        assertThat(cansada.code()).isEqualTo("CARTA_CANSADA");
+        assertThat(Andamento.ler(partida(id).getEstadoJson()).acionamentos()).containsExactly(new Acionamento(ace.getId(), null));
+        service.acionar(ana, id, new Acionamento(especial.getId(), null));
+        service.acionar(ana, id, null);
         assertThat(erro(() -> service.acionar(ana, id, new Acionamento(especial.getId(), null))).code()).isEqualTo("ESPECIAL_JA_USADA");
-        assertThat(Andamento.ler(partida(id).getEstadoJson()).acionamentos()).containsExactly(new Acionamento(especial.getId(), null));
 
-        Resultado fim = service.acionar(ana, id, null);
+        Resultado fim = lance1;
+        for (int i = 0; i < 9 && !"ENTREGUE".equals(fim.status()); i++) {
+            fim = service.acionar(ana, id, null);
+        }
         assertThat(fim.status()).isEqualTo("ENTREGUE");
-        assertThat(fim.pontos()).isEqualTo(100);
-        assertThat(fim.resultado()).isEqualTo("VITORIA");
-        assertThat(fim.eventos()).hasSize(4);
+        assertThat(fim.resultado()).isIn("VITORIA", "DERROTA");
         assertThat(fim.cartas()).hasSize(4);
         Flair3dMatch salva = partida(id);
         assertThat(salva.getStatus()).isEqualTo("ENTREGUE");
-        assertThat(salva.getPontos()).isEqualTo(100);
-        assertThat(salva.getEstrelas()).isEqualTo(3);
-        assertThat(salva.getResultadoJson()).contains("ESPECIAL").contains("\"cartas\"").contains("\"status\":\"ENTREGUE\"");
+        assertThat(salva.getResultadoJson()).contains("LANCE_DA_LUTA").contains("ESPECIAL").contains("\"status\":\"ENTREGUE\"");
         ApiException depois = erro(() -> service.acionar(ana, id, null));
         assertThat(depois.status()).isEqualTo(409);
         assertThat(depois.code()).isEqualTo("PARTIDA_SEM_ACAO");
@@ -141,28 +138,37 @@ class Flair3dPartidaEtapasTest {
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isEqualTo(1);
 
         Resultado previa = service.previa(ana, id, vestir(sup, inf, cal));
-        assertThat(previa.pontos()).isEqualTo(80);
+        // 80 + 1 da regra peça-recurso (o tênis da vaga CAL soma agilidade, que o Labirinto pede)
+        assertThat(previa.pontos()).isEqualTo(81);
         assertThat(previa.status()).isEqualTo("ABERTA");
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isEqualTo(1);
 
-        Resultado abriu = service.entregar(ana, id, vestir(sup, inf, cal));
+        // o espelho abriu: falta a execução no percurso; os três botões a tempo somam 15
+        Resultado espelho = service.entregar(ana, id, vestir(sup, inf, cal));
+        assertThat(espelho.status()).isEqualTo("EM_ACAO");
+        // a execução começa com o Reflexo que a apresentação errada deixou (40 - 15)
+        assertThat(espelho.eventos()).filteredOn(e -> e.codigo().equals("EXECUCAO_PEDIDA")).extracting(Resultado.Evento::valor)
+                .first().asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP).containsEntry("recurso", "ENERGIA").containsEntry("reserva", 25);
+        Resultado abriu = service.acionar(ana, id, Flair3dFixtures.perfeita(espelho));
         assertThat(abriu.status()).isEqualTo("ENTREGUE");
         assertThat(abriu.resultado()).isEqualTo("ABRE");
-        assertThat(abriu.pontos()).isEqualTo(80);
-        assertThat(abriu.estrelas()).isEqualTo(2);
+        assertThat(abriu.pontos()).isEqualTo(96);
+        assertThat(abriu.estrelas()).isEqualTo(Resultado.estrelas(96));
         assertThat(abriu.eventos()).contains(new Resultado.Evento("TENTATIVA", 2));
         assertThat(partida(id).getStatus()).isEqualTo("ENTREGUE");
-        assertThat(partida(id).getEstrelas()).isEqualTo(2);
+        assertThat(partida(id).getEstrelas()).isEqualTo(Resultado.estrelas(96));
         assertThat(erro(() -> service.entregar(ana, id, vestir(sup, inf, cal))).code()).isEqualTo("PARTIDA_JA_ENTREGUE");
 
+        // cada apresentação errada gasta 15 de Reflexo (a energia, 40 no começo): a terceira zera e a partida é perdida
         UUID outra = abrir("LABIRINTO", sup, inf, cal, ace);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 2; i++) {
             assertThat(service.entregar(ana, outra, vestir(sup, ace)).status()).isEqualTo("ABERTA");
         }
-        Resultado naQuarta = service.entregar(ana, outra, vestir(sup, inf, cal));
-        assertThat(naQuarta.resultado()).isEqualTo("ABRE");
-        assertThat(naQuarta.pontos()).isZero();
-        assertThat(naQuarta.status()).isEqualTo("ENTREGUE");
+        Resultado semReflexo = service.entregar(ana, outra, vestir(sup, ace));
+        assertThat(semReflexo.resultado()).isEqualTo("DERROTA");
+        assertThat(semReflexo.pontos()).isZero();
+        assertThat(semReflexo.status()).isEqualTo("ENTREGUE");
+        assertThat(erro(() -> service.entregar(ana, outra, vestir(sup, inf, cal))).code()).isEqualTo("PARTIDA_JA_ENTREGUE");
     }
 
     @Test
@@ -174,9 +180,11 @@ class Flair3dPartidaEtapasTest {
         UUID id = abrir("PASSARELA", sup, inf, cal);
 
         Resultado previa = service.previa(ana, id, vestir(sup, inf));
-        assertThat(previa.pontos()).isEqualTo(57);
+        assertThat(previa.pontos()).isEqualTo(58);
         assertThat(previa.status()).isEqualTo("ABERTA");
         assertThat(previa.regras()).extracting(Resultado.RegraResultado::codigo).containsExactly("MARCA_BR", "TODAS_BR");
+        // na prévia, o que o look soma vai como evento (a nota já mostra)
+        assertThat(previa.eventos()).extracting(Resultado.Evento::codigo).contains("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO");
         assertThat(previa.cartas()).containsExactly(new Resultado.CartaPontos("SUP", sup.getId(), 28.57),
                 new Resultado.CartaPontos("INF", inf.getId(), 28.57));
         Flair3dMatch intacta = partida(id);
@@ -190,7 +198,8 @@ class Flair3dPartidaEtapasTest {
         assertThat(erro(() -> service.previa(ana, UUID.randomUUID(), vestir(sup))).status()).isEqualTo(404);
         assertThat(erro(() -> service.previa(ana, id, vestir(foraDoDeck))).code()).isEqualTo("CARTA_FORA_DO_DECK");
 
-        Resultado entrega = service.entregar(ana, id, vestir(sup, inf, cal));
+        service.entregar(ana, id, vestir(sup, inf, cal));
+        Resultado entrega = service.acionar(ana, id, Flair3dFixtures.perfeita(service.acionar(ana, id, Acionamento.NENHUM)));
         assertThat(entrega.status()).isEqualTo("ENTREGUE");
         assertThat(entrega.cartas()).extracting(Resultado.CartaPontos::pontos).containsExactly(14.29, 14.29, 0.0);
         assertThat(erro(() -> service.previa(ana, id, vestir(sup))).status()).isEqualTo(409);
@@ -209,10 +218,20 @@ class Flair3dPartidaEtapasTest {
         FlairCardInstance leve = carta(ana, "SUP", "material:linen");
         Map<String, Object> out = service.efeitos(ana, "AROUND_THE_WORLD",
                 new Flair3dNucleoService.PedidoEfeitos(List.of(neutra.getId(), leve.getId())));
-        assertThat(out.get("efeitos")).isEqualTo(List.of(
+        assertThat(semPerfil(out.get("efeitos"))).isEqualTo(List.of(
                 Map.of("cardId", neutra.getId(), "itens", List.of(Efeito.motivo("SEM_BONUS"))),
                 Map.of("cardId", leve.getId(), "itens", List.of(new Efeito("CIMA_LEVE", 25)))));
         Map<String, Object> zonas = service.efeitos(ana, "SUPER_HEROI", new Flair3dNucleoService.PedidoEfeitos(List.of(neutra.getId())));
-        assertThat(zonas.get("efeitos")).isEqualTo(List.of(Map.of("cardId", neutra.getId(), "itens", List.of())));
+        assertThat(semPerfil(zonas.get("efeitos"))).isEqualTo(List.of(Map.of("cardId", neutra.getId(), "itens", List.of())));
+    }
+
+    /** Os efeitos sem o perfil da peça (a regra peça-recurso tem teste próprio: Flair3dRecursoTabelaTest). */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> semPerfil(Object efeitos) {
+        return ((List<Map<String, Object>>) efeitos).stream().map(m -> {
+            Map<String, Object> copia = new java.util.LinkedHashMap<>(m);
+            copia.remove("perfil");
+            return copia;
+        }).toList();
     }
 }

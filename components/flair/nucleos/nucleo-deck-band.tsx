@@ -10,12 +10,14 @@ import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoResourceWindow } from "@/components/flair/nucleos/nucleo-resource-window";
 import type { CardZoom } from "@/components/flair/nucleos/use-card-zoom";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { NucleoSalvo } from "@/components/flair/nucleos/nucleo-salvo";
 import type { BoardEstado } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import type { ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
 import { valorDoEvento } from "@/lib/flair/nucleos/action-fx";
 import { salaoDaVez } from "@/lib/flair/nucleos/detective";
 import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
+import { desgasteDe, nomeDoRecurso, type Desgaste } from "@/lib/flair/recursos/desgaste";
 import { respostaObrigatoria, vagasQueFaltam } from "@/lib/flair/nucleos/rodadas";
 import type { ResourceTab } from "@/lib/flair/nucleos/selection";
 import type { EfeitoItem, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
@@ -51,15 +53,15 @@ export interface NucleoDeckBandProps {
 }
 
 /**
- * O espelho não abriu: a tentativa, quantas peças faltam, de qual família de cor e quando a peça achada na sala entra
- * (a partir da 3ª apresentação; uma segunda a partir da 5ª).
+ * O espelho não abriu: a tentativa, quantas peças faltam, de qual família de cor e quanto Reflexo sobrou (cada
+ * apresentação errada gasta; zerado, a partida acaba em derrota).
  */
-function textoDoEspelho(tx: ReturnType<typeof useNucleoText>, n: number, faltam: number, familia: unknown): string {
+function textoDoEspelho(tx: ReturnType<typeof useNucleoText>, n: number, faltam: number, familia: unknown, gasto: Desgaste | null): string {
   const base = typeof familia === "string"
     ? tx.t("flair3d.ui.trigger.ESPELHO.retryFamily", { n, faltam, familia: tx.familiaCor(familia).toLowerCase() })
     : tx.t("flair3d.ui.trigger.ESPELHO.retry", { n, faltam });
-  const achada = n === 2 || n === 4 ? ` ${tx.t("flair3d.ui.trigger.ESPELHO.found")}` : "";
-  return `${base}${achada}`;
+  const reflexo = gasto ? ` ${tx.t("flair3d.ui.trigger.ESPELHO.reflexo", { recurso: nomeDoRecurso(tx.ou, "LABIRINTO", gasto.recurso), n: gasto.restante })}` : "";
+  return `${base}${reflexo}`;
 }
 
 export function NucleoDeckBand(props: NucleoDeckBandProps) {
@@ -85,13 +87,14 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
   else if (resposta && !estado.sel.resposta) dica = [props.briefing, daResposta("need")].filter(Boolean).join(" ");
   else if (resposta && estado.sel.resposta) dica = [props.briefing, daResposta("done", { titulo: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta}`, estado.sel.resposta) })].filter(Boolean).join(" ");
   else if (props.briefing) dica = props.briefing;
+  else if (definicao.codigo === "FASHION_DETECTIVE" && definicao.rodada !== "SALOES_DA_GALA") dica = tx.t("flair3d.detetive.ui.look");
   else if (definicao.codigo === "FASHION_DETECTIVE") {
     const s = salaoDaVez(props.tentativa);
     dica = tx.t("flair3d.ui.detetive.hint", { n: s.numero, total: s.total, salao: tx.t(`flair3d.ui.detetive.${s.codigo}.name`), codigo: tx.t(`flair3d.ui.detetive.${s.codigo}.code`), carta: tx.t(`flair3d.ui.detetive.${s.codigo}.clue`) });
   } else if (props.tentativa) {
     const n = Number(valorDoEvento(props.tentativa, "TENTATIVA") ?? 1);
     const faltam = Number(valorDoEvento(props.tentativa, "FALTAM_PECAS") ?? 0);
-    dica = textoDoEspelho(tx, n, faltam, valorDoEvento(props.tentativa, "FAMILIA"));
+    dica = textoDoEspelho(tx, n, faltam, valorDoEvento(props.tentativa, "FAMILIA"), desgasteDe(props.tentativa));
   } else if (espelho) dica = tx.t("flair3d.ui.trigger.ESPELHO.hint");
   else if (props.automatico && abaDaResposta >= 0) dica = tx.t("flair3d.ui.modalidade.hint", { modalidade: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta ?? "FUTEBOL"}`, "") });
   else if (props.automatico) dica = tx.t("flair3d.ui.auto");
@@ -124,6 +127,7 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
       />
       <div className="n3d-band-foot">
         {dica && <p className="n3d-hint" role="status" data-testid="nucleo-hint">{dica}</p>}
+        <NucleoSalvo />
         {resposta && !estado.sel.resposta && abaDaResposta >= 0 && (
           <button type="button" className="btn btn-sm" onClick={() => props.onAba(abaDaResposta)}>
             {daResposta("go")}

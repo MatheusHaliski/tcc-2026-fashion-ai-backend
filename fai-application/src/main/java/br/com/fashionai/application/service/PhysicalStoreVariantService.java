@@ -1,8 +1,18 @@
 package br.com.fashionai.application.service;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.physicalstore.PhysicalStoreViews;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.CatalogVariant;
@@ -11,14 +21,6 @@ import br.com.fashionai.domain.model.PhysicalStoreVariant;
 import br.com.fashionai.domain.repository.CatalogVariantRepository;
 import br.com.fashionai.domain.repository.PhysicalStoreListingRepository;
 import br.com.fashionai.domain.repository.PhysicalStoreVariantRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
 
 /** RF-PESQ-01 — cadastro de variantes (cor × tamanho) por oferta e a tela de checkout do comprador. */
 @Service

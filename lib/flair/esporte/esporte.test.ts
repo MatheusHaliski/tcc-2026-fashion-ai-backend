@@ -4,6 +4,7 @@ import { CAMPOS, campoDe, noMundo, repouso } from "@/lib/flair/esporte/campo";
 import { bolaNoLance, FOLGA, quadroDoLance } from "@/lib/flair/esporte/timeline";
 import { comoJogada, jogadasDe, modalidadeDe, relogioEmTexto, resumoDe, situacaoDe, type Jogada } from "@/lib/flair/esporte/types";
 import ptBR from "@/lib/i18n/messages/pt-BR.json";
+import { desfechoDoPlacar, momentoDoLance } from "@/lib/flair/esporte/momentos";
 
 const lance = (over: Partial<Jogada>): Jogada => ({ n: 1, jogada: 1, tempo: 1, relogio: 150, tipo: "PASSE", time: "NOS", ok: true, jogador: 3, alvo: 4, de: [45, 20], para: [70, 34], placar: "0-0", ...over });
 const FUTEBOL = CAMPOS.FUTEBOL;
@@ -171,5 +172,34 @@ describe("textos de cada modalidade (auditoria 3: basquete e vôlei falavam de m
       const frase = pt[`flair3d.esporte.${m}.lance.${tipo}`] ?? pt[`flair3d.esporte.lance.${tipo}`];
       expect(frase, `${m} ${tipo}`).not.toMatch(/goleiro/i);
     }
+  });
+});
+
+describe("momentos-chave da partida (critério da dona: apito inicial e final, comemoração do gol)", () => {
+  const saida1 = lance({ n: 1, tipo: "SAIDA", tempo: 1 });
+  it("apito inicial, ponto de cada lado, intervalo na saída do 2º tempo e apito final", () => {
+    expect(momentoDoLance([saida1], false)).toBe("APITO_INICIAL");
+    expect(momentoDoLance([saida1, lance({ n: 2, tipo: "CHUTE_GOL", time: "NOS" })], false)).toBe("PONTO_NOS");
+    expect(momentoDoLance([saida1, lance({ n: 2, tipo: "RIVAL_GOL", time: "ELES" })], false)).toBe("PONTO_ELES");
+    expect(momentoDoLance([saida1, lance({ n: 2 }), lance({ n: 3, tipo: "SAIDA", tempo: 1 })], false)).toBeNull();
+    expect(momentoDoLance([saida1, lance({ n: 2 }), lance({ n: 3, tipo: "SAIDA", tempo: 2 })], false)).toBe("INTERVALO");
+    expect(momentoDoLance([saida1], true)).toBe("APITO_FINAL");
+    expect([desfechoDoPlacar("2-1"), desfechoDoPlacar("1-1"), desfechoDoPlacar("0-3")]).toEqual(["VITORIA", "EMPATE", "DERROTA"]);
+  });
+
+  it("no gol, os colegas correm até quem marcou e comemoram; o outro time baixa a cabeça", () => {
+    const gol = lance({ tipo: "CHUTE_GOL", time: "NOS", jogador: 5, de: [70, 28], para: [100, 30] });
+    const autor = (q: ReturnType<typeof quadroDoLance>) => q.figuras.find((f) => f.time === "NOS" && f.n === 5)!;
+    const colega = (q: ReturnType<typeof quadroDoLance>) => q.figuras.find((f) => f.time === "NOS" && f.n === 3)!;
+    const longe = (q: ReturnType<typeof quadroDoLance>) => Math.hypot(colega(q).x - autor(q).x, colega(q).y - autor(q).y);
+    const antes = quadroDoLance(FUTEBOL, null, gol, 0.7);
+    const correndo = quadroDoLance(FUTEBOL, null, gol, 0.84);
+    const depois = quadroDoLance(FUTEBOL, null, gol, 1);
+    expect(longe(depois)).toBeLessThan(longe(antes));
+    expect(colega(correndo).gesto).toBe("corre");
+    expect(colega(depois).gesto).toBe("comemora");
+    expect(autor(correndo).gesto).toBe("comemora");
+    expect(depois.figuras.filter((f) => f.time === "ELES").every((f) => f.gesto === "lamenta")).toBe(true);
+    expect(depois.figuras.find((f) => f.time === "NOS" && f.n === 1)!.gesto).toBe("comemora");
   });
 });

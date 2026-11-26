@@ -11,6 +11,7 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dAtributos;
+import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoNoMotor;
 import br.com.fashionai.application.flair3d.Flair3dCores;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
@@ -82,7 +83,9 @@ public class FashionDetectiveNucleo implements Flair3dNucleo {
         List<Evento> eventos = new ArrayList<>();
         for (int i = 1; i <= numero; i++) {
             Andamento.Etapa etapa = etapas.get(etapas.size() - numero + i - 1);
-            atual = new FashionDetectiveSalao(i, look(etapa.cartas(), contexto), bolsa);
+            List<Andamento.UsoDeRecurso> usos = contexto.andamento().usos();
+            atual = new FashionDetectiveSalao(i, look(etapa.cartas(), contexto), bolsa,
+                    Flair3dRecursoNoMotor.naEtapa(usos, "VIDA", i - 1), Flair3dRecursoNoMotor.naEtapa(usos, "FOCO", i - 1));
             bolsa.ganhar(atual.estalecas());
             soma += atual.pontos();
             acessos += atual.acesso ? 1 : 0;
@@ -135,7 +138,9 @@ public class FashionDetectiveNucleo implements Flair3dNucleo {
     @Override
     public Resultado previa(Entrega entrega, Contexto contexto) {
         int numero = Math.min(contexto.andamento().anteriores().size() + 1, SALOES);
-        FashionDetectiveSalao s = new FashionDetectiveSalao(numero, contexto.vestidas(entrega), new FashionDetectiveMercado());
+        List<Andamento.UsoDeRecurso> usos = contexto.andamento().usos();
+        FashionDetectiveSalao s = new FashionDetectiveSalao(numero, contexto.vestidas(entrega), new FashionDetectiveMercado(),
+                Flair3dRecursoNoMotor.naEtapa(usos, "VIDA", numero - 1), Flair3dRecursoNoMotor.naEtapa(usos, "FOCO", numero - 1));
         return Resultado.parcial(null, "PREVIA", List.of(), s.medidores().subList(1, s.medidores().size()));
     }
 

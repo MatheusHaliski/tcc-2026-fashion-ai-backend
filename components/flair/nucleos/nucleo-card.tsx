@@ -17,7 +17,7 @@ interface Props {
   card: FlairCollectionCard;
   /** "deck" = carta da fileira; "mini" = miniatura da régua de vagas */
   tamanho?: "deck" | "mini";
-  /** texto do selo do efeito (já traduzido); null = sem selo */
+  /** texto do selo do efeito (já traduzido); null = sem selo. Com mais de um efeito, um por linha ("\n") */
   selo?: string | null;
   /** selo cinza: a carta não pontua neste jogo */
   semEfeito?: boolean;
@@ -46,7 +46,7 @@ export function NucleoCard({ card, tamanho = "deck", selo = null, semEfeito = fa
         </span>
       )}
       {emUso && <span className="n3d-card-inuse">{emUso}</span>}
-      {selo && <span className={cn("n3d-card-fx", semEfeito && "is-none")}>{selo}</span>}
+      {selo && <span className={cn("n3d-card-fx", semEfeito && "is-none", selo.includes("\n") && "is-todos")}>{selo}</span>}
     </span>
   );
 }

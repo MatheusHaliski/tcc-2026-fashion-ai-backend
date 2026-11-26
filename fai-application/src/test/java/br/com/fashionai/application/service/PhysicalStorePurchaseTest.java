@@ -1,28 +1,22 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.catalog.CatalogService;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.domain.model.FaiPointsLedgerEntry;
-import br.com.fashionai.domain.model.PhysicalStoreListing;
-import br.com.fashionai.domain.model.PhysicalStoreOrder;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.CatalogProductRepository;
-import br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository;
-import br.com.fashionai.domain.repository.PhysicalStoreListingRepository;
-import br.com.fashionai.domain.repository.PhysicalStoreOrderRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.catalog.CatalogService;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.physicalstore.SellerIdentity;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.AccountStatus;
+import br.com.fashionai.domain.model.enums.ProfileType;
+import br.com.fashionai.domain.repository.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -75,7 +69,7 @@ class PhysicalStorePurchaseTest {
         when(orders.findById(any())).thenAnswer(inv -> created.stream().filter(o -> o.getId().equals(inv.getArgument(0))).findFirst());
         store = new PhysicalStoreService(listings, orders, mock(br.com.fashionai.domain.repository.PhysicalStoreVariantRepository.class),
                 mock(CatalogProductRepository.class), mock(BrandRepository.class), ledger, users,
-                mock(Guard.class), mock(CatalogService.class), mock(WardrobeCreatorService.class));
+                mock(Guard.class), mock(CatalogService.class), mock(SellerIdentity.class));
         this.listingId = listingId;
     }
 

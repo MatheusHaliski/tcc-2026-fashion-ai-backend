@@ -20,6 +20,8 @@ export interface CamerasDoJogo {
 
 /** O preparo de todo jogo: três quartos, corpo inteiro, na altura do peito. */
 const TRES_QUARTOS: Camera = { id: "TRES_QUARTOS", rig: "ORBITAL", dist: 4.2, altura: 1.35, angulo: 24 };
+/** Nos duelos o par fica lado a lado (o adversário à direita): o preparo vem da esquerda, para os dois caberem inteiros. */
+const TRES_QUARTOS_DO_PAR: Camera = { ...TRES_QUARTOS, angulo: -24 };
 const ORBITAL_360: Camera = { id: "ORBITAL_360", rig: "ORBITAL", dist: 4, altura: 1.5, velocidade: 14 };
 const CLOSE_ROUPA: Camera = { id: "CLOSE_ROUPA", rig: "CLOSE", dist: 2, altura: 1.25, angulo: 18, mira: 1.15 };
 const CLOSE_ROSTO: Camera = { id: "CLOSE_ROSTO", rig: "CLOSE", dist: 1.05, altura: 1.6, angulo: 12, mira: 1.58, fov: 30 };
@@ -34,35 +36,50 @@ const aerea = (altura = 7): Camera => ({ id: "AEREA", rig: "AEREA", dist: 0.6, a
  * (os cones de visão dos vigias, os esconderijos) e olhando para onde a pessoa anda.
  */
 const EXPLORACAO: Camera = { id: "EXPLORACAO", rig: "SEGUE", dist: 3.6, altura: 3.4, mira: 0.7, angulo: 12, fov: 48 };
+/**
+ * A luta de arcade: de lado, as duas de perfil no mesmo plano, lente longa (quase sem perspectiva) e parada; e a de
+ * terceira pessoa por trás do ombro da avatar, olhando para a oponente (auditoria dos jogos, pergunta 6).
+ */
+const ARCADE: Camera = { id: "ARCADE", rig: "LATERAL", dist: 6, altura: 1.15, angulo: -90, mira: 1.0, fov: 28 };
+const OMBRO: Camera = { id: "OMBRO", rig: "SEGUE", dist: 2.2, altura: 1.75, angulo: 18, mira: 1.3, fov: 50 };
 /** A câmera de RPG de cima: alta, em diagonal, parada. */
 const ISOMETRICA: Camera = { id: "ISOMETRICA", rig: "ORBITAL", dist: 5.2, altura: 5.4, angulo: 35, mira: 0.6, fov: 38 };
 /**
  * Do fosso dos fotógrafos, ou da plateia: de baixo para cima, de frente, presas ao lugar (rig orbital parado), para
  * recuarem na tela em pé e manterem o corpo inteiro no quadro.
  */
-const FOSSO: Camera = { id: "FOSSO", rig: "ORBITAL", dist: 3.6, altura: 0.55, angulo: -8, mira: 1.2 };
+const FOSSO: Camera = { id: "FOSSO", rig: "ORBITAL", dist: 4.4, altura: 0.55, angulo: -8, mira: 1.0 };
 const PLATEIA: Camera = { id: "PLATEIA", rig: "ORBITAL", dist: 5.2, altura: 1, angulo: 10, mira: 1.25 };
 /** O ângulo de herói: bem de baixo, com o teto ou o céu atrás, ainda com os pés no quadro. */
 const CONTRA_PLONGEE: Camera = { id: "CONTRA_PLONGEE", rig: "ORBITAL", dist: 3.6, altura: 0.4, angulo: 20, mira: 1.2, fov: 42 };
 
+/**
+ * A fase de uso dos jogos de zonas (o campo, o palco, a pista, o terraço): do alto e de frente, parada na direção, para
+ * o piso com as marcas aparecer inteiro atrás da personagem e "para cima" na tela ser sempre o fundo do lugar.
+ */
+const PERCURSO: Camera = { id: "PERCURSO", rig: "ORBITAL", dist: 6.2, altura: 3.2, angulo: 0, mira: 0.4, fov: 50 };
+
 const jogo = (acao: string, resultado: string, ...cameras: Camera[]): CamerasDoJogo => ({ cameras: [TRES_QUARTOS, ...cameras], momento: { PREPARO: "TRES_QUARTOS", ACAO: acao, RESULTADO: resultado } });
+
+const duelo = (acao: string, resultado: string, ...cameras: Camera[]): CamerasDoJogo => ({ ...jogo(acao, resultado), cameras: [TRES_QUARTOS_DO_PAR, ...cameras] });
 
 export const CAMERAS: Record<NucleoCodigo, CamerasDoJogo> = {
   PASSARELA: jogo("TRAVELLING", "GRUA", travelling(), FOSSO, grua(), ORBITAL_360, CLOSE_ROUPA),
-  DRESS_FIGHTER: jogo("LATERAL", "ORBITAL_360", lateral(5.6, 1.3, DUELO), ORBITAL_360, aerea(6.5), CLOSE_ROUPA),
+  DRESS_FIGHTER: duelo("ARCADE", "ORBITAL_360", ARCADE, OMBRO, lateral(5.6, 1.3, DUELO), ORBITAL_360, aerea(6.5), CLOSE_ROUPA),
   DRESS_THE_STAR: jogo("FOSSO", "ORBITAL_360", FOSSO, travelling(4.4, -30, 30), ORBITAL_360, grua(), CLOSE_ROUPA),
   PERSONAGEM_FILME: jogo("TRAVELLING", "GRUA", travelling(4.8, -45, 30, 1.2), grua(5.2, 1.2, 3.8, 25), lateral(4.6), CLOSE_ROUPA),
   ROAD_TO_GLORY: jogo("CLOSE_ROSTO", "ORBITAL_360", CLOSE_ROSTO, ORBITAL_360, lateral(3.2, 1.5), CLOSE_ROUPA),
   FASHION_DETECTIVE: jogo("EXPLORACAO", "CLOSE_ROUPA", EXPLORACAO, ISOMETRICA, aerea(8), CLOSE_ROUPA),
-  BOUTIQUE_3D: jogo("TRAVELLING", "ORBITAL_360", travelling(4.4, -50, 20, 1.4), lateral(4.4), ORBITAL_360, aerea(6), CLOSE_ROUPA),
-  CLUBE_CORACAO: jogo("ORBITAL_360", "GRUA", ORBITAL_360, grua(5.4, 1.6, 4), lateral(4.6), CLOSE_ROUPA),
-  FAVORITE_SINGER: jogo("GRUA", "PLATEIA", grua(5.4, 1.2, 4, 30), PLATEIA, ORBITAL_360, lateral(4.8, 1.4), CLOSE_ROUPA),
+  // loja e rua têm móveis atrás da avatar (provador, vitrines): o resultado fica no travelling da frente, não no giro
+  BOUTIQUE_3D: jogo("TRAVELLING", "TRAVELLING", travelling(4.4, -50, 20, 1.4), lateral(4.4), ORBITAL_360, aerea(6), CLOSE_ROUPA),
+  CLUBE_CORACAO: jogo("PERCURSO", "GRUA", PERCURSO, ORBITAL_360, grua(5.4, 1.6, 4), lateral(4.6), CLOSE_ROUPA),
+  FAVORITE_SINGER: jogo("PERCURSO", "PLATEIA", PERCURSO, grua(5.4, 1.2, 4, 30), PLATEIA, ORBITAL_360, lateral(4.8, 1.4), CLOSE_ROUPA),
   LABIRINTO: jogo("EXPLORACAO", "ORBITAL_360", EXPLORACAO, aerea(9), ISOMETRICA, ORBITAL_360, CLOSE_ROUPA),
-  PILOTO_FAVORITO: jogo("ORBITAL_360", "GRUA", ORBITAL_360, lateral(4.8, 0.9), grua(5.2, 1.3, 3.4), aerea(7), CLOSE_ROUPA),
-  AROUND_THE_WORLD: jogo("EXPLORACAO", "ORBITAL_360", EXPLORACAO, travelling(4.8, -40, 40, 1.5), aerea(8), ORBITAL_360, CLOSE_ROUPA),
-  SUPER_HEROI: jogo("CONTRA_PLONGEE", "GRUA", CONTRA_PLONGEE, grua(5, 1, 4.2, -30), ORBITAL_360, lateral(4.6), CLOSE_ROUPA),
+  PILOTO_FAVORITO: jogo("PERCURSO", "GRUA", PERCURSO, ORBITAL_360, lateral(4.8, 0.9), grua(5.2, 1.3, 3.4), aerea(7), CLOSE_ROUPA),
+  AROUND_THE_WORLD: jogo("EXPLORACAO", "TRAVELLING", EXPLORACAO, travelling(4.8, -40, 40, 1.5), aerea(8), ORBITAL_360, CLOSE_ROUPA),
+  SUPER_HEROI: jogo("PERCURSO", "GRUA", PERCURSO, CONTRA_PLONGEE, grua(5, 1, 4.2, -30), ORBITAL_360, lateral(4.6), CLOSE_ROUPA),
   FASHION_SPORTS: jogo("ORBITAL_360", "GRUA", ORBITAL_360, grua(), lateral(4.6), CLOSE_ROUPA),
-  BATALHA_LOOKS: jogo("LATERAL", "ORBITAL_360", lateral(5.6, 1.3, DUELO), PLATEIA, ORBITAL_360, grua(5.2, 1.4, 3.6, 20), CLOSE_ROUPA),
+  BATALHA_LOOKS: duelo("LATERAL", "ORBITAL_360", lateral(5.6, 1.3, DUELO), PLATEIA, ORBITAL_360, grua(5.2, 1.4, 3.6, 20), CLOSE_ROUPA),
 };
 
 export function camerasDe(codigo: NucleoCodigo): CamerasDoJogo {

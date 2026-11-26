@@ -2,21 +2,25 @@
 /**
  * Momento 1, o deck (antes da partida): as cartas FLAIR da pessoa, cada uma com o selo do efeito dela neste núcleo
  * (POST .../efeitos), o contador do deck, as obrigatórias com o que falta e "Entrar na partida", ativo só com o deck
- * válido. Toque longo ou a tecla I ampliam a carta. Um 422 do servidor ao abrir mostra a mensagem e o que falta.
+ * válido. Toque longo ou a tecla I ampliam a carta. Um 422 do servidor ao abrir mostra a mensagem e o que falta. A
+ * carta mostra todos os efeitos dela; a que o jogo não tem onde vestir (a peça inteira num jogo sem essa vaga) fica
+ * apagada, não entra no deck e o toque diz por quê.
  */
 import { useState } from "react";
 import { cn } from "@/components/ui";
 import type { ApiError } from "@/lib/api/client";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
+import { NucleoAvisoDaRodada } from "@/components/flair/nucleos/nucleo-aviso-da-rodada";
 import { NucleoCard } from "@/components/flair/nucleos/nucleo-card";
 import { NucleoCardZoom } from "@/components/flair/nucleos/nucleo-card-zoom";
 import { useCardZoom } from "@/components/flair/nucleos/use-card-zoom";
 import { useNucleoEffects } from "@/components/flair/nucleos/use-nucleo-effects";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { useNucleoViewport } from "@/components/flair/nucleos/use-nucleo-viewport";
-import { seloDaCarta } from "@/lib/flair/nucleos/card-fx";
-import { alternarCarta, avisoDoDeck, conferirDeck, posicoesDaRegra } from "@/lib/flair/nucleos/deck";
+import { selosDaCarta } from "@/lib/flair/nucleos/card-fx";
+import { alternarCarta, avisoDoDeck, conferirDeck, entraNoDeck, posicoesDaRegra } from "@/lib/flair/nucleos/deck";
 import { estiloDoQuadro } from "@/lib/flair/nucleos/quadro";
+import { semPontosNoDeck, viabilidade } from "@/lib/flair/nucleos/viabilidade";
 import type { DeckRegras, NucleoCodigo } from "@/lib/flair/nucleos/types";
 
 interface Props {
@@ -28,6 +32,8 @@ interface Props {
   onEntrar: (deck: string[]) => void;
   /** a rodada escolhida: os selos valem para ela */
   rodada?: string | null;
+  /** os códigos das regras da rodada: o aviso diz quais nenhuma carta cumpre */
+  regrasDaRodada?: string[];
 }
 
 type Texto = ReturnType<typeof useNucleoText>;
@@ -41,6 +47,9 @@ function faltasDoErro(erro: ApiError, tx: Texto): string[] {
     const pos = posicoesDaRegra(f.posicao);
     out.push(tx.t("flair3d.ui.deck.lacks", { n: f.quantidade ?? 1, pos: pos.length ? pos.map(tx.posicao).join(" / ") : tx.t("flair3d.ui.deck.any") }));
   }
+  const semVaga = Array.isArray(d.semVaga) ? (d.semVaga as { posicao?: string }[]) : [];
+  const fora = [...new Set(semVaga.map((x) => tx.posicao(x.posicao ?? "")))];
+  if (fora.length) out.push(tx.t("flair3d.ui.deck.noSlotServer", { pos: fora.join(" / ") }));
   if (d.repetidas === true) out.push(tx.t("flair3d.ui.deck.repeated"));
   if (typeof d.tamanho === "number" && typeof d.tamanhoMax === "number" && d.tamanho > d.tamanhoMax) {
     out.push(tx.t("flair3d.ui.deck.counter", { n: d.tamanho, max: d.tamanhoMax }));
@@ -48,41 +57,51 @@ function faltasDoErro(erro: ApiError, tx: Texto): string[] {
   return out;
 }
 
-export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar, rodada = null }: Props) {
+export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar, rodada = null, regrasDaRodada = [] }: Props) {
   const tx = useNucleoText();
   const layout = useNucleoViewport();
   const [deck, setDeck] = useState<string[]>([]);
   const [foco, setFoco] = useState<FlairCollectionCard | null>(null);
+  /** a última carta recusada por não ter vaga neste jogo: a mensagem fica até a pessoa escolher outra */
+  const [recusada, setRecusada] = useState<FlairCollectionCard | null>(null);
   const efeitos = useNucleoEffects(codigo, cartas, true, { rodada });
   const zoom = useCardZoom(foco);
   const escolhidas = cartas.filter((c) => deck.includes(c.id));
   const status = conferirDeck(regras, escolhidas);
+  // a rodada cumprível? para a coleção inteira e, quando a coleção pontua, para as cartas escolhidas
+  const naColecao = viabilidade(regrasDaRodada, cartas.map((c) => efeitos.itens(c.id)));
+  const noDeck = escolhidas.length && !naColecao?.semPontos ? semPontosNoDeck(viabilidade(regrasDaRodada, escolhidas.map((c) => efeitos.itens(c.id)))) : null;
   const posicoes = (p: string[]) => (p.length ? p.map(tx.posicao).join(" / ") : tx.t("flair3d.ui.deck.any"));
 
   const alternar = (c: FlairCollectionCard) => {
     setFoco(c);
     if (zoom.consumirClique()) return;
-    setDeck((d) => alternarCarta(d, c.id, regras.tamanhoMax));
+    const entra = entraNoDeck(regras, c);
+    setRecusada(entra ? null : c);
+    if (entra) setDeck((d) => alternarCarta(d, c.id, regras.tamanhoMax));
   };
 
   const carta = (c: FlairCollectionCard) => {
     const dentro = deck.includes(c.id);
-    const achado = seloDaCarta(efeitos.porCarta.get(c.id));
-    const selo = achado ? tx.efeito(achado) : tx.t("flair3d.ui.deck.noEffect");
-    const rotulo = `${tx.t("flair3d.ui.card.aria", { nome: c.name, pos: tx.posicao(c.position) })}, ${selo}`;
+    const entra = entraNoDeck(regras, c);
+    const achados = entra ? selosDaCarta(efeitos.porCarta.get(c.id)) : [];
+    const semSelo = tx.t(entra ? "flair3d.ui.deck.noEffect" : "flair3d.ui.deck.noSlot");
+    const selo = achados.length ? achados.map(tx.efeito).join("\n") : semSelo;
+    const rotulo = `${tx.t("flair3d.ui.card.aria", { nome: c.name, pos: tx.posicao(c.position) })}, ${selo.replace(/\n/g, ", ")}`;
     return (
       <button
         key={c.id}
         type="button"
         aria-pressed={dentro}
+        aria-disabled={!entra || undefined}
         aria-label={rotulo}
         title={rotulo}
-        className={cn("n3d-deck-card", dentro && "is-on")}
+        className={cn("n3d-deck-card", dentro && "is-on", !entra && "is-sem-vaga")}
         onFocus={() => setFoco(c)}
         onClick={() => alternar(c)}
         {...zoom.toque(c)}
       >
-        <NucleoCard card={c} selo={selo} semEfeito={!achado} emUso={dentro ? tx.t("flair3d.ui.deck.inDeck") : null} />
+        <NucleoCard card={c} selo={selo} semEfeito={achados.length === 0} emUso={dentro ? tx.t("flair3d.ui.deck.inDeck") : null} />
       </button>
     );
   };
@@ -103,6 +122,13 @@ export function NucleoDeck({ codigo, regras, cartas, entrando, erro, onEntrar, r
       {avisoDoDeck(codigo, rodada, escolhidas.map((c) => efeitos.porCarta.get(c.id))) && (
         <p className="n3d-deck-warning" role="status" data-testid="nucleo-deck-warning">{tx.t("flair3d.ui.deck.noTrio")}</p>
       )}
+      {recusada && (
+        <p className="n3d-deck-warning" role="alert" data-testid="nucleo-deck-sem-vaga">
+          {tx.t("flair3d.ui.deck.noSlotWhy", { nome: recusada.name, pos: tx.posicao(recusada.position).toLowerCase(), vagas: posicoes(regras.posicoes ?? []).toLowerCase() })}
+        </p>
+      )}
+      <NucleoAvisoDaRodada codigo={codigo} escopo="colecao" viabilidade={naColecao} />
+      <NucleoAvisoDaRodada codigo={codigo} escopo="deck" viabilidade={noDeck} />
       {cartas.length === 0 ? (
         <p className="n3d-empty">{tx.t("flair3d.ui.deck.noCards")}</p>
       ) : (

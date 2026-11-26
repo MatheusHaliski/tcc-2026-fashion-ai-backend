@@ -1,6 +1,6 @@
 /**
  * Central de FAI Points (/points): a mesma tela de seleção da Central FLAIR, com os quatro lugares dos pontos
- * agrupados pela função real: ver o saldo e os níveis, saber como ganhar, gastar na loja do quarto e consultar o extrato.
+ * agrupados pela função real: ver o saldo e os níveis, saber como ganhar, gastar na loja e consultar o extrato.
  * Escolher um item só troca o painel; a ação principal leva à rota.
  */
 import type { HubAvailability, HubDemo } from "@/lib/flair/hub";
@@ -10,12 +10,13 @@ export type PointsModeId = "balance" | "earn" | "store" | "statement";
 
 export interface PointsMode { id: PointsModeId; group: PointsGroup; href: string; guide: string; demo: HubDemo }
 
-const demo = (id: PointsModeId, seconds: number): HubDemo => ({ mp4: `/points/demos/${id}.mp4`, webm: `/points/demos/${id}.webm`, poster: `/points/demos/${id}.jpg`, seconds, recorded: true });
+const demo = (id: PointsModeId, seconds: number, recorded = true): HubDemo => ({ mp4: `/points/demos/${id}.mp4`, webm: `/points/demos/${id}.webm`, poster: `/points/demos/${id}.jpg`, seconds, recorded });
 
 export const POINTS_MODES: PointsMode[] = [
   { id: "balance", group: "balance", href: "/points/saldo", guide: "points.balance", demo: demo("balance", 12) },
   { id: "earn", group: "earn", href: "/points/ganhar", guide: "points.earn", demo: demo("earn", 13) },
-  { id: "store", group: "spend", href: "/points/loja", guide: "shop.room", demo: demo("store", 11) },
+  // a gravação da loja mostrava a loja do quarto (saiu em 15/11/2026): sem vídeo até gravar a loja física
+  { id: "store", group: "spend", href: "/points/loja", guide: "points.fai", demo: demo("store", 11, false) },
   { id: "statement", group: "history", href: "/notifications?cat=POINTS", guide: "points.statement", demo: demo("statement", 12) },
 ];
 export const POINTS_GROUPS: PointsGroup[] = ["balance", "earn", "spend", "history"];
@@ -27,7 +28,7 @@ export const POINTS_SECTION_MODE: Record<string, PointsModeId> = { saldo: "balan
 export interface PointsAccount {
   balance: number; lifetime: number; level: string; unlocks?: string; note?: string;
   nextLevel?: { level: string; threshold: number; missing: number; unlocks?: string } | null;
-  levels?: { level: string; threshold: number; reached: boolean; aesthetic?: string; unlocks?: string }[];
+  levels?: { level: string; threshold: number; reached: boolean; unlocks?: string }[];
   rules?: { action: string; points: number; description?: string; dailyCap?: number | string | null }[];
 }
 
@@ -52,7 +53,7 @@ export function levelNameKey(level: string): string {
   return known ? `levelProgress.name.${known}` : level;
 }
 
-export interface PointsSummary { account?: PointsAccount | null; shop?: { items: number; affordable: number } | null; statement?: number | null }
+export interface PointsSummary { account?: PointsAccount | null; statement?: number | null }
 
 export function pointsAvailability(id: PointsModeId, s: PointsSummary): HubAvailability {
   const a = s.account;
@@ -62,8 +63,7 @@ export function pointsAvailability(id: PointsModeId, s: PointsSummary): HubAvail
     case "earn":
       return { available: true, status: a?.rules ? { key: "points.hub.status.earn", vars: { n: a.rules.length } } : null, action: "open" };
     case "store":
-      if (s.shop && s.shop.items === 0) return { available: false, status: { key: "points.hub.status.store_none" }, action: "open" };
-      return { available: true, status: s.shop ? { key: s.shop.affordable > 0 ? "points.hub.status.store_affordable" : "points.hub.status.store", vars: { n: s.shop.affordable > 0 ? s.shop.affordable : s.shop.items } } : null, action: "open" };
+      return { available: true, status: null, action: "open" };
     case "statement":
       return { available: true, status: s.statement != null ? { key: "points.hub.status.statement", vars: { n: s.statement } } : null, action: "open" };
   }

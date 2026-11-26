@@ -1,38 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.Seal;
-import br.com.fashionai.domain.model.SealBond;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.ApprovalStatus;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.SealStatus;
-import br.com.fashionai.domain.model.enums.SealTier;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.CelebrityProfileRepository;
-import br.com.fashionai.domain.repository.FollowRepository;
-import br.com.fashionai.domain.repository.PromotionRedemptionRepository;
-import br.com.fashionai.domain.repository.PromotionRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.SealBondRepository;
-import br.com.fashionai.domain.repository.SealRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.springframework.context.ApplicationEventPublisher;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +10,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.ApplicationEventPublisher;
+
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.ai.AiOutcome;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.seal.SealPolicies;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;

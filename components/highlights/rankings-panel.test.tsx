@@ -2,7 +2,8 @@
 /** Reauditoria (Destaques): a janela "Rankings" mostrava o JSON da API; agora mostra a frase, o botão e os nomes. */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, renderApp, screen } from "@/test-utils/render";
-import { RankingsPanel, rankingName } from "./rankings-panel";
+import { RankingsPanel } from "./rankings-panel";
+import { rankingName } from "./ranking-name";
 
 afterEach(cleanup);
 

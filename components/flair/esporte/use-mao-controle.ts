@@ -2,10 +2,11 @@
 /**
  * A mão de cartas do Fashion Sports no teclado e no controle, enquanto a janela da jogada está aberta. Teclado: setas
  * escolhem a carta, Enter ou Espaço jogam, Backspace segue sem carta. Controle (Gamepad API, layout padrão, os mesmos
- * comandos de lib/flair/nucleos/controls.ts): direcional para os lados escolhe, A ou Start jogam, B segue sem carta. O
+ * comandos de lib/flair/nucleos/controls.ts): direcional para os lados escolhe, ✕ (A) joga, ○ (B) segue sem carta. O
  * controle é lido por requestAnimationFrame só enquanto a janela está aberta e há um controle conectado.
  */
 import { useEffect, useRef } from "react";
+import { eixoDeAndar } from "@/lib/flair/entrada/eixo-de-andar";
 import { comandoDaTecla, lerGamepad, PAD_INICIAL, type Comando, type PadEstado } from "@/lib/flair/nucleos/controls";
 
 export interface MaoNoControle {
@@ -52,7 +53,8 @@ export function useMaoNoControle(opcoes: MaoNoControle): void {
       if (!pads.length) return;
       const proximos = new Map<number, PadEstado>();
       for (const pad of pads) {
-        const { comandos, estado } = lerGamepad(pad, estados.get(pad.index) ?? PAD_INICIAL, agora);
+        // com a capitã andando, o analógico é dela; o direcional continua escolhendo a carta
+        const { comandos, estado } = lerGamepad(pad, estados.get(pad.index) ?? PAD_INICIAL, agora, eixoDeAndar().ativo);
         proximos.set(pad.index, estado);
         comandos.forEach(usar);
       }

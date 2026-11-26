@@ -5,6 +5,7 @@ import { PIECE, SCHEME } from "@/test-utils/fixtures";
 import { PieceCardPanels } from "./piece-card-panels";
 import { PieceDetailFacts } from "./piece-detail-facts";
 import { PieceCard } from "./piece-card";
+import { ExpandedPieceCard } from "./expanded-card/expanded-piece-card";
 import { SchemeCard } from "./scheme-card";
 
 afterEach(cleanup);
@@ -42,7 +43,9 @@ it("shows both reference names and preserves distinct additional care text", () 
   const careInstructions = "Secar à sombra.\nNão alvejar nem torcer. " + "Conservar separadamente. ".repeat(35);
   const { container } = renderApp(<PieceDetailFacts piece={{ ...PIECE, estadoConservacao, tipoLavagem, careInstructions }} />);
   expect(screen.getByText(estadoConservacao.nome)).toBeTruthy();
-  expect(screen.getByText(tipoLavagem.nome)).toBeTruthy();
+  // o tipo de lavagem do catálogo tem linha própria, com o rótulo dele
+  expect(screen.getByText(tipoLavagem.nome).parentElement!.querySelector("dt")?.textContent).toBe("Tipo de lavagem");
+  expect(screen.queryByText("Lavagem")).toBeNull();
   const careRow = screen.getByText("Cuidados adicionais").parentElement!;
   expect(careRow.querySelector("dd")?.textContent).toBe(careInstructions.trim());
   expect(careRow.querySelector("dd")?.classList.contains("whitespace-pre-wrap")).toBe(true);
@@ -66,11 +69,22 @@ it("does not duplicate identical washing and care text", () => {
   expect(screen.queryByText("Cuidados adicionais")).toBeNull();
 });
 
-it.each([false, true])("retains the real conservation object in a piece card, expanded=%s", expanded => {
+it("retains the real conservation object in the feed piece card", () => {
   mockApi({});
-  const { container } = renderApp(<PieceCard piece={{ ...PIECE, estadoConservacao, tipoLavagem }} expanded={expanded} flip={false} />);
+  // estado de conservação é opcional no card do feed: fica de fora por padrão e entra quando ligado no Background Studio
+  const piece = { ...PIECE, estadoConservacao, tipoLavagem };
+  const { unmount } = renderApp(<PieceCard piece={piece} flip={false} />);
+  expect(within(screen.getByRole("tabpanel")).queryByText(estadoConservacao.nome)).toBeNull();
+  unmount();
+  renderApp(<PieceCard piece={{ ...piece, background: { infoGrid: { fields: ["brand", "condition"] } } }} flip={false} />);
   expect(within(screen.getByRole("tabpanel")).getByText(estadoConservacao.nome)).toBeTruthy();
-  if (expanded) expect(container.querySelector(".c-facts")?.textContent).toContain(tipoLavagem.nome);
+});
+
+it("the expanded piece card shows the conservation in Info and the washing type in Detalhes", () => {
+  mockApi({});
+  const { container } = renderApp(<ExpandedPieceCard piece={{ ...PIECE, estadoConservacao, tipoLavagem }} preview />);
+  expect(within(screen.getByRole("tabpanel")).getByText(estadoConservacao.nome)).toBeTruthy();
+  expect(container.querySelector(".pd-section .c-facts")?.textContent).toContain(tipoLavagem.nome);
 });
 
 it.each([false, true])("renders a real TipoLook object on the outfit card, expanded=%s", expanded => {

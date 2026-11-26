@@ -3,14 +3,14 @@
  * Sala 3D de um jogo: desenha a descrição pura (lib/flair/nucleos/scene) — a casca (piso, paredes, teto ou céu), os
  * móveis fixos fundidos por material e os móveis animados (porta, claquete, bola, capa), cada um no próprio grupo.
  */
-import { useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { glbDoMovel } from "@/lib/flair/nucleos/scene/assets";
+import { glbDoMovel, type AssetGlb } from "@/lib/flair/nucleos/scene/assets";
 import { partesNoLugar } from "@/lib/flair/nucleos/scene/parts";
 import { cascaDaSala } from "@/lib/flair/nucleos/scene/shell";
 import type { Movel, Parte, Sala } from "@/lib/flair/nucleos/scene/types";
-import { MovelGlb } from "@/components/flair/nucleos/scene/glb-prop";
+import { MovelGlb, ObjetoGlb } from "@/components/flair/nucleos/scene/glb-prop";
 import { fundirPorMaterial } from "@/components/flair/nucleos/scene/part-geometry";
 import { LuzesDaSala } from "@/components/flair/nucleos/scene/room-lights";
 import { Placar } from "@/components/flair/nucleos/scene/scoreboard";
@@ -37,8 +37,11 @@ function Malhas({ fundidas, sala, materiais, sombra }: { fundidas: [string, THRE
   );
 }
 
-/** Móvel animado: o grupo de fora fica no lugar do móvel; o de dentro recebe o movimento da sequência. */
-function MovelAnimado({ movel, sala, materiais }: { movel: Movel; sala: Sala; materiais: MateriaisDaSala }) {
+/**
+ * Móvel animado: o grupo de fora fica no lugar do móvel; o de dentro recebe o movimento da sequência. Com objeto GLB
+ * no manifesto (`glb`), é o objeto que se move; as partes procedurais ficam de reserva enquanto ele carrega.
+ */
+function MovelAnimado({ movel, sala, materiais, glb }: { movel: Movel; sala: Sala; materiais: MateriaisDaSala; glb?: AssetGlb | null }) {
   const cena = useCena();
   const fora = useRef<THREE.Group>(null);
   const dentro = useRef<THREE.Group>(null);
@@ -54,7 +57,11 @@ function MovelAnimado({ movel, sala, materiais }: { movel: Movel; sala: Sala; ma
   return (
     <group ref={fora} name={`movel-${movel.id}`} position={movel.pos} rotation={[0, movel.giro * RAD, 0]}>
       <group ref={dentro}>
-        <Malhas fundidas={fundidas} sala={sala} materiais={materiais} sombra />
+        {glb ? (
+          <Suspense fallback={<Malhas fundidas={fundidas} sala={sala} materiais={materiais} sombra />}>
+            <ObjetoGlb movel={movel} slug={glb.slug} materiais={materiais} leve={!!glb.leve} />
+          </Suspense>
+        ) : <Malhas fundidas={fundidas} sala={sala} materiais={materiais} sombra />}
       </group>
     </group>
   );
@@ -66,9 +73,13 @@ function MovelFixo({ movel, sala, materiais }: { movel: Movel; sala: Sala; mater
   return <Malhas fundidas={fundidas} sala={sala} materiais={materiais} sombra />;
 }
 
-export function Sala3D({ sala, placar }: { sala: Sala; placar: string | null }) {
+const SEM_OBJETOS: AssetGlb[] = [];
+
+/** `semObjetos`: só os móveis procedurais (o laboratório usa para comparar com e sem os objetos GLB). */
+export function Sala3D({ sala, placar, semObjetos = false }: { sala: Sala; placar: string | null; semObjetos?: boolean }) {
   const materiais = useRoomMaterials(sala);
-  const manifesto = useGlbManifest();
+  const publicado = useGlbManifest();
+  const manifesto = semObjetos ? SEM_OBJETOS : publicado;
   // móveis com objeto GLB disponível saem da malha fundida: cada um carrega o arquivo e tem a própria reserva
   const comGlb = useMemo(() => sala.moveis.filter((m) => !m.id && glbDoMovel(m, manifesto, sala.codigo)), [sala, manifesto]);
   const casca = useFundidas(() => cascaDaSala(sala), sala, [sala]);
@@ -83,9 +94,10 @@ export function Sala3D({ sala, placar }: { sala: Sala; placar: string | null }) 
         <Malhas fundidas={fixos} sala={sala} materiais={materiais} sombra />
       </group>
       {comGlb.map((m, i) => (
-        <MovelGlb key={`${m.tipo}-${i}`} movel={m} slug={glbDoMovel(m, manifesto, sala.codigo)?.slug ?? ""} reserva={<MovelFixo movel={m} sala={sala} materiais={materiais} />} />
+        <MovelGlb key={`${m.tipo}-${i}`} movel={m} slug={glbDoMovel(m, manifesto, sala.codigo)?.slug ?? ""} materiais={materiais}
+          leve={!!glbDoMovel(m, manifesto, sala.codigo)?.leve} reserva={<MovelFixo movel={m} sala={sala} materiais={materiais} />} />
       ))}
-      {animados.map((m) => <MovelAnimado key={m.id} movel={m} sala={sala} materiais={materiais} />)}
+      {animados.map((m) => <MovelAnimado key={m.id} movel={m} sala={sala} materiais={materiais} glb={glbDoMovel(m, manifesto, sala.codigo)} />)}
       {sala.placar && <Placar em={sala.placar} texto={placar} />}
       <LuzesDaSala sala={sala} />
     </group>

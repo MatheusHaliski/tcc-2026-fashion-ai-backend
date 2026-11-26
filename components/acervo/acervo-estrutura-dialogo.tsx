@@ -1,7 +1,8 @@
 "use client";
 /**
- * ACERVO — janelas da estrutura: criar ambiente, móvel ou compartimento, renomear e apagar. Apagar avisa que as peças
- * não somem: ficam sem lugar.
+ * ACERVO — janelas da estrutura: criar ambiente, móvel (armário de "Meu espaço" ou módulo do Dream Space) ou
+ * compartimento, renomear e apagar. Apagar avisa que as peças não somem: ficam sem lugar. O módulo pedido sem ambiente
+ * (pelo Dream Space do diretório) pergunta em qual ambiente ele entra.
  */
 import { useEffect, useState } from "react";
 import { Button, Dialog, Field, Input, Select } from "@/components/ui";
@@ -14,10 +15,13 @@ import { useAcervo } from "./acervo-contexto";
 export type AlvoEstrutura = { classe: "AMBIENTE" | "MOVEL" | "COMPARTIMENTO"; id: string; nome: string };
 export type PedidoEstrutura =
   | { acao: "NOVO_AMBIENTE" }
-  | { acao: "NOVO_MOVEL"; ambienteId: string; modo: AcervoModo }
+  | { acao: "NOVO_MOVEL"; ambienteId: string | null; modo: AcervoModo }
   | { acao: "NOVO_COMPARTIMENTO"; movelId: string }
   | { acao: "RENOMEAR"; alvo: AlvoEstrutura }
   | { acao: "APAGAR"; alvo: AlvoEstrutura };
+
+/** Limite do nome na API (AcervoRegras): acima disso o servidor recusa, não corta. */
+const NOME_MAX = 80;
 
 const TITULO: Record<PedidoEstrutura["acao"], string> = {
   NOVO_AMBIENTE: "acervo.estrutura.novoAmbiente",
@@ -32,26 +36,40 @@ export function EstruturaDialogo({ pedido, onClose }: { pedido: PedidoEstrutura 
   const { dados } = useAcervo();
   const [nome, setNome] = useState("");
   const [tipo, setTipo] = useState<AcervoTipo>("GAVETA");
+  const [ambienteId, setAmbienteId] = useState("");
+  const ambientes = dados.arvore?.ambientes ?? [];
 
   useEffect(() => {
-    setNome(pedido?.acao === "RENOMEAR" ? pedido.alvo.nome : "");
+    setNome(pedido?.acao === "RENOMEAR" ? pedido.alvo.nome : pedido ? nomeSugerido(pedido) : "");
     setTipo("GAVETA");
-  }, [pedido]);
+    setAmbienteId(pedido?.acao === "NOVO_MOVEL" ? pedido.ambienteId ?? ambientes[0]?.id ?? "" : "");
+    // o nome sugerido e o ambiente inicial valem para o pedido que acabou de abrir
+  }, [pedido]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function nomeSugerido(p: PedidoEstrutura): string {
+    if (p.acao !== "NOVO_MOVEL" || p.modo !== "DREAM_SPACE") return "";
+    const modulos = ambientes.flatMap((a) => a.moveis).filter((m) => m.modo === "DREAM_SPACE").length;
+    return t("acervo.dream.nomeModulo", { n: modulos + 1 });
+  }
 
   if (!pedido) return null;
   const apagar = pedido.acao === "APAGAR";
-  const precisaNome = !apagar && pedido.acao !== "NOVO_COMPARTIMENTO";
-  const valido = !precisaNome || nome.trim().length > 0;
+  // compartimento pode ficar sem nome: ao criar ou renomear, o servidor devolve o nome padrão do tipo ("Gaveta 2")
+  const nomeOpcional = pedido.acao === "NOVO_COMPARTIMENTO" || (pedido.acao === "RENOMEAR" && pedido.alvo.classe === "COMPARTIMENTO");
+  const precisaNome = !apagar && !nomeOpcional;
+  const escolheAmbiente = pedido.acao === "NOVO_MOVEL" && pedido.ambienteId === null;
+  const valido = (!precisaNome || nome.trim().length > 0) && (!escolheAmbiente || ambienteId !== "");
 
   async function enviar() {
     if (!pedido || !valido) return;
     const limpo = nome.trim();
-    const ok = await dados.executar(() => acao(pedido, limpo, tipo), t(apagar ? "acervo.estrutura.apagado" : "acervo.estrutura.salvo"));
+    const pedidoCompleto = pedido.acao === "NOVO_MOVEL" ? { ...pedido, ambienteId } : pedido;
+    const ok = await dados.executar(() => acao(pedidoCompleto, limpo, tipo), t(apagar ? "acervo.estrutura.apagado" : "acervo.estrutura.salvo"));
     if (ok) onClose();
   }
 
   return (
-    <Dialog open onClose={onClose} title={t(TITULO[pedido.acao])} role={apagar ? "alertdialog" : "dialog"}
+    <Dialog open onClose={onClose} title={t(pedido.acao === "NOVO_MOVEL" && pedido.modo === "DREAM_SPACE" ? "acervo.estrutura.novoModulo" : TITULO[pedido.acao])} role={apagar ? "alertdialog" : "dialog"}
       footer={<>
         <Button variant="ghost" onClick={onClose}>{t("common.cancel")}</Button>
         <Button variant="primary" disabled={!valido} loading={dados.ocupado} onClick={() => { void enviar(); }}>
@@ -59,6 +77,13 @@ export function EstruturaDialogo({ pedido, onClose }: { pedido: PedidoEstrutura 
         </Button>
       </>}>
       {apagar && <p className="type-body">{t("acervo.estrutura.apagarAviso", { nome: pedido.alvo.nome })}</p>}
+      {escolheAmbiente && (
+        <Field label={t("acervo.estrutura.ambiente")} id="acv-ambiente">
+          <Select id="acv-ambiente" value={ambienteId} onChange={(e) => setAmbienteId(e.target.value)}>
+            {ambientes.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
+          </Select>
+        </Field>
+      )}
       {pedido.acao === "NOVO_COMPARTIMENTO" && (
         <Field label={t("acervo.estrutura.tipo")} id="acv-tipo">
           <Select id="acv-tipo" value={tipo} onChange={(e) => setTipo(e.target.value as AcervoTipo)}>
@@ -68,9 +93,10 @@ export function EstruturaDialogo({ pedido, onClose }: { pedido: PedidoEstrutura 
       )}
       {!apagar && (
         <Field label={t("acervo.estrutura.nome")} id="acv-nome" required={precisaNome}
-          hint={pedido.acao === "NOVO_COMPARTIMENTO" ? t("acervo.estrutura.nomeOpcional") : undefined}>
-          <Input id="acv-nome" value={nome} maxLength={80} autoFocus onChange={(e) => setNome(e.target.value)}
+          hint={pedido.acao === "NOVO_COMPARTIMENTO" ? t("acervo.estrutura.nomeOpcional") : nomeOpcional ? t("acervo.estrutura.nomeVazioPadrao") : undefined}>
+          <Input id="acv-nome" value={nome} maxLength={NOME_MAX} autoFocus aria-describedby="acv-nome-limite" onChange={(e) => setNome(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") void enviar(); }} />
+          <p id="acv-nome-limite" className="help tabular">{t("acervo.estrutura.nomeLimite", { n: nome.length, max: NOME_MAX })}</p>
         </Field>
       )}
     </Dialog>
@@ -82,7 +108,7 @@ function acao(pedido: PedidoEstrutura, nome: string, tipo: AcervoTipo): Promise<
     case "NOVO_AMBIENTE":
       return acervoApi.criarAmbiente(nome);
     case "NOVO_MOVEL":
-      return acervoApi.criarMovel(pedido.ambienteId, movelPadrao(pedido.modo, nome));
+      return acervoApi.criarMovel(pedido.ambienteId ?? "", movelPadrao(pedido.modo, nome));
     case "NOVO_COMPARTIMENTO":
       return acervoApi.criarCompartimento(pedido.movelId, tipo, nome || undefined);
     case "RENOMEAR":

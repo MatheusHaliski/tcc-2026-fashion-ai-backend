@@ -205,5 +205,5 @@ public class AtelierProjectService {
     private String encode(Object value){try{return json.writeValueAsString(value);}catch(Exception e){throw ApiException.badRequest("ATELIER_SPEC_INVALID","A especificação não pôde ser processada.");}}
     private Specification decode(String value){try{return json.readValue(value,Specification.class);}catch(Exception e){throw new IllegalStateException("Stored Atelier specification is invalid",e);}}
     private static String hash(String value){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
-    private List<String> missing(Specification s){var out=new ArrayList<String>();if(s.family()==null||s.family().isBlank())out.add("family");if(s.modeling()==null||s.modeling().isBlank())out.add("modeling");if(s.fabric()==null||s.fabric().isBlank())out.add("fabric");if(s.measurements()==null||s.measurements().isEmpty()||s.measurements().stream().anyMatch(m->m==null||m.point()==null||m.point().isBlank()||m.protocol()==null||m.protocol().isBlank()||m.centimeters()==null||m.centimeters().signum()<=0))out.add("measurements");return List.copyOf(out);}
+    private List<String> missing(Specification s){return TechPackCompleteness.missing(s);}
 }

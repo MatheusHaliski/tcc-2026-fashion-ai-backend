@@ -130,9 +130,24 @@ const F_QUEDA = clip("F_QUEDA", 3.6, 1.6, [
   segura("bracoD", "rz", -50, 3.6, 0.6, 0.9),
 ]);
 
+/** A avatar sente o golpe: um passo para trás, tronco e braços abertos, e volta à guarda (estilizado, sem ferida). */
+const RECUO = clip("RECUO", 1.1, 0.4, [
+  segura("raiz", "pz", -0.25, 1.1, 0.2, 0.5),
+  segura("Spine", "rx", -12, 1.1, 0.2, 0.5),
+  segura("LeftArm", "rz", 35, 1.1, 0.2, 0.5),
+  segura("RightArm", "rz", -35, 1.1, 0.2, 0.5),
+]);
+
+/** A oponente esquiva: passo de lado com o corpo baixo. */
+const F_ESQUIVA = clip("F_ESQUIVA", 1.0, 0.4, [
+  segura("raiz", "px", 0.35, 1.0, 0.3, 0.4),
+  segura("raiz", "rz", -12, 1.0, 0.3, 0.4),
+  segura("raiz", "py", -0.08, 1.0, 0.3, 0.4),
+]);
+
 /** Luz do rastro da peça: acende no golpe e apaga, sem piscar. */
 const L_RASTRO = clip("L_RASTRO", 2.0, 1.0, [segura("luz", "v", 1, 2.0, 0.5, 0.8)]);
 
-export const CLIPS_LUTA: Clip[] = [GUARDA, SOCO, CHUTE, DEFESA, ESQUIVA, GOLPE_ESPECIAL, QUEDA, F_GUARDA, F_SOCO, F_DEFESA, F_RECUO, F_QUEDA, L_RASTRO];
+export const CLIPS_LUTA: Clip[] = [GUARDA, SOCO, CHUTE, DEFESA, ESQUIVA, GOLPE_ESPECIAL, QUEDA, RECUO, F_GUARDA, F_SOCO, F_DEFESA, F_RECUO, F_ESQUIVA, F_QUEDA, L_RASTRO];
 
 export const PROPRIAS_LUTA = ["GUARDA", "SOCO", "CHUTE", "DEFESA", "ESQUIVA", "GOLPE_ESPECIAL", "QUEDA"];

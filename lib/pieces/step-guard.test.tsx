@@ -4,7 +4,7 @@
  * estilo só eram cobrados ao salvar. A etapa Peça agora segura a pessoa e diz o que falta.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, loggedAs, renderApp, screen, ME } from "@/test-utils/render";
+import { cleanup, fireEvent, loggedAs, renderApp, screen, within, ME } from "@/test-utils/render";
 import NewPiecePage from "@/app/(site)/(app)/pieces/new/page";
 import { readFileSync } from "node:fs";
 import { waitFor } from "@testing-library/react";
@@ -68,12 +68,34 @@ describe("etapa Peça do criador — campos obrigatórios", () => {
     expect(liveFieldErrors({ category: "x", color: "y" }, { category: "upper_piece", color: "" })).toEqual({ color: "y" });
   });
 
-  it("reauditoria: em tela estreita a prévia do card não fica presa no topo cobrindo o formulário", () => {
+  it("a prévia não reserva uma coluna nem fica presa sobre o formulário", () => {
     const css = readFileSync("app/(site)/_styles/24-metamorfoses-layouts.css", "utf8");
-    const wide = css.indexOf("@media (min-width: 900px)");
-    const sticky = [...css.matchAll(/\.piece-create-preview[^{]*\{[^}]*position: sticky/g)].map((m) => m.index ?? 0);
-    expect(sticky.length).toBe(1);
-    expect(sticky[0]).toBeGreaterThan(wide);
-    expect(css.slice(0, wide)).toMatch(/\.piece-create-main \{ grid-row: 1; \}/);
+    expect(css).not.toContain(".piece-create-preview");
+    expect(css).not.toContain(".piece-create-layout:not(.is-art)");
+    expect(css).toMatch(/\.piece-create-main \{ grid-row: 1; \}/);
+  });
+
+  it("abre a prévia atualizada em modal e preserva o formulário ao fechar", async () => {
+    loggedAs(ME, { "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/brands": { brands: [] } });
+    renderApp(<NewPiecePage />);
+    await screen.findByRole("heading", { name: "Dados" });
+    expect(screen.queryByRole("dialog", { name: "Prévia do card" })).toBeNull();
+    expect(document.querySelector(".piece-card")).toBeNull();
+    fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: "Camisa de teste" } });
+    const trigger = screen.getByRole("button", { name: "Ver prévia do card" });
+    trigger.focus();
+    fireEvent.click(trigger);
+    const dialog = screen.getByRole("dialog", { name: "Prévia do card" });
+    expect(within(dialog).getByText("Camisa de teste")).toBeTruthy();
+    expect(within(dialog).getByRole("radiogroup", { name: "Enquadramento da foto" })).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Peça inteira (Total frame)" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Fechar" }));
+    expect(screen.queryByRole("dialog", { name: "Prévia do card" })).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+    expect((screen.getByLabelText(/^Nome/) as HTMLInputElement).value).toBe("Camisa de teste");
+    fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
+    expect(within(screen.getByRole("dialog", { name: "Prévia do card" })).getByRole("radio", { name: "Peça inteira (Total frame)" }).getAttribute("aria-checked")).toBe("true");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Prévia do card" })).toBeNull();
   });
 });

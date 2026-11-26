@@ -11,7 +11,7 @@
 @import "./_styles/04-dna-capsula.css";
 @import "./_styles/05-palco-anatomias.css";
 @import "./_styles/06-shell-navegacao.css";
-@import "./_styles/07-meu-quarto.css";
+@import "./_styles/07-feed-e-blocos.css";
 @import "./_styles/08-layout-secao-c.css";
 @import "./_styles/09-flair-cartas-modos.css";
 @import "./_styles/10-dashboard-detalhes.css";
@@ -34,6 +34,7 @@
 @import "./_styles/28-flair-match-stage.css";
 @import "./_styles/29-card-compacto-camadas.css";
 @import "./_styles/29-flair3d-nucleos.css";
+@import "./_styles/29-flair3d-continuar.css";
 @import "./_styles/30-flair3d-recursos.css";
 @import "./_styles/31-flair3d-makeup.css";
 @import "./_styles/32-flair-elencos.css";
@@ -42,11 +43,21 @@
 @import "./_styles/34-flair3d-cartas-cor.css";
 @import "./_styles/35-flair3d-efeitos.css";
 @import "./_styles/36-flair3d-hud.css";
+@import "./_styles/36-flair3d-luta.css";
 @import "./_styles/37-flair3d-ampliada.css";
 @import "./_styles/38-flair3d-acao.css";
 @import "./_styles/39-flair3d-esporte.css";
+@import "./_styles/39-flair3d-esporte-momento.css";
+@import "./_styles/39-flair3d-esporte-carga.css";
 @import "./_styles/47-flair3d-detetive.css";
 @import "./_styles/48-flair3d-detetive-cenas.css";
+@import "./_styles/50-flair3d-campanha.css";
+@import "./_styles/51-flair3d-recursos.css";
+@import "./_styles/52-flair3d-recursos-medidores.css";
+@import "./_styles/53-flair3d-cinema.css";
+@import "./_styles/54-flair3d-execucao.css";
+@import "./_styles/55-flair3d-esporte-tempo.css";
+@import "./_styles/55-card-grade-info.css";
 @import "./_styles/39-flair-elencos-quebra-cabeca.css";
 @import "./_styles/39-seletor-pecas.css";
 @import "./_styles/40-acervo-base.css";
@@ -57,6 +68,7 @@
 @import "./_styles/44-acervo-espaco.css";
 @import "./_styles/45-acervo-ficha.css";
 @import "./_styles/46-acervo-desejos.css";
+@import "./_styles/46-acervo-uso.css";
 @import "./_styles/47-flair-mesa.css";
 @import "./_styles/48-flair-elencos-vagas.css";
 @import "./_styles/49-flair-cbc-vagas.css";

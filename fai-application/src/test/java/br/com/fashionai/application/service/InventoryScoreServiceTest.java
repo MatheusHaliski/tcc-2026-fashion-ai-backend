@@ -179,7 +179,6 @@ class InventoryScoreServiceTest {
         score.invalidate(new DomainEvents.SchemeSaved(me, UUID.randomUUID(), List.of(), "CRIAR_LOOK", true));
         score.invalidate(new DomainEvents.DailyLookRegistered(me, UUID.randomUUID(), today, "MANUAL", List.of()));
         score.invalidate(new DomainEvents.PieceDeleted(me, piece));
-        score.invalidate(new DomainEvents.RoomOrganized(me));
         score.invalidate(new DomainEvents.PieceUpdated(me, piece, 90));
         score.invalidate(new DomainEvents.AvailabilityChanged(me, piece, false));
     }
@@ -203,5 +202,39 @@ class InventoryScoreServiceTest {
         for (int s : new int[]{0, 350, 550, 750, 900, 1000}) {
             assertThat(InventoryScoreService.band(s)).isNotBlank();
         }
+    }
+
+    @Test
+    void organizacaoLeOLugarNoAcervoPecaNoTipoErradoPuxaParaBaixo() {
+        // o Meu Quarto saiu (15/11/2026): a coerência do lugar vem do ACERVO (tipo do compartimento x tipo da peça)
+        kit.real(br.com.fashionai.application.acervo.AcervoLugares.class);
+        assertThat(kit.build(InventoryScoreService.class).explain(ana, "O").pullingDown()).as("sem ACERVO, ninguém é cobrado pelo lugar").isEmpty();
+        WardrobeItem jeans = world.piecesOf(world.me).stream().filter(w -> "lower_piece".equals(w.getCategory())).findFirst().orElseThrow();
+        var closet = new br.com.fashionai.domain.model.acervo.AcervoAmbiente();
+        closet.setUserId(world.me.getId());
+        closet.setNome("Closet");
+        kit.save(br.com.fashionai.domain.repository.acervo.AcervoAmbienteRepository.class, closet);
+        var armario = new br.com.fashionai.domain.model.acervo.AcervoMovel();
+        armario.setUserId(world.me.getId());
+        armario.setAmbienteId(closet.getId());
+        armario.setNome("Armário 01");
+        kit.save(br.com.fashionai.domain.repository.acervo.AcervoMovelRepository.class, armario);
+        var cabideiro = new br.com.fashionai.domain.model.acervo.AcervoCompartimento();
+        cabideiro.setUserId(world.me.getId());
+        cabideiro.setMovelId(armario.getId());
+        cabideiro.setTipo(br.com.fashionai.domain.model.acervo.AcervoCompartimento.CABIDEIRO);
+        cabideiro.setNome("Cabideiro 1");
+        kit.save(br.com.fashionai.domain.repository.acervo.AcervoCompartimentoRepository.class, cabideiro);
+        var linha = new br.com.fashionai.domain.model.acervo.AcervoPeca();
+        linha.setUserId(world.me.getId());
+        linha.setPieceId(jeans.getId());
+        linha.setCompartimentoId(cabideiro.getId());
+        kit.save(br.com.fashionai.domain.repository.acervo.AcervoPecaRepository.class, linha);
+
+        InventoryScoreService.Dimension o = kit.build(InventoryScoreService.class).explain(ana, "O");   // instância nova: sem a nota guardada
+
+        assertThat(o.pullingDown()).anySatisfy(p -> assertThat(p).containsEntry("pieceId", jeans.getId())
+                .containsEntry("value", "Closet / Armário 01 / Cabideiro 1"));
+        assertThat(o.rule()).contains("ACERVO");
     }
 }

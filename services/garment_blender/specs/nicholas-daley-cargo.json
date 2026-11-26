@@ -1,0 +1,23 @@
+{
+ "produto": "Carhartt WIP x Nicholas Daley Cargo Pant",
+ "marca": "Carhartt WIP",
+ "url_oficial": "https://www.carhartt-wip.com/p/carhartt-wip-x-nicholas-daley-cargo-pant-nd-ocean-cavern-37",
+ "subcategoria": "cargo_pants",
+ "tamanho": "40",
+ "sexo": "MASCULINO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#313442",
+  "gramatura": 330
+ },
+ "fechamento": "botao_ziper",
+ "bolsos": [
+  "faca",
+  "traseiro",
+  "cargo"
+ ],
+ "passantes": true,
+ "ribana": false,
+ "observacao": "cor: mediana da textura de cor do produto (lote meshy-2026-11-18)"
+}

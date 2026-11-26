@@ -1,0 +1,44 @@
+{
+  "versao": 1,
+  "categoria": "shoes_piece",
+  "subcategoria": "espadrilles",
+  "slot": "feet",
+  "attach": "rigid",
+  "osso": "Foot",
+  "giroY": 1.5708,
+  "centro": [
+    -0.0002,
+    -0.00021,
+    0.00006
+  ],
+  "caixa": [
+    0.7639,
+    0.8651,
+    1.9018
+  ],
+  "escalaNominal": 0,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 0,
+    "bracosAbertos": false,
+    "aberto": false,
+    "sola": 0.025
+  },
+  "tamanhos": {
+    "grade": "shoes",
+    "porPasso": {
+      "largura": 0.012,
+      "comprimento": 0.027,
+      "manga": 0
+    },
+    "limite": [
+      -4,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "veste"
+}

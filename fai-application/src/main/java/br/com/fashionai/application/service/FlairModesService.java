@@ -1,27 +1,19 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.flair.FlairLooks;
-import br.com.fashionai.application.flair.FlairLooks.Look;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.repository.FlairCoinEntryRepository;
-import br.com.fashionai.domain.repository.FlairMatchEntryRepository;
-import br.com.fashionai.domain.repository.FlairMatchRepository;
-import br.com.fashionai.domain.repository.FlairModeStateRepository;
-import br.com.fashionai.domain.repository.FlairTerritoryRepository;
-import br.com.fashionai.domain.repository.FlairTrophyRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.flair.*;
+import br.com.fashionai.application.flair.FlairLooks.Look;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.Scheme;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * FLAIR como conjunto de modos sobre as mesmas peças, looks, HypeScore e estatísticas do Fashion AI:
@@ -36,8 +28,8 @@ import java.util.UUID;
  */
 @Service
 public class FlairModesService {
-    static final int REWARDED_PER_MODE_DAY = 3;
-    static final Set<String> COMPETITIVE = Set.of("DUEL", "TEAM", "BATTLE", "SQUAD", "LEAGUE", "TAG_TEAM", "CONQUEST", "MONOPOLY", "COMBO", "ULTIMATE");
+    public static final int REWARDED_PER_MODE_DAY = 3;
+    public static final Set<String> COMPETITIVE = Set.of("DUEL", "TEAM", "BATTLE", "SQUAD", "LEAGUE", "TAG_TEAM", "CONQUEST", "MONOPOLY", "COMBO", "ULTIMATE");
 
     private final FlairModeParts parts;
 

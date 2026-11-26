@@ -1,6 +1,5 @@
 package br.com.fashionai.application.ai.local;
 
-import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.domain.model.WardrobeItem;
@@ -133,7 +132,7 @@ public final class LocalSchemeComposer {
         List<String> seals = seals(pieces, sty, occ, total);
         String mood = mood(sty, occ);
         String title = LocalLookWording.title(sty, occ, season);
-        String rationale = Msg.t("localSchemeComposer.combinacao_de_pecas_do_seu", pieces.size(), (occ.isEmpty() ? Msg.t("localSchemeComposer.ocasiao_livre") : Msg.t("localSchemeComposer.ocasiao", LocalLookWording.spoken(occ))), (sty.isEmpty() ? "" : Msg.t("localSchemeComposer.e_estilo", LocalLookWording.spoken(sty))));
+        String rationale = LocalLookWording.rationale(pieces, occ, sty);
         return new Composition(title, picks, occ, sty, season, mood, seals, total, score, rationale);
     }
 

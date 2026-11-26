@@ -41,7 +41,7 @@ public record Definicao(String codigo, int numero, Objetivo objetivo, List<Strin
     public static Definicao cartas(String codigo, int numero, Objetivo objetivo, List<String> recursos, List<String> vagas,
                                    Deck deck, boolean desfile) {
         return new Definicao(codigo, numero, objetivo, recursos, vagas, List.of(), List.of(), List.of(),
-                desfile ? acoesComDesfile() : ACOES, deck, Avatares.solo(null));
+                desfile ? acoesComDesfile() : ACOES, deck.semDeck() || !deck.posicoes().isEmpty() ? deck : deck.so(vagas), Avatares.solo(null));
     }
 
     /** Núcleo do editor: zonas com cor e acabamento, sem deck; {@code opcoes} quando há resposta (emblema). */
@@ -150,16 +150,35 @@ public record Definicao(String codigo, int numero, Objetivo objetivo, List<Strin
     public record Regra(String codigo, double pontos) {
     }
 
-    /** O deck da partida: tamanho máximo, posições obrigatórias e se o núcleo dispensa deck. */
-    public record Deck(Integer tamanhoMax, List<Obrigatoria> obrigatorias, boolean semDeck) {
+    /**
+     * O deck da partida: tamanho máximo, posições obrigatórias, se o núcleo dispensa deck e as posições de carta que o
+     * jogo usa ({@code posicoes}; vazio = qualquer uma). Num núcleo de cartas são as vagas do look: a carta de outra
+     * posição não teria onde entrar, e o deck a recusa.
+     */
+    public record Deck(Integer tamanhoMax, List<Obrigatoria> obrigatorias, boolean semDeck, List<String> posicoes) {
         public static final Deck SEM_DECK = new Deck(null, List.of(), true);
 
         public Deck {
             obrigatorias = List.copyOf(obrigatorias);
+            posicoes = posicoes == null ? List.of() : List.copyOf(posicoes);
+        }
+
+        public Deck(Integer tamanhoMax, List<Obrigatoria> obrigatorias, boolean semDeck) {
+            this(tamanhoMax, obrigatorias, semDeck, List.of());
         }
 
         public static Deck ate(int tamanhoMax, Obrigatoria... obrigatorias) {
             return new Deck(tamanhoMax, List.of(obrigatorias), false);
+        }
+
+        /** O mesmo deck, aceitando só as cartas destas posições. */
+        public Deck so(List<String> novas) {
+            return new Deck(tamanhoMax, obrigatorias, semDeck, novas);
+        }
+
+        /** A carta desta posição entra no deck? */
+        public boolean aceita(String posicao) {
+            return posicoes.isEmpty() || posicoes.contains(posicao);
         }
     }
 

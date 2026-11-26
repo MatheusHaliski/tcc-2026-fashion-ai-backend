@@ -3,7 +3,8 @@ import { useEffect, use, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
-import type { PieceView, SchemeView, UserCard } from "@/lib/api/types";
+import type { PieceView, ReferenceOption, SchemeView, UserCard } from "@/lib/api/types";
+import { institutionalReferenceLine } from "@/lib/api/institutional-reference";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { issuerMetricLabel, issuerMetricValue } from "@/lib/seals/issuer-metrics";
@@ -12,8 +13,11 @@ import { label } from "@/lib/api/taxonomy";
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, SegmentPicker, Select, Skeleton, SkeletonGrid, Tabs, Textarea, cn, useToast } from "@/components/ui";
 import { SchemeCard, toSealBadges } from "@/components/scheme-card";
 import { SealWizard, type SealFormState } from "@/components/seal-wizard";
+import { SealAvailability } from "@/components/seal-availability";
+import { isoToLocalInput, localInputToIso, type SealAvailabilityState } from "@/lib/seals/availability";
 import { EMPTY_POLICY, cleanPolicy, type SealPolicy, type SealTierId } from "@/components/seal-policy-editor";
 import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/seal-medallion";
+import { SealPolicyBrands } from "@/components/seal-policy-brands";
 import { SealHypeStat, type SealHypeAggregate } from "@/components/hype/hype-seals";
 import { PieceCard } from "@/components/piece-card";
 import { BrandFlairTab } from "@/components/flair/brand-flair-tab";
@@ -22,8 +26,6 @@ import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { ProfileHeader } from "@/components/profile-header";
 import { CollectionsTab, ErasTab } from "@/components/showcase/showcase-tabs";
-import { WardrobeCreatorTab } from "@/components/room3d/wardrobe-creator";
-import { RoomStore } from "@/components/room3d/room-store";
 import { PhysicalStoreSellerManager } from "@/components/points/physical-store";
 import { ReturnsInbox } from "@/components/points/store-returns-inbox";
 import { FittingAppointmentsInbox } from "@/components/try-on/fitting-appointments";
@@ -44,10 +46,10 @@ import type { HypeDirection, HypeLevel } from "@/lib/hype/types";
 type HighlightSort = "RECENTES" | "HYPE" | "GROWTH";
 const SORTABLE_TABS: Record<string, HighlightSort> = { ESQUEMAS_DESTAQUE: "HYPE", PECAS_DESTAQUE: "HYPE", LOOKS_CONSAGRADOS: "RECENTES" };
 
-interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; grantValidityDays?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; policy?: SealPolicy | null; /** RF53 — Hype do selo: média do Hype atual dos vinculados */ hype?: SealHypeAggregate | null; }
+interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; grantValidityDays?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; availabilityState?: SealAvailabilityState | null; design?: SealDesign | null; policy?: SealPolicy | null; /** RF53 — Hype do selo: média do Hype atual dos vinculados */ hype?: SealHypeAggregate | null; }
 interface Promotion { id: string; type: string; title: string; description?: string; rules?: string; discountPercent?: number; status: string; eligible?: boolean; requiredSealId?: string; redemptions?: number; }
 import type {LevelProgress} from "@/components/profile-level-progress";
-interface Profile { user?: UserCard; brand?: Record<string, unknown>; celebrity?: Record<string, unknown>; header: { levelProgress?:LevelProgress; userId?: string; username?: string; name?: string; slug?: string; logoUrl?: string | null; avatarUrl?: string | null; userAvatarUrl?: string | null; coverUrl?: string | null; bio?: string | null; storeUrl?: string | null; status?: string; kind?: string; profileType?: string; verified?: boolean; premium?: boolean; category?: string | null; followers?: number; following: number; pieces?: number; schemes?: number; activeSeals: number; viewerFollows: boolean; metrics?: Record<string, number> }; mode?: string; tabs?: ({ id: string; label: string; adminOnly?: boolean } | string)[]; admin?: boolean; store?: { url?: string; hashtag?: string }; [k: string]: unknown; }
+interface Profile { user?: UserCard; brand?: Record<string, unknown>; celebrity?: Record<string, unknown>; header: { levelProgress?:LevelProgress; userId?: string; username?: string; name?: string; slug?: string; logoUrl?: string | null; avatarUrl?: string | null; userAvatarUrl?: string | null; coverUrl?: string | null; bio?: string | null; storeUrl?: string | null; status?: string; kind?: string; profileType?: string; verified?: boolean; premium?: boolean; category?: string | null; categoriaPrincipal?: ReferenceOption | null; areaPrincipal?: ReferenceOption | null; areas?: string[] | null; followers?: number; following: number; pieces?: number; schemes?: number; activeSeals: number; viewerFollows: boolean; metrics?: Record<string, number> }; mode?: string; tabs?: ({ id: string; label: string; adminOnly?: boolean } | string)[]; admin?: boolean; store?: { url?: string; hashtag?: string }; [k: string]: unknown; }
 
 export default function BrandPage({ params }: { params: Promise<{ slug: string }> }) {
   const slug = use(params).slug;   /* vai direto para caminhos da API */ const { t, fmtDate, rich } = useI18n(); const { user, refreshMe } = useAuth(); const router = useRouter(); const searchParams = useSearchParams(); const toast = useToast();
@@ -57,7 +59,8 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const sortDefault = SORTABLE_TABS[tab]; const sort = sorts[tab] ?? sortDefault;
   const sortParam = sortDefault && sort !== sortDefault ? `?filter=${sort}` : "";
   const requestedTab = searchParams.get("tab")?.toUpperCase();
-  useEffect(() => { setTab(requestedTab ?? "ESQUEMAS_DESTAQUE"); }, [slug, requestedTab]);
+  // a aba Guarda-roupa 3D saiu com o Meu Quarto (15/11/2026): o link antigo (?tab=GUARDA_ROUPA) cai na aba padrão
+  useEffect(() => { setTab(requestedTab && requestedTab !== "GUARDA_ROUPA" ? requestedTab : "ESQUEMAS_DESTAQUE"); }, [slug, requestedTab]);
   const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   const promos = useApi<Promotion[]>((signal) => api.get(`/api/users/${ownerId}/promotions`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
@@ -99,11 +102,12 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const admin = data.admin ?? data.mode === "ADMINISTRADOR"; const brand = data.brand ?? data.celebrity ?? {}; const h = data.header;
   const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");
   const owner: UserCard = data.user ?? ({ id: h.userId ?? "", username: h.username ?? h.slug ?? "", displayName: h.name ?? h.username ?? "", avatarUrl: h.logoUrl ?? null, profileType: isCeleb ? "CELEBRIDADE" : "MARCA", verified: h.verified } as unknown as UserCard);
-  const tabs = [...(isCeleb ? [{ id: "ERAS", label: t("brands.slug.eras") }] : [{ id: "COLECOES", label: t("common.colecoes") }]), { id: "ESQUEMAS_DESTAQUE", label: t("brands.slug.esquemas_em_destaque") }, { id: "PECAS_DESTAQUE", label: t("brands.slug.pecas_em_destaque") }, { id: "LOOKS_CONSAGRADOS", label: admin ? t("lookbook.looks") : t("brands.slug.looks_consagrados") }, { id: "CATALOGO", label: t("brands.slug.catalogo_de_pecas") }, { id: "SELOS", label: t("brands.slug.selos", { value: seals.data?.length ?? data.header.activeSeals }) }, { id: "PROMOCOES", label: t("brands.slug.promocoes") }, { id: "FLAIR", label: admin ? t("brands.slug.minhas_combinacoes_flair") : t("brands.slug.combinacoes_flair") }, ...(admin ? [{ id: "CUPONS", label: t("brands.slug.meus_cupons_promocionais") }] : []), { id: "GUARDA_ROUPA", label: admin ? t("brands.slug.criar_guarda_roupa_3d") : t("brands.slug.guarda_roupa_3d") },
+  const reference = institutionalReferenceLine({ ...h, category: (brand.fashionCategory as string) ?? h.category, areas: h.areas ?? (brand.areas as string[]) }, isCeleb);   // ex. 09/10: opção escolhida antes do texto legado
+  const tabs = [...(isCeleb ? [{ id: "ERAS", label: t("brands.slug.eras") }] : [{ id: "COLECOES", label: t("common.colecoes") }]), { id: "ESQUEMAS_DESTAQUE", label: t("brands.slug.esquemas_em_destaque") }, { id: "PECAS_DESTAQUE", label: t("brands.slug.pecas_em_destaque") }, { id: "LOOKS_CONSAGRADOS", label: admin ? t("lookbook.looks") : t("brands.slug.looks_consagrados") }, { id: "CATALOGO", label: t("brands.slug.catalogo_de_pecas") }, { id: "SELOS", label: t("brands.slug.selos", { value: seals.data?.length ?? data.header.activeSeals }) }, { id: "PROMOCOES", label: t("brands.slug.promocoes") }, { id: "FLAIR", label: admin ? t("brands.slug.minhas_combinacoes_flair") : t("brands.slug.combinacoes_flair") }, ...(admin ? [{ id: "CUPONS", label: t("brands.slug.meus_cupons_promocionais") }] : []),
     ...(admin ? [{ id: "PHYSICAL_STORE", label: t("physicalStore.manage") }, ...(reviewStatus !== "APROVADO" ? [{ id: "CENTRAL", label: t("issuerReview.central") }] : []), { id: "ESQUEMAS_SALVOS", label: t("brands.slug.esquemas_salvos") }, { id: "PECAS_SALVAS", label: t("lookbook.savedPieces") }, { id: "REVISAO", label: t("brands.slug.revisao_de_vinculos") }, { id: "METRICAS", label: t("brands.slug.metricas") }] : [])];
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
-    const iso = (v: string) => (v ? new Date(v).toISOString() : null);
+    const iso = localInputToIso;   // datetime-local (hora local) → instante UTC; vazio vira null
     const policy = cleanPolicy(sealForm.policy);
     const body = { name: sealForm.name.trim(), tier: sealForm.tier, policy, policyText: policy ? null : sealForm.policyText || null, usageLimit: sealForm.usageLimit ? Number(sealForm.usageLimit) : null, grantValidityDays: sealForm.grantValidityDays ? Number(sealForm.grantValidityDays) : null, status: sealForm.status, availableFrom: iso(sealForm.availableFrom), availableUntil: iso(sealForm.availableUntil), design: sealForm.design };
     try { if (sealForm.id) await api.put(`/api/seals/${sealForm.id}`, body); else await api.post("/api/seals", body); setSealForm({ ...sealForm, open: false }); toast.success(t(sealForm.id ? "brands.slug.selo_atualizado" : "brands.slug.selo_criado", { name: sealForm.name.trim() })); seals.reload(); return true; } catch (e) { toast.fromError(e); return false; }
@@ -120,7 +124,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
     <>
       <ProfileHeader levelProgress={h.levelProgress} username={h.username ?? owner.username} displayName={(brand.brandName as string) ?? (brand.stageName as string) ?? h.name ?? owner.displayName}
         verified={owner.verified || h.status === "Validada" || h.status === "Verificada"} kindLabel={isCeleb ? t("auth.profileCelebrity") : t("auth.profileBrand")} cover={h.coverUrl}
-        category={[(brand.fashionCategory as string) ?? h.category ?? ((brand.areas as string[]) ?? []).join(", "), brand.officialHashtag ? `#${String(brand.officialHashtag).replace(/^#/, "")}` : null, t("brands.slug.selos_ativos", { count: data.header.activeSeals ?? 0 })].filter(Boolean).join(" · ")}
+        category={[reference.principal, reference.outras.length ? t("institutionalReference.outrasAreas", { areas: reference.outras.join(", ") }) : null, brand.officialHashtag ? `#${String(brand.officialHashtag).replace(/^#/, "")}` : null, t("brands.slug.selos_ativos", { count: data.header.activeSeals ?? 0 })].filter(Boolean).join(" · ")}
         bio={h.bio} link={data.store?.url ? { href: data.store.url, label: data.store.url.replace(/^https?:\/\//, "") } : h.storeUrl ? { href: h.storeUrl, label: h.storeUrl.replace(/^https?:\/\//, "") } : null}
         photoUrl={h.userAvatarUrl ?? (isCeleb ? ((brand.officialPhotoUrl as string) ?? h.avatarUrl ?? owner.avatarUrl) : null)}
         photo={!h.userAvatarUrl && !isCeleb ? <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white"><BrandLogo name={(brand.brandName as string) ?? owner.displayName} src={(brand.logoUrl as string) ?? h.logoUrl ?? undefined} size={120} /></span> : undefined}
@@ -141,7 +145,6 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       {tab === "ERAS" && isCeleb && <ErasTab slug={slug} admin={admin} />}
       {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} brand={{ name: (brand.brandName as string) ?? h.name ?? owner.displayName, logoUrl: (brand.logoUrl as string) ?? h.logoUrl ?? null }} />}
       {tab === "FLAIR" && <BrandFlairTab slug={slug} autoNew={flairNew} />}
-      {tab === "GUARDA_ROUPA" && (admin ? <WardrobeCreatorTab /> : user ? <RoomStore creatorSlug={slug} compact /> : <EmptyState title={t("brands.slug.entre_para_ver_os_itens")} hint={t("brands.slug.componentes_e_guarda_roupas_inteiros")} />)}
       {tab === "PHYSICAL_STORE" && admin && <><PhysicalStoreSellerManager /><div className="mt-8"><ReturnsInbox /></div><div className="mt-8"><FittingAppointmentsInbox /></div><div className="mt-8"><AccessibilityDeclarations /></div><div className="mt-8"><DemandPanel /></div></>}
       {tab === "CUPONS" && admin && <BrandCouponsTab ownerId={ownerId ?? ""} celebrity={isCeleb} onCreateFlair={() => { setTab("FLAIR"); setFlairNew((n) => n + 1); }} />}
       {tab === "ESQUEMAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.looks_de_qualquer_usuario_que")}</p><div className="grid-looks social-card-grid">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} extra={promotionNote(e.promotion)} />)}</div></> : <EmptyState title={t("brands.slug.nenhum_esquema_em_destaque_ainda")} hint={t("brands.slug.aparecem_aqui_os_looks_que")} />)}
@@ -158,9 +161,10 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
             <Card key={s.id} className={s.premium ? "bg-gradient-to-br from-surface to-surface-3" : ""}>
               <div className="flex items-start gap-3"><SealMedallion design={s.design ?? DEFAULT_DESIGN} size={56} premium={s.premium} title={s.name} /><div className="min-w-0 flex-1"><p className="type-h3">{s.name}</p><p className="type-caption text-muted">{label(s.tier.toLowerCase())} · {s.available ? t("brands.slug.disponivel") : s.unavailableReason ?? label(s.status.toLowerCase())}</p></div></div>
               {s.policyText && <p className="mt-2 type-body-sm">{s.policyText}</p>}
+              <SealPolicyBrands policy={s.policy} />
               {s.tier !== "PERFIL" && <SealHypeStat hype={s.hype} tier={s.tier} />}
-              <p className="mt-2 type-data text-faint tabular">{s.tier !== "PERFIL" && t("brands.slug.emissoes", { value: s.usageCount ?? 0, value2: s.usageLimit ? t("brands.slug.emissoes_limite", { limit: s.usageLimit }) : "" })}{(s.availableFrom || s.availableUntil) && <>{t("brands.slug.valido", { value: s.availableFrom ? t("brands.slug.de", { date: fmtDate(s.availableFrom) }) : "", value2: s.availableUntil ? t("common.ate", { date: fmtDate(s.availableUntil) }) : "" })}</>}</p>
-              {admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => setSealForm({ open: true, id: s.id, name: s.name, tier: s.tier === "PERFIL" ? "PERFIL" : s.tier === "PECA" ? "PECA" : "LOOK", policyText: s.policy ? "" : s.policyText ?? "", usageLimit: s.usageLimit?.toString() ?? "", grantValidityDays: s.grantValidityDays?.toString() ?? "", status: s.status, availableFrom: s.availableFrom ? s.availableFrom.slice(0, 16) : "", availableUntil: s.availableUntil ? s.availableUntil.slice(0, 16) : "", design: s.design ?? DEFAULT_DESIGN, policy: s.policy ? { ...EMPTY_POLICY, ...s.policy } : EMPTY_POLICY })}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={async () => { try { await api.put(`/api/seals/${s.id}`, { name: s.name, tier: s.tier, policy: s.policy, design: s.design, policyText: s.policyText, usageLimit: s.usageLimit, availableFrom: s.availableFrom, availableUntil: s.availableUntil, status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); seals.reload(); } catch (e) { toast.fromError(e); } }}>{s.status === "ACTIVE" ? t("common.desativar") : t("brands.slug.ativar")}</Button></div>}
+              <p className="mt-2 type-data text-faint tabular">{s.tier !== "PERFIL" && t("brands.slug.emissoes", { value: s.usageCount ?? 0, value2: s.usageLimit ? t("brands.slug.emissoes_limite", { limit: s.usageLimit }) : "" })}<SealAvailability seal={s} /></p>
+              {admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => setSealForm({ open: true, id: s.id, name: s.name, tier: s.tier === "PERFIL" ? "PERFIL" : s.tier === "PECA" ? "PECA" : "LOOK", policyText: s.policy ? "" : s.policyText ?? "", usageLimit: s.usageLimit?.toString() ?? "", grantValidityDays: s.grantValidityDays?.toString() ?? "", status: s.status, availableFrom: isoToLocalInput(s.availableFrom), availableUntil: isoToLocalInput(s.availableUntil), design: s.design ?? DEFAULT_DESIGN, policy: s.policy ? { ...EMPTY_POLICY, ...s.policy } : EMPTY_POLICY })}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={async () => { try { await api.put(`/api/seals/${s.id}`, { name: s.name, tier: s.tier, policy: s.policy, design: s.design, policyText: s.policyText, usageLimit: s.usageLimit, availableFrom: s.availableFrom, availableUntil: s.availableUntil, status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); seals.reload(); } catch (e) { toast.fromError(e); } }}>{s.status === "ACTIVE" ? t("common.desativar") : t("brands.slug.ativar")}</Button></div>}
             </Card>))}</div>}
         </>
       )}

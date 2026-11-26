@@ -1,5 +1,7 @@
 # Erro 500 ao carregar o quarto
 
+> **Retirado em 15/11/2026.** O Quarto 3D (Meu Quarto) saiu do app por decisão da dona ("Retire totalmente o Quarto 3D do app FashionAI"); o guarda-roupa em perspectiva é o ACERVO (`/acervo`). Este documento fica como histórico do desenho. O que saiu, o que ficou e os dados que ficaram sem uso: `docs/quarto/RETIRADA_DO_QUARTO_3D.md`.
+
 Os logs fornecidos em 12/10/2026 registram erro MySQL 1062 (chave única de `room_storage_map.wardrobe_item_id`) seguido de `UnexpectedRollbackException` em `/api/me/room` e `/api/me/room/list`.
 
 A reconciliação apagava um endereço incompatível e criava outro registro para a mesma peça. No flush, o Hibernate pode emitir INSERT antes do DELETE, violando a chave única. A reconciliação agora altera o endereço na própria entidade, preservando seu ID e data de criação.

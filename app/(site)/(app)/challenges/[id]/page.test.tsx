@@ -84,7 +84,8 @@ describe("detalhe do desafio — ações por estado", () => {
       { "GET /api/challenges/c1/result-card": () => [{ url: "/media/card.png" }, { imageUrl: "/media/img.png" }, {}, fail(500, "Card indisponível")()][n++] });
     const card = await screen.findByRole("button", { name: "Card de resultado" }, { timeout: 4000 });
     expect(screen.getByText(/→/)).toBeTruthy();
-    expect(screen.getByText("Vaso dourado")).toBeTruthy();
+    // a decoração no quarto saiu com o Meu Quarto (15/11/2026): mesmo vinda de um servidor antigo, não aparece
+    expect(screen.queryByText("Vaso dourado")).toBeNull();
     // resultado em frases, sem o JSON cru
     expect(screen.getByText("Venceu: @ana.")).toBeTruthy();
     expect(within(screen.getByRole("list", { name: "Classificação" })).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["1º @ana8.5", "2º @bia6"]);
@@ -177,5 +178,14 @@ describe("detalhe do desafio — Solo", () => {
     const chosen = await screen.findByRole("list", { name: "As 2 peças escolhidas" }, { timeout: 4000 });
     await waitFor(() => expect(within(chosen).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Saia verde", "Bota preta"]));
     expect(screen.getByText("Look azul", { selector: "p" })).toBeTruthy();
+  });
+
+  it("10×10: diz o que conta no progresso ao lado do 0/10 e a entrada não ocupa a coluna inteira (auditoria 10.1, Desafios)", async () => {
+    show({ ...BASE, code: "TEN_X_TEN", mode: "SOLO", state: "ATIVO", me: { value: 0, target: 10, fraction: 0, label: "looks só com as 10 peças", pieceIds: [] },
+      entries: [{ entryId: "s1", title: "Look azul", mine: true, pieces: [] }] });
+    expect(await screen.findByText(/Contam os looks novos, criados depois de começar o desafio e só com as 10 peças/, undefined, { timeout: 4000 })).toBeTruthy();
+    const entrada = screen.getByText("Look azul", { selector: "p" }).closest("div")!.parentElement!;
+    expect(entrada.className).not.toContain("grid-cards");
+    expect(entrada.className).toContain("minmax(140px,200px)");
   });
 });

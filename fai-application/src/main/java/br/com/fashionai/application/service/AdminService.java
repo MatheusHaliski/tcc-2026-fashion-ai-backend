@@ -1,14 +1,26 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.admin.AdminViews;
+import br.com.fashionai.application.admin.BackupJob;
 import br.com.fashionai.application.ai.AiCatalog;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.assets.AssetCatalogService;
 import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.hype.HypeLiveRecalc;
-import br.com.fashionai.application.hype.HypeScoreConfig;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.hype.*;
 import br.com.fashionai.application.moderation.UploadQuarantine;
 import br.com.fashionai.application.ports.AnalyticsQueryPort;
 import br.com.fashionai.application.ports.BackupPort;
@@ -20,25 +32,7 @@ import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ModerationQueueStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.repository.AiInferenceLogRepository;
-import br.com.fashionai.domain.repository.AuditLogRepository;
-import br.com.fashionai.domain.repository.BackupRecordRepository;
-import br.com.fashionai.domain.repository.CommentRepository;
-import br.com.fashionai.domain.repository.ModerationQueueRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * Administração (perfil ADMIN): validação de Marcas e Celebridades (RF1.CA07/CA09) com selos padrão, fila de

@@ -5,10 +5,12 @@ import { cn } from "@/components/ui";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
 import { fmtOriginal } from "@/lib/i18n/money";
+import { couponChannelText, type CouponChannel } from "@/components/coupons/coupon-channel-field";
+import { couponMinimumText, type CouponMinimumSnapshot } from "@/components/coupons/coupon-minimum";
 
 /** Card Trello RF38 — Cupom Fashion AI (tipos compartilhados pela carteira do usuário e pela aba da marca). */
 export interface CouponOwner { user: UserCard; name: string; kind: "MARCA" | "CELEBRIDADE" | "PESSOAL"; logoUrl?: string | null; slug?: string | null; storeUrl?: string | null; }
-export interface Coupon {
+export interface Coupon extends CouponChannel, CouponMinimumSnapshot {
   id: string; source: "SELO" | "FLAIR"; origin?: string | null; code: string; title: string; subtitle?: string | null; discount: string;
   discountPercent?: number | null; discountAmount?: number | null; minPurchase?: number | null; status: "EMITIDO" | "USADO" | "EXPIRADO";
   expiresAt?: string | null; issuedAt?: string | null; owner: CouponOwner; storeUrl?: string | null; accentColor: string; holder?: UserCard;
@@ -51,6 +53,8 @@ export function FaiCoupon({ coupon, preview, onClick, compact }: { coupon: Coupo
         <div className="fai-coupon-value"><b>{val.v}</b><span>{val.unit}</span></div>
         <p className="fai-coupon-title">{c.title}</p>
         {c.discountPercent == null && c.discountAmount == null ? null : <p className="fai-coupon-terms">{c.discount}</p>}
+        {!preview && <p className="fai-coupon-terms" data-coupon-channel={c.canalCodigoSnapshot ?? ""}>{couponChannelText(c)}</p>}
+        {!preview && couponMinimumText(c) && <p className="fai-coupon-terms" data-coupon-minimum={c.minPurchaseSnapshotStatus ?? ""}>{couponMinimumText(c)}</p>}
         <div className="fai-coupon-foot">
           <code className="fai-coupon-code">{preview ? t("coupons.faiCoupon.fai") : c.code}</code>
           <span>{t("coupons.faiCoupon.valido_ate", { date: date(c.expiresAt) })}</span>

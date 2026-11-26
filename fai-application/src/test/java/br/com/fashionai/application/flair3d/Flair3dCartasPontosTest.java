@@ -48,6 +48,15 @@ class Flair3dCartasPontosTest {
     }
 
     @Test
+    void passarelaDizAContaDaNotaQuandoAsRegrasSomamAte70() {
+        CbcRules.Card sup = card("SUP", "brand:Farm");
+        CbcRules.Card inf = card("INF", "brand:Osklen");
+        Resultado r = new PassarelaNucleo().pontuar(vestir(sup, inf), contexto(7L, sup, inf));
+        assertThat(r.eventos()).contains(new Resultado.Evento("CONTA", java.util.Map.of("soma", 40.0, "maximo", 70.0)));
+        assertThat(r.regras().stream().mapToDouble(Resultado.RegraResultado::pontos).sum() * 100 / 70).isCloseTo(r.pontos(), org.assertj.core.data.Offset.offset(0.5));
+    }
+
+    @Test
     void nucleosDePontoPorPecaDaoOValorDaRegraACadaCartaQueBate() {
         CbcRules.Card y2k = card("SUP", "style:y2k");
         CbcRules.Card classica = card("INF", "style:classic", "color:black");
@@ -70,7 +79,8 @@ class Flair3dCartasPontosTest {
         CbcRules.Card sup = card("SUP", "occasion:casual", "material:linen");
         CbcRules.Card inf = card("INF", "occasion:beach", "material:leather");
         Entrega ensaio = comMaquiagem(vestir(sup, inf), "LABIOS", "CORAL", "GLOSS");
-        assertThat(cartas(new RoadToGloryNucleo(), ensaio, sup, inf)).containsExactly(de(sup, 12.5), de(inf, 12.5));
+        // a nota do look (a prévia): a entrega ainda abre a sessão de fotos
+        assertThat(new RoadToGloryNucleo().previa(ensaio, Flair3dFixtures.contexto(1, sup, inf)).cartas()).containsExactly(de(sup, 12.5), de(inf, 12.5));
 
         CbcRules.Card cima = card("SUP", "material:linen", "color:red", "brand:Farm");
         CbcRules.Card baixo = card("INF", "material:cotton", "color:orange");

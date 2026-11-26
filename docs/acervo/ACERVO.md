@@ -1,6 +1,6 @@
 # ACERVO — o guarda-roupa como um espaço navegável
 
-Primeira versão funcional. Rota `/acervo`, no menu Guarda-roupa. Tudo aqui é privado da dona das peças: nada vai para o
+Primeira versão funcional. Rota `/acervo`, no menu Guarda-roupa. Desde 15/11/2026 é o **único** lugar do app para ver o guarda-roupa em perspectiva: o Quarto 3D saiu (`docs/quarto/RETIRADA_DO_QUARTO_3D.md`), e `/room` e `/atelier?tab=room…` levam para cá. O Espelho, o Copilot ("onde está…?") e o Inventory Score (dimensão Organização) leem daqui o lugar de cada peça (`AcervoLugares`). Tudo aqui é privado da dona das peças: nada vai para o
 feed, e a API só responde a quem é dona (o que é de outra pessoa responde "não encontrado").
 
 ## 1. O conceito, nas palavras da dona
@@ -46,8 +46,11 @@ Regras que o banco garante: cada peça tem no máximo um lugar (`UNIQUE piece_id
 peça nem desejo (`ON DELETE SET NULL`); apagar a peça ou a conta leva junto o que é dela. A quantidade de gavetas,
 prateleiras e cabideiros de um móvel é a quantidade de compartimentos de cada tipo (não há contador separado).
 
-A migration não foi rodada num banco neste ambiente. Ela é conferida por `MigrationV102AcervoTest` (colunas que as
-entidades mapeiam e chaves estrangeiras) e por `MigrationVersionsTest` (número de versão sem repetição).
+A migration rodou em MySQL local: o Flyway aplicou a V102 no banco da auditoria de 14/11/2026 (seção 10.3 de
+`docs/auditoria/AUDITORIA_APP_2026-11-14.md`, com @lia.demo) e, na rodada de 16/11/2026, num banco local novo
+(`fashionai_acervo`, todas as migrations do zero), contra o qual a API do ACERVO foi usada pela tela (seção 9). Ela
+também é conferida por `MigrationV102AcervoTest` (colunas que as entidades mapeiam e chaves estrangeiras) e por
+`MigrationVersionsTest` (número de versão sem repetição).
 
 Código: entidades em `fai-domain/.../model/acervo`, repositórios em `fai-domain/.../repository/acervo`, serviços em
 `fai-application/.../acervo`, controllers `AcervoController` e `AcervoPecasController` em `fai-web`.
@@ -91,6 +94,12 @@ Regras de negócio que valem a pena saber:
 
 - Diretório lateral: "Todas as peças", "Sem lugar", depois Meu espaço e Dream Space → ambientes → móveis →
   compartimentos, com contagem. No celular o diretório abre por um botão.
+- Reordenar: arrastar uma linha e soltar sobre outra do mesmo nível (ambientes, móveis de um ambiente, compartimentos de
+  um móvel) muda a ordem; pelo teclado ou no toque, "Mover para cima" e "Mover para baixo" no menu "Opções de…" da
+  linha. Os dois caminhos gravam pelas rotas de ordem da API. Os móveis do outro modo continuam onde estavam
+  (`lib/acervo/ordem.ts`, `components/acervo/use-ordem-do-diretorio.ts`).
+- Dream Space pelo menu: "Novo módulo Dream Space" no fim da raiz Dream Space (pergunta o ambiente) e no menu de cada
+  ambiente. O nome vem sugerido ("Módulo N") e o módulo nasce com o padrão do Dream Space (vidro, porta de vidro).
 - Filtros Todas, Favoritas e Em uso; ordenação; grade ou lista.
 - Cartão da peça: foto, nome, preço, estrela da favorita e o botão que marca a peça para o subtotal. A peça marcada
   ganha um número, e o mesmo número aparece no compartimento dela no mapa e na cena.
@@ -105,9 +114,22 @@ Regras de negócio que valem a pena saber:
 
 - Cena 3D (react-three-fiber) com os móveis lado a lado, feitos de geometria procedural a partir da configuração:
   carcaça, divisória, prateleiras, cabideiro, gavetas, portas, puxadores e luz embutida; materiais de madeira (com
-  veio), laca, vidro e metal. As peças aparecem como formas coloridas: penduradas, dobradas em pilhas ou em fileiras
-  na gaveta.
-- Barra da cena: Frontal, Perspectiva, Abrir gavetas e Raio-X.
+  veio), laca, vidro e metal. As peças aparecem como formas na cor da peça: penduradas, dobradas em pilhas ou em
+  fileiras na gaveta.
+- Fotos na cena: a peça com foto própria mostra a foto nas faces grandes da forma (laterais da pendurada, tampo da
+  dobrada, tampo e laterais do calçado). A foto vira uma textura de 128 × 128 px recortada ao centro, a partir da
+  miniatura de 320 px; cada foto é carregada uma vez, compartilhada e descartada quando nenhuma forma usa mais; a cena
+  guarda no máximo 64 (cerca de 4 MB de memória de vídeo). Sem foto (só a ilustração da categoria), enquanto carrega,
+  se falhar ou acima do limite, fica o bloco na cor. A peça-fantasma nunca leva foto (`lib/acervo/cena/fotos.ts`,
+  `components/acervo/espaco/roupa-3d.tsx`).
+- Câmera livre: arrastar a cena gira a vista em volta dos móveis, até 55° para cada lado e sem passar por cima nem por
+  baixo, então o conjunto continua na tela. Não há panorâmica, e a roda do mouse não aproxima (ela continua rolando a
+  página); no celular, deslizar na vertical sobre a cena rola a página e o giro fica no deslize lateral. Segurar uma
+  peça para arrastar desliga o giro até soltar (`components/acervo/espaco/camera-3d.tsx`, limites em
+  `lib/acervo/cena/camera.ts`).
+- Barra da cena: Frontal, Perspectiva, "Girar a vista para a esquerda" e "para a direita" (15° por toque; a
+  alternativa por teclado ao arrasto, só com a cena em 3D), Abrir gavetas e Raio-X. Frontal e Perspectiva levam de
+  volta ao enquadramento pronto depois de um giro.
 - Painel de configuração: medidas, quantidade de cabideiros, prateleiras e gavetas, material, cor, porta, puxador e
   acabamento. Cada mudança é gravada e a cena se refaz.
 - Clicar num compartimento abre o conteúdo dele ampliado (a "gaveta expandida"); a gaveta escolhida sai do móvel.
@@ -117,14 +139,14 @@ Regras de negócio que valem a pena saber:
 - Modos: "Meu espaço" (medidas reais) e "Dream Space" (módulos suspensos, vidro, luz fria embutida, aro de luz no chão,
   botão "Adicionar módulo" e o orçamento estimado dos desejos).
 - Sem WebGL (ou se a cena falhar): esquema 2D com as mesmas interações.
-- "Reduzir movimento": gaveta e câmera mudam direto, sem animação.
+- "Reduzir movimento": gaveta e câmera mudam direto, sem animação nem inércia do giro.
 
 ### 4.3 O que é diferente da imagem de referência
 
 A imagem mostra um render fotográfico. Aqui os móveis são procedurais: caixas e cilindros com textura desenhada. A
 composição segue a imagem (dois módulos em nogueira, vãos abertos, destaque em verde, gaveta à frente), mas não há
-bolsas, caixas, sapatos modelados, tecido com dobras nem a luz quente de fotografia. As roupas são blocos coloridos pela
-cor da peça, não fotos nem modelos. O cartão "Dream Space — Conceito" da imagem é uma ilustração; aqui o Dream Space é
+bolsas, caixas, sapatos modelados, tecido com dobras nem a luz quente de fotografia. As roupas são blocos na cor da
+peça, com a foto nas faces grandes quando a peça tem foto; não são modelos. O cartão "Dream Space — Conceito" da imagem é uma ilustração; aqui o Dream Space é
 a própria cena no outro modo. O sino e o perfil no topo são os do app. O chip de comparação do custo por uso não existe.
 
 ## 5. Diferenciais
@@ -136,12 +158,14 @@ a própria cena no outro modo. O sino e o perfil no topo são os do app. O chip 
 | Gaveta expandida | feito | O compartimento escolhido abre num painel ampliado à frente do móvel; no 3D a gaveta também sai do móvel. |
 | Modo arrumação | feito | "Arrumar" mostra lugar atual e proposto lado a lado; dá para tirar itens; só a confirmação grava. A proposta é por regra simples (não é IA). |
 | Simulação de compra | feito | Um desejo com lugar escolhido entra como peça-fantasma no compartimento e o painel mostra gasto estimado e acervo depois da compra. Nada é gravado. |
-| Mapa de uso | parcial | Marca peças paradas (sem uso há mais de 180 dias ou nunca usadas) e os compartimentos que as guardam. A API já diz quais peças não estão em nenhum look, mas a tela ainda não mostra "combinações pouco exploradas". |
+| Mapa de uso | feito | Marca peças paradas (sem uso há mais de 180 dias ou nunca usadas) e os compartimentos que as guardam. O painel "Combinações pouco exploradas" lista as peças que não estão em nenhum look (até 8, com "E mais N"), cada uma com a ficha e o atalho "Montar look" (`/schemes/new?pieces=id`). |
 | Looks vinculados | feito | A ficha lista os looks que usam a peça e onde está cada item; o lugar é um atalho para "Meu espaço". |
 
-Pendente desta versão: girar a câmera livremente; fotos das peças dentro da cena 3D; reordenar pelo arrasto no
-diretório (a API de ordem existe, a tela ainda não usa); criar módulo Dream Space pelo menu do diretório (hoje é pelo
-botão "Adicionar módulo"); medição de fluidez em máquina com placa de vídeo.
+Feito em 16/11/2026 (antes pendente): câmera livre, fotos das peças na cena 3D, reordenar no diretório, módulo
+Dream Space pelo menu do diretório e "combinações pouco exploradas" no mapa de uso.
+
+Pendente: medição de fluidez em máquina com placa de vídeo (aqui só há renderização por software) e os modelos GLB da
+seção 6.
 
 ## 6. Modelos GLB
 
@@ -181,7 +205,7 @@ Nada foi alterado no código do provador.
 | 3 | Campo sem dado aparece como "Não informado" | atendido | os dois acima; `digital-passport.test.tsx` |
 | 4 | Estimativas identificadas, inclusive tamanhos e medidas vindos do 3D | atendido | `DigitalPassportServiceTest.sizesDistinguish…`; `peca-ficha-abas.test.tsx` (rótulos "estimado" e "Aproximação visual") |
 | 5 | Acesso ao endereço da fonte original | atendido | `digital-passport.test.tsx`; `peca-ficha-abas.test.tsx` |
-| 6 | Ver o modelo 3D quando disponível e autorizado | parcial | `peca-ficha-abas.test.tsx` confere o botão "Ver modelo 3D" e que ele abre o visualizador; o modelo desenhado não foi conferido em teste nem em tela (não há GLB de peça neste ambiente) |
+| 6 | Ver o modelo 3D quando disponível e autorizado | atendido | `peca-ficha-abas.test.tsx` confere o botão "Ver modelo 3D" e que ele abre o visualizador. Em tela (16/11/2026), com um GLB de teste na peça: "Ver modelo 3D" desenha o modelo na ficha, com "vitrine sem revisão: não aprovado para o provador" ([captura](capturas/passaporte-modelo-3d-d.jpg)) |
 | 7 | Modelo em quarentena não aparece como aprovado para o provador | atendido | `DigitalPassportServiceTest` (primeiro e terceiro testes); `peca-ficha-abas.test.tsx` |
 | 8 | Alteração autorizada aparece no passaporte e muda a data | atendido | `DigitalPassportServiceTest.ownerDeclarationsUpdateTheSheetAndViewersSeeOnlyWhatVisibilityAllows` |
 | 9 | Quem não pode editar só consulta o que tem acesso | atendido | o mesmo teste (visitante vê menos; sem acesso, 404) |
@@ -193,7 +217,7 @@ Nada foi alterado no código do provador.
 | 1 | Carrega o modelo ou mostra mensagem clara na falha | atendido | `piece-editor.test.tsx` (dois testes); `peca-ficha-abas.test.tsx` (peça sem modelo) |
 | 2 | Frente, costas e laterais pelos controles de câmera | atendido | `piece-editor-toolbar.test.tsx` (lista de vistas); a vista desenhada não foi conferida em tela |
 | 3 | Controles correspondem ao que o modelo suporta | atendido | `piece-editor-toolbar.test.tsx` |
-| 4 | Cor e material aparecem na visualização durante a edição | parcial | o painel e o viewport são os do Atelier (`scene-inspector.test.tsx`, `lib/atelier3d/document.test.ts`); não há teste nem conferência em tela com o GLB de uma peça |
+| 4 | Cor e material aparecem na visualização durante a edição | atendido | o painel e o viewport são os do Atelier (`scene-inspector.test.tsx`, `lib/atelier3d/document.test.ts`). Em tela (16/11/2026), com o GLB de teste: tocar na peça abre "Malha em edição: Corpo"; a cor #2867ad → #c62b28 muda o corpo no viewport na hora e "Desfazer" volta ao quadro anterior ([captura](capturas/editor-cor-alterada-d.jpg)). Nada foi salvo |
 | 5 | Posição, rotação e escala não mudam o arquivo original | atendido | `PieceCustomizationServiceTest.onlyTheOwnerSavesAndTheOriginalModelAndPassportDataStayUntouched` |
 | 6 | Desfazer e refazer na sessão | atendido | `lib/atelier3d/history.test.ts`; `piece-editor.test.tsx` (botões) |
 | 7 | Restaurar com confirmação quando há alterações | atendido | `piece-editor.test.tsx` |
@@ -201,7 +225,7 @@ Nada foi alterado no código do provador.
 | 9 | Reabrir recupera o que foi salvo | atendido | `PieceCustomizationServiceTest` (primeiro teste, trecho `reopened`) |
 | 10 | Sem autorização não altera personalização alheia nem o original | atendido | `PieceCustomizationServiceTest` (403 para outra pessoa; visitante só visualiza) |
 | 11 | Escala é ajuste visual, não medida nem tamanho | atendido | `PieceCustomizationServiceTest`; `piece-editor.test.tsx`; `peca-ficha-abas.test.tsx` (selo "Ajuste visual") |
-| 12 | Modelo bloqueado ou em quarentena não vira asset aprovado | parcial | `PieceCustomizationServiceTest.quarantinedAssetsAreNeverPresentedAsApproved…` e `peca-ficha-abas.test.tsx`: o modelo em quarentena nunca aparece como aprovado e modelo com falha não é editável. Porém o modelo em quarentena continua podendo ser personalizado pela dona (com o aviso); se a regra for bloquear a edição, falta mudar `PieceCustomizationService` |
+| 12 | Modelo bloqueado ou em quarentena não vira asset aprovado | parcial | `PieceCustomizationServiceTest.quarantinedAssetsAreNeverPresentedAsApproved…` e `peca-ficha-abas.test.tsx`: o modelo em quarentena nunca aparece como aprovado e modelo com falha não é editável. Porém o modelo em quarentena continua podendo ser personalizado pela dona, com o aviso "Modelo de vitrine (gerado da foto): não aprovado para o provador" (visto em tela em 16/11/2026); se a regra for bloquear a edição, falta mudar `PieceCustomizationService`. Comportamento mantido de propósito |
 
 ### 7.3 Seleção e representação do tamanho
 
@@ -209,13 +233,13 @@ Nada foi alterado no código do provador.
 |---|---|---|---|
 | 1 | Ver os tamanhos disponíveis da peça | atendido | `peca-ficha-abas.test.tsx` (aba Tamanhos) |
 | 2 | Tamanho indisponível não pode ser escolhido | atendido | `peca-ficha-abas.test.tsx`; `size-picker.test.tsx` |
-| 3 | No provador, o tamanho com 3D atualiza a peça e indica o tamanho | parcial | `size-picker.test.tsx` cobre a escolha e a indicação; a peça mudando no avatar do provador não foi conferida aqui |
+| 3 | No provador, o tamanho com 3D atualiza a peça e indica o tamanho | parcial | `size-picker.test.tsx` cobre a escolha e a indicação. Em tela não deu para conferir: no Provador o seletor de tamanho aparece para peça de loja do catálogo, e o banco local não tem produto com grade, tabela e variantes 3D; a peça do guarda-roupa (mesmo com o GLB de teste) entra no manequim sem seletor de tamanho |
 | 4 | Tamanho sem 3D: avisa e não troca por outro | atendido | `peca-ficha-abas.test.tsx`; `size-picker.test.tsx` |
 | 5 | Medidas com valor, unidade e origem | atendido | `DigitalPassportServiceTest.sizesDistinguish…`; `peca-ficha-abas.test.tsx` |
-| 6 | Diferencia medida oficial, outro método e estimada | parcial | medida oficial tem rótulo e teste (`digital-passport.test.tsx`, `peca-ficha-abas.test.tsx`, serviço); "outro método" tem rótulo, mas nenhum teste com esse caso; medida estimada não existe como valor: o que é estimado é a variação visual, sempre rotulada |
+| 6 | Diferencia medida oficial, outro método e estimada | atendido | oficial e "outro método": `DigitalPassportServiceTest.measurementsFromAnUnauthorizedChartAreOtherMethodNotOfficial` (tabela sem fonte autorizada sai `OTHER_METHOD`) e `peca-ficha-abas.test.tsx` (a aba mostra "medida obtida por outro método" num tamanho e "medida oficial autorizada" no outro); medida estimada não existe como valor: o que é estimado é a variação visual, sempre rotulada |
 | 7 | Variação por escala identificada como aproximação | atendido | `peca-ficha-abas.test.tsx`; `size-picker.test.tsx` |
 | 8 | Escolher tamanho não altera as medidas do avatar | atendido | `DigitalPassportServiceTest` (`avatarMeasurementsChanged = false`); textos em `peca-ficha-abas.test.tsx` e `size-picker.test.tsx` |
-| 9 | Tamanho salvo com a composição do provador e recuperado | parcial | `size-picker.test.tsx` ("keeps saved sizes…") cobre a recuperação; salvar e reabrir a composição inteira no provador não foi conferido aqui |
+| 9 | Tamanho salvo com a composição do provador e recuperado | parcial | `size-picker.test.tsx` ("keeps saved sizes…") cobre a recuperação; salvar e reabrir a composição com tamanho no Provador não foi conferido em tela, pelo mesmo motivo do critério 3 (sem produto de loja com tamanhos no banco local) |
 | 10 | Opção salva que ficou indisponível: avisa e pede nova escolha | atendido | `size-picker.test.tsx` (`validateSavedSizes`) |
 | 11 | Não afirma caimento | atendido | `DigitalPassportServiceTest` (`fitClaim = NONE`); `peca-ficha-abas.test.tsx` |
 | 12 | Variantes P/M/G/GG dos GLBs do lote ditas como aproximação relativa | atendido | `DigitalPassportServiceTest` (`RELATIVE_VISUAL_APPROXIMATION`); `peca-ficha-abas.test.tsx` (texto da limitação) |
@@ -235,7 +259,7 @@ Nada foi alterado no código do provador.
 ```
 npx vitest run lib/acervo components/acervo components/piece3d components/passport
 /opt/maven/bin/mvn -o -q -Djacoco.skip=true -pl fai-application,fai-infrastructure/persistence-mysql,fai-web -am test \
-  -Dtest='Acervo*Test,Migration*Test' -Dsurefire.failIfNoSpecifiedTests=false
+  -Dtest='Acervo*Test,Migration*Test,DigitalPassportServiceTest' -Dsurefire.failIfNoSpecifiedTests=false
 npx tsc --noEmit && node scripts/i18n/check.js --fail && node scripts/i18n/scan.js --fail && npm run lint:styles
 python -m scripts.refactoring.line_ratchet
 ```
@@ -245,13 +269,35 @@ criar o primeiro armário, guardar peças pela lista "Sem lugar" e abrir "Meu es
 
 ### O que foi conferido e como
 
-- **Por teste automático:** serviços e controllers do ACERVO, a migration (texto do SQL), as libs, as duas views no
-  jsdom (com o esquema 2D) e a cena 3D no renderizador de teste (partes do móvel, peças, Raio-X, gaveta aberta).
-- **Visto renderizado:** as duas views em 1440×900 e 390×844, a gaveta expandida, a vista frontal com busca, o Dream
-  Space com peça-fantasma e as abas da ficha, num navegador sem placa de vídeo (renderização por software), com o Next
-  local numa porta própria e a API simulada por interceptação. Não foi usado banco nem a API de verdade.
-- **Não conferido:** a API rodando contra um MySQL; arrastar e soltar com mouse de verdade dentro da cena 3D; temas
-  escuro e alto contraste em tela; fluidez do 3D ("não medida": o ambiente não tem placa de vídeo).
+- **Por teste automático:** serviços e controllers do ACERVO, a migration (texto do SQL), as libs (inclusive limites
+  e giro da câmera, fotos da cena e reordenação), as duas views no jsdom (com o esquema 2D), o diretório (arrastar
+  para reordenar, menu "Mover para cima/baixo", módulo Dream Space), o painel de combinações e a cena 3D no
+  renderizador de teste (partes do móvel, peças, Raio-X, gaveta aberta, giro pelos botões até o limite, giro desligado
+  ao segurar uma peça e a foto nas faces certas).
+- **Com a API de verdade e MySQL local:** a auditoria de 14/11/2026 já tinha usado a API contra o MySQL local
+  (seção 10.3 de `docs/auditoria/AUDITORIA_APP_2026-11-14.md`). Em 16/11/2026, com um banco local novo
+  (`fashionai_acervo`), a API na porta 8096 (armazenamento local), o Next na 3006 e uma conta fictícia com 10 peças
+  (3 com foto), pelo Chromium do Playwright em 1440×900 e 390×844, com renderização por software e sem erro de rede
+  nem de console:
+  - Meu espaço: fotos nas peças penduradas e na dobrada ([captura](capturas/espaco-perspectiva-d.jpg)); arrastar a
+    cena com o mouse gira até o limite de 55° e os móveis continuam na tela
+    ([captura](capturas/espaco-girado-arrasto-d.jpg)); "Girar a vista para a direita" com "Abrir gavetas"
+    ([captura](capturas/espaco-girar-direita-cena-d.jpg)); Frontal volta ao quadro pronto. No celular, sem rolagem
+    lateral ([captura](capturas/espaco-girado-m.jpg)); com "reduzir movimento" o quadro 120 ms depois do giro já é o
+    final, e sem ele a câmera ainda está a caminho.
+  - Diretório: arrastar "Armário 02" sobre "Armário 01" com o mouse gravou a nova ordem (conferida na resposta da
+    API); "Opções de Armário 02" → "Mover para baixo" pelo teclado desfez a troca
+    ([captura](capturas/diretorio-menu-ordem-d.jpg)).
+  - "Novo módulo Dream Space" na raiz Dream Space criou "Módulo 1" no modo Dream Space
+    ([captura](capturas/dream-novo-modulo-d.jpg)).
+  - Mapa de uso com "Combinações pouco exploradas" ([captura](capturas/uso-combinacoes-d.jpg)).
+  - Passaporte #6 e editor #4 (seção 7) com um GLB de teste (a camiseta base do Atelier,
+    `docs/atelier3d/auditoria-2026-11-05/fai-tee-prototype.glb`) posto na "Camiseta branca" só durante a conferência
+    (arquivo no armazenamento local e `model3d_url`/`model3d_status` na peça). Depois o arquivo foi apagado e os dois
+    campos voltaram a vazio; nenhuma personalização foi salva.
+- **Não conferido:** tamanhos #3 e #9 no Provador (seção 7.3); segurar e soltar uma peça com o mouse dentro da cena 3D
+  (coberto só pelo renderizador de teste); temas escuro e alto contraste em tela; fluidez do 3D
+  ("não medida": o ambiente não tem placa de vídeo).
 
 Padrão GoF: nenhum. A estrutura é serviço + regras puras + projeções, como o resto do app; não houve problema que
 pedisse um padrão.

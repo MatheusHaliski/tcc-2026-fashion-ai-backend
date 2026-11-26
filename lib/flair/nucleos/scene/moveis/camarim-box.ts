@@ -23,7 +23,7 @@ export function penteadeira(em: Em, corpo: string, tampo: string, metal: string,
     chanfrada(produtos, [0.2, 0.03, 0.14], [-0.02, 0.835, 0.02]),
     cilindro(metal, 0.045, 0.12, [0.42, 0.88, -0.07], undefined, 10),
     ...pinceis,
-  ]);
+  ], { corpo, tampo, metal, produtos });
 }
 
 /** Cadeira alta de maquiagem: assento, encosto, apoio de pés em anel e a coluna. */
@@ -34,7 +34,7 @@ export function cadeiraDeCamarim(em: Em, estofado: string, metal: string): Movel
     toro(metal, 0.2, 0.015, [0, 0.36, 0], [90, 0, 0], 16),
     chanfrada(estofado, [0.46, 0.08, 0.44], [0, 0.68, 0]),
     chanfrada(estofado, [0.46, 0.5, 0.07], [0, 0.98, -0.2], [-6, 0, 0]),
-  ]);
+  ], { estofado, metal });
 }
 
 /** Carro de corrida estilizado (sem marca): assoalho, bico, cockpit, capota do motor, asas e quatro rodas. */
@@ -56,7 +56,7 @@ export function carroDeCorrida(em: Em, pintura: string, carbono: string, pneu: s
     chanfrada(pintura, [0.36, 0.4, 0.04], [1.75, 0.65, -0.5]),
     ...rodas,
     ...cubos,
-  ]);
+  ], { pintura, carbono, pneu, metal });
 }
 
 /** Porta de enrolar do box: as lâminas, os trilhos e a caixa do rolo em cima. `pos` é o centro do pé da porta. */

@@ -8,7 +8,7 @@ import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { NucleoActionPanel } from "@/components/flair/nucleos/nucleo-action-panel";
 import { NucleoTrigger, type AcionamentoPedido } from "@/components/flair/nucleos/nucleo-trigger";
 import type { useNucleoAction } from "@/components/flair/nucleos/use-nucleo-action";
-import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
+import type { EfeitoItem, NucleoCodigo } from "@/lib/flair/nucleos/types";
 
 interface Props {
   nucleo: NucleoCodigo;
@@ -24,12 +24,14 @@ interface Props {
   erro: ApiError | null;
   /** a ação que a cor da carta dispara ao entrar em campo */
   acaoDe: (cardId: string) => string | null;
+  /** os selos de cada carta (a jogada de cena diz a ação da cor) */
+  itens?: (cardId: string) => EfeitoItem[] | undefined;
   onAcionar?: (pedido: AcionamentoPedido) => void;
 }
 
-export function NucleoActionSlot({ nucleo, variante, acao, acionou, cartas, vestidas, vagas, ocupado, erro, acaoDe, onAcionar }: Props) {
+export function NucleoActionSlot({ nucleo, variante, acao, acionou, cartas, vestidas, vagas, ocupado, erro, acaoDe, itens, onAcionar }: Props) {
   return (
-    <NucleoActionPanel nucleo={nucleo} variante={variante} passos={acao.passos} mostrados={acao.mostrados} onPular={acao.pular} esperando={acao.aberta}>
+    <NucleoActionPanel nucleo={nucleo} variante={variante} passos={acao.passos} mostrados={acao.mostrados} onPular={acao.pular} esperando={acao.aberta} luta={acao.luta}>
       {acao.tipo && (
         <NucleoTrigger
           tipo={acao.tipo}
@@ -41,6 +43,9 @@ export function NucleoActionSlot({ nucleo, variante, acao, acionou, cartas, vest
           ocupado={ocupado}
           erro={erro}
           acaoDe={acaoDe}
+          itens={itens}
+          pedidoDaCena={acao.pedido}
+          luta={acao.luta}
           onAcionar={onAcionar}
         />
       )}

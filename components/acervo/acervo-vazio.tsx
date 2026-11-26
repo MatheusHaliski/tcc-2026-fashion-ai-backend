@@ -27,7 +27,7 @@ export function AcervoVazio() {
   return (
     <section className="acv-cartao acv-vazio" aria-label={t("acervo.vazio.titulo")}>
       <AcervoIcone nome="armario" tamanho={40} />
-      <h2 className="acv-vazio-titulo">{t("acervo.vazio.titulo")}</h2>
+      <h2 className="acv-vazio-titulo type-h2">{t("acervo.vazio.titulo")}</h2>
       <p>{t("acervo.vazio.texto")}</p>
       <ol className="acv-vazio-passos">
         <li>{t("acervo.vazio.passo1")}</li>

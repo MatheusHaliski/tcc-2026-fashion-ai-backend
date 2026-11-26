@@ -13,7 +13,7 @@ vi.mock("@/components/admin-approvals", () => ({
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
-const ADMIN = { ...ME, role: "ADMIN" as const };
+const ADMIN = { ...ME, user: { ...ME.user, id: "admin1", username: "admin" }, role: "ADMIN" as const };
 const fail = (status: number, message: string) => () => new Response(JSON.stringify({ status, code: "ERRO", message }), { status, headers: { "content-type": "application/json" } });
 const USERS = [
   { id: "u1", username: "ana", displayName: "Ana", profileType: "PESSOAL", verified: true, country: "BR", privateAccount: false },
@@ -39,13 +39,13 @@ describe("admin · usuários", () => {
     renderApp(<AdminUsersPage />);
     await tab(/Usuários/);
     expect(await screen.findByText("@ana", { exact: false })).toBeTruthy();
-    expect(screen.getByText("PESSOAL· verificado · BR")).toBeTruthy();
-    expect(screen.getByText("MARCA")).toBeTruthy();
+    expect(screen.getByText("Pessoal· verificado · BR")).toBeTruthy();   // tipo de perfil por extenso (era "PESSOAL")
+    expect(screen.getByText("Marca")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("buscar"), { target: { value: "an a" } });
     await waitFor(() => expect(calls.some((c) => c.path === "/api/admin/users?term=an%20a")).toBe(true));
     const row = (await screen.findByText("Ana")).closest("li")!;
     fireEvent.click(within(row).getByRole("button", { name: /^papel/ }));
-    fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: "ADMIN" }));
+    fireEvent.click(within(screen.getByRole("listbox")).getByRole("option", { name: "Administrador" }));
     expect(await screen.findByText("Papel atualizado")).toBeTruthy();
     expect(calls.find((c) => c.path === "/api/admin/users/u1/role")!.body).toEqual({ role: "ADMIN" });
     // suspender pede confirmação e motivo; cancelar não suspende
@@ -64,6 +64,15 @@ describe("admin · usuários", () => {
     fireEvent.click(within(suspended).getByRole("button", { name: "Reativar" }));
     expect(await screen.findByText("Sem permissão")).toBeTruthy();
     expect(calls.find((c) => c.path === "/api/admin/users/u2/status")!.body).toEqual({ suspend: false, reason: "" });
+  });
+
+  it("a própria conta de administração não mostra Suspender nem troca de papel (auditoria 10.1, Administração)", async () => {
+    loggedAs(ADMIN, { "GET /api/admin/approvals": { pending: [] }, "GET /api/admin/users": [{ ...USERS[0], id: ADMIN.user.id, username: ADMIN.user.username, displayName: "Eu admin" }] });
+    renderApp(<AdminUsersPage />);
+    await tab(/Usuários/);
+    const row = (await screen.findByText("Eu admin")).closest("li")!;
+    expect(within(row).queryByRole("button", { name: "Suspender" })).toBeNull();
+    expect(within(row).getByText("Sua conta (não se suspende pela lista)")).toBeTruthy();
   });
 
   it("auditoria: filtra por ator e mostra campos em português ou inglês", async () => {

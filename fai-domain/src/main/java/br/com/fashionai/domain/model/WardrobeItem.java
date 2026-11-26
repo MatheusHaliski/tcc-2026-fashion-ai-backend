@@ -39,7 +39,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "wardrobe_items")
-public class WardrobeItem extends PieceStudioMedia {
+public class WardrobeItem extends PieceClassification {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -166,16 +166,6 @@ public class WardrobeItem extends PieceStudioMedia {
     @JoinColumn(name = "estado_de_conservacao")
     private EstadoConservacao estadoConservacao;
 
-    /** Coleção escolhida pelo dono (FK para a tabela colecao). */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "colecao_id")
-    private Colecao colecao;
-
-    /** Intensidade térmica da peça (leve, moderada, alta), escolhida pelo dono (FK para a tabela intensidade_termica). */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "intensidade_termica_id")
-    private IntensidadeTermica intensidadeTermica;
-
     /** Instrução estruturada, sem substituir o campo livre careInstructions. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tipo_lavagem_id")
@@ -284,10 +274,6 @@ public class WardrobeItem extends PieceStudioMedia {
     @Column(name = "canonical_image_url", length = 1024)
     private String canonicalImageUrl;
 
-    /** RF4 · sessão de captura adaptativa que originou a peça (fotos originais, canônicos e identificação). */
-    @Column(name = "capture_session_id", length = 36)
-    private java.util.UUID captureSessionId;
-
     /** RF47 · produto global do catálogo que esta peça pessoal possui (referência, sem cópia de foto nem metadados). */
     @Column(name = "catalog_product_id", length = 36)
     private java.util.UUID catalogProductId;
@@ -310,7 +296,7 @@ public class WardrobeItem extends PieceStudioMedia {
     @Column(name = "last_viewed_at")
     private Instant lastViewedAt;
 
-    /** DET-M07 — origem da peça: COMPRADA, GARIMPADA, HERDADA, PRESENTE, FEITA_A_MAO, TROCADA. */
+    /** DET-M07 — origem da peça: COMPRADA, GARIMPADA, HERDADA, PRESENTE, FEITA_A_MAO, TROCADA, SOB_ENCOMENDA. */
     @Column(name = "piece_origin", length = 20)
     private String pieceOrigin;
 }

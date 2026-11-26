@@ -1,7 +1,7 @@
 # Fashion AI (TCC 2026)
 
 Rede social de moda com guarda-roupa digital, composição de looks por IA, DNA de Estilo, Hype Score, selos de
-marcas/celebridades, Meu Quarto, Smart Mirror, Inventory Score, FAI Points, desafios e Momentos (o calendário da moda:
+marcas/celebridades, ACERVO, Smart Mirror, Inventory Score, FAI Points, desafios e Momentos (o calendário da moda:
 datas, temporadas, desafios e eventos privados FLAIR — `docs/momentos/MOMENTOS.md`).
 
 Este repositório contém **o sistema inteiro**: a API REST em Java (Spring Boot) e o frontend web em Next.js, além dos

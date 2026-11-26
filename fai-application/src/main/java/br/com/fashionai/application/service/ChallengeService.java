@@ -1,59 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import org.springframework.transaction.event.TransactionalEventListener;
-import org.springframework.transaction.event.TransactionPhase;
-import br.com.fashionai.application.events.SideEffectRunner;
-import br.com.fashionai.application.ai.local.ColorMath;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.events.DomainEvents;
-import br.com.fashionai.application.imaging.ImageOps;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.domain.model.ChallengeEvent;
-import br.com.fashionai.domain.model.ChallengeInstance;
-import br.com.fashionai.domain.model.ChallengeNote;
-import br.com.fashionai.domain.model.ChallengeParticipant;
-import br.com.fashionai.domain.model.ChallengeTemplate;
-import br.com.fashionai.domain.model.ChallengeVote;
-import br.com.fashionai.domain.model.DailyLook;
-import br.com.fashionai.domain.model.PieceUsageDiaryEntry;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.FollowStatus;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.NotificationType;
-import br.com.fashionai.domain.model.enums.PhotoOrigin;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.repository.ChallengeEventRepository;
-import br.com.fashionai.domain.repository.ChallengeInstanceRepository;
-import br.com.fashionai.domain.repository.ChallengeNoteRepository;
-import br.com.fashionai.domain.repository.ChallengeParticipantRepository;
-import br.com.fashionai.domain.repository.ChallengeTemplateRepository;
-import br.com.fashionai.domain.repository.ChallengeVoteRepository;
-import br.com.fashionai.domain.repository.DailyLookRepository;
-import br.com.fashionai.domain.repository.FollowRepository;
-import br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -61,7 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
@@ -82,14 +27,40 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+import br.com.fashionai.application.ai.local.ColorMath;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.challenge.*;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.events.SideEffectRunner;
+import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.wardrobe.ForgottenPieces;
+import br.com.fashionai.application.wardrobe.PieceUsageDiary;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
+
 /**
  * RF36 — Desafios & Games do Guarda-Roupa (03-desafios-e-games.md). Modos Solo, Equipe (metas proporcionais),
  * Duelo (resultado objetivo ou votação às cegas) e Comunidade. Progresso verificável, sempre a partir de dados
  * reais do sistema (CA10) — não existe "marcar como feito". Limite de 3 ativos (CA06), convites só para quem o
- * usuário segue ou para quem usou a Chave do Quarto (CA04), aceite em 48 h, sem notificações de culpa (ETI-02).
+ * usuário segue (CA04; a Chave do Quarto saiu com o Meu Quarto), aceite em 48 h, sem notificações de culpa (ETI-02).
  */
 @Service
-public class ChallengeService implements RoomService.DecorationsProvider, MirrorService.PieceRestrictionProvider {
+public class ChallengeService implements MirrorService.PieceRestrictionProvider {
     private SideEffectRunner sideEffects;
     private static final Logger log = LoggerFactory.getLogger(ChallengeService.class);
     public static final int MAX_ACTIVE = 3;
@@ -145,7 +116,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
     private final FollowRepository follows;
     private final UserRepository users;
     private final StyleDnaRepository dnas;
-    private final RoomService room;
+    private final PieceUsageDiary usage;
     private final FaiPointsService points;
     private final NotificationService notifications;
     private final MediaService media;
@@ -156,7 +127,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                             ChallengeParticipantRepository participants, ChallengeEventRepository evidence, ChallengeNoteRepository notes,
                             ChallengeVoteRepository votes, WardrobeItemRepository pieces, SchemeRepository schemes,
                             SchemeItemRepository schemeItems, DailyLookRepository dailyLooks, PieceUsageDiaryEntryRepository diary,
-                            FollowRepository follows, UserRepository users, StyleDnaRepository dnas, RoomService room,
+                            FollowRepository follows, UserRepository users, StyleDnaRepository dnas, PieceUsageDiary usage,
                             FaiPointsService points, NotificationService notifications, MediaService media, Guard guard, Audit audit,
             SideEffectRunner sideEffects) {
         this.sideEffects = sideEffects;
@@ -174,7 +145,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         this.follows = follows;
         this.users = users;
         this.dnas = dnas;
-        this.room = room;
+        this.usage = usage;
         this.points = points;
         this.notifications = notifications;
         this.media = media;
@@ -248,7 +219,6 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             m.put("playingNow", playing.getOrDefault(t.getCode(), 0L));
             m.put("origin", t.getOrigin());
             m.put("author", t.getAuthorUserId() == null ? null : users.findById(t.getAuthorUserId()).map(User::getUsername).orElse(null));
-            m.put("roomDecoration", t.getRoomDecoration());
             if (t.getCode().equals("DAILY_CHALLENGE")) {
                 m.put("todayRule", dailyRuleText(d));
             }
@@ -349,7 +319,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         }
         for (UUID invitee : list) {
             boolean follows = this.follows.findByFollowerIdAndFollowingId(user.id(), invitee).filter(f -> f.getStatus() == FollowStatus.ACEITO).isPresent();
-            if (!follows && !room.hasKey(user.id(), invitee)) {
+            if (!follows) {
                 throw guard.deny(user, "challenge-invite:" + invitee,
                         Msg.t("challenge.voce_so_pode_convidar_quem"));
             }
@@ -506,9 +476,9 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
 
     List<UUID> forgottenNow(UUID userId) {
         LocalDate d = today();
-        Map<UUID, LocalDate> last = room.lastDiaryDates(userId, d.minusYears(10));
+        Map<UUID, LocalDate> last = usage.lastDiaryDates(userId, d.minusYears(10));
         return pieces.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .filter(w -> RoomService.forgotten(w, RoomService.lastUse(w, last), d)).map(WardrobeItem::getId).toList();
+                .filter(w -> ForgottenPieces.forgotten(w, ForgottenPieces.lastUse(w, last), d)).map(WardrobeItem::getId).toList();
     }
 
     /** Comunidade: a mesma regra para todo mundo — uma instância compartilhada por período (dia ou semana). */
@@ -1012,7 +982,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                 case "category" -> w -> String.valueOf(v).equals(w.getCategory());
                 case "origin" -> w -> w.getPieceOrigin() != null && List.of(String.valueOf(v).split("\\|")).contains(w.getPieceOrigin().toUpperCase(Locale.ROOT));
                 case "state" -> w -> switch (String.valueOf(v)) {
-                    case "forgotten" -> daysUnused(w, day) >= RoomService.FORGOTTEN_DAYS;
+                    case "forgotten" -> daysUnused(w, day) >= ForgottenPieces.FORGOTTEN_DAYS;
                     case "favorite" -> w.isFavorite();
                     default -> w.isDisponivel();
                 };
@@ -1136,7 +1106,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
         return out;
     }
 
-    static double round2(double v) {
+    public static double round2(double v) {
         return Math.round(v * 100) / 100.0;
     }
 
@@ -1283,7 +1253,6 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
             out.put("entries", entries(user, i, t, false));   // Solo: as próprias entradas, para a página mostrar o que foi enviado
         }
         out.put("result", Json.map(i.getResultJson()));
-        out.put("decoration", t.getRoomDecoration());
         return out;
     }
 
@@ -1738,53 +1707,7 @@ public class ChallengeService implements RoomService.DecorationsProvider, Mirror
                 "maxActive", MAX_ACTIVE);
     }
 
-    // ================================================================== integração com o quarto e o Vista-me
-    /** RF36.CA13 — elemento visual do desafio ativo no quarto; some quando o desafio termina. */
-    @Override
-    @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> decorations(UUID userId) {
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (Object[] row : activeParticipations(userId)) {
-            ChallengeInstance i = (ChallengeInstance) row[0];
-            ChallengeParticipant p = (ChallengeParticipant) row[1];
-            ChallengeTemplate t = (ChallengeTemplate) row[2];
-            if (t.getRoomDecoration() == null) {
-                continue;
-            }
-            Map<String, Object> d = new LinkedHashMap<>();
-            d.put("challengeId", i.getId());
-            d.put("type", t.getRoomDecoration());
-            d.put("name", tplName(t));
-            Map<String, Object> params = Json.map(i.getParamsJson());
-            switch (t.getRoomDecoration()) {
-                case "quadro_cortica" -> {
-                    List<Map<String, Object>> polaroids = evidence.findByInstanceIdAndUserId(i.getId(), userId).stream()
-                            .filter(e -> "LOOK".equals(e.getEvidenceType())).map(e -> schemes.findById(e.getRefId()).orElse(null)).filter(Objects::nonNull)
-                            .map(s -> Map.<String, Object>of("schemeId", s.getId(), "coverImageUrl", String.valueOf(s.getCoverImageUrl()))).toList();
-                    d.put("days", t.getDurationDays());
-                    d.put("polaroids", polaroids);
-                }
-                case "fita_alfaiate" -> {
-                    Set<String> capsule = new HashSet<>(Json.strings(Json.write(params.get("piece_ids"))));
-                    d.put("tapedPieceIds", pieces.findByUserIdOrderByCreatedAtDesc(userId).stream().map(w -> w.getId().toString())
-                            .filter(x -> !capsule.contains(x)).toList());
-                }
-                case "etiqueta_2a_chance" -> {
-                    Set<UUID> rescued = evidence.findByInstanceIdAndUserId(i.getId(), userId).stream().filter(e -> "RESCUE".equals(e.getEvidenceType()))
-                            .map(ChallengeEvent::getRefId).collect(Collectors.toSet());
-                    d.put("taggedPieceIds", Json.strings(Json.write(Json.map(p.getPersonalGoalJson()).get("forgotten"))).stream()
-                            .filter(x -> !rescued.contains(UUID.fromString(x))).toList());
-                }
-                case "calendario_parede" -> d.put("days", progress(i, p, t).value());
-                case "tema_espelho" -> d.put("theme", params.getOrDefault("theme", runwayTheme(today())));
-                default -> {
-                }
-            }
-            out.add(d);
-        }
-        return out;
-    }
-
+    // ================================================================== integração com o Vista-me
     /** RF36.CA14 — 10×10 e Temporada Cápsula restringem o Vista-me e o Copilot às peças do desafio. */
     @Override
     public Optional<Restriction> restriction(UUID userId) {

@@ -68,6 +68,10 @@ public class FlairCombination extends VersionedAuditableEntity {
     @Column(name = "min_purchase", precision = 10, scale = 2)
     private BigDecimal minPurchase;
 
+    /** Exercício 15 — moeda contratada do mínimo de compra; nula nas combinações antigas (moeda não confirmada). */
+    @Column(name = "min_purchase_currency", length = 3, columnDefinition = "char(3)")
+    private String minPurchaseCurrency;
+
     @Column(name = "valid_days", nullable = false)
     private int validDays;
 
@@ -92,4 +96,9 @@ public class FlairCombination extends VersionedAuditableEntity {
     /** Link da loja terceira onde o cupom é usado (sobrepõe o site da marca). */
     @Column(name = "store_url", length = 512)
     private String storeUrl;
+
+    /** Exercício 14 — canal em que o cupom desta oferta pode ser usado; nulo = não informado (oferta antiga). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "canal_cupom_id")
+    private CanalCupom canalCupom;
 }

@@ -19,7 +19,7 @@ const ADMIN = { ...ME, role: "ADMIN" as const };
 const fail = (status: number, message: string) => () => new Response(JSON.stringify({ status, code: "ERRO", message }), { status, headers: { "content-type": "application/json" } });
 const AI = { remoteEnabled: true, providers: { claude: true, local: false },
   catalog: [{ capability: "tag", name: "Etiquetas", primary: "claude", status: "OK", dailyQuota: 100, hostRf: "RF05" }, { capability: "dna", name: "DNA", primary: "local", status: "OFF" }],
-  recent: [{ capability: "tag", provider: "claude", result: "OK", latencyMs: 120, costUsd: 0.01 }, { capability: "dna", provider: "local", result: "FALLBACK", fallback: true }],
+  recent: [{ capability: "COPILOT", provider: "claude", result: "SUCCESS", latencyMs: 120, costUsd: 0.01 }, { capability: "MULTI_PIECE_DETECTOR", provider: "local", result: "FALLBACK_LOCAL", fallback: true }],
   hypeV2: { algorithmVersion: "v2.1", lastCalculatedAt: null, lastSnapshotDate: null, rows: 0, staleAfterHours: 24, stale: null, coverage: [{}, {}] } };
 const LOGOS = [
   { name: "Nike", url: "/n.png", source: "WIKIDATA", status: "FOUND", domain: "nike.com", confidence: 0.92 },
@@ -45,8 +45,9 @@ describe("admin · sistema e IA", () => {
     expect(screen.getByText(/^24\/10\/2026.* · banco de dados completo · concluído$/)).toBeTruthy();
     expect(screen.getByText("20 KB")).toBeTruthy();
     expect(screen.getByText("sem data · banco de dados completo · falhou")).toBeTruthy();
-    expect(screen.getByText("tag · claude · OK")).toBeTruthy();
-    expect(screen.getByText("dna · local(IA local) · FALLBACK")).toBeTruthy();
+    // capacidade e resultado por extenso, não o código (auditoria 10.1, Administração)
+    expect(screen.getByText("Copilot · claude · concluída")).toBeTruthy();
+    expect(screen.getByText("Várias peças numa foto · local · feita no app (sem IA online)")).toBeTruthy();
     expect(screen.getByText(/^0 ms ·$/)).toBeTruthy();
     expect(screen.getByText(/^120 ms · .*0[.,]01/)).toBeTruthy();
     expect(await screen.findByText("Wikidata / Commons · nike.com · 92%")).toBeTruthy();

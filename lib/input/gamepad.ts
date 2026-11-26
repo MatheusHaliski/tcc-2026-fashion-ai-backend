@@ -1,6 +1,6 @@
 /*
  * Controle de videogame (DualSense/DualShock e qualquer controle no mapeamento padrão do navegador): a mesma leitura no
- * Meu Quarto, no Provador e no FLAIR. O navegador só mostra o controle depois que a pessoa aperta um botão dele com a
+ * Provador e no FLAIR. O navegador só mostra o controle depois que a pessoa aperta um botão dele com a
  * página aberta (regra da Gamepad API), e só controles com `mapping === "standard"` têm os botões nos índices abaixo.
  */
 import { useEffect, useRef } from "react";

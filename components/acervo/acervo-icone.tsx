@@ -6,6 +6,7 @@ const TRACOS = {
   gaveta: "M3 7h18v10H3zM3 12h18M10 9.5h4M10 14.5h4",
   prateleira: "M3 6h18M3 12h18M3 18h18M5 6v12M19 6v12",
   brilho: "M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8L11 3zM18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z",
+  luz: "M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z",
   coracao: "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z",
   estrela: "M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8L3.5 9.7l5.9-.8L12 3.5z",
   local: "M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z",
@@ -23,6 +24,8 @@ const TRACOS = {
   outros: "M4 10a3 3 0 1 0 6 0 3 3 0 0 0-6 0zM14 10a3 3 0 1 0 6 0 3 3 0 0 0-6 0zM10 10h4",
   vassoura: "M14 3l-4 9M7 12h7l2 9H5l2-9zM9 16v5M12 16v5",
   lapis: "M4 20l1-4L16 5l3 3L8 19l-4 1zM14 7l3 3",
+  girarEsquerda: "M4 4v5h5M4.6 9A8 8 0 1 1 4 13",
+  girarDireita: "M20 4v5h-5M19.4 9A8 8 0 1 0 20 13",
 } as const;
 
 export type AcervoIconeNome = keyof typeof TRACOS;

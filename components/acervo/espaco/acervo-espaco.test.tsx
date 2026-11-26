@@ -5,12 +5,19 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { useThree } from "@react-three/fiber";
+import { I18nProvider } from "@/lib/i18n/i18n";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor, within } from "@/test-utils/render";
 import { ARMARIO_1, ARMARIO_2, ARVORE, rotasDoAcervo } from "@/test-utils/acervo";
-import { frames, meshes, mount3d } from "@/test-utils/three";
+import { frames, meshes, mount3d, ReactThreeTestRenderer } from "@/test-utils/three";
 import { AcervoApp } from "../acervo-app";
 import { CenaConteudo } from "./cena-conteudo";
 import type { CenaProps } from "./cena-tipos";
+
+// as fotos são carregadas pelo navegador; aqui a peça com foto recebe direto uma textura
+const FOTO = vi.hoisted(() => ({ textura: null as unknown }));
+vi.mock("./use-foto-da-peca", () => ({ useFotoDaPeca: (url?: string | null) => (url ? FOTO.textura : null) }));
 
 beforeEach(() => {
   localStorage.clear();
@@ -185,5 +192,84 @@ describe("ACERVO · cena 3D (renderizador de teste)", () => {
     const malha = (nome: string) => meshes(cena).find((m) => m.instance.name === nome)!;
     expect(malha("gaveta-c-gav2").instance.parent?.position.z).toBeCloseTo(0.42);
     expect(malha("gaveta-c-gav1").instance.parent?.position.z).toBe(0);
+  });
+
+  it("a câmera gira pelos botões (alternativa ao arrasto) até o limite e Frontal/Perspectiva voltam ao quadro pronto", async () => {
+    const vista: { camera: THREE.Camera | null; controles: { enabled: boolean; target: THREE.Vector3 } | null } = { camera: null, controles: null };
+    function Espia() {
+      const estado = useThree();
+      vista.camera = estado.camera;
+      vista.controles = estado.controls as unknown as { enabled: boolean; target: THREE.Vector3 };
+      return null;
+    }
+    const cena = (comando?: { vez: number; giro: number }) => (
+      <I18nProvider initial="pt-BR"><CenaConteudo {...base} rotulos={false} comandoDeCamera={comando} /><Espia /></I18nProvider>
+    );
+    const r = await mount3d(cena());
+    await frames(r);
+    const alvo = vista.controles!.target;
+    const azimute = (p = vista.camera!.position) => Math.atan2(p.x - alvo.x, p.z - alvo.z);
+    const inicio = vista.camera!.position.clone();
+    expect(vista.controles?.enabled).toBe(true);
+    await ReactThreeTestRenderer.act(async () => r.update(cena({ vez: 1, giro: 15 })));
+    await frames(r);
+    expect(azimute() - azimute(inicio)).toBeCloseTo((15 * Math.PI) / 180, 2);
+    for (let vez = 2; vez < 10; vez++) {
+      await ReactThreeTestRenderer.act(async () => r.update(cena({ vez, giro: 15 })));
+      await frames(r);
+    }
+    expect(azimute()).toBeCloseTo((55 * Math.PI) / 180, 2);
+    await ReactThreeTestRenderer.act(async () => r.update(cena({ vez: 10, giro: 0 })));
+    await frames(r);
+    expect(vista.camera!.position.distanceTo(inicio)).toBeLessThan(0.01);
+    // segurar uma peça para arrastar não gira a câmera; soltar devolve o giro
+    await r.fireEvent(meshes(r).find((m) => m.instance.name === "roupa-p1")!, "onPointerDown");
+    expect(vista.controles?.enabled).toBe(false);
+    await ReactThreeTestRenderer.act(async () => {
+      window.dispatchEvent(new Event("pointerup"));
+      await new Promise((fim) => setTimeout(fim, 5));
+    });
+    expect(vista.controles?.enabled).toBe(true);
+  });
+
+  it("a peça com foto tem a silhueta da foto (não um bloco com a foto); dobrada sem foto é um bloco macio na cor", async () => {
+    const foto = new THREE.Texture();
+    foto.userData.recorte = { removido: 0.45, caixa: [0.2, 0.05, 0.8, 0.95] };
+    FOTO.textura = foto;
+    const cena = await mount3d(<CenaConteudo {...base} moveis={[ARMARIO_1]} rotulos={false} gavetasAbertas
+      itensDe={(id) => base.itensDe(id).map((item) => (item.id === "p1" || item.id === "p2" ? { ...item, foto: `/fotos/${item.id}.webp` } : item))} />);
+    await frames(cena);
+    const malha = (nome: string) => meshes(cena).find((m) => m.instance.name === nome)?.instance as THREE.Mesh;
+    // pendurada: um painel recortado (alphaTest) com só o trecho da peça na textura, no cabide — não uma caixa
+    const pendurada = malha("roupa-p1");
+    const mat = pendurada.material as THREE.MeshStandardMaterial;
+    expect(mat.map).toBe(foto);
+    expect(mat.alphaTest).toBeCloseTo(0.5);
+    expect(pendurada.geometry).toBeInstanceOf(THREE.PlaneGeometry);
+    expect(Array.from(pendurada.geometry.getAttribute("uv").array).map((v) => +v.toFixed(2))).toEqual([0.2, 0.95, 0.8, 0.95, 0.2, 0.05, 0.8, 0.05]);
+    expect(meshes(cena).some((m) => m.instance.parent?.name === "cabide-p1")).toBe(true);
+    // dobrada: bloco macio na cor, com o miolo da peça (o tecido) por cima
+    expect((malha("roupa-p2").material as THREE.MeshStandardMaterial).map).toBeNull();
+    expect((malha("tecido-p2").material as THREE.MeshStandardMaterial).map?.source).toBe(foto.source);
+    // dobrada sem foto (p3, na gaveta): o bloco macio de bordas arredondadas, só na cor e sem tecido por cima
+    const semFoto = malha("roupa-p3");
+    expect(semFoto.geometry).toBeInstanceOf(RoundedBoxGeometry);
+    expect(malha("tecido-p3")).toBeUndefined();
+    expect((semFoto.material as THREE.MeshStandardMaterial).map).toBeNull();
+    expect((semFoto.material as THREE.MeshStandardMaterial).color.getHexString()).toBe("335577");
+    FOTO.textura = null;
+  });
+
+  it("foto cujo fundo não saiu não vira bloco nem painel: a peça fica com a silhueta da categoria", async () => {
+    const foto = new THREE.Texture();
+    foto.userData.recorte = { removido: 0.01, caixa: [0, 0, 1, 1] };
+    FOTO.textura = foto;
+    const cena = await mount3d(<CenaConteudo {...base} moveis={[ARMARIO_1]} rotulos={false}
+      itensDe={(id) => base.itensDe(id).map((item) => ({ ...item, foto: `/fotos/${item.id}.webp` }))} />);
+    await frames(cena);
+    const p1 = meshes(cena).find((m) => m.instance.name === "roupa-p1")!.instance as THREE.Mesh;
+    expect(p1.geometry).toBeInstanceOf(THREE.ExtrudeGeometry);
+    expect((p1.material as THREE.MeshStandardMaterial).map).toBeNull();
+    FOTO.textura = null;
   });
 });

@@ -2,7 +2,8 @@
 /**
  * O palco do Fashion Sports durante a partida: a transmissão (3D com WebGL; sem ele, o campo visto de cima, em SVG, com
  * os mesmos jogadores e a mesma bola) e, por cima, o placar de TV com os times, o placar, o relógio e o tempo. A linha
- * de narração do lance fica embaixo, fora do meio do campo. Com "reduzir movimento" a câmera não viaja e o campo mostra
+ * de narração do lance fica embaixo, fora do meio do campo. Enquanto o estádio carrega, a tela de carga
+ * (esporte-carga.tsx) cobre o palco com a arte do campo e o que está sendo carregado. Com "reduzir movimento" a câmera não viaja e o campo mostra
  * o fim de cada lance, parado.
  */
 import dynamic from "next/dynamic";
@@ -12,11 +13,15 @@ import { useReducedMotion, useWebGL } from "@/components/three/common";
 import { HudIcon } from "@/components/flair/nucleos/nucleo-icons";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { jogadorEmTexto, narracao, nomeDoTime, tempoEmTexto } from "@/components/flair/esporte/esporte-texto";
+import { EsporteCarga } from "@/components/flair/esporte/esporte-carga";
+import { EsporteMomento } from "@/components/flair/esporte/esporte-momento";
 import { NucleoCameraSelector } from "@/components/flair/nucleos/nucleo-camera-selector";
 import { CAMERAS_DO_CAMPO, planoDaCamera } from "@/lib/flair/esporte/camera";
+import { carregando, type EtapaDaCarga } from "@/lib/flair/esporte/carga";
 import { campoDe, UNIFORME_VISITANTE, type Campo, type Uniforme } from "@/lib/flair/esporte/campo";
 import { quadroDoLance } from "@/lib/flair/esporte/timeline";
 import { relogioEmTexto, type Jogada } from "@/lib/flair/esporte/types";
+import { useEixoDeAndar } from "@/components/flair/nucleos/use-eixo-de-andar";
 
 const Transmissao3D = dynamic(() => import("@/components/flair/esporte/transmissao-3d"), { ssr: false, loading: () => null });
 
@@ -60,6 +65,10 @@ interface Props {
   fim: boolean;
   /** semente da partida: o elenco de cada time sai dela */
   semente?: number;
+  /** o que a tela de jogo põe por cima do campo (a roda de recursos da regra peça-recurso) */
+  children?: ReactNode;
+  /** a janela da jogada aberta: WASD e o analógico levam a capitã pelo campo (as setas ficam com a mão de cartas) */
+  capita?: boolean;
 }
 
 /** A câmera escolhida no seletor (vale enquanto a partida está na tela). */
@@ -67,11 +76,15 @@ function useCameraDoCampo() {
   return useState<string>(CAMERAS_DO_CAMPO[0]);
 }
 
-export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, semente }: Props) {
+export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, semente, children, capita = false }: Props) {
   const tx = useNucleoText();
   const webgl = useWebGL();
   const reduzido = useReducedMotion();
   const [camera, setCamera] = useCameraDoCampo();
+  const comCapita = capita && webgl === true && !reduzido;
+  useEixoDeAndar(comCapita);
+  /** a carga do estádio: a cena 3D chegando, o campo sendo montado e, no primeiro quadro, pronta */
+  const [etapa, setEtapa] = useState<EtapaDaCarga>("ESTADIO");
   const campo = campoDe(modalidade);
   const atual = jogadas[jogadas.length - 1] ?? null;
   const anterior = jogadas[jogadas.length - 2] ?? null;
@@ -100,8 +113,9 @@ export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, seme
       {webgl === false || reduzido ? planta : webgl === null ? <div className="n3d-scene2d" role="status">{tx.t("flair3d.ui.scene.loading")}</div> : (
         <Limite reserva={planta}>
           <div className="n3d-scene3d">
-            <Transmissao3D campo={campo} anterior={anterior} atual={atual} inicio={inicio.current} duracao={duracao} reduzido={reduzido} uniforme={uniforme} rotulo={rotulo} camera={camera} semente={semente} />
+            <Transmissao3D campo={campo} anterior={anterior} atual={atual} inicio={inicio.current} duracao={duracao} reduzido={reduzido} uniforme={uniforme} rotulo={rotulo} camera={camera} semente={semente} fim={fim} onEtapa={setEtapa} capita={comCapita} />
           </div>
+          {carregando(etapa) && <EsporteCarga etapa={etapa} modalidade={modalidade} campo={campo} uniforme={uniforme} />}
         </Limite>
       )}
       <Link href="/flair/3d" className="n3d-icon-btn fsp-voltar" aria-label={voltar} title={voltar}>
@@ -119,7 +133,9 @@ export function EsportePalco({ modalidade, jogadas, duracao, uniforme, fim, seme
           <span className="fsp-parcial tabular" data-testid="esporte-parcial">{tx.t("flair3d.esporte.parcial", { n: atual.tempo, nos: atual.parcial.split("-")[0], eles: atual.parcial.split("-")[1] })}</span>
         )}
       </div>
+      <EsporteMomento modalidade={modalidade} jogadas={jogadas} fim={fim} />
       {atual && <p className="fsp-narracao" data-testid="esporte-narracao">{narracao(tx, modalidade, atual)}</p>}
+      {children}
     </div>
   );
 }

@@ -1,10 +1,10 @@
 {
   "source": "FashionAI — Prompts de Assets de Ícones (2026-09-23)",
   "counts": {
-    "total": 77,
+    "total": 75,
     "SOC": 15,
-    "NAV": 16,
-    "ACT": 46
+    "NAV": 15,
+    "ACT": 45
   },
   "palette": {
     "disc": "#2A211C",
@@ -1242,43 +1242,6 @@
       "available": true
     },
     {
-      "id": "NAV-16",
-      "slug": "nav-16",
-      "family": "NAV",
-      "rf": "RF32",
-      "label": {
-        "PT_BR": "Meu Quarto",
-        "EN": "My Room",
-        "ES": "Mi cuarto"
-      },
-      "object": "a wardrobe next to a tall standing mirror",
-      "activeState": "o guarda-roupa espacial com o Smart Mirror",
-      "activeAccent": "an orange mirror frame",
-      "singleState": false,
-      "states": [
-        "normal",
-        "ativo"
-      ],
-      "glyph": "room",
-      "ai": false,
-      "route": "/room",
-      "files": {
-        "normal": {
-          "512": "/icons/fai/nav-16-normal-512.png",
-          "96": "/icons/fai/nav-16-normal-96.png",
-          "48": "/icons/fai/nav-16-normal-48.png",
-          "24": "/icons/fai/nav-16-normal-24.png"
-        },
-        "ativo": {
-          "512": "/icons/fai/nav-16-ativo-512.png",
-          "96": "/icons/fai/nav-16-ativo-96.png",
-          "48": "/icons/fai/nav-16-ativo-48.png",
-          "24": "/icons/fai/nav-16-ativo-24.png"
-        }
-      },
-      "available": true
-    },
-    {
       "id": "ACT-01",
       "slug": "act-01",
       "family": "ACT",
@@ -2363,43 +2326,6 @@
           "96": "/icons/fai/act-30-ativo-96.png",
           "48": "/icons/fai/act-30-ativo-48.png",
           "24": "/icons/fai/act-30-ativo-24.png"
-        }
-      },
-      "available": true
-    },
-    {
-      "id": "ACT-31",
-      "slug": "act-31",
-      "family": "ACT",
-      "rf": "RF32",
-      "label": {
-        "PT_BR": "Mostrar no quarto",
-        "EN": "Show in room",
-        "ES": "Mostrar en el cuarto"
-      },
-      "object": "a single drawer with a small spotlight cone shining on it",
-      "activeState": "ativo",
-      "activeAccent": "an orange spotlight cone",
-      "singleState": false,
-      "states": [
-        "normal",
-        "ativo"
-      ],
-      "glyph": "drawerspot",
-      "ai": false,
-      "action": "showInRoom",
-      "files": {
-        "normal": {
-          "512": "/icons/fai/act-31-normal-512.png",
-          "96": "/icons/fai/act-31-normal-96.png",
-          "48": "/icons/fai/act-31-normal-48.png",
-          "24": "/icons/fai/act-31-normal-24.png"
-        },
-        "ativo": {
-          "512": "/icons/fai/act-31-ativo-512.png",
-          "96": "/icons/fai/act-31-ativo-96.png",
-          "48": "/icons/fai/act-31-ativo-48.png",
-          "24": "/icons/fai/act-31-ativo-24.png"
         }
       },
       "available": true

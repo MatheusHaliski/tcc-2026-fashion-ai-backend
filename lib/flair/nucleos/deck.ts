@@ -18,6 +18,8 @@ export interface DeckStatus {
   tamanhoMax: number | null;
   excesso: number;
   obrigatorias: ObrigatoriaStatus[];
+  /** cartas escolhidas que o jogo não tem onde vestir (o servidor recusa o deck com elas) */
+  semVaga: FlairCollectionCard[];
   valido: boolean;
 }
 
@@ -28,6 +30,11 @@ export function posicoesDaRegra(posicao: string | null | undefined): string[] {
   return p.split(/[|,]/).map((x) => x.trim()).filter(Boolean);
 }
 
+/** A carta tem lugar neste jogo? A peça inteira não entra no deck de um jogo sem a vaga dela. */
+export function entraNoDeck(regras: DeckRegras, card: Pick<FlairCollectionCard, "position">): boolean {
+  return !regras.posicoes?.length || regras.posicoes.includes(card.position);
+}
+
 export function conferirDeck(regras: DeckRegras, deck: FlairCollectionCard[]): DeckStatus {
   const obrigatorias = regras.obrigatorias.map((regra) => {
     const posicoes = posicoesDaRegra(regra.posicao);
@@ -35,8 +42,9 @@ export function conferirDeck(regras: DeckRegras, deck: FlairCollectionCard[]): D
     return { regra, posicoes, tem, falta: Math.max(0, regra.quantidade - tem) };
   });
   const excesso = regras.tamanhoMax == null ? 0 : Math.max(0, deck.length - regras.tamanhoMax);
-  const valido = deck.length > 0 && excesso === 0 && obrigatorias.every((o) => o.falta === 0);
-  return { total: deck.length, tamanhoMax: regras.tamanhoMax, excesso, obrigatorias, valido };
+  const semVaga = deck.filter((c) => !entraNoDeck(regras, c));
+  const valido = deck.length > 0 && excesso === 0 && semVaga.length === 0 && obrigatorias.every((o) => o.falta === 0);
+  return { total: deck.length, tamanhoMax: regras.tamanhoMax, excesso, obrigatorias, semVaga, valido };
 }
 
 /** Liga/desliga uma carta no deck sem passar do tamanho máximo. */

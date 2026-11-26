@@ -7,14 +7,29 @@ import java.util.UUID;
 /**
  * Corpo de POST /api/flair/3d/partidas/{id}/acionar: o que a pessoa aciona entre as etapas da ação. {@code carta} é a
  * carta Especial do DRESS_FIGHTER (ou a carta jogada); {@code troca}, a peça trocada no intervalo do FASHION_SPORTS;
- * {@code alvo}, no FASHION_DETECTIVE, o que a pessoa faz com a carta ("IR:ponto", "ABRIR:armario", "ACUSAR:2"...). Tudo
- * opcional: sem nada, a partida só avança.
+ * {@code alvo}, no FASHION_DETECTIVE, o que a pessoa faz com a carta ("IR:ponto", "ABRIR:armario", "ACUSAR:2"...);
+ * {@code execucao}, nos jogos de ação jogável, os botões apertados em cada marca do percurso ({@link Flair3dExecucao}).
+ * Tudo opcional: sem nada, a partida só avança.
  */
-public record Acionamento(UUID carta, Troca troca, String alvo) {
+public record Acionamento(UUID carta, Troca troca, String alvo, Execucao execucao) {
     public static final Acionamento NENHUM = new Acionamento(null, null);
 
     public Acionamento(UUID carta, Troca troca) {
-        this(carta, troca, null);
+        this(carta, troca, null, null);
+    }
+
+    public Acionamento(UUID carta, Troca troca, String alvo) {
+        this(carta, troca, alvo, null);
+    }
+
+    /** O que a pessoa fez no percurso: um toque por marca (a marca, o botão e o tempo de reação em ms). */
+    public record Execucao(List<Toque> toques) {
+        public Execucao {
+            toques = toques == null ? List.of() : List.copyOf(toques);
+        }
+    }
+
+    public record Toque(int marca, String botao, int ms) {
     }
 
     /** Troca de uma peça do uniforme: a vaga e a carta que entra. */

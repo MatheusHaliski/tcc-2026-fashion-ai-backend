@@ -3,35 +3,19 @@
  * ACERVO — o que há dentro da cena 3D de "Meu espaço": a sala (piso, parede, tapete e pufe), as luzes, a câmera e os
  * móveis lado a lado. No Dream Space a sala é clara e fria, com um aro de luz no chão sob os módulos suspensos.
  */
-import { useEffect, useState, type MutableRefObject } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useCallback, useEffect, useState, type MutableRefObject } from "react";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { enquadrar } from "@/lib/acervo/cena/camera";
 import { LUZ_FRIA } from "@/lib/acervo/cena/materiais";
+import { luzDaCena } from "@/lib/acervo/luz";
 import { alturaMaxima, ladoALado, larguraTotal } from "@/lib/acervo/planta";
+import { Camera3D } from "./camera-3d";
 import type { CenaProps } from "./cena-tipos";
 import { useManifestoDoAcervo } from "./glb-encaixe";
 import { Movel3D } from "./movel-3d";
 
 /** Dado um ponto da tela, o compartimento da cena que está embaixo dele (para soltar peças arrastadas do HTML). */
 export type PonteDeArrasto = MutableRefObject<((clientX: number, clientY: number) => string | null) | null>;
-
-function Camera({ largura, altura, vista, reduzido }: { largura: number; altura: number; vista: CenaProps["vista"]; reduzido: boolean }) {
-  const { camera, size } = useThree();
-  const quadro = enquadrar(largura, altura, vista, size.width / Math.max(1, size.height));
-  const [pronta, setPronta] = useState(false);
-  useFrame((_, dt) => {
-    const destino = new THREE.Vector3(...quadro.posicao);
-    if (reduzido || !pronta) {
-      camera.position.copy(destino);
-      if (!pronta) setPronta(true);
-    } else {
-      camera.position.lerp(destino, 1 - Math.exp(-6 * dt));
-    }
-    camera.lookAt(...quadro.alvo);
-  });
-  return null;
-}
 
 function Ponte({ ponte }: { ponte: PonteDeArrasto }) {
   const { camera, scene, gl } = useThree();
@@ -87,24 +71,32 @@ function Sala({ largura, dream }: { largura: number; dream: boolean }) {
 
 export function CenaConteudo(props: CenaProps & { ponte?: PonteDeArrasto; rotulos?: boolean }) {
   const manifesto = useManifestoDoAcervo();
-  const [carregada, setCarregada] = useState<string | null>(null);
+  const controles = useThree((s) => s.controls) as { enabled: boolean } | null;
+  const [carregada, setCarregadaNoEstado] = useState<string | null>(null);
+  // segurar uma peça não gira a câmera: o giro se desliga já no toque (antes do OrbitControls ver o mesmo evento)
+  const setCarregada = useCallback((id: string | null) => {
+    if (controles) controles.enabled = id === null;
+    setCarregadaNoEstado(id);
+  }, [controles]);
   useEffect(() => {
     if (!carregada) return;
     // soltou fora de um compartimento: a peça volta; o tempo deixa o compartimento sob o ponteiro receber o evento antes
     const largar = () => setTimeout(() => setCarregada(null), 0);
     window.addEventListener("pointerup", largar);
     return () => window.removeEventListener("pointerup", largar);
-  }, [carregada]);
+  }, [carregada, setCarregada]);
   const largura = larguraTotal(props.moveis) / 100;
   const dream = props.moveis.some((m) => m.modo === "DREAM_SPACE");
   const altura = alturaMaxima(props.moveis) / 100 + (dream ? 0.28 : 0);
+  const luz = luzDaCena(props.iluminacao, dream);
   return (
     <>
-      <Camera largura={largura} altura={altura} vista={props.vista} reduzido={props.reduzido} />
+      <Camera3D largura={largura} altura={altura} vista={props.vista} reduzido={props.reduzido} comando={props.comandoDeCamera} />
       {props.ponte && <Ponte ponte={props.ponte} />}
-      <ambientLight intensity={dream ? 1.25 : 0.9} />
-      <directionalLight position={[largura / 2 + 2, altura + 2.5, 4]} intensity={dream ? 1.4 : 1.7} castShadow shadow-mapSize={[1024, 1024]} />
-      <pointLight position={[largura / 2, altura * 0.8, 1.2]} intensity={dream ? 6 : 9} color={dream ? LUZ_FRIA : "#FFD9A0"} />
+      <ambientLight intensity={luz.ambiente} />
+      <directionalLight position={[largura / 2 + 2, altura + 2.5, 4]} intensity={luz.direcional} color={luz.corDirecional} castShadow
+        shadow-mapSize={[1024, 1024]} />
+      <pointLight position={[largura / 2, altura * 0.8, 1.2]} intensity={luz.pontual} color={luz.corPontual} />
       <Sala largura={largura} dream={dream} />
       <group name="moveis">
         {ladoALado(props.moveis).map(({ movel, x }) => (

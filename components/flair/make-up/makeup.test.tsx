@@ -74,7 +74,26 @@ describe("brief", () => {
     expect(result.textContent).toContain("+0 de Prestígio");
     expect(result.textContent).toContain("Agora: nível 1, 20 de Prestígio");
     expect(result.textContent).toContain("Lábios na família coral");
-    expect(calls.find((c) => c.method === "POST")?.body).toEqual({ cartas: { SUP: "c1" }, maquiagem: { LABIOS: { familia: "CORAL", acabamento: "GLOSS" } } });
+    expect(calls.find((c) => c.method === "POST" && c.path.endsWith("/entrega"))?.body).toEqual({ cartas: { SUP: "c1" }, maquiagem: { LABIOS: { familia: "CORAL", acabamento: "GLOSS" } } });
+  });
+
+  it("selo de cada carta no brief, aviso da regra de roupa sem carta e a explicação no resultado", async () => {
+    loggedAs(ME, {
+      "GET /api/flair/make-up/briefs/ENTREVISTA": { codigo: "ENTREVISTA", nivelMin: 1, regras: [{ codigo: "OCASIAO", pontos: 25 }, { codigo: "CALCADO_FECHADO", pontos: 25 }, { codigo: "LABIOS_NUDE_OU_ROSA", pontos: 25 }], vagas: ["SUP", "INF"], areas: ["LABIOS"], paleta: { familias: { LABIOS: ["NUDE"] }, acabamentos: ["FOSCO"] } },
+      "GET /api/me/flair/cards": CARDS,
+      // os selos vêm do Road to Glory na rodada do brief: a regata é de trabalho, o short não cumpre nada
+      "POST /api/flair/3d/nucleos/ROAD_TO_GLORY/efeitos": { efeitos: [{ cardId: "c1", itens: [{ codigo: "OCASIAO", valor: 25 }] }, { cardId: "c2", itens: [{ codigo: "SEM_BONUS", valor: 0, motivo: true }] }] },
+      "POST /api/flair/make-up/briefs/ENTREVISTA/entrega": { pontos: 25, estrelas: 0, regras: [{ codigo: "OCASIAO", ok: false, pontos: 0 }, { codigo: "LABIOS_NUDE_OU_ROSA", ok: true, pontos: 25 }], eventos: [{ codigo: "PECA_FORA_DA_OCASIAO", valor: { vaga: "INF" } }], prestigioGanho: 0, carreira: null },
+    });
+    renderApp(<MakeUpScreen brief="entrevista" />);
+    const game = await screen.findByTestId("makeup-game");
+    // nenhuma carta é calçado fechado: o aviso diz a regra pelo nome, e não que a nota sai 0 (a maquiagem pontua)
+    expect((await screen.findByTestId("nucleo-aviso-colecao")).textContent).toBe("Nenhuma carta sua cumpre: Calçado fechado. Esses pontos ficam de fora.");
+    expect(await within(game).findByText("+25 ocasião do brief")).toBeTruthy();
+    fireEvent.keyDown(window, { key: " " });
+    fireEvent.keyDown(window, { key: "Enter" });
+    const result = await screen.findByTestId("makeup-result");
+    expect(within(result).getByTestId("makeup-result-events").textContent).toContain("A peça em “Parte de baixo” não é da ocasião do brief");
   });
 
   it("abaixo do nível mínimo o servidor responde 403 e a tela mostra o cadeado", async () => {

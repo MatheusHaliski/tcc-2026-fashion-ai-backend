@@ -11,6 +11,7 @@ import { cleanup } from "@/test-utils/render";
 import { frames, mount3d } from "@/test-utils/three";
 import { ACABAMENTO_3D, faixasDasZonas, LuzDeEfeito, PecaPintada, POSICAO_DA_LUZ_DE_EFEITO } from "@/components/flair/nucleos/scene/effects-3d";
 import { Figurantes } from "@/components/flair/nucleos/scene/extras";
+import { fonteQueCabe } from "@/components/flair/nucleos/scene/scoreboard";
 import { CenaContexto } from "@/components/flair/nucleos/scene/stage-context";
 import { useSceneDirector } from "@/components/flair/nucleos/scene/use-scene-director";
 import { boardInicial } from "@/lib/flair/nucleos/board";
@@ -113,5 +114,14 @@ describe("peça pintada no manequim (modos do Ateliê)", () => {
     expect(material.metalness).toBe(ACABAMENTO_3D.METALICO.metalness);
     expect(r.scene.findAllByProps({ name: "zona-LATERAIS" })).toHaveLength(0);
     await r.unmount();
+  });
+});
+
+describe("placar de LED", () => {
+  it("diminui a fonte para o placar inteiro caber (auditoria: \"00 × 7\" no lugar de 100 × 75)", () => {
+    expect(fonteQueCabe(300)).toBe(150);
+    const menor = fonteQueCabe(700);
+    expect(menor).toBeLessThan(150);
+    expect((700 * menor) / 150).toBeLessThanOrEqual(512 * 0.9);
   });
 });

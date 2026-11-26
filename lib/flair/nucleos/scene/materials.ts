@@ -66,3 +66,9 @@ export const espelhado = (cor = "#DCE6EA"): MaterialDesc => ({ textura: "liso", 
 
 /** Imagem pronta (logo); `repete: 0` usa a face inteira. */
 export const imagem = (url: string): MaterialDesc => ({ textura: "imagem", cor: "#FFFFFF", rugosidade: 0.6, metal: 0, px: 1024, repete: 0, url, opacidade: 0.99 });
+
+/** O material faz sombra? (vidro, rede, luz acesa e céu não) */
+export function fazSombra(m: MaterialDesc | undefined): boolean {
+  if (!m) return true;
+  return m.opacidade === undefined && !m.emissiva && m.textura !== "ceu";
+}

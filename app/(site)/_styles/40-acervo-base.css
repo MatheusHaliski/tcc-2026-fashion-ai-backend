@@ -1,36 +1,29 @@
-/* ── ACERVO · base (components/acervo/acervo-app.tsx): marfim e grafite com destaque em verde elétrico e tons de
-   marcenaria. As cores são variáveis só desta área (.acv) e acompanham os temas claro, escuro e alto contraste. */
+/* ── ACERVO · base (components/acervo/acervo-app.tsx). Fundo, cartões, tinta e linhas são os tokens do app (branco no
+   tema claro, como as outras abas) e acompanham os temas claro, escuro e alto contraste sozinhos; o que é só do acervo
+   são os destaques (verde elétrico, grafite e os tons de marcenaria das peças da cena). */
 .acv {
-  --acv-fundo: #F5F0E6;
-  --acv-cartao: #FBF8F1;
-  --acv-tinta: #2A2B2A;
-  --acv-suave: #5F605B;
-  --acv-linha: #E0D8C8;
+  --acv-fundo: var(--surface);
+  --acv-cartao: var(--surface);
+  --acv-tinta: var(--ink);
+  --acv-suave: var(--muted);
+  --acv-linha: var(--line-soft);
   --acv-lima: #DDF247;
   --acv-lima-tinta: #1D2100;
   --acv-grafite: #2B2C2B;
-  --acv-grafite-tinta: #FBF8F1;
+  --acv-grafite-tinta: #FFFFFF;
   --acv-madeira: #7A5236;
   --acv-veio: #5A3A24;
   --acv-alerta: #B45F06;
   --acv-raio: 16px;
-  --acv-sombra: 0 1px 2px rgb(60 50 30 / 6%), 0 10px 28px -18px rgb(60 50 30 / 30%);
+  --acv-sombra: var(--shadow);
   container: acv / inline-size;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
-  padding: clamp(10px, 1.6vw, 20px);
-  border-radius: var(--acv-raio);
-  background: var(--acv-fundo);
   color: var(--acv-tinta);
 }
 
 :root[data-theme="dark"] .acv {
-  --acv-fundo: #171816;
-  --acv-cartao: #1F201D;
-  --acv-tinta: #EFEDE6;
-  --acv-suave: #B5B7AE;
-  --acv-linha: #37382F;
   --acv-lima: #D4EE3A;
   --acv-lima-tinta: #141700;
   --acv-grafite: #EFEDE6;
@@ -40,11 +33,6 @@
 }
 
 :root[data-theme="contrast"] .acv {
-  --acv-fundo: #000000;
-  --acv-cartao: #000000;
-  --acv-tinta: #FFFFFF;
-  --acv-suave: #FFFFFF;
-  --acv-linha: #FFFFFF;
   --acv-lima: #FFFF00;
   --acv-lima-tinta: #000000;
   --acv-grafite: #FFFFFF;
@@ -61,47 +49,9 @@
   color: inherit;
 }
 
-.acv-topo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2) var(--space-6);
-}
-
-.acv-marca,
-.acv-vista-titulo {
-  margin: 0;
-  font-family: var(--font-editorial);
-  font-size: var(--text-h2);
-  font-weight: 400;
-  text-transform: uppercase;
-}
-
-.acv-marca {
-  letter-spacing: 0.34em;
-}
-
-.acv-marca-barra {
-  margin-right: 0.5em;
-  color: var(--acv-lima);
-  -webkit-text-stroke: 1px var(--acv-tinta);
-}
-
-.acv-vista-titulo {
-  flex: 1 1 14rem;
-  letter-spacing: 0.04em;
-}
-
 .acv-vistas,
 .acv-filtros {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-}
-
-.acv-privado {
-  flex-basis: 100%;
-  margin: 0;
-  color: var(--acv-suave);
-  font-size: var(--text-caption);
 }

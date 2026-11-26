@@ -21,13 +21,34 @@ const CATALOG: Partial<BgCatalog> = {
 };
 const api = () => mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": { recommended: ["atelier"] } });
 
-function Editor({ onBg, initial = {} }: { onBg: (b: Record<string, unknown>) => void; initial?: Record<string, unknown> }) {
+function Editor({ onBg, initial = {}, previewInDialog = false }: { onBg: (b: Record<string, unknown>) => void; initial?: Record<string, unknown>; previewInDialog?: boolean }) {
   const [bg, setBg] = useState<Record<string, unknown>>(initial);
-  return <PieceArtEditor value={bg} onChange={(b) => { setBg(b); onBg(b); }} piece={PIECE} styles={["basic"]} occasions={["casual"]} />;
+  return <PieceArtEditor value={bg} onChange={(b) => { setBg(b); onBg(b); }} piece={PIECE} styles={["basic"]} occasions={["casual"]} previewInDialog={previewInDialog} />;
 }
 const openLayout = async () => fireEvent.click(await screen.findByRole("radio", { name: "Layout & Estilo" }));
 
 describe("arte da peça — Cartela sazonal no padrão do Background Studio", () => {
+  it("no cadastro, a prévia abre em modal só com o card (como o detalhe do feed): sem título visível nem margem", async () => {
+    api();
+    renderApp(<Editor onBg={() => undefined} previewInDialog />);
+    await screen.findByRole("group", { name: "Cor" });
+    expect(screen.queryByRole("complementary", { name: "Prévia no feed" })).toBeNull();
+    // Desfazer/Limpar arte ficam ao lado do botão que abre a prévia, fora do modal
+    expect(screen.getByRole("button", { name: "Limpar arte" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
+    const dialog = screen.getByRole("dialog", { name: "Prévia do card" });
+    expect(dialog.className).toContain("dialog-card");
+    expect(dialog.querySelector(".dialog-head, h2")).toBeNull();
+    expect(within(dialog).queryByRole("button", { name: "Limpar arte" })).toBeNull();
+    expect(dialog.querySelector(".card-preview-mode > .piece-card")).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Ampliado" }));
+    expect(within(dialog).getByRole("button", { name: "Feed" })).toBeTruthy();
+    expect(dialog.querySelector(".card-preview-mode > .piece-detail")).toBeTruthy();
+    expect(dialog.className).toContain("is-piece");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Fechar" }));
+    expect(screen.queryByRole("dialog", { name: "Prévia do card" })).toBeNull();
+  });
+
   it("cartela e animação não aparecem mais no segmento Cor", async () => {
     api();
     renderApp(<Editor onBg={() => undefined} />);

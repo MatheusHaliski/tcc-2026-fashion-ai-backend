@@ -108,7 +108,7 @@ public class FlairMakeUpService {
         return out;
     }
 
-    /** {pontos, estrelas, regras, prestigioGanho, carreira}: 403 abaixo do nível, 422 com carta alheia ou fora da paleta. */
+    /** {pontos, estrelas, regras, eventos, prestigioGanho, carreira}: 403 abaixo do nível, 422 com carta alheia ou fora da paleta. */
     @Transactional
     public Map<String, Object> entregar(CurrentUser user, String codigo, Entrega entrega) {
         FlairMakeUpBrief b = brief(codigo);
@@ -136,6 +136,7 @@ public class FlairMakeUpService {
         out.put("pontos", r.pontos());
         out.put("estrelas", r.estrelas());
         out.put("regras", r.regras());
+        out.put("eventos", r.eventos());
         out.put("prestigioGanho", ganho);
         out.put("carreira", carreiraMap(carreira(user.id())));
         return out;

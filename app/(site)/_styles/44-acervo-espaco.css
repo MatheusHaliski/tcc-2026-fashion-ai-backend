@@ -18,7 +18,8 @@
   min-height: 420px;
   border: 1px solid var(--acv-linha);
   border-radius: var(--acv-raio);
-  background: linear-gradient(180deg, #EDE6D8 0%, #E3D9C6 62%, #D8CDBA 100%);
+  /* neutro claro fixo (sem o bege antigo): o esquema 2D usa tinta escura sobre ele em qualquer tema */
+  background: linear-gradient(180deg, #F4F4F3 0%, #E8E8E6 62%, #DEDEDB 100%);
 }
 
 .acv-palco[data-modo="DREAM_SPACE"] {
@@ -81,6 +82,12 @@
   background: var(--acv-lima);
   color: var(--acv-lima-tinta);
   font-weight: 600;
+}
+
+.acv-ferramentas .acv-ferramenta-icone {
+  justify-content: center;
+  min-width: var(--control-sm);
+  padding: 0 8px;
 }
 
 .acv-expandida {
@@ -184,6 +191,14 @@
   display: grid;
   gap: var(--space-3);
   min-width: 0;
+}
+
+.acv-luz-campos {
+  min-width: 0;
+}
+
+.acv-luz-aplicar {
+  justify-self: start;
 }
 
 .acv-config-resumo,
