@@ -77,7 +77,9 @@ describe("um elenco", () => {
     expect(within(modal).getByText("Parabéns, você completou!")).toBeTruthy();
     expect(modal.textContent).toContain("Você completou Desafio do Fogo. A imagem é sua, edição nº 3.");
     const video = within(modal).getByTestId("elenco-video") as HTMLVideoElement;
-    expect(video.getAttribute("src")).toBe("/flair/elencos/cenas-firefly.mp4");
+    expect(video.getAttribute("src")).toBe("/flair/elencos/fogo.mp4");
+    // quadro cheio: a moldura tem a proporção do vídeo (a cena é quadrada), sem faixas pretas
+    expect(video.style.getPropertyValue("--ep-ar")).toBe("1");
     expect(video.muted).toBe(true);
     expect([video.autoplay, video.loop, video.controls, video.hasAttribute("playsinline")]).toEqual([true, true, true, true]);
     expect(pecas()).toEqual(["encaixada", "encaixada", "encaixada", "encaixada"]);
