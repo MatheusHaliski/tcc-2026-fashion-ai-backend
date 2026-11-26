@@ -1,4 +1,8 @@
 {
+  "pieceDetail.catalogo": "Do catálogo",
+  "pieceDetail.catalogo_produto": "Produto do catálogo, sem variante",
+  "pieceDetail.catalogo_sem_sku": "Variante {cor}",
+  "pieceDetail.catalogo_sku_cor": "SKU {sku} · {cor}",
   "pieceReferences.tipoLavagem.label": "Tipo de lavagem",
   "pieceReferences.tipoLavagem.unselected": "Não informado",
   "pieceReferences.tipoLavagem.unavailable": "Lavagem salva indisponível",

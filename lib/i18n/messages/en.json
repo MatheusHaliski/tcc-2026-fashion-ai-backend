@@ -1,4 +1,8 @@
 {
+  "pieceDetail.catalogo": "From the catalog",
+  "pieceDetail.catalogo_produto": "Catalog product, no variant",
+  "pieceDetail.catalogo_sem_sku": "Variant {cor}",
+  "pieceDetail.catalogo_sku_cor": "SKU {sku} · {cor}",
   "pieceReferences.tipoLavagem.label": "Washing type",
   "pieceReferences.tipoLavagem.unselected": "Not specified",
   "pieceReferences.tipoLavagem.unavailable": "Saved washing type unavailable",
