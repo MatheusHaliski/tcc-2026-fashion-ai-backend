@@ -77,6 +77,24 @@ class BatalhaLooksPlacarTest {
     }
 
     @Test
+    void aPecaQueDesfilouNaRodadaAnteriorEAGastaComoRecursoNaoContamJuntas() {
+        CbcRules.Card sup = Flair3dFixtures.card("SUP", "color:blue");
+        CbcRules.Card inf = Flair3dFixtures.card("INF", "color:blue");
+        CbcRules.Card cal = Flair3dFixtures.card("CAL", "color:blue");
+        Map<String, CbcRules.Card> look = new LinkedHashMap<>();
+        look.put("SUP", sup);
+        look.put("INF", inf);
+        look.put("CAL", cal);
+        // SUP desfilou na rodada 1 (não está entre as descansadas); INF foi gasta como recurso na rodada 2
+        Map<String, CbcRules.Card> descansadas = new LinkedHashMap<>(look);
+        descansadas.remove("SUP");
+        BatalhaLooksPlacar.DaPessoa voce = BatalhaLooksPlacar.daPessoa(AZUL, look, descansadas, List.of(foco(inf, 15, 1)), 2);
+        assertThat(voce.cansadas()).containsExactly("SUP", "INF");
+        assertThat(voce.nota().regra()).isEqualTo(25);
+        assertThat(voce.nota().recurso()).isEqualTo(3);
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void peloServicoOUsoDepoisDaEntregaCaiNaRodadaSeguinteEOSeloSegueODesafioDaVez() {
         Kit kit = new Kit();

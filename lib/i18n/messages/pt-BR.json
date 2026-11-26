@@ -10170,7 +10170,7 @@
   "flair3d.ui.batalha.adversario": "Adversário",
   "flair3d.ui.batalha.numero": "Rodada {n}",
   "flair3d.ui.batalha.conta": "{regra} da regra + {look} do look + {recurso} do foco = {total}",
-  "flair3d.ui.batalha.cansadas": "Peça gasta como recurso não contou: {vagas}",
+  "flair3d.ui.batalha.cansadas": "Peça cansada não contou (desfilou na rodada anterior ou foi gasta como recurso nesta): {vagas}",
   "flair3d.ui.batalha.veio": "veio de {familia}",
   "flair3d.ui.batalha.soma": "Soma",
   "flair3d.ui.batalha.regra": "A nota de cada rodada: 25 por peça na regra, até 10 pelo carisma e pela agilidade do look e até 5 pelo foco da peça que você gastar na rodada. O look da casa passa pela mesma conta, sem recurso.",

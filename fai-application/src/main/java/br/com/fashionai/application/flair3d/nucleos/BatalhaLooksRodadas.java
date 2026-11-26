@@ -160,7 +160,8 @@ final class BatalhaLooksRodadas {
                 Desafio desafio = desafios.get(look.etapa() - 1);
                 Map<String, CbcRules.Card> descansadas = descansadas(look);
                 List<String> cansadas = look.pecas().keySet().stream().filter(v -> !descansadas.containsKey(v)).toList();
-                List<RegraResultado> regras = regras(desafio, descansadas, look.pecas());
+                BatalhaLooksPlacar.DaPessoa voce = BatalhaLooksPlacar.daPessoa(desafio, look.pecas(), descansadas, contexto.andamento().usos(),
+                        look.etapa());
                 Map<String, Object> adversario = adversarioNaTela(contexto, look.etapa(), desafio);
                 Map<String, Object> placar = new LinkedHashMap<>();
                 placar.put("rodada", look.etapa());
@@ -176,7 +177,7 @@ final class BatalhaLooksRodadas {
                     eventos.add(new Evento(CARTAS_CANSADAS, Map.of("quantas", cansadas.size(), "vagas", cansadas)));
                 }
                 eventos.add(new Evento("RODADA_DA_BATALHA", placar));
-                return new Avaliacao(true, pontos(regras), regras, eventos);
+                return new Avaliacao(true, voce.nota().total(), voce.regras(), eventos);
             }
 
             private int soma(List<Passo> passos) {
