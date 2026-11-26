@@ -68,7 +68,7 @@ export function FlairModes({ initial, onPlayed, skin }: { initial?: string | nul
         <section><h2 className="type-h3 mb-2">{t("flair.modes.category.flair")}</h2><div className="mode-grid">{classic.map((m) => <ModeCard key={m.code} m={m} icon={<FaiIcon id={CLASSIC_ICON[m.code]} size={24} decorative />} onOpen={() => setMode(m.code)} />)}{c.modes.map((m) => <ModeCard key={m.code} m={m} onOpen={() => setMode(m.code)} />)}</div></section>
         <section><h2 className="type-h3 mb-2">{t("flair.modes.category.metamorphose")}</h2>
           <div className="mode-grid">
-            <Link href="/flair/jogos" className="fm-card" aria-label={t("flair.modes.flair3d.open")}>
+            <Link href="/flair/3d" className="fm-card" aria-label={t("flair.modes.flair3d.open")}>
               <span className="fm-card-emoji" aria-hidden>🏙️</span><p className="type-h3">{t("flair.hub.mode.games.title")}</p><p className="type-body-sm text-muted">{t("flair.hub.mode.games.lead")}</p>
               <p className="type-caption">{t("flair.modes.flair3d.open")}</p>
             </Link>

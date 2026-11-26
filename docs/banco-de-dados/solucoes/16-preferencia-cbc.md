@@ -1,5 +1,29 @@
 # Exercício 16 — CBC: modalidade/cenário preferido
 
+> **Implementado em 26/11/2026.** Migração `V121__cbc_cenario_preferido_exercicio_16.sql` (idempotente) e SQL simples para
+> o Railway em [`sql/railway/16-preferencia-cbc.sql`](sql/railway/16-preferencia-cbc.sql), com os mesmos nomes.
+> - **Alcance:** a preferência é de cada pessoa em cada Desafio de Montagem e só troca a cena que ela vê.
+>   `flair_challenges.scenario` (o cenário oficial), a janela, os requisitos, os pontos, as vagas e as entregas não são
+>   alterados; o `FlairChallengeService` não foi tocado.
+> - **Schema:** `cbc_scenarios` (16 códigos: os 15 que a tela desenha e `livre`), `cbc_challenge_scenarios` (cenários
+>   permitidos por desafio; `fk_ccs_challenge` CASCADE, `fk_ccs_scenario` RESTRICT) e `cbc_preferences` (chave pessoa +
+>   desafio; `fk_cbcp_user` CASCADE; `fk_cbcp_allowed` é a FK **composta** `(challenge_id, scenario_id)`, RESTRICT). Cada
+>   desafio existente foi associado ao seu cenário oficial e ao `livre`.
+> - **API (`CbcPreferenceService`, `CbcPreferenceController`):** `GET /api/flair/challenges/{id}/scenarios`,
+>   `GET|PUT|DELETE /api/flair/challenges/{id}/preference` (`{"scenarioId": "<UUID>"}`) e
+>   `GET /api/flair/challenge-preferences`. A pessoa é sempre a da sessão. Desafio que ela não pode ver: 404. Cenário
+>   inexistente: 400 `CBC_CENARIO_INVALIDO`; desativado: 400 `CBC_CENARIO_INATIVO` (quem já o tinha continua lendo);
+>   cadastrado mas não permitido no desafio: 400 `CBC_CENARIO_NAO_PERMITIDO`.
+> - **Desafio criado depois da migração:** não tem linhas em `cbc_challenge_scenarios`. O cenário oficial dele é oferecido
+>   mesmo assim, e a linha de associação é criada quando alguém o escolhe. Para permitir outro cenário é preciso inserir a
+>   associação (não há tela de administração para isso).
+> - **Regra escolhida para desafio encerrado:** quem ainda vê o desafio pode trocar a cena, inclusive nas Memórias.
+> - **Renderer:** a lista de cenários com arte fica na tela (`lib/flair/cenas/catalogo.ts`). O servidor não a conhece: um
+>   código novo no banco aparece na lista e a tela recusa a escolha ("ainda não tem arte"), sem gravar.
+> - Telas: `components/flair/cbc-cenario-preferido.tsx` (escolha no desafio e leitura na lista).
+>   Testes: `CbcPreferenceServiceTest`, `cbc-cenario-preferido.test.tsx`; FK composta provada no MySQL 8 do laboratório
+>   (1452 para cenário não permitido, 1451 para retirar associação em uso, CASCADE ao apagar a conta).
+
 **Situação na revisão `9f5512a77`:** Parcial: desafios têm scenario e validação própria; preferência individual não deve reescrever o desafio global.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

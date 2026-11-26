@@ -108,7 +108,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
     },
     [reportError],
   );
-  const [evidence, setEvidence] = useGenderEvidence(client.evidence, ids, evidenceFailed);
+  const [evidence, refreshEvidence] = useGenderEvidence(client.evidence, ids, evidenceFailed);
   const effectiveConfirmed =
     confirmed && confirmedHash === evidence?.hash ? confirmed : null;
   const reload = useCallback(async () => {
@@ -121,7 +121,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
       setScene(result);
       setSequence(result.current?.sequence ?? 0);
       setIds(result.current?.gender.sources.map((s) => s.id) ?? []);
-      setEvidence(result.current?.gender ?? null);
+      refreshEvidence(); // conferência nova: a gravada na versão (ou a falta dela) não apaga a que já chegou
       setConfirmed(result.current?.confirmedTipoLookId ?? null);
       setConfirmedHash(result.current?.gender.hash ?? null);
       if (result.asset)
@@ -143,7 +143,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
       busyRef.current = false;
       setBusy(false);
     }
-  }, [client, install, reportError]);
+  }, [client, install, reportError, refreshEvidence]);
   useEffect(() => {
     mounted.current = true;
     void reload();
@@ -411,7 +411,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
         onExport={() => void download()}
         onReload={() => dirty ? setConfirmReload(true) : void reload()}
       />
-      <GarmentCreationPanel editable={canEdit} dirty={dirty} onCreate={upload} />
+      <GarmentCreationPanel editable={canEdit} canChoose={!!scene?.edit} dirty={dirty} onCreate={upload} />
       {!loaded ? (
         <p>{t("atelier3d.empty")}</p>
       ) : (

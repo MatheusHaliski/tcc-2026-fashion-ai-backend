@@ -24,6 +24,23 @@ class LocalLookWordingTest {
     }
 
     @Test
+    void cadaLookExplicaComAsSuasPecasMesmoComOcasiaoEEstiloIguais() {
+        LocaleContextHolder.setLocale(Locale.forLanguageTag("pt-BR"));
+        var um = List.of(peca("Camiseta Vermelha"), peca("Jeans Hype Médio"), peca("Tênis branco"));
+        var outro = List.of(peca("Camisa Hype Baixo"), peca("Calça azul"), peca("Tênis azul"));
+        String a = LocalLookWording.rationale(um, List.of("casual"), List.of("basic"));
+        String b = LocalLookWording.rationale(outro, List.of("casual"), List.of("basic"));
+        assertThat(a).startsWith("Camiseta Vermelha + Jeans Hype Médio + Tênis branco: ocasião casual e estilo básico");
+        assertThat(b).isNotEqualTo(a).startsWith("Camisa Hype Baixo + Calça azul + Tênis azul:");
+    }
+
+    private static br.com.fashionai.domain.model.WardrobeItem peca(String nome) {
+        var w = new br.com.fashionai.domain.model.WardrobeItem();
+        w.setName(nome);
+        return w;
+    }
+
+    @Test
     void emEspanholOsNomesAcompanham() {
         LocaleContextHolder.setLocale(Locale.forLanguageTag("es"));
         assertThat(LocalLookWording.spoken(List.of("date", "work"))).isEqualTo("cita/trabajo");

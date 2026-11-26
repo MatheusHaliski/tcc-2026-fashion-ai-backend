@@ -6,6 +6,10 @@
  *
  * - tronco e perna: escala em torno do centro da faixa, com o menor deslocamento que cobre os dois lados;
  * - manga: presa na borda de dentro (a cava, costurada no tronco) e alargada só para fora.
+ *
+ * `ownSleeves` (peça do motor Blender, mangas rotuladas no próprio arquivo): da axila para cima o tronco não alarga — ali
+ * ele é só frente e costas em volta da cava, e quem cobre o ombro é a cabeça da manga. Alargado, a faixa da axila
+ * esticava até o lado de fora do braço e virava ponta horizontal no peito.
  */
 import { skinOf, torsoZone } from "./depth";
 import { bandExtent, type BodyFrame, type Groups } from "./frame";
@@ -20,7 +24,7 @@ const SLEEVE_MARGIN = 0.01;
 interface Band { scale: number; from: number; to: number }
 
 /** Escala e centro de cada faixa: `x' = to + (x − from) × scale`. */
-function bandsOf(p: Float32Array, idx: number[], label: number, f: BodyFrame, groups: Groups, clearance: number): Map<number, Band> {
+function bandsOf(p: Float32Array, idx: number[], label: number, f: BodyFrame, groups: Groups, clearance: number, ownSleeves: boolean): Map<number, Band> {
   const extent = new Map<number, [number, number]>();
   for (const v of idx) {
     const b = Math.round(p[v * 3 + 1] / STEP), x = p[v * 3];
@@ -32,7 +36,7 @@ function bandsOf(p: Float32Array, idx: number[], label: number, f: BodyFrame, gr
   const out = new Map<number, Band>();
   for (const [b, [g0, g1]] of extent) {
     const y = b * STEP;
-    if (label === 0 && y < zone.floor) continue;
+    if (label === 0 && (y < zone.floor || (ownSleeves && y >= zone.armpit))) continue;
     // tronco: da axila para cima a pala também cobre o ombro; manga: só o braço (a mão aberta não alarga o punho)
     const skin = label === 0 ? (y >= zone.armpit ? [1, 2] : skinOf(0)) : Math.abs(label) === 1 ? [2] : skinOf(label);
     const body = bandExtent(f, y, STEP / 2, skin, sideOf);
@@ -46,6 +50,12 @@ function bandsOf(p: Float32Array, idx: number[], label: number, f: BodyFrame, gr
       out.set(b, { scale, from: inner, to: inner });
       continue;
     }
+    // faixa que não atravessa o meio do corpo, ou que já passa da pele de um lado (a barra ao lado do punho na peça
+    // da Meshy): alargar em volta do centro dela jogaria o pano longe do corpo; a colisão cuida do lado que falta
+    if (label === 0 && (g0 > 0 || g1 < 0 || g0 < b0 - 0.02 || g1 > b1 + 0.02)) continue;
+    // peça do motor: faixa que não chega à metade do corpo de cada lado não é um anel do tronco (só detalhes entre dois
+    // anéis: bolso, vista, botões, pesponto): alargá-la puxava os anéis vizinhos para fora
+    if (label === 0 && ownSleeves && (g0 > b0 / 2 || g1 < b1 / 2)) continue;
     const scale = Math.min(MAX_WIDEN, Math.max(1, (b1 - b0) / have));
     const half = (have * scale) / 2, centre = (g0 + g1) / 2;
     // o centro só anda o que falta para cobrir os dois lados (peça já larga o bastante: não anda)
@@ -56,12 +66,12 @@ function bandsOf(p: Float32Array, idx: number[], label: number, f: BodyFrame, gr
 }
 
 /** Alarga em x as partes mais estreitas que o corpo; devolve o maior deslocamento (m). */
-export function widen(p: Float32Array, part: Int8Array, f: BodyFrame, groups: Groups, clearance: number): number {
+export function widen(p: Float32Array, part: Int8Array, f: BodyFrame, groups: Groups, clearance: number, ownSleeves = false): number {
   const byLabel = new Map<number, number[]>();
   for (let v = 0; v < part.length; v++) (byLabel.get(part[v]) ?? byLabel.set(part[v], []).get(part[v])!).push(v);
   let most = 0;
   for (const [label, idx] of byLabel) {
-    const bands = bandsOf(p, idx, label, f, groups, clearance);
+    const bands = bandsOf(p, idx, label, f, groups, clearance, ownSleeves);
     for (const v of idx) {
       // a faixa e as duas vizinhas, em média: a largura muda aos poucos de uma altura para a outra
       const b = Math.round(p[v * 3 + 1] / STEP);

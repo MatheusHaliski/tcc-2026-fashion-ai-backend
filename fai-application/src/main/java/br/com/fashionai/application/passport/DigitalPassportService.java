@@ -63,6 +63,8 @@ public class DigitalPassportService {
         Map<String, Object> sizeOptions = sizes.forPiece(w);
         out.put("sizes", sizeOptions);
         out.put("model3d", model3d(w, sizeOptions));
+        // peça produzida pela Fábrica FashionAI: etiqueta de cuidados estruturada (símbolos), registrada pelo sistema
+        out.put("careLabel", passport == null ? null : PassportViews.careLabel(passport.getManufacturingJson()));
         out.put("provenanceLegend", List.of(VERIFIED, SOURCE_DECLARED, OWNER_DECLARED, ESTIMATED, NOT_INFORMED));
         out.put("notices", List.of("ESTIMATED_IS_NOT_CERTIFICATION", "NO_EU_DPP_COMPLIANCE_CLAIM"));
         out.put("lastUpdated", latest(w.getUpdatedAt(), passport == null ? null : passport.getStateUpdatedAt(), product == null ? null : product.getUpdatedAt()));

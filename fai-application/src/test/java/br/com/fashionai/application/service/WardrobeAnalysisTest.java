@@ -1,16 +1,17 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.imaging.BrandRegions;
-import br.com.fashionai.application.imaging.LocalVision;
-import br.com.fashionai.application.imaging.PhotoAcceptance;
-import br.com.fashionai.application.imaging.SubtypeReferences;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import org.junit.jupiter.api.Test;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.imaging.*;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.wardrobe.PieceForm;
+import br.com.fashionai.application.wardrobe.PiecePrefill;
+import br.com.fashionai.application.wardrobe.draft.DraftEvidence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -68,10 +69,10 @@ class WardrobeAnalysisTest {
 
     @Test
     void marcaQueNaoEhMarcaVoltaNula() {
-        assertThat(WardrobeService.brandName("null")).isNull();
-        assertThat(WardrobeService.brandName("Sem marca")).isNull();
-        assertThat(WardrobeService.brandName("  ")).isNull();
-        assertThat(WardrobeService.brandName(" Nike ")).isEqualTo("Nike");
+        assertThat(PieceAnalysisParser.brandName("null")).isNull();
+        assertThat(PieceAnalysisParser.brandName("Sem marca")).isNull();
+        assertThat(PieceAnalysisParser.brandName("  ")).isNull();
+        assertThat(PieceAnalysisParser.brandName(" Nike ")).isEqualTo("Nike");
         assertThat(PieceAnalysisParser.isNoBrandPlaceholder("No brand")).isTrue();
         assertThat(PieceAnalysisParser.isNoBrandPlaceholder("Sin marca")).isTrue();
         assertThat(PieceAnalysisParser.isNoBrandPlaceholder("Zara")).isFalse();
@@ -110,9 +111,9 @@ class WardrobeAnalysisTest {
 
     @Test
     void cadastroNormalizaAsListasQueATelaManda() {
-        WardrobeService.PieceForm f = new WardrobeService.PieceForm(null, true, "Camiseta", "upper_piece", "t_shirt", "UNISSEX", null,
+        PieceForm f = new PieceForm(null, true, "Camiseta", "upper_piece", "t_shirt", "UNISSEX", null,
                 null, "black", "COTTON", "m", null, List.of(" Casual ", "casual", ""), List.of("BASIC"), List.of(), BigDecimal.TEN,
-                null, List.of(), null, null, null, null, null, null, false, null, null, null, null, null);
+                null, List.of(), null, null, null, null, null, null, false, null, null, null, null, null, null, null, null, null, null, false, null, null, null, false);
         assertThat(f.occasion()).containsExactly("casual");
         assertThat(f.style()).containsExactly("basic");
         assertThatCode(() -> Taxonomy.requirePiece(f.category(), f.subcategory(), f.sex(), f.color(), f.material(), f.size(),

@@ -1,0 +1,17 @@
+{
+ "produto": "Script Embroidery Sweatshirt",
+ "marca": "Carhartt WIP",
+ "url_oficial": "https://www.carhartt-wip.com/p/script-embroidery-sweatshirt-barchan-white-1210",
+ "subcategoria": "sweatshirt",
+ "tamanho": "M",
+ "sexo": "MASCULINO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "moletom",
+  "cor": "#cfc0a7",
+  "gramatura": 340
+ },
+ "gola": "careca",
+ "ribana": true,
+ "observacao": "cor: mediana da foto de entrada (lote meshy-2026-11-19-pose-t); o bordado do peito ainda não é modelado"
+}

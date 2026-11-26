@@ -12,7 +12,7 @@ import { projectApi } from './project-api';
 import { ProjectForm } from './project-form';
 import styles from './atelier-projects.module.css';
 const AtelierHub = dynamic(() => import('@/components/atelier/atelier-hub').then(module => module.AtelierHub));
-const TABS = ['projects', 'metamorphoses', 'timeline', 'trends', 'room'] as const;
+const TABS = ['projects', 'metamorphoses', 'timeline', 'trends', 'rewards'] as const;
 export function AtelierWorkspace() {
   const { t, fmtDate } = useI18n(); const router = useRouter(); const params = useSearchParams();
   const legacy = TABS.slice(1).includes(params.get('tab') as typeof TABS[1]);
@@ -35,7 +35,7 @@ export function AtelierWorkspace() {
   }
   if (legacy) return <div className={styles.stack}><div><Link href="/atelier" className="btn">{t('atelierProjects.backToProjects')}</Link></div><AtelierHub/></div>;
   return <div className={styles.workspace}>
-    <PageHeader title={t('atelier.brandTitle')} lead={t('atelierProjects.lead')} actions={<Button variant="primary" onClick={() => { requestId.current = crypto.randomUUID(); setCreating(true); }}>{t('atelierProjects.new')}</Button>}/>
+    <PageHeader title={t('atelier.brandTitle')} lead={t('atelierProjects.lead')} actions={<><Link className="btn" href="/atelier/orders">{t('garmentDelivery.orders.title')}</Link><Button variant="primary" onClick={() => { requestId.current = crypto.randomUUID(); setCreating(true); }}>{t('atelierProjects.new')}</Button></>}/>
     <Tabs tabs={TABS.map(id => ({ id, label: t(id === 'projects' ? 'atelierProjects.projects' : `atelier.tab.${id}`) }))} value="projects" label={t('atelier.tabs')} onChange={tab => router.replace(tab === 'projects' ? '/atelier' : `/atelier?tab=${tab}`)}/>
     <section className={styles.hero}>
       <div><h2 className="type-h2">{t('atelierProjects.heroTitle')}</h2><p>{t('atelierProjects.heroLead')}</p><p className="type-body-sm">{t('atelierProjects.noManufacturing')}</p></div>

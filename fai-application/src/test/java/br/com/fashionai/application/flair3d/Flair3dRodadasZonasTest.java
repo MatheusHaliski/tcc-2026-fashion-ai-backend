@@ -36,14 +36,16 @@ class Flair3dRodadasZonasTest {
     }
 
     @Test
-    void clubeAuroraSegueSemPlacarEOUniformeDeEsportsTemNota() {
+    void clubeAuroraTemNotaPelasZonasEPelasCoresEOUniformeDeEsportsTambem() {
         ClubeCoracaoNucleo n = new ClubeCoracaoNucleo();
         Entrega aurora = zonas(null, "FRENTE=" + VERMELHO, "COSTAS=" + VERMELHO, "MANGAS=" + PRETO, "GOLA=" + PRETO);
         Resultado r = n.pontuar(aurora, rodada("CLUBE_AURORA"));
         assertThat(r.resultado()).isEqualTo("CONCLUIDO");
-        assertThat(r.pontos()).isZero();
-        assertThat(n.pontuar(aurora, rodada(null)).resultado()).isEqualTo("INCOMPLETO");
-        assertThat(n.definicao().naRodada("CLUBE_AURORA").objetivo().regras()).allMatch(x -> x.pontos() == 0);
+        assertThat(r.pontos()).isEqualTo(100);
+        Resultado noAtlantico = n.pontuar(aurora, rodada(null));
+        assertThat(noAtlantico.resultado()).isEqualTo("INCOMPLETO");
+        assertThat(noAtlantico.pontos()).isEqualTo(50);
+        assertThat(n.definicao().naRodada("CLUBE_AURORA").objetivo().regras()).allMatch(x -> x.pontos() == ClubeCoracaoNucleo.POR_REGRA);
 
         Entrega time = zonas(null, "FRENTE=" + ROXO, "COSTAS=" + ROXO, "MANGAS=" + PRETO, "GOLA=" + AMARELO);
         Resultado esports = n.pontuar(time, rodada("UNIFORME_ESPORTS"));
@@ -69,10 +71,10 @@ class Flair3dRodadasZonasTest {
     void macacaoETenisDosSonhosUsamAsZonasDaRodada() {
         PilotoFavoritoNucleo n = new PilotoFavoritoNucleo();
         assertThat(n.definicao().naRodada("TENIS_DOS_SONHOS").zonas()).containsExactly("CABEDAL", "SOLA", "CADARCO");
-        Entrega tenis = zonas(null, "CABEDAL=" + AZUL + "/ESPELHADO", "SOLA=" + BRANCO, "CADARCO=" + AMARELO);
+        Entrega tenis = zonas(null, "CABEDAL=" + AZUL + "/ESPELHADO", "SOLA=" + BRANCO, "CADARCO=" + BRANCO);
         assertThat(n.pontuar(tenis, rodada("TENIS_DOS_SONHOS")).pontos()).isEqualTo(100);
         Entrega escuro = zonas(null, "CABEDAL=" + PRETO, "SOLA=" + PRETO, "CADARCO=" + PRETO);
-        assertThat(cumpridas(n.pontuar(escuro, rodada("TENIS_DOS_SONHOS")))).containsExactly("ATE_3_CORES");
+        assertThat(cumpridas(n.pontuar(escuro, rodada("TENIS_DOS_SONHOS")))).containsExactly("ATE_2_CORES");
         Entrega macacao = zonas(null, "TRONCO=" + AZUL, "MANGAS=" + BRANCO, "PERNAS=" + BRANCO, "GOLA=" + BRANCO, "CINTO=" + VERMELHO);
         assertThat(n.pontuar(macacao, rodada("MACACAO_BOREAL")).pontos()).isEqualTo(100);
         assertThat(n.pontuar(macacao, rodada(null)).pontos()).isZero();
@@ -96,9 +98,9 @@ class Flair3dRodadasZonasTest {
         RoadToGloryNucleo n = new RoadToGloryNucleo();
         assertThat(n.definicao().rodadas()).extracting(Definicao.Rodada::codigo).startsWith("ENSAIO_VERAO", "ENTREVISTA", "PRIMEIRO_ENCONTRO");
         Entrega nude = Flair3dFixtures.comMaquiagem(new Entrega(null, null, null, null), "LABIOS", "NUDE", "FOSCO");
-        Resultado entrevista = n.pontuar(nude, rodada("ENTREVISTA"));
+        Resultado entrevista = n.previa(nude, rodada("ENTREVISTA"));
         assertThat(cumpridas(entrevista)).containsExactly("LABIOS_NUDE_OU_ROSA", "ACABAMENTO_FOSCO");
         assertThat(entrevista.pontos()).isEqualTo(50);
-        assertThat(n.pontuar(nude, rodada(null)).pontos()).isZero();
+        assertThat(n.previa(nude, rodada(null)).pontos()).isZero();
     }
 }

@@ -1,0 +1,44 @@
+{
+  "versao": 1,
+  "categoria": "accessory_piece",
+  "subcategoria": "hat",
+  "slot": "head",
+  "attach": "rigid",
+  "osso": "Head",
+  "giroY": 0,
+  "centro": [
+    0.00015,
+    0.00361,
+    0.00018
+  ],
+  "caixa": [
+    1.8189,
+    1.1524,
+    1.9015
+  ],
+  "escalaNominal": 0,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 1.3731,
+    "bracosAbertos": false,
+    "aberto": false,
+    "sola": 0
+  },
+  "tamanhos": {
+    "grade": null,
+    "porPasso": {
+      "largura": 0,
+      "comprimento": 0,
+      "manga": 0
+    },
+    "limite": [
+      -3,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "veste"
+}

@@ -1,70 +1,30 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { api, ApiError, mediaUrl } from "@/lib/api/client";
-import type { TipoLook } from "@/lib/api/types";
+import { api } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
-import { useApi } from "@/lib/hooks/use-api";
-import { Badge, Button, Card, Chip, Dialog, ErrorState, cn, useToast } from "@/components/ui";
+import { Button, Card, cn, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
-import { GarmentGlyph } from "@/components/capture/garment-glyphs";
-import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
-import { assetStateOf } from "@/lib/room3d/mirror-session";
-import type { Illustration } from "@/lib/capture/capture-guides";
-import { VistaMeCells } from "@/components/mirror/vista-me-cells";
+import { LookScores } from "@/components/hype/look-scores";
+import { MirrorVistaSection } from "@/components/mirror/mirror-vista-section";
+import { MirrorLookType } from "@/components/mirror/mirror-look-type";
 import { MirrorPartSheet } from "@/components/mirror/mirror-part-sheet";
+import { MirrorPartsGrid } from "@/components/mirror/mirror-parts-grid";
+import { canTakeOneOff, inHandOf, isCatalogPiece, MIRROR_PARTS, ownedOf, tryOnRef, wornOf, type MirrorData, type MirrorPieceRef } from "@/lib/mirror/mirror-model";
+export { canTakeOneOff, inHandOf, MIRROR_PARTS, partOfSlot, wornOf } from "@/lib/mirror/mirror-model";
+export type { MirrorData, MirrorPart, MirrorPieceRef, MirrorSequenceStep, WornEntry } from "@/lib/mirror/mirror-model";
 
 /*
- * Espelho (RF28) — o painel da prova dentro do Meu Quarto (e da vista embutida no 2.5D): só botões, células e listas,
+ * Espelho (RF28) — o painel da prova em /mirror (e da vista embutida no 2.5D): só botões, células e listas,
  * nada de formulário. O estado é o do servidor (/api/me/mirror); aqui ficam os pedidos e a apresentação.
  *  - "Para quem é o look": chips (radiogroup) com os tipos do banco.
  *  - "Partes do look": a grade de células do Provador (Parte de cima, Peça única, Parte de baixo, Calçado, Acessório). A
  *    camada externa do servidor (jaqueta, blazer…) entra na Parte de cima — não existe "Camada externa" na tela.
  *    Tocar numa célula abre a folha da parte: vestindo agora, roupas em mãos (a lista do espelho e a peça na mão),
- *    guarda-roupa e sugestões. No quarto, as roupas em mãos só aparecem aqui (a célula conta quantas há).
- *  - Vista-me: células de ocasião + humor/clima opcionais; peças fixadas ("Manter") viram âncoras.
- *  - Ações: usar hoje, salvar (um toque), abrir no editor, provar no Provador, tira uma coisa, GRWM e limpar (desfazíveis).
+ *    guarda-roupa e sugestões. As roupas em mãos só aparecem aqui (a célula conta quantas há).
+ *  - Vista-me (MirrorVistaSection; em /mirror fica no painel próprio): nível térmico, ocasiões + humor/clima, âncoras.
+ *  - Ações: usar hoje, salvar (um toque), abrir no editor, provar no Provador, tira uma coisa e limpar (desfazíveis).
  */
-export interface MirrorPieceRef {
-  id: string; name: string; imageUrl?: string | null; thumbnailUrl?: string | null; category?: string | null; subcategory?: string | null; colorHex?: string | null;
-  addressLabel?: string | null; moduleId?: string | null; inMirror?: boolean; model3dUrl?: string | null; model3dStatus?: string | null; photoProcessingStatus?: string | null;
-  available?: boolean; slot?: string | null; worn?: boolean; why?: string | null;
-}
-export interface MirrorSequenceStep { pieceId: string; name: string; moduleId?: string | null; legend: string }
-export interface MirrorData {
-  tipoLook?: TipoLook | null; slots: Record<string, MirrorPieceRef | MirrorPieceRef[] | null>; complete: boolean;
-  missing?: { slot: string; action: string; message: string }[]; warnings?: string[]; prompt?: string | null; shownCount?: number;
-  scores?: LookScoreValues | null; restriction?: { challenge: string; allowed?: number } | null; postIt?: string | null;
-  silhouette?: { letter?: string; rule?: string } | string | null; light?: { kelvin?: number } | null; rack?: MirrorPieceRef[];
-  origin?: string | null; actions?: string[]; interpretation?: { anchors?: string[] | null } | null;
-  /** extras da resposta do Vista-me / Outra sugestão */
-  sequence?: MirrorSequenceStep[]; fallbackMessage?: string | null; challengeNotice?: string | null; message?: string | null;
-}
-export type WornEntry = { slot: string; p: MirrorPieceRef };
-export const wornOf = (data: MirrorData | null | undefined): WornEntry[] => Object.entries(data?.slots ?? {}).flatMap(([slot, v]) => (Array.isArray(v) ? v.map((p) => ({ slot, p })) : v ? [{ slot, p: v }] : []));
-const asList = (v: MirrorPieceRef | MirrorPieceRef[] | null | undefined) => (Array.isArray(v) ? v : v ? [v] : []);
-
-/** As cinco partes do look, no vocabulário do Provador e do quarto (room.mirror.slot.*). */
-export interface MirrorPart { id: string; slots: string[]; label: string; glyph: Illustration; suggest: string; max?: number }
-export const MIRROR_PARTS: MirrorPart[] = [
-  { id: "top", slots: ["upper", "outer_layer"], label: "room.mirror.slot.upper", glyph: "tshirt", suggest: "upper" },
-  { id: "dress", slots: ["dress"], label: "room.mirror.slot.dress", glyph: "dress", suggest: "dress" },
-  { id: "lower", slots: ["lower"], label: "room.mirror.slot.lower", glyph: "pants_back", suggest: "lower" },
-  { id: "shoes", slots: ["shoes"], label: "room.mirror.slot.shoes", glyph: "sneaker_side", suggest: "shoes" },
-  { id: "accessory", slots: ["accessory"], label: "room.mirror.slot.accessory", glyph: "bag", suggest: "accessory", max: 4 },
-];
-export const partOfSlot = (slot?: string | null) => MIRROR_PARTS.find((p) => p.slots.includes(slot ?? "")) ?? null;
-const PART_OF_CATEGORY: Record<string, string> = { upper_piece: "top", full_body_piece: "dress", lower_piece: "lower", shoes_piece: "shoes", accessory_piece: "accessory" };
-/** Parte do look de uma peça: pelo slot do espelho; sem slot (peça na mão, lista antiga), pela categoria. */
-const partOfPiece = (p: Pick<MirrorPieceRef, "slot" | "category">) => partOfSlot(p.slot) ?? MIRROR_PARTS.find((x) => x.id === PART_OF_CATEGORY[p.category ?? ""]) ?? null;
-/** Roupas em mãos de uma parte, ainda não vestidas: a lista do espelho (trazidas do quarto) e a peça segurada fora dela. */
-export function inHandOf(part: MirrorPart, data: MirrorData, held: MirrorPieceRef[] = []): (MirrorPieceRef & { listed: boolean })[] {
-  const worn = new Set(wornOf(data).map((w) => w.p.id)), rack = data.rack ?? [];
-  const listed = rack.filter((r) => !worn.has(r.id) && partOfPiece(r)?.id === part.id).map((r) => ({ ...r, listed: true }));
-  const loose = held.filter((h) => !worn.has(h.id) && !rack.some((r) => r.id === h.id) && partOfPiece(h)?.id === part.id).map((h) => ({ ...h, listed: false }));
-  return [...loose, ...listed];
-}
-
 /** Pedidos ao espelho: a resposta com `slots` substitui o estado; sem ela, recarrega. `busy` é a chave do pedido em andamento. */
 export function useMirrorActions<T extends MirrorData>(setData: (d: T) => void, reload: () => void) {
   const toast = useToast(); const [busy, setBusy] = useState<string | null>(null);
@@ -79,14 +39,6 @@ export function useMirrorActions<T extends MirrorData>(setData: (d: T) => void, 
     } catch (e) { toast.fromError(e); return null; } finally { setBusy(null); }
   };
   return { run, busy };
-}
-
-/**
- * "Tira uma coisa" (DET-M01): o servidor libera com o look completo e algo removível (acessório ou camada externa). A
- * resposta do Vista-me / Outra sugestão traz a lista de ações dela no lugar da calculada — então a regra é refeita aqui.
- */
-export function canTakeOneOff(data: MirrorData): boolean {
-  return !!data.actions?.includes("TIRA_UMA_COISA") || (data.complete && (asList(data.slots.accessory).length > 0 || asList(data.slots.outer_layer).length > 0));
 }
 
 /**
@@ -115,32 +67,19 @@ export type MirrorPins = ReturnType<typeof useMirrorPins>;
  * servidor não recebe corpo); se a pessoa fixou ou soltou peças depois, vai o mesmo pedido ao /vista-me com as âncoras
  * novas — as combinações já mostradas continuam de fora do mesmo jeito.
  */
-export function vistaRequest(kind: "vista-me" | "another", data: MirrorData | null | undefined, anchorIds: string[], prompt?: string): { path: string; body?: { prompt: string; anchorIds: string[] } } {
-  if (kind === "another") {
-    const before = (data?.interpretation?.anchors ?? []).map(String);
-    const same = before.length === anchorIds.length && anchorIds.every((id) => before.includes(id));
-    if (same) return { path: "/api/me/mirror/another" };
-    return { path: "/api/me/mirror/vista-me", body: { prompt: data?.prompt ?? "", anchorIds } };
-  }
-  return { path: "/api/me/mirror/vista-me", body: { prompt: prompt ?? "", anchorIds } };
-}
-
-/** Ações que o quarto faz do jeito dele (reação do avatar, luz nas portas, fecho do look); fora do quarto, o padrão. */
+/** Ações que uma tela anfitriã pode fazer do jeito dela (era o Meu Quarto, retirado em 15/11/2026); sem anfitrião, o padrão. */
 export interface MirrorHost {
   wear?: (p: MirrorPieceRef) => Promise<unknown> | void;
   takeOff?: (p: MirrorPieceRef) => Promise<unknown> | void;
   unlist?: (p: MirrorPieceRef) => Promise<unknown> | void;
-  /** "Mostrar no quarto" dentro do quarto (enquadra a posição); fora dele vira link /room?piece= */
-  showInRoom?: (p: MirrorPieceRef) => void;
-  /** resposta do Vista-me / Outra sugestão (o quarto acende as portas da sequência) */
+  /** resposta do Vista-me / Outra sugestão */
   onVista?: (r: MirrorData) => void;
-  /** "Usar este look hoje" com o fecho do quarto */
+  /** "Usar este look hoje" com o fecho do anfitrião */
   use?: () => Promise<unknown> | void;
 }
 type Notice = { text: string; actions?: { label: string; href?: string; onClick?: () => void }[] };
-const ASSET_TONE = { PENDING: "mark", IMAGE_2D: "chalk", MOULD_3D: undefined, MODEL_3D: "thread" } as const;
 
-export function MirrorControls<T extends MirrorData>({ data, setData, reload, compact = false, children, host, preview2d, held, arrivedId, pins }: {
+export function MirrorControls<T extends MirrorData>({ data, setData, reload, compact = false, children, host, preview2d, held, arrivedId, pins, vista = true }: {
   data: T; setData: (d: T) => void; reload: () => void;
   /** dentro do quarto (coluna estreita ao lado da cena) */
   compact?: boolean;
@@ -155,26 +94,20 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
   arrivedId?: string | null;
   /** peças fixadas guardadas por quem usa o painel (o quarto); sem isto, o painel guarda as suas */
   pins?: MirrorPins;
+  /** false: o Vista-me não entra aqui (em /mirror ele tem o próprio painel lateral) */
+  vista?: boolean;
 }) {
   const { t } = useI18n(); const toast = useToast();
   const { run, busy } = useMirrorActions<T>(setData, reload);
-  const tipos = useApi<TipoLook[]>((signal) => api.get("/api/tipos-look", { signal }), []);
   const [open, setOpen] = useState<string | null>(null);
   const ownPins = useMirrorPins(data);
   const { pinned, toggle: togglePin, anchorIds } = pins ?? ownPins;
-  const [extras, setExtras] = useState<Pick<MirrorData, "sequence" | "fallbackMessage" | "challengeNotice" | "message"> | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [grwm, setGrwm] = useState<{ steps?: { imageUrl?: string | null; caption?: string; pieceId?: string; at?: number }[]; totalMs?: number } | null>(null);
   const worn = wornOf(data);
-  const tiposMissing = tipos.error instanceof ApiError && (tipos.error.status === 404 || tipos.error.status === 405);
-  const dressOn = asList(data.slots.dress).length > 0;
-  const restore = async (ids: string[]) => { for (const id of ids) await run("restore", () => api.post("/api/me/mirror/pieces", { pieceId: id })); setNotice(null); };
+  const owned = ownedOf(data);
+  const putOn = (p: MirrorPieceRef) => (isCatalogPiece(p) ? api.post<T>("/api/me/mirror/catalog", { productId: p.productId }) : api.post<T>("/api/me/mirror/pieces", { pieceId: p.id }));
+  const restore = async (pieces: MirrorPieceRef[]) => { for (const p of pieces) await run("restore", () => putOn(p)); setNotice(null); };
 
-  async function vista(path: "vista-me" | "another", prompt?: string) {
-    const req = vistaRequest(path, data, anchorIds(), prompt);
-    const r = await run("vista", () => api.post(req.path, req.body));
-    if (r && (r as T).slots) { const x = r as T; setExtras({ sequence: x.sequence, fallbackMessage: x.fallbackMessage, challengeNotice: x.challengeNotice, message: x.message }); host?.onVista?.(x); }
-  }
   async function use() {
     if (host?.use) { await host.use(); return; }
     try { const r = await api.post<{ message?: string }>("/api/me/mirror/use"); toast.success(r.message ?? t("mirror.look_do_dia_registrado")); reload(); } catch (e) { toast.fromError(e); }
@@ -187,15 +120,15 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
   }
   async function takeOneOff() {
     const r = await run("one", () => api.post("/api/me/mirror/take-one-off")) as (T & { removed?: MirrorPieceRef; why?: string }) | null;
-    if (r?.removed) { const id = r.removed.id; setNotice({ text: t("mirror.tirei", { name: r.removed.name, why: r.why ?? "" }).trim(), actions: [{ label: t("mirror.desfazer"), onClick: () => void restore([id]) }] }); }
+    if (r?.removed) { const removed = r.removed; setNotice({ text: t("mirror.tirei", { name: removed.name, why: r.why ?? "" }).trim(), actions: [{ label: t("mirror.desfazer"), onClick: () => void restore([removed]) }] }); }
   }
   async function clear() {
-    const ids = worn.map((w) => w.p.id);
+    const pieces = worn.map((w) => w.p);
     const r = await run("clear", () => api.delete("/api/me/mirror"));
-    if (r) setNotice({ text: t("mirror.espelho_limpo"), actions: ids.length ? [{ label: t("mirror.desfazer"), onClick: () => void restore(ids) }] : undefined });
+    if (r) setNotice({ text: t("mirror.espelho_limpo"), actions: pieces.length ? [{ label: t("mirror.desfazer"), onClick: () => void restore(pieces) }] : undefined });
   }
   const silhouette = typeof data.silhouette === "object" && data.silhouette?.letter ? data.silhouette : null;
-  const provar = worn.slice(0, 8).map((w) => `w.${w.p.id}`).join(",");
+  const provar = worn.slice(0, 8).map((w) => tryOnRef(w.p)).join(",");
   const part = MIRROR_PARTS.find((p) => p.id === open) ?? null;
 
   return (
@@ -218,78 +151,12 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
         </div>
       )}
 
-      <section className="mirror-section" aria-labelledby="mirror-parts-h">
-        <h3 id="mirror-parts-h" className="mirror-section-h">{t("mirror.slots")}</h3>
-        <div className="fitting-stores mirror-parts" role="group" aria-labelledby="mirror-parts-h">
-          {MIRROR_PARTS.map((p) => {
-            const pieces = p.slots.flatMap((s) => asList(data.slots[s]));
-            const label = t(p.label);
-            // a falta vem do lugar da própria parte: na Parte de cima, só a jaqueta (camada externa) não supre a peça por baixo
-            const own = p.id === "top" ? asList(data.slots[p.suggest]) : pieces;
-            const missing = (data.missing ?? []).some((m) => m.slot === p.suggest) && own.length === 0;
-            const covered = !pieces.length && dressOn && (p.id === "top" || p.id === "lower");
-            const under = pieces.length > 0 && missing ? t("mirror.parte.falta_por_baixo") : null;
-            const caption = pieces.length
-              ? [p.max ? t("mirror.parte.n_de", { n: pieces.length, max: p.max }) : pieces.map((x) => x.name).join(" + "), under].filter(Boolean).join(" · ")
-              : covered ? t("mirror.parte.coberto") : missing ? t("mirror.parte.falta") : t("mirror.parte.vazio");
-            const asset = pieces[0] ? assetStateOf(pieces[0]) : null;
-            const unavailable = pieces.some((x) => x.available === false);
-            const pin = pieces.some((x) => pinned.has(x.id));
-            const hand = inHandOf(p, data, held);
-            const arrived = !!arrivedId && hand.some((x) => x.id === arrivedId);
-            return (
-              <button key={p.id} type="button" className={cn("fitting-store mirror-part", open === p.id && "is-active", missing && "is-missing", !pieces.length && "is-empty", arrived && "is-arrived")}
-                aria-haspopup="dialog" aria-label={t("mirror.parte.aria", { part: label, value: pieces.length ? [pieces.map((x) => x.name).join(", "), under].filter(Boolean).join(" · ") : caption })} onClick={() => setOpen(p.id)}>
-                <span className="mirror-part-art" aria-hidden>
-                  {pieces.length ? pieces.slice(0, 2).map((x) => <img key={x.id} src={mediaUrl(x.thumbnailUrl ?? x.imageUrl ?? undefined)} alt="" style={{ background: x.colorHex ?? undefined }} />)
-                    : <GarmentGlyph id={p.glyph} size={36} animated={false} numbered={false} />}
-                </span>
-                <span className="fitting-store-name">{label}</span>
-                <span className="mirror-part-caption">{caption}</span>
-                {(asset || unavailable || pin || hand.length > 0) && (
-                  <span className="mirror-part-badges">
-                    {asset && <Badge tone={ASSET_TONE[asset]}>{t(`room.mirror.asset_curto.${asset}`)}</Badge>}
-                    {hand.length > 0 && <Badge tone="thread">{t("mirror.parte.em_maos", { n: hand.length })}</Badge>}
-                    {unavailable && <Badge tone="mark">⚠ {t("mirror.parte.indisponivel")}</Badge>}
-                    {pin && <Badge>📌 {t("mirror.parte.fixada")}</Badge>}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        {data.warnings?.length ? <ul className="mirror-warnings">{data.warnings.map((w) => <li key={w}>⚠ {w}</li>)}</ul> : null}
-      </section>
+      <MirrorPartsGrid data={data} held={held} arrivedId={arrivedId} pinned={pinned} open={open} onOpen={setOpen} />
 
-      <section className="mirror-section" aria-labelledby="mirror-tipo-h">
-        <h3 id="mirror-tipo-h" className="mirror-section-h">{t("mirror.para_quem")}</h3>
-        {tiposMissing ? <p className="type-body-sm text-muted" role="status">{t("lookType.unavailable")}</p>
-          : tipos.error ? <ErrorState error={tipos.error} onRetry={tipos.reload} />
-          : (
-            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-labelledby="mirror-tipo-h">
-              {(tipos.data ?? []).map((tipo) => (
-                <Chip key={tipo.id} role="radio" aria-checked={data.tipoLook?.id === tipo.id} disabled={busy === "tipo-look"}
-                  onClick={() => { if (data.tipoLook?.id !== tipo.id) void run("tipo-look", () => api.put("/api/me/mirror/tipo-look", { tipoLookId: tipo.id })); }}>{tipo.nome}</Chip>
-              ))}
-            </div>
-          )}
-      </section>
+      <MirrorLookType currentId={data.tipoLook?.id} busy={busy === "tipo-look"}
+        onChoose={(tipoLookId) => void run("tipo-look", () => api.put("/api/me/mirror/tipo-look", { tipoLookId }))} />
 
-      <section className="mirror-section" aria-labelledby="mirror-vista-h">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 id="mirror-vista-h" className="mirror-section-h">{t("mirror.vista_me")}</h3>
-          <Button size="sm" disabled={data.origin !== "vista_me" || busy === "vista"} onClick={() => void vista("another")}>{t("room.outra_sugestao")}</Button>
-        </div>
-        <VistaMeCells busy={busy === "vista"} lastPrompt={data.prompt} pinnedCount={anchorIds().length} onRun={(prompt) => void vista("vista-me", prompt)} />
-        {extras && (extras.message || extras.fallbackMessage || extras.challengeNotice || extras.sequence?.length) ? (
-          <div className="mirror-vista-result" role="status">
-            {extras.message && <p className="type-body-sm">{extras.message}</p>}
-            {extras.sequence?.length ? <ol className="mirror-sequence">{extras.sequence.map((s) => <li key={s.pieceId}>{s.legend}</li>)}</ol> : null}
-            {extras.fallbackMessage && <p className="type-body-sm text-muted">{extras.fallbackMessage}</p>}
-            {extras.challengeNotice && <p className="type-body-sm text-muted">{extras.challengeNotice}</p>}
-          </div>
-        ) : data.prompt ? <p className="type-body-sm text-muted">{t("mirror.ultimo_pedido_combinacoes_mostradas", { prompt: data.prompt, value: data.shownCount ?? 0 })}</p> : null}
-      </section>
+      {vista && <MirrorVistaSection data={data} busy={busy} anchorIds={anchorIds} run={run} onVista={host?.onVista} />}
 
       {worn.length > 0 && data.scores && (
         <Card>
@@ -299,34 +166,23 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
         </Card>
       )}
 
+      {owned.length < worn.length && <p className="type-body-sm text-muted" role="note">{t("mirror.catalogo.so_prova")}</p>}
       <div className="mirror-actions">
         <Button variant="accent" disabled={!data.complete} onClick={() => void use()}><FaiIcon id="ACT-36" size={20} className="ico-text" decorative />{t("mirror.usar_este_look_hoje")}</Button>
-        <Button variant="primary" disabled={worn.length < 2} onClick={() => void save()}><FaiIcon id="ACT-10" size={20} className="ico-text" decorative />{t("mirror.salvar_look")}</Button>
-        {worn.length ? <Link href={`/schemes/new?pieces=${worn.map((w) => encodeURIComponent(w.p.id)).join(",")}`} className="btn">{t("mirror.abrir_no_editor")}</Link> : <Button disabled>{t("mirror.abrir_no_editor")}</Button>}
+        <Button variant="primary" disabled={owned.length < 2} onClick={() => void save()}><FaiIcon id="ACT-10" size={20} className="ico-text" decorative />{t("mirror.salvar_look")}</Button>
+        {owned.length ? <Link href={`/schemes/new?pieces=${owned.map((w) => encodeURIComponent(w.p.id)).join(",")}`} className="btn">{t("mirror.abrir_no_editor")}</Link> : <Button disabled>{t("mirror.abrir_no_editor")}</Button>}
         {worn.length ? <Link href={`/try-on?provar=${provar}`} className="btn"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("mirror.provar_look_no_provador")}</Link> : <Button disabled>{t("mirror.provar_look_no_provador")}</Button>}
         <Button disabled={!canTakeOneOff(data) || busy === "one"} onClick={() => void takeOneOff()}><FaiIcon id="ACT-33" size={20} className="ico-text" decorative />{t("mirror.tira_uma_coisa")}</Button>
-        <Button disabled={worn.length === 0 || busy === "grwm"} onClick={async () => { const r = await run("grwm", () => api.get("/api/me/mirror/grwm")); if (r) setGrwm(r as typeof grwm); }}>{t("mirror.grwm")}</Button>
       </div>
 
       {part && (
         <MirrorPartSheet part={part} data={data} hand={inHandOf(part, data, held)} pinned={pinned} busy={busy} onClose={() => setOpen(null)}
           onTogglePin={togglePin}
           wear={async (p) => { if (host?.wear) await host.wear(p); else { const r = await run("place", () => api.post("/api/me/mirror/pieces", { pieceId: p.id })) as { notice?: string } | null; if (r?.notice) toast.info(r.notice); } }}
-          takeOff={async (p) => { if (host?.takeOff) await host.takeOff(p); else await run("rm", () => api.delete(`/api/me/mirror/pieces/${encodeURIComponent(p.id)}`)); }}
-          unlist={async (p) => { if (host?.unlist) await host.unlist(p); else await run("unlist", () => api.delete(`/api/me/mirror/rack/${encodeURIComponent(p.id)}`)); }}
-          showInRoom={host?.showInRoom ? (p) => { setOpen(null); host.showInRoom!(p); } : undefined} />
+          wearProduct={async (productId) => { await run("place", () => api.post("/api/me/mirror/catalog", { productId })); }}
+          takeOff={async (p) => { if (isCatalogPiece(p)) await run("rm", () => api.delete(`/api/me/mirror/catalog/${encodeURIComponent(p.productId ?? "")}`)); else if (host?.takeOff) await host.takeOff(p); else await run("rm", () => api.delete(`/api/me/mirror/pieces/${encodeURIComponent(p.id)}`)); }}
+          unlist={async (p) => { if (host?.unlist) await host.unlist(p); else await run("unlist", () => api.delete(`/api/me/mirror/rack/${encodeURIComponent(p.id)}`)); }} />
       )}
-      <Dialog open={!!grwm} onClose={() => setGrwm(null)} title={t("mirror.grwm_storyboard")} size="lg">
-        <ol className="mirror-grwm" aria-label={t("mirror.grwm_storyboard")}>
-          {(grwm?.steps ?? []).map((s, i) => (
-            <li key={i} className="mirror-grwm-card">
-              {s.imageUrl && s.imageUrl !== "null" ? <img src={mediaUrl(s.imageUrl)} alt="" /> : <span className="mirror-grwm-end" aria-hidden>✨</span>}
-              <span className="mirror-grwm-n">{i + 1}</span>
-              <p>{s.caption}</p>
-            </li>
-          ))}
-        </ol>
-      </Dialog>
     </div>
   );
 }

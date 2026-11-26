@@ -1,5 +1,9 @@
 # FLAIR 3D: a protagonista, a atividade-puzzle e as roupas como recursos de RPG
 
+> **Nota de 15/11/2026.** A área antiga de capítulos (`/flair/jogos`, `/api/flair/games`, `FlairGameController`,
+> `scripts/flair-games/`) saiu do app; o FLAIR 3D são os 15 núcleos (`/api/flair/3d`). As referências a ela abaixo
+> são do plano original e ficam como registro. Ver `docs/flair/ENDPOINTS_FLAIR.md`.
+
 Data: 07/11/2026. Escopo: estudo de game design com pesquisa e leitura do código. Nenhum código mudou. Complementa
 `JOGOS.md` (os cinco jogos), `../cbc/CINCO_ELENCOS.md` e `../cbc/FLAIR_CBC.md` (links do CBC),
 `../3d-puzzles/ESTUDO_INSOMNIAC.md` e `../3d-puzzles/ALTERNATIVAS_FASHIONAI.md`. Plataforma: estudo em andamento em

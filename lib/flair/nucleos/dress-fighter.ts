@@ -1,4 +1,4 @@
-/** Núcleo 2: arena de rua com neon ao fundo; o oponente fica ao lado do avatar. A luta roda sozinha após a entrega. */
+/** Núcleo 2: arena de rua com neon ao fundo; a oponente fica ao lado do avatar. Depois da entrega, a luta anda lance a lance com as cartas da mão. */
 import { acoesDe, deckDe } from "@/lib/flair/nucleos/base";
 import type { NucleoConfig } from "@/lib/flair/nucleos/types";
 
@@ -15,7 +15,7 @@ export const DRESS_FIGHTER: NucleoConfig = {
   },
   personagens: [{ papel: "OPONENTE", tipo: "manequim", pos: [1.7, 0, -0.5], cor: "#5B2A86", giro: -75 }],
   avatares: { protagonista: ["PROPRIO"], online: { min: 1, max: 1 } },
-  vagas: ["SUP", "INF", "CAL", "ACE"],
+  vagas: ["SUP", "INF", "CAL", "ACE", "VES"],
   zonas: [],
   areas: [],
   opcoes: [],

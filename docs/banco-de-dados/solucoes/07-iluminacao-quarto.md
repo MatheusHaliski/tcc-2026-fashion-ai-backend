@@ -1,5 +1,12 @@
 # Exercício 07 — Tipo de iluminação e temperatura do quarto
 
+> **Retirado em 15/11/2026.** O Quarto 3D (Meu Quarto) saiu do app por decisão da dona ("Retire totalmente o Quarto 3D do app FashionAI"); o guarda-roupa em perspectiva é o ACERVO (`/acervo`). Este documento fica como histórico do desenho. O que saiu, o que ficou e os dados que ficaram sem uso: `docs/quarto/RETIRADA_DO_QUARTO_3D.md`.
+
+> **Implementado no ACERVO em 25/11/2026** (o quarto saiu do app; a luz passou a ser do ambiente do acervo):
+> - schema: `tipos_iluminacao` + `acervo_ambientes.tipo_iluminacao_id` (FK RESTRICT) e `temperatura_kelvin` (CHECK 2700–6500 K), migração **V112** idempotente (ver [MIGRACOES_DOS_EXERCICIOS.md](../MIGRACOES_DOS_EXERCICIOS.md));
+> - backend: `TipoIluminacao`, `AcervoLightingWriter` (tipo ativo, faixa sem "clamp", pedido explícito de limpar), `AcervoIluminacaoService` (só o dono), `PUT /api/me/acervo/ambientes/{id}/luz` e `GET /api/opcoes/tipos-iluminacao`; a luz volta no GET do acervo (`ambiente.iluminacao`);
+> - tela: painel "Luz do ambiente" em Meu espaço (`components/acervo/espaco/painel-luz.tsx`); a cena 3D usa só a luz confirmada pelo GET (`lib/acervo/luz.ts`: kelvin → cor, tipo → intensidade); ambiente legado mostra "Sem classificação" e mantém a luz padrão.
+
 **Situação na revisão `9f5512a77`:** Parcial: kelvin/intensidade/on já são guardados em modules_json; falta a FK TipoIluminacao exigida.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

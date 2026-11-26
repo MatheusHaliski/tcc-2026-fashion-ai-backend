@@ -37,7 +37,7 @@ function useMalhas(postura: Postura, cor: string) {
   return malhas;
 }
 
-export function Figurante({ p, ator, material }: { p: NucleoPersonagem; ator: string; material: THREE.Material }) {
+export function Figurante({ p, ator, material, oculto }: { p: NucleoPersonagem; ator: string; material: THREE.Material; oculto?: () => boolean }) {
   const cena = useCena();
   const { corpo, braco, ombros } = useMalhas(p.postura ?? "em_pe", p.cor);
   const fora = useRef<THREE.Group>(null);
@@ -47,6 +47,8 @@ export function Figurante({ p, ator, material }: { p: NucleoPersonagem; ator: st
   const origem = useMemo(() => ({ x: p.pos[0], z: p.pos[2], giro: p.giro ?? 0 }), [p]);
   useFrame(() => {
     if (!fora.current || !raiz.current) return;
+    // a pessoa humana deste figurante já está em cena (figurantes-humanos.tsx): a silhueta sai
+    fora.current.visible = !oculto?.();
     const { amostra, lugar } = estadoDoAtor(cena, ator, origem);
     fora.current.position.set(lugar.x, p.pos[1], lugar.z);
     fora.current.rotation.y = lugar.giro * RAD;
@@ -65,8 +67,11 @@ export function Figurante({ p, ator, material }: { p: NucleoPersonagem; ator: st
   );
 }
 
-/** Todos os figurantes, cada um com o nome de ator "fig:<PAPEL>:<índice no papel>". */
-export function Figurantes({ personagens }: { personagens: NucleoPersonagem[] }) {
+/**
+ * Todos os figurantes, cada um com o nome de ator "fig:<PAPEL>:<índice no papel>". `prontos`: os que já são gente
+ * (a silhueta fica só enquanto o corpo humano monta).
+ */
+export function Figurantes({ personagens, prontos }: { personagens: NucleoPersonagem[]; prontos?: React.MutableRefObject<Set<string>> }) {
   const material = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0 }), []);
   useEffect(() => () => material.dispose(), [material]);
   const porPapel = new Map<string, number>();
@@ -75,7 +80,8 @@ export function Figurantes({ personagens }: { personagens: NucleoPersonagem[] })
       {personagens.map((p, i) => {
         const indice = porPapel.get(p.papel) ?? 0;
         porPapel.set(p.papel, indice + 1);
-        return <Figurante key={`${p.papel}-${i}`} p={p} ator={`fig:${p.papel}:${indice}`} material={material} />;
+        const ator = `fig:${p.papel}:${indice}`;
+        return <Figurante key={`${p.papel}-${i}`} p={p} ator={ator} material={material} oculto={prontos ? () => prontos.current.has(ator) : undefined} />;
       })}
     </group>
   );

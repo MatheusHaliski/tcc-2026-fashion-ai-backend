@@ -53,18 +53,6 @@ export const RESULTADO_PASSARELA: NucleoResultado = {
   eventos: [],
 };
 
-export const RESULTADO_LUTA: NucleoResultado = {
-  pontos: 100,
-  estrelas: 3,
-  resultado: "VITORIA",
-  regras: [{ codigo: "VITORIA", ok: true, pontos: 100 }, { codigo: "UM_ROUND", ok: false, pontos: 0 }],
-  eventos: [
-    { codigo: "ROUND", valor: { round: 1, atributo: "VELOCIDADE", voce: 52, oponente: 40, venceu: true } },
-    { codigo: "ROUND", valor: { round: 2, atributo: "ATAQUE", voce: 31, oponente: 40, venceu: false } },
-    { codigo: "ROUND", valor: { round: 3, atributo: "DEFESA", voce: 60, oponente: 40, venceu: true } },
-  ],
-};
-
 /** Viewport do jsdom (a tela lê innerWidth/innerHeight para o porte e a proporção do quadro). */
 export function viewport(largura: number, altura: number) {
   Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: largura });

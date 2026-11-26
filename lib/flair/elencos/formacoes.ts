@@ -83,8 +83,3 @@ export function elencoDaRota(param: string): string | null {
 export function rotaDoElenco(codigo: string): string {
   return `/flair/elencos/${codigo.toLowerCase().replace(/_/g, "-")}`;
 }
-
-/** Arte provisória do elenco (public/flair/elencos/<codigo>.svg). */
-export function arteDoElenco(codigo: string): string {
-  return `/flair/elencos/${codigo}.svg`;
-}

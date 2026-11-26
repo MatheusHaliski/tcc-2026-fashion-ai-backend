@@ -172,7 +172,7 @@ PROJ = {
     'reactions': 'Redis contadores por alvo', 'comments': 'Redis contadores por alvo', 'follows': 'Redis contadores de seguidores',
     'ai_inference_log': 'Redis rate limit (cota diária de IA)', 'photos': 'S3 (arquivo original e versões)',
     'users': 'S3 (avatar, capa)', 'brand_profiles': 'S3 (logo)', 'celebrity_profiles': 'S3 (foto oficial)', 'seals': 'S3 (ícone/arte do selo)',
-    'room_catalog': 'S3 (logo e arte do guarda-roupa)', 'data_export_requests': 'S3 (pacote .zip)', 'brand_logos': 'S3 (logo filtrado)',
+    'data_export_requests': 'S3 (pacote .zip)', 'brand_logos': 'S3 (logo filtrado)',
     'backup_records': 'S3 (dump do MySQL)', 'daily_looks': 'Cassandra timeline_by_user quando publicado',
 }
 w_by_table = collections.defaultdict(set)

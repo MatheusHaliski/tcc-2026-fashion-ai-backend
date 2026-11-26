@@ -1,18 +1,19 @@
 package br.com.fashionai.application.demand;
 
+import java.time.*;
+import java.util.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.physicalstore.PhysicalStoreReturnEvents;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.service.PhysicalStoreReturnEvents;
 import br.com.fashionai.application.testkit.MemoryRepository;
 import br.com.fashionai.domain.model.*;
 import br.com.fashionai.domain.model.enums.*;
 import br.com.fashionai.domain.repository.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.time.*;
-import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

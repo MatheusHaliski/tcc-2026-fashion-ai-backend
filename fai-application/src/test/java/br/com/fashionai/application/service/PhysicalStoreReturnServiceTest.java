@@ -1,6 +1,18 @@
 package br.com.fashionai.application.service;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.time.*;
+import java.util.*;
+import javax.imageio.ImageIO;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
+
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.physicalstore.PhysicalStoreReturnEvents;
+import br.com.fashionai.application.physicalstore.PhysicalStoreReturnPolicy;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.testkit.MemoryRepository;
@@ -10,15 +22,6 @@ import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.store.PhysicalStoreReturnCase;
 import br.com.fashionai.domain.repository.*;
 import br.com.fashionai.domain.repository.store.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationEventPublisher;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.time.*;
-import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

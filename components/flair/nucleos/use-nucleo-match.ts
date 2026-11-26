@@ -12,18 +12,10 @@ import { abrirPartida, acionarPartida, buscarNucleo, entregarPartida } from "@/l
 import { mesclarDefinicao } from "@/lib/flair/nucleos/registry";
 import { definicaoDaRodada, temRodadas } from "@/lib/flair/nucleos/rodadas";
 import { toEntrega, type Selecao } from "@/lib/flair/nucleos/selection";
-import type { AvatarTipo, NucleoAcionamento, NucleoCodigo, NucleoPartida, NucleoResultado } from "@/lib/flair/nucleos/types";
+import { corpoDoAcionamento, type AcionamentoDaPessoa } from "@/lib/flair/nucleos/acionamento";
+import type { AvatarTipo, NucleoCodigo, NucleoPartida, NucleoResultado, NucleoRetomada } from "@/lib/flair/nucleos/types";
 
-/** O que a pessoa acionou na janela da ação: a carta Especial (só `cardId`) ou a troca (`vaga` e `cardId`); vazio = seguir. */
-export interface AcionamentoDaPessoa {
-  cardId?: string;
-  vaga?: string;
-}
-
-function corpoDoAcionamento({ cardId, vaga }: AcionamentoDaPessoa): NucleoAcionamento {
-  if (cardId && vaga) return { troca: { vaga, carta: cardId } };
-  return cardId ? { carta: cardId } : {};
-}
+export type { AcionamentoDaPessoa };
 
 export function useNucleoMatch(codigo: NucleoCodigo) {
   const def = useApi((signal) => buscarNucleo(codigo, signal), [codigo]);
@@ -95,6 +87,18 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
   const todas = useMemo(() => bank.data?.cards ?? [], [bank.data]);
   const cartasDaPartida = useMemo(() => (semDeck || !deck ? todas : todas.filter((c) => deck.includes(c.id))), [semDeck, deck, todas]);
 
+  /** "Continuar partida": a partida que ficou aberta volta com o deck, o look vestido e o ponto em que parou */
+  const continuar = (r: NucleoRetomada) => {
+    const p = { ...r.partida, vestidas: r.vestidas, rascunho: r.rascunho };
+    const modelo = p.participantes?.some((x) => x.tipo === "MODELO_CASA") ? "MODELO_CASA" : "";
+    abertura.current = { chave: `${modelo}:${p.rodada ?? ""}`, promessa: Promise.resolve(p) };
+    setRodada(p.rodada ?? null);
+    setPartida(p);
+    setDeck(p.deck ?? []);
+    setResultado(r.resultado);
+    setTentativa(r.tentativa);
+  };
+
   /** de volta ao começo (nova partida com outro deck) */
   const reiniciar = () => {
     setPartida(null);
@@ -134,5 +138,6 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
     entregando: entrega.busy,
     erroEntrega: entrega.error,
     reiniciar,
+    continuar,
   };
 }

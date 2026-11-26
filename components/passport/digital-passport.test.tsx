@@ -30,4 +30,19 @@ describe('digital garment passport', () => {
     expect(screen.getByText(/não são certificações nem informações oficiais da marca/)).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Abrir editor 3D da peça' })).toBeTruthy();
   });
+
+  it('tipo, subtipo e conservação aparecem por extenso, não como código (auditoria 10.6, item 7)', async () => {
+    loggedAs(undefined, { 'GET /api/pieces/piece1/digital-passport': { ...sheet, materials: { ...sheet.materials, composition: f('COTTON', 'OWNER_DECLARED') },
+      sizes: { ...sheet.sizes, sizes: [{ ...sheet.sizes.sizes[0], label: 'm' }] } } });
+    renderApp(<DigitalPassportSheet pieceId="piece1" />);
+    await screen.findByText('FAI-PIECE-piece1');
+    expect(screen.getByText('Parte superior')).toBeTruthy();
+    expect(screen.getByText('Camisa')).toBeTruthy();
+    expect(screen.getByText('Bom')).toBeTruthy();
+    expect(screen.getAllByText('Algodão').length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText('upper_piece')).toBeNull();
+    expect(screen.queryByText('shirt')).toBeNull();
+    expect(screen.queryByText('GOOD')).toBeNull();
+    expect(screen.getByText(/^M · /)).toBeTruthy();
+  });
 });

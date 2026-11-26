@@ -5,8 +5,6 @@ import br.com.fashionai.application.ports.NotificationProjectionPort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.FaiPointsRule;
 import br.com.fashionai.domain.model.Notification;
-import br.com.fashionai.domain.model.RoomCatalogItem;
-import br.com.fashionai.domain.model.RoomInventoryItem;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.NotificationCategory;
@@ -15,8 +13,6 @@ import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository;
 import br.com.fashionai.domain.repository.FaiPointsRuleRepository;
 import br.com.fashionai.domain.repository.NotificationRepository;
-import br.com.fashionai.domain.repository.RoomCatalogItemRepository;
-import br.com.fashionai.domain.repository.RoomInventoryItemRepository;
 import br.com.fashionai.domain.repository.UserPreferencesRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +44,6 @@ class FaiPointsStatementTest {
     private final CurrentUser me = new CurrentUser(user, "ana", "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
     private FaiPointsLedgerEntryRepository ledger;
     private FaiPointsRuleRepository rules;
-    private RoomCatalogItemRepository catalog;
     private NotificationService notifications;
     private FaiPointsService service;
 
@@ -56,15 +51,8 @@ class FaiPointsStatementTest {
     void setUp() {
         ledger = mock(FaiPointsLedgerEntryRepository.class);
         rules = mock(FaiPointsRuleRepository.class);
-        catalog = mock(RoomCatalogItemRepository.class);
         notifications = mock(NotificationService.class);
-        RoomInventoryItemRepository inventory = mock(RoomInventoryItemRepository.class);
-        when(inventory.save(any())).thenAnswer(inv -> {
-            RoomInventoryItem saved = inv.getArgument(0);
-            saved.setId(UUID.randomUUID());                    // o @PrePersist do JPA faria isso
-            return saved;
-        });
-        service = new FaiPointsService(ledger, rules, catalog, inventory, null, notifications, mock(WardrobeCreatorService.class));
+        service = new FaiPointsService(ledger, rules, notifications);
     }
 
     private void rule(String code, int points) {
@@ -95,25 +83,6 @@ class FaiPointsStatementTest {
         assertThat(n.title()).isEqualTo("+40 FAI Points");
         assertThat(n.body()).isEqualTo("Look criado");
         assertThat(n.payload()).containsEntry("delta", 40).containsEntry("action", "SCHEME_CREATED").containsEntry("href", "/points");
-    }
-
-    @Test
-    void compraNaLojaViraNotificacaoDeDebitoComONomeDoItem() {
-        User u = new User();
-        u.assignId(user);
-        when(ledger.lockOwner(user)).thenReturn(Optional.of(u));
-        when(ledger.balance(user)).thenReturn(500L);
-        RoomCatalogItem item = new RoomCatalogItem();
-        item.setSku("FAI-PRT-AB60-NVY-LAC");
-        item.setName("Porta 60 · Navy laca");
-        item.setPricePoints(180);
-        item.setRequiredLevel("ESTREIA");
-        when(catalog.lockBySku("FAI-PRT-AB60-NVY-LAC")).thenReturn(Optional.of(item));
-        service.buy(me, "FAI-PRT-AB60-NVY-LAC");
-        Sent n = sent();
-        assertThat(n.title()).isEqualTo("−180 FAI Points");
-        assertThat(n.body()).isEqualTo("Compra na loja do quarto: Porta 60 · Navy laca");
-        assertThat(n.payload()).containsEntry("delta", -180);
     }
 
     @Test

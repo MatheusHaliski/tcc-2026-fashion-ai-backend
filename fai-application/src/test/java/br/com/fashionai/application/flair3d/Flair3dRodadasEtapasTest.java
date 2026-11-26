@@ -18,7 +18,7 @@ import static br.com.fashionai.application.flair3d.Flair3dFixtures.vestir;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * FLAIR 3D — as rodadas em etapas (um look por etapa, a partida segue ABERTA até a última): a peça achada e as rodadas do
+ * FLAIR 3D — as rodadas em etapas (um look por etapa, a partida segue ABERTA até a última): o Reflexo e as rodadas do
  * Labirinto, as clientes da Boutique, a volta ao mundo, o elevador e o metrô do Around the World e a batalha de 3
  * rodadas. Cada teste entrega os looks em sequência, como o serviço faz, guardando as entregas anteriores no andamento.
  */
@@ -72,21 +72,44 @@ class Flair3dRodadasEtapasTest {
     }
 
     @Test
-    void espelhoAbreComAPecaAchadaDepoisDeDuasApresentacoesSemAbrir() {
+    void espelhoGastaReflexoACadaApresentacaoErradaEFechaEmDerrotaSemEle() {
         CbcRules.Card a = card("SUP", "color:navy");
         CbcRules.Card b = card("INF", "color:blue");
         CbcRules.Card c = card("CAL", "color:red");
         Partida p = new Partida(new LabirintoNucleo(), "ESPELHO_1", 1L, a, b, c);
-        assertThat(p.entregar(null, a, b, c).resultado()).isEqualTo("NAO_ABRE");
+        Resultado primeira = p.entregar(null, a, b, c);
+        assertThat(primeira.resultado()).isEqualTo("NAO_ABRE");
+        assertThat(mapa(primeira, "DESGASTE")).containsEntry("recurso", "ENERGIA").containsEntry("reserva", 40).containsEntry("restante", 25);
         Resultado segunda = p.entregar(null, a, b, c);
         assertThat(segunda.status()).isEqualTo("ABERTA");
         assertThat(simples(segunda, "FALTAM_PECAS")).isEqualTo(1);
+        assertThat(mapa(segunda, "DESGASTE")).containsEntry("restante", 10).containsEntry("motivos", Map.of("APRESENTACAO_ERRADA", 30));
+        // sem pena: a peça achada na sala não entra mais, e a terceira apresentação errada zera o Reflexo
         Resultado terceira = p.entregar(null, a, b, c);
-        assertThat(terceira.resultado()).isEqualTo("ABRE");
-        assertThat(terceira.pontos()).isEqualTo(60);
-        assertThat(mapa(terceira, "PECA_ACHADA")).isEqualTo(Map.of("pecas", 1, "familia", "FAMILIA_AZUL"));
-        assertThat(LabirintoNucleo.achadas(1)).isZero();
-        assertThat(LabirintoNucleo.achadas(5)).isEqualTo(2);
+        assertThat(terceira.fecha()).isTrue();
+        assertThat(terceira.resultado()).isEqualTo("DERROTA");
+        assertThat(terceira.pontos()).isZero();
+        assertThat(terceira.eventos()).extracting(Resultado.Evento::codigo).doesNotContain("PECA_ACHADA");
+    }
+
+    @Test
+    void pecaUsadaComoRecursoDevolveReflexoEDaMaisUmaApresentacao() {
+        CbcRules.Card a = card("SUP", "color:navy");
+        CbcRules.Card b = card("INF", "color:blue");
+        CbcRules.Card c = card("CAL", "color:cobalt");
+        LabirintoNucleo n = new LabirintoNucleo();
+        // três apresentações erradas (45) com a energia de um tênis e de uma calça usados (+35): a quarta abre com 40
+        List<Andamento.UsoDeRecurso> usos = List.of(new Andamento.UsoDeRecurso(c.id(), "ENERGIA", 20, "p1"),
+                new Andamento.UsoDeRecurso(b.id(), "ENERGIA", 15, "p2"));
+        Andamento quarta = new Andamento(4, List.of(), List.of(), null, null, usos);
+        Resultado abriu = n.pontuar(vestir(a, b, c), Flair3dFixtures.contexto(1L, a, b, c).comAndamento(quarta));
+        assertThat(abriu.resultado()).isEqualTo("ABRE");
+        assertThat(abriu.pontos()).isEqualTo(40);
+        assertThat(mapa(abriu, "DESGASTE")).containsEntry("reserva", 75).containsEntry("gasto", 45).containsEntry("restante", 30);
+        // a quarta errada, com o Reflexo devolvido, ainda deixa a partida aberta; sem os usos, teria fechado na terceira
+        Resultado errou = n.pontuar(vestir(a, b), Flair3dFixtures.contexto(1L, a, b, c).comAndamento(quarta));
+        assertThat(errou.status()).isEqualTo("ABERTA");
+        assertThat(mapa(errou, "DESGASTE")).containsEntry("restante", 15);
     }
 
     @Test
@@ -121,19 +144,20 @@ class Flair3dRodadasEtapasTest {
     }
 
     @Test
-    void espelhoCedeSemPontosDepoisDeQuatroApresentacoesEAsTresPortasContamEstrelas() {
+    void oEspelhoNaoCedeMaisAErradaZeraOReflexoEAsTresPortasContamEstrelas() {
         CbcRules.Card festa1 = card("SUP", "occasion:party");
         CbcRules.Card festa2 = card("INF", "occasion:night_out");
         CbcRules.Card trabalho = card("CAL", "occasion:work");
         LabirintoNucleo n = new LabirintoNucleo();
         Partida escada = new Partida(n, "ESCADA_DE_ESPELHOS", 1L, festa1);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 2; i++) {
             assertThat(escada.entregar(null, festa1).resultado()).isEqualTo(Flair3dPercurso.NAO_CUMPRIDA);
         }
-        Resultado cedeu = escada.entregar(null, festa1);
-        assertThat(cedeu.resultado()).isEqualTo(Flair3dPercurso.CUMPRIDA);
-        assertThat(cedeu.eventos()).extracting(Resultado.Evento::codigo).contains("ESPELHO_CEDEU");
-        assertThat(simples(cedeu, "PONTOS_DA_ETAPA")).isEqualTo(0L);
+        Resultado semReflexo = escada.entregar(null, festa1);
+        assertThat(semReflexo.fecha()).isTrue();
+        assertThat(semReflexo.resultado()).isEqualTo("DERROTA");
+        assertThat(semReflexo.pontos()).isZero();
+        assertThat(semReflexo.eventos()).extracting(Resultado.Evento::codigo).doesNotContain("ESPELHO_CEDEU").contains("DESGASTE");
 
         Partida portas = new Partida(n, "TRES_PORTAS", 1L, festa1, festa2, trabalho);
         assertThat(n.definicao().naRodada("TRES_PORTAS").opcoes()).containsExactly("PORTA_FACIL", "PORTA_MEDIA", "PORTA_DIFICIL");
@@ -145,12 +169,14 @@ class Flair3dRodadasEtapasTest {
         assertThat(mapa(media, "PORTA")).isEqualTo(Map.of("estrelas", 2));
         assertThat(mapa(media, "PROXIMA_ETAPA")).containsEntry("codigo", "SALA_DO_TRABALHO");
         assertThat(portas.entregar("PORTA_FACIL", trabalho).resultado()).isEqualTo(Flair3dPercurso.CUMPRIDA);
-        for (int i = 0; i < 3; i++) {
-            assertThat(portas.entregar("PORTA_FACIL", trabalho).status()).isEqualTo("ABERTA");
-        }
+        // a porta difícil já gastou 15; na sala do passeio, a segunda errada zera o Reflexo
+        assertThat(portas.entregar("PORTA_FACIL", trabalho).status()).isEqualTo("ABERTA");
         Resultado fim = portas.entregar("PORTA_FACIL", trabalho);
         assertThat(fim.fecha()).isTrue();
+        assertThat(fim.resultado()).isEqualTo("DERROTA");
+        // as salas fechadas valem (2 e 1 estrelas: 100 e 50) e a que faltou conta zero na média das 3
         assertThat(fim.pontos()).isEqualTo(50);
+        assertThat(fim.regras()).extracting(Resultado.RegraResultado::codigo).containsExactly("SALA_DA_FESTA", "SALA_DO_TRABALHO");
 
         Resultado holofotes = n.pontuar(vestir(festa1, card("INF", "material:denim", "color:white")),
                 Flair3dFixtures.naRodada("CORREDOR_DE_HOLOFOTES", 1L, festa1));
@@ -257,6 +283,25 @@ class Flair3dRodadasEtapasTest {
     }
 
     @Test
+    void cadaTentativaReprovadaDaViagemGastaEnergiaEATerceiraAcabaAViagem() {
+        AroundTheWorldNucleo n = new AroundTheWorldNucleo();
+        CbcRules.Card sup = card("SUP", "material:linen", "style:resort", "color:yellow");
+        CbcRules.Card inf = card("INF");
+        CbcRules.Card cal = card("CAL");
+        Partida volta = new Partida(n, "VOLTA_AO_MUNDO", 1L, sup, inf, cal);
+        assertThat(volta.entregar(null, sup, inf, cal).resultado()).isEqualTo(Flair3dPercurso.CUMPRIDA);
+        assertThat(mapa(volta.entregar(null, inf, cal), "DESGASTE")).containsEntry("restante", 25)
+                .containsEntry("motivos", Map.of("TENTATIVA_REPROVADA", 15));
+        assertThat(volta.entregar(null, inf, cal).status()).isEqualTo("ABERTA");
+        Resultado fim = volta.entregar(null, inf, cal);
+        assertThat(fim.fecha()).isTrue();
+        assertThat(fim.resultado()).isEqualTo("DERROTA");
+        // o Rio fechado com 3 estrelas (100) e as outras 7 regiões em zero
+        assertThat(fim.pontos()).isEqualTo(13);
+        assertThat(fim.eventos()).extracting(Resultado.Evento::codigo).doesNotContain("CAMINHO_ABERTO_SEM_CUMPRIR");
+    }
+
+    @Test
     void batalhaDeTresRodadasSomaContraOAdversarioEDecideOVencedor() {
         BatalhaLooksNucleo n = new BatalhaLooksNucleo();
         CbcRules.Card sup = card("SUP", "color:blue");
@@ -277,6 +322,8 @@ class Flair3dRodadasEtapasTest {
                 assertThat(placar.get("voce")).isEqualTo((long) previa.pontos());
                 voce += ((Long) placar.get("voce")).intValue();
                 adversario += (int) placar.get("adversario");
+                // o adversário veste o look da casa da rodada: a família dominante e uma peça por vaga
+                assertThat(placar).containsKeys("familia", "look");
                 desafios.add((String) mapa(r, "PROXIMA_ETAPA").get("codigo"));
             }
         }
@@ -284,7 +331,7 @@ class Flair3dRodadasEtapasTest {
         assertThat(desafios).doesNotHaveDuplicates();
         Map<String, Object> soma = mapa(r, "SOMA_DA_BATALHA");
         assertThat((int) soma.get("voce")).isGreaterThanOrEqualTo(voce);
-        assertThat((int) soma.get("adversario")).isGreaterThan(adversario);
+        assertThat((int) soma.get("adversario")).isGreaterThanOrEqualTo(adversario);
         boolean venceu = (int) soma.get("voce") > (int) soma.get("adversario");
         boolean empate = (int) soma.get("voce") == (int) soma.get("adversario");
         if (!empate) {
@@ -293,5 +340,10 @@ class Flair3dRodadasEtapasTest {
             assertThat(r.eventos()).extracting(Resultado.Evento::codigo).contains("VOTO_DA_PLATEIA");
         }
         assertThat(r.regras()).hasSize(3);
+        // cada carta com os pontos que deu nas etapas (não "vale conforme o pedido da vez")
+        double dasCartas = r.cartas().stream().mapToDouble(Resultado.CartaPontos::pontos).sum();
+        assertThat(r.cartas()).extracting(Resultado.CartaPontos::cardId).doesNotHaveDuplicates().isSubsetOf(sup.id(), inf.id());
+        assertThat(dasCartas).isLessThanOrEqualTo(r.pontos() + 0.05);
+        assertThat(r.cartas()).allSatisfy(c -> assertThat(c.pontos()).isPositive());
     }
 }

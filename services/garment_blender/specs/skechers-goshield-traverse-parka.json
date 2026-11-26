@@ -1,0 +1,24 @@
+{
+ "produto": "Goshield Traverse Parka",
+ "marca": "Skechers",
+ "url_oficial": "https://www.skechers.com/goshield-traverse-parka/JA392_BLK.html",
+ "subcategoria": "parka",
+ "sexo": "MASCULINO",
+ "caimento": "amplo",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#18181b",
+  "gramatura": 260
+ },
+ "gola": "capuz",
+ "fechamento": "ziper_inteiro",
+ "bolsos": [
+  "peito"
+ ],
+ "ribana": false,
+ "medidas_marca": {
+  "comprimento": 84
+ },
+ "observacao": "parka longa (84 cm) com capuz, zíper e bolso. Cor: a da variante na URL (BLK).",
+ "tamanho": "M"
+}

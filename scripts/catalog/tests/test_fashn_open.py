@@ -81,10 +81,12 @@ class FuseTest(unittest.TestCase):
         f = fo.fuse(labels, alpha, {3})
         self.assertFalse(f.target[100, 80]); self.assertTrue(f.target[60, 50])
         self.assertTrue(fo.keep_large(np.ones((10, 10), dtype=bool)).all())
-        # um fio de 1 px saindo da peça (cabelo, linha solta) é descartado; a barra de 3 px de espessura fica
+        # fio de 1 px PRESO ao tecido é preservado (reconstrução geodésica: não encurta cós nem barras; quem segura é o
+        # postflight/revisão); fio SOLTO, sem ligação com a peça, é descartado; a barra de 3 px de espessura fica
         hair = labels.copy(); alpha_hair = alpha.copy(); hair[20:40, 65] = 3; alpha_hair[20:40, 65] = 1.0
+        hair[2:14, 90] = 3; alpha_hair[2:14, 90] = 1.0
         g = fo.fuse(hair, alpha_hair, {3})
-        self.assertFalse(g.target[25, 65]); self.assertTrue(g.target[82, 50])
+        self.assertTrue(g.target[25, 65]); self.assertFalse(g.target[8, 90]); self.assertTrue(g.target[82, 50])
 
     def test_sem_pessoa_e_flat_lay_so_birefnet(self):
         labels, alpha = scene()

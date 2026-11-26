@@ -41,10 +41,12 @@ import java.util.List;
 public class SecurityConfig {
     private static final String[] PUBLIC_GET = {
             "/actuator/health", "/actuator/info", "/media/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-            "/api/usernames/*/availability", "/api/preferences/options", "/api/exchange-rates", "/api/client/config", "/api/taxonomy", "/api/assets/**",
+            "/api/usernames/*/availability", "/api/preferences/options","/api/opcoes/niveis-termicos", "/api/exchange-rates", "/api/client/config", "/api/taxonomy", "/api/assets/**",
             "/api/backgrounds/catalog", "/api/backgrounds/combination", "/api/backgrounds/recommendations",
-            "/api/estados-conservacao","/api/piece-references/tipos-lavagem", "/api/opcoes/estados-conservacao", "/api/tipos-lavagem", "/api/colecoes", "/api/intensidades-termicas", "/api/origens",
-            "/api/passport-shares/*",
+            // catálogos de opções: /api/opcoes/** é público por convenção (só GET, sem dado de usuário — OpcoesConvencaoTest);
+            // os campos dos criadores mandam a sessão, então um GET novo fora daqui também carrega sem mexer nesta lista
+            "/api/opcoes/**", "/api/estados-conservacao", "/api/tipos-lavagem", "/api/colecoes", "/api/cortes", "/api/intensidades-termicas", "/api/origens",
+            "/api/passport-shares/*", "/api/seals/art",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",
             "/api/profiles/*", "/api/brands", "/api/celebrities", "/api/institutional/**",
             "/api/schemes/*", "/api/schemes/*/card.png", "/api/schemes/*/look3d", "/api/pieces/*", "/api/pieces/*/aura-media/*", "/api/pieces/*/look3d", "/api/dna-schemes/*",
@@ -56,7 +58,7 @@ public class SecurityConfig {
             // Momentos: leituras públicas (privados filtram por membro no serviço); ações e "meus" exigem sessão
             "/api/moments", "/api/moments/active", "/api/moments/upcoming", "/api/moments/now", "/api/moments/calendar", "/api/moments/*",
             "/api/moments/*/feed", "/api/moments/*/leaderboard", "/api/moments/*/trending", "/api/moments/context/*/*", "/api/users/*/moments", "/api/flair/challenges", "/api/flair/challenges/*",
-            "/api/flair/games", "/api/flair/games/*", "/api/flair/games/summary", "/api/flair/3d/nucleos", "/api/flair/3d/nucleos/*", "/api/inventory-score/method", "/api/explorer/**", "/api/brand-logos", "/api/brand-logos/batch", "/api/studio/backdrops"
+            "/api/flair/3d/nucleos", "/api/flair/3d/nucleos/*", "/api/inventory-score/method", "/api/explorer/**", "/api/brand-logos", "/api/brand-logos/batch", "/api/studio/backdrops"
     };
 
     @Bean

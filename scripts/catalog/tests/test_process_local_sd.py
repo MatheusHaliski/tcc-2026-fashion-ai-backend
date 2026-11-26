@@ -151,92 +151,10 @@ class LenientCleanupTest(unittest.TestCase):
         self.assertEqual(str(strict.exception), "UNCLASSIFIED_THIN_CONTOUR")
         t, _, metrics = sd.measure(im, masks(target, empty, "lower_piece", "jeans"), "lower_piece", "jeans", im.size)
         self.assertEqual(metrics["cleanup"]["cleanupMode"], "LENIENT_OPENING"); self.assertEqual(metrics["cleanup"]["strictReason"], "UNCLASSIFIED_THIN_CONTOUR")
-        self.assertEqual(metrics["cleanup"]["retainedParts"], 2); self.assertFalse(t[300, 380]); self.assertTrue(t[300, 150]); self.assertTrue(t[300, 250])
+        # o fio preso à perna é reconstruído junto (pixels originais ligados ao núcleo); o modo LENIENT_OPENING manda o set para revisão
+        self.assertEqual(metrics["cleanup"]["retainedParts"], 2); self.assertTrue(t[300, 380]); self.assertTrue(t[300, 150]); self.assertTrue(t[300, 250])
         clean = Image.new("L", im.size, 0); ImageDraw.Draw(clean).rectangle((120, 100, 280, 500), fill=255)
         self.assertEqual(sd.measure(im, masks(clean, empty, "upper_piece", "t_shirt"), "upper_piece", "t_shirt", im.size)[2]["cleanup"]["cleanupMode"], "STRICT")
-
-
-class DownloadTest(unittest.TestCase):
-    def test_og_image_de_pagina_html_e_link_direto(self):
-        page = (b'<html><head><meta property="og:title" content="Camisa"><meta property=og:image content="//cdn.brand.com/a.jpg?w=1200">'
-                b'</head><body></body></html>')
-        self.assertEqual(sd.og_image(page, "https://brand.com/p/camisa"), "https://cdn.brand.com/a.jpg?w=1200")
-        self.assertIsNone(sd.og_image(b"<html><head></head></html>", "https://brand.com/x"))
-        png = io.BytesIO(); Image.new("RGB", (8, 8), "red").save(png, "PNG")
-        web = {"https://brand.com/p/camisa": (200, page, "text/html; charset=utf-8"),
-               "https://cdn.brand.com/a.jpg?w=1200": (200, png.getvalue(), "image/png"),
-               "https://brand.com/direta.png": (200, png.getvalue(), "image/png"),
-               "https://brand.com/fora.png": (404, b"", ""), "https://brand.com/bloqueada.png": (403, b"", "")}
-        fetch = lambda u: web.get(u, (404, b"", ""))
-        self.assertEqual(sd.resolve_image("https://brand.com/p/camisa", fetch)[1], "https://cdn.brand.com/a.jpg?w=1200")
-        self.assertEqual(sd.resolve_image("https://brand.com/direta.png", fetch)[1], "https://brand.com/direta.png")
-        with self.assertRaises(sd.PhotoSkip) as c1:
-            sd.resolve_image("https://brand.com/fora.png", fetch)
-        self.assertEqual(c1.exception.status, "REJECTED")
-        with self.assertRaises(sd.PhotoSkip) as c2:
-            sd.resolve_image("https://brand.com/bloqueada.png", fetch)
-        self.assertEqual(c2.exception.status, "RETRY")
-        with self.assertRaises(sd.PhotoSkip):
-            sd.resolve_image("javascript:alert(1)", fetch)
-
-    def test_imagem_pequena_ou_corrompida_e_recusada(self):
-        small = io.BytesIO(); Image.new("RGB", (299, 400), "red").save(small, "PNG")
-        with self.assertRaises(sd.PhotoSkip) as c:
-            sd.open_image(small.getvalue())
-        self.assertEqual(str(c.exception), "BELOW_MINIMUM_300X300")
-        with self.assertRaises(sd.PhotoSkip) as c2:
-            sd.open_image(b"not an image")
-        self.assertEqual(str(c2.exception), "CORRUPT_IMAGE")
-
-
-class PoliteFetchTest(unittest.TestCase):
-    def test_intervalo_por_host_e_espera_em_429(self):
-        calls = []; slept = []; t = [0.0]
-        answers = {"https://cdn.loja.com/a.png": [(429, b"", "retry-after:2"), (200, b"ok", "image/png")],
-                   "https://cdn.loja.com/b.png": [(200, b"ok", "image/png")], "https://outra.com/c.png": [(200, b"ok", "image/png")]}
-        def raw(url):
-            calls.append((round(t[0], 2), url)); return answers[url].pop(0)
-        def sleep(s): slept.append(round(s, 2)); t[0] += s
-        fetch = sd.polite_fetch(raw, min_interval=1.0, retries=2, sleep=sleep, clock=lambda: t[0])
-        self.assertEqual(fetch("https://cdn.loja.com/a.png")[0], 200)        # 429 → espera Retry-After (2 s) → 200
-        self.assertEqual(fetch("https://outra.com/c.png")[0], 200)           # outro host: sem espera
-        self.assertEqual(fetch("https://cdn.loja.com/b.png")[0], 200)        # mesmo host: espera o intervalo
-        self.assertEqual([u.rsplit("/", 1)[1] for _, u in calls], ["a.png", "a.png", "c.png", "b.png"])
-        self.assertIn(2.0, slept)                                             # Retry-After respeitado
-        self.assertTrue(all(0 < s_ <= 2.0 for s_ in slept))
-        gaps = [c for c in calls if "cdn.loja.com" in c[1]]
-        self.assertGreaterEqual(gaps[-1][0] - gaps[-2][0], 1.0)              # intervalo mínimo entre pedidos ao mesmo host
-
-    def test_429_persistente_vira_retry_no_relatorio(self):
-        fetch = sd.polite_fetch(lambda u: (429, b"", "retry-after:"), min_interval=0, retries=1, sleep=lambda s: None, clock=lambda: 0.0)
-        with self.assertRaises(sd.PhotoSkip) as c:
-            sd.resolve_image("https://cdn.loja.com/a.png", fetch)
-        self.assertEqual(c.exception.status, "RETRY")
-
-    def test_disjuntor_por_host_para_de_consultar_quem_pediu_para_parar(self):
-        calls = []
-
-        def raw(url):
-            calls.append(url)
-            return (200, b"ok", "image/png") if "outra.com" in url else (429, b"", "retry-after:")
-        fetch = sd.polite_fetch(raw, min_interval=0, retries=0, sleep=lambda s: None, clock=lambda: 0.0, host_limit=3)
-        for i in range(3):
-            self.assertEqual(fetch(f"https://cdn.loja.com/{i}.png")[0], 429)
-        self.assertEqual(fetch("https://cdn.loja.com/4.png"), (429, b"", sd.HOST_PAUSED))    # sem pedido: o host pediu para parar
-        self.assertEqual(fetch("https://outra.com/c.png")[0], 200)                           # outro host segue normal
-        self.assertEqual(len(calls), 4)
-        with self.assertRaises(sd.PhotoSkip) as c:
-            sd.resolve_image("https://cdn.loja.com/5.png", fetch)
-        self.assertEqual((c.exception.status, str(c.exception)), ("RETRY", "HTTP_429_HOST_PAUSED"))
-        # um 200 zera a conta; host_limit=0 desliga o disjuntor
-        ok_then_429 = iter([(200, b"ok", "image/png")] + [(429, b"", "retry-after:")] * 5)
-        fetch2 = sd.polite_fetch(lambda u: next(ok_then_429), min_interval=0, retries=0, sleep=lambda s: None, clock=lambda: 0.0, host_limit=2)
-        self.assertEqual([fetch2("https://x.com/a")[0], fetch2("https://x.com/b")[0], fetch2("https://x.com/c")[0]], [200, 429, 429])
-        self.assertEqual(fetch2("https://x.com/d")[2], sd.HOST_PAUSED)
-        n = []
-        fetch3 = sd.polite_fetch(lambda u: n.append(1) or (429, b"", ""), min_interval=0, retries=0, sleep=lambda s: None, clock=lambda: 0.0, host_limit=0)
-        [fetch3("https://y.com/z") for _ in range(5)]
-        self.assertEqual(len(n), 5)
 
 
 class DeviceTest(unittest.TestCase):
@@ -417,17 +335,25 @@ class FashnOpenEngineTest(unittest.TestCase):
         class Provider:
             """Fusão da fixture (sem o risco externo) com a evidência que o engine real traria."""
 
-            def __init__(self, evidence):
-                self.evidence = evidence
+            def __init__(self, evidence, person=False):
+                self.evidence, self.person = evidence, person
 
             def analyse(self, image, category, subcategory):
                 t = np.asarray(target.convert("L")) >= 128; t[:150] = False
                 f = np.asarray(forbidden.convert("L")) >= 128
-                return fo.Fusion(t, f, t.astype(np.float32), "parser+birefnet", True, ("top",), self.evidence)
+                return fo.Fusion(t, f, t.astype(np.float32), "parser+birefnet", self.person, ("top",), self.evidence)
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
+            # peça vestida (pessoa detectada): o postflight manda para revisão e as imagens ficam só como prévia local
+            worn = Provider({"touchesBorder": False, "bodyInsideFraction": 0.01, "occluderFraction": 0.0}, person=True)
+            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "w", engine="fashn-open", dry_run=True, photo_set=True), fetch=fetch,
+                                       open_provider=worn, filler=FakeFiller()).run([row])
+            ps = results[0]["photoSet"]; self.assertEqual((ps["status"], ps["reason"]), ("REVIEW", "HUMAN_SOURCE_REVIEW_REQUIRED"))
+            data = json.loads((Path(ps["dir"]) / "set.json").read_text(encoding="utf-8"))
+            self.assertNotIn("files", data); self.assertEqual(data["reviewPreviewFiles"], {"whole": "whole.png", "fabric": "fabric.png"})
+            # sem pessoa e sem região reconstruída pela IA (ghostPixels = 0): o postflight mantém READY
             ok = Provider({"touchesBorder": False, "bodyInsideFraction": 0.01, "occluderFraction": 0.0})
-            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "a", engine="fashn-open", dry_run=True, photo_set=True), fetch=fetch,
+            results = sd.GhostPipeline(None, sd.Options(out_dir=out / "a", engine="fashn-open", dry_run=True, photo_set=True, no_ai=True), fetch=fetch,
                                        open_provider=ok, filler=FakeFiller()).run([row])
             self.assertEqual(results[0]["status"], "RENDERED"); self.assertEqual(results[0]["metrics"]["preflight"]["status"], "PASS")
             ps = results[0]["photoSet"]; self.assertEqual(ps["status"], "READY")

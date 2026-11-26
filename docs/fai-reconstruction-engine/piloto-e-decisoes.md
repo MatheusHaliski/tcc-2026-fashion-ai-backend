@@ -200,3 +200,59 @@ com confirmação). O gerador e a origem vão para `catalog_product_models_3d.ge
 
 **A medir no piloto:** GPU, VRAM de pico, segundos por produto, custo por hora e total, e as notas comparadas com a
 Meshy (mesma régua do `glb_quality.py`, renders de frente, lado e costas).
+
+## Provador com os `.glb` da Meshy (19/11/2026)
+
+Uso dos 46 modelos já gerados na Meshy (um por subcategoria, `meshy-7.1`, lidos do bucket só para leitura) no
+provador. **Nenhum uso novo de provedor, modelo ou GPU:** normalização, encaixe, pesos e tamanhos rodam na CPU, em
+código do repositório (`lib/avatar3d/meshy`, `docs/provador/MESHY_GLB.md`). Custo de geração já registrado na tarefa
+de cada modelo (30 créditos, ~3 min por modelo, no `tarefa.json` do lote). Tempo medido no preparo offline: ~10 s
+para os 46 manifestos; no provador, a roupa leva o mesmo do glb-garment (~0,5–1,5 s por peça na CPU).
+
+## Motor próprio em Blender no lugar da Meshy (24/11/2026)
+
+**Decisão da dona (24/11/2026): parar de usar a API paga da Meshy** e modelar as peças do zero num motor próprio em
+Blender, com medidas reais, tecido e detalhes de construção (gola, manga, barra, cós, costura, capuz, zíper, bolsos,
+aberturas). Motivo imediato: o Stockton Sweater importado da Meshy saía enorme no provador mesmo no tamanho P, porque o
+`.glb` da Meshy não tem medida e o provador o escala pelo corpo (a manga em pose T era esticada até o punho, até
+1,5 × a escala do tronco).
+
+- **Provedor/modelo:** Blender 4.2.0 como módulo Python (`bpy`, PyPI), na CPU. Nenhuma IA, nenhuma API, nenhuma GPU.
+- **Custo:** zero. **Tempo medido** (4 vCPU): 1,5 s por peça e tamanho (malha, texturas, `.glb`, manifesto e
+  relatório); 12,5 s com a prévia renderizada em Cycles (48 amostras, frente e ¾).
+- **Código:** `services/garment_blender/` (README com a ficha técnica e o estado no provador). No provador, o manifesto
+  `medidaReal` faz o encaixe usar escala 1 (`realScale` em `lib/avatar3d/human/glb-garment/align.ts`).
+- **Cor:** mediana dos pixels da peça na foto de entrada ou na textura de cor do lote da Meshy já no bucket (só
+  leitura); quando não há imagem, a cor da variante, dita na ficha (`observacao`).
+- **Medido no provador (corpo padrão):** calças (cargo e joelho duplo), suéter, moletom careca e camiseta vestem em
+  todos os tamanhos, com a manga caída em torno da articulação do ombro; os moletons com capuz são recusados (o capuz
+  precisa de encaixe próprio).
+
+## Peças de cima do catálogo em lote no motor Blender (25/11/2026)
+
+Pedido da dona: produzir em 3D o máximo de peças do catálogo, começando pelas de cima, a partir das bases do motor,
+com atenção à cor de cada peça, aos desenhos (estampa, logo e o lugar deles), aos bolsos, golas e mangas. Sugestão
+dela no meio do trabalho, adotada: **a base de cada subcategoria é sempre o modelo do motor**; da foto sai só a pintura,
+o desenho e o recorte (`services/garment_blender/README.md`, "Peças do catálogo em lote").
+
+- **Provedor/modelo novo:** fashn-ai/fashn-human-parser (SegFormer, 18 classes de pessoa e roupa, pesos do Hugging
+  Face, pacote `fashn-human-parser` no commit f2771f2f), na CPU (torch 2.15 CPU). Só separa a peça de cima, a pele e o
+  rosto na foto; a cor, as listras, a estampa e os logos são lidos por código do repositório (`catalogo/`). Nenhuma API
+  paga, nenhuma GPU. **Custo:** zero.
+- **Tempo medido** (4 vCPU, sem GPU): carga do modelo 8–9 s por processo; 2,0–2,3 s por foto no segmentador (2–3
+  núcleos, o tamanho da foto quase não muda: a rede trabalha em resolução fixa); 0,4 s de análise da foto; 1,5–3 s
+  para montar o `.glb` no M; a prévia em Cycles (só no piloto) ~8 s. Download das fotos com ritmo por site (0,5 s, dobra
+  a cada 429).
+- **Fonte:** `data/catalog/expansion/products/*.jsonl`, 8.545 peças de cima (8.401 com foto). Pulados pelo nome:
+  infantil, moda praia, parte de baixo e vestido listados como peça de cima.
+- **Saída:** bucket de produção, prefixo novo do lote (`catalog/model3d/motor-blender-2026-11-25/`, nada existente
+  sobrescrito), no formato dos lotes da Meshy; o banco não é tocado (a importação é a do `import_meshy_glbs.py`, com
+  `--generator garment-blender-1 --origin local`).
+- **Piloto (93 peças, 5 por subcategoria, 25/11):** 85 fichas, 7 puladas (infantil, parte de baixo, sem foto) e 1
+  erro (foto de 192 px, corrigido). Pintura lida: 56 lisas, 20 com desenho ou logo, 5 estampas corridas, 4 listradas;
+  comprimento ajustado pela foto em 8 (cropped de verdade, casaco longo). Todas montaram no motor (0 falhas) e as
+  amostras conferidas no `glb_quality.py` saíram BOM. A revisão visual (foto × prévia) levou às regras que estão no
+  código: V fundo e comprimento por subcategoria (blazer, casaco, colete, cardigã, quimono, parka), jaqueta jeans com
+  botões e colarinho, "jeans" na descrição não faz a peça de jeans, a roupa de baixo aparecendo pela frente aberta, o
+  cordão do capuz, o cadarço do zíper e o fundo da gola não viram desenho, blocos de cor não viram estampa corrida,
+  capuz não conta como alto da peça, logo de manga, infantil pelo endereço.

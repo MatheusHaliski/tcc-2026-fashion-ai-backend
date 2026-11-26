@@ -1,5 +1,6 @@
 package br.com.fashionai.web.controller;
 
+import br.com.fashionai.application.acervo.AcervoIluminacaoService;
 import br.com.fashionai.application.acervo.AcervoEstruturaService;
 import br.com.fashionai.application.acervo.AcervoPecasService;
 import br.com.fashionai.application.security.CurrentUser;
@@ -23,10 +24,12 @@ import java.util.UUID;
 public class AcervoController {
     private final AcervoEstruturaService estrutura;
     private final AcervoPecasService pecas;
+    private final AcervoIluminacaoService luz;
 
-    public AcervoController(AcervoEstruturaService estrutura, AcervoPecasService pecas) {
+    public AcervoController(AcervoEstruturaService estrutura, AcervoPecasService pecas, AcervoIluminacaoService luz) {
         this.estrutura = estrutura;
         this.pecas = pecas;
+        this.luz = luz;
     }
 
     @GetMapping("/api/me/acervo")
@@ -49,6 +52,12 @@ public class AcervoController {
     @PutMapping("/api/me/acervo/ambientes/{id}")
     public Map<String, Object> renomearAmbiente(CurrentUser user, @PathVariable UUID id, @RequestBody AcervoEstruturaService.NomeForm body) {
         return estrutura.renomearAmbiente(user, id, body);
+    }
+
+    /** Exercício 07: tipo de iluminação e temperatura (K) do ambiente; o dono vem do token, nunca do corpo. */
+    @PutMapping("/api/me/acervo/ambientes/{id}/luz")
+    public Map<String, Object> iluminarAmbiente(CurrentUser user, @PathVariable UUID id, @RequestBody AcervoIluminacaoService.LuzForm body) {
+        return luz.iluminar(user, id, body);
     }
 
     @DeleteMapping("/api/me/acervo/ambientes/{id}")

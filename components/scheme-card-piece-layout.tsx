@@ -81,4 +81,3 @@ export function PieceLayout({ anatomy, pieces, side, sealsOf, onPiece }: { anato
     </div>
   );
 }
-

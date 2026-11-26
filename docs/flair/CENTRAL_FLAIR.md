@@ -29,6 +29,9 @@ Montagem), [Momentos](../momentos/MOMENTOS.md), [Orientação "Como funciona"](.
 |---|---|---|---|---|---|
 | Jogar | Partidas FLAIR | `/flair/partidas` | Jogar | decks prontos | sem deck → "Destravar" leva a criar esquema |
 | Jogar | Desafios de Montagem (Card Building Challenges) | `/flair/desafios` | Jogar | desafios abertos | nada aberto (só em breve / nenhum) |
+| Jogar | Elencos (Card Building Challenge, desde 15/11/2026) | `/flair/elencos` | Jogar | — (a tela mostra os elencos concluídos) | — |
+| Jogar | FLAIR 3D (os 15 núcleos) | `/flair/3d` | Jogar | jogos liberados (`/api/flair/3d/nucleos`) | nenhum jogo publicado |
+| Jogar | FLAIR 3D MAKE UP (desde 15/11/2026) | `/flair/make-up` | Jogar | — (a tela mostra nível e briefs) | — |
 | Calendário | Momentos | `/moments` | Abrir | momentos acontecendo / a caminho | nada no calendário |
 | Desafios | Desafios | `/challenges` | Continuar (com ativos) / Abrir | ativos, convites, catálogo | — |
 | Coleção | Minhas cartas | `/flair/cartas` | Abrir | cartas | sem cartas → converter uma peça |

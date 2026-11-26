@@ -1,6 +1,6 @@
 /**
  * ACERVO — modelos GLB de marcenaria e de roupas (public/acervo/3d/<slug>.glb, listados em manifest.json). Hoje a pasta
- * não existe e nenhum arquivo foi produzido: tudo na cena é procedural. Quando um GLB for publicado e entrar no
+ * só tem o manifesto, vazio (assim a cena não pede um arquivo que não existe): tudo na cena é procedural. Quando um GLB for publicado e entrar no
  * manifesto com o encaixe certo, ele substitui a parte procedural daquele encaixe; sem o arquivo, a cena continua como
  * está. O formato segue o dos objetos das salas do FLAIR 3D (lib/flair/nucleos/scene/assets.ts).
  */

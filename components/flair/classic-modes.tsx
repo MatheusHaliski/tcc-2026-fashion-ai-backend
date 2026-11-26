@@ -24,7 +24,7 @@ interface TeamSide { user: UserCard; deck: string; power: number; }
 interface TeamBattle { teamA: Team; teamB: Team; duels: { slot: number; a: TeamSide | null; b: TeamSide | null; winner: string; rounds: FlairRound[] }[]; score: { a: number; b: number }; winner: string; faiPoints?: number; }
 
 export const OUTCOME: Record<string, { label: string; tone: "mark" | "thread" | "chalk" }> = { WIN: { get label() { return tr("common.vitoria"); }, tone: "thread" }, LOSS: { get label() { return tr("common.derrota"); }, tone: "mark" }, DRAW: { get label() { return tr("common.empate"); }, tone: "chalk" } };
-export const MODE_LABEL: Record<string, string> = { get DUEL() { return tr("flair.duelo_1_1"); }, get TREINO() { return tr("flair.treino_com_a_casa"); }, get ARENA() { return tr("flair.batalha_de_ocasiao"); }, get TEAM() { return tr("flair.equipes_3_3"); } };
+export const MODE_LABEL: Record<string, string> = { get DUEL() { return tr("flair.duelo_1_1"); }, get TREINO() { return tr("flair.treino_com_a_casa"); }, get ARENA() { return tr("flair.batalha_de_ocasiao"); }, get TEAM() { return tr("flair.equipes_3_3"); }, get RUNWAY() { return tr("flair.modo_passarela"); } };
 
 /** Rodadas do duelo reveladas uma a uma (sem animação com "reduzir movimento"). */
 export function Rounds({ rounds, a, b }: { rounds: FlairRound[]; a: string; b: string }) {

@@ -1,0 +1,171 @@
+/* ── Desafios de Montagem · vagas em grade (components/flair/cbc-vagas.tsx) ──────────────────────────────────────────
+   As vagas nunca se sobrepõem: uma grade de ladrilhos do celular ao computador, embaixo da cena. Só tokens do tema.
+   Movimento reduzido: as animações somem pela regra global de 01. */
+.cbv-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 480px) {
+  .cbv-slots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.cbv-slot {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  gap: 0 8px;
+  width: 100%;
+  min-height: 60px;
+  padding: 6px 8px;
+  border: 1.5px dashed var(--line-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.cbv-slot:disabled {
+  cursor: default;
+}
+
+.cbv-slot.is-filled {
+  border-style: solid;
+}
+
+.cbv-slot.is-lit {
+  border-color: var(--thread);
+  background: var(--thread-soft);
+}
+
+.cbv-slot.is-selected {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+  box-shadow: var(--shadow);
+}
+
+.cbv-slot:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.cbv-n {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  top: -7px;
+  left: -7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cbv-card,
+.cbv-empty {
+  position: relative;
+  display: grid;
+  grid-row: 1 / span 3;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.cbv-empty {
+  color: var(--faint);
+  font-size: 1.3rem;
+}
+
+.cbv-card {
+  /* a carta pode ser arrastada daqui com o dedo sem a página rolar */
+  touch-action: none;
+  cursor: grab;
+  animation: el-card-in 0.32s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.cbv-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.cbv-card b {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.cbv-card.tier-ouro {
+  box-shadow: inset 0 0 0 2px #e0b04d;
+}
+
+.cbv-card.tier-prata {
+  box-shadow: inset 0 0 0 2px #9da3aa;
+}
+
+.cbv-card.tier-bronze {
+  box-shadow: inset 0 0 0 2px #b07a52;
+}
+
+.cbv-card.tier-especial {
+  box-shadow: inset 0 0 0 2px var(--mark);
+}
+
+.cbv-label {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cbv-pos {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cbv-sync {
+  grid-column: 2;
+  color: var(--thread-ink, var(--thread));
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 2px;
+}
+
+/* a cena entregue, inteira, acima do resumo da entrega */
+.cbc-stage-art.is-done {
+  max-width: 720px;
+}
+
+/* a cena da montagem não passa de 40% da altura da tela: as vagas e a bandeja ficam na primeira dobra */
+.cbc-play .cbc-stage-art {
+  width: min(100%, calc(40dvh * 1.6));
+  margin: 0 auto;
+}

@@ -9,10 +9,11 @@ import { useApi } from '@/lib/hooks/use-api';
 import { useI18n } from '@/lib/i18n/i18n';
 import { Button, Field, FileButton, Input, Select, Skeleton, Textarea } from '@/components/ui';
 import { PassportTransfers } from './passport-transfers';
+import { ManufacturingRecordView } from '@/components/garment-delivery/manufacturing-record';
 import styles from './passport.module.css';
 
-const origins: PassportOrigin[] = ['UNKNOWN', 'COMPRADA', 'GARIMPADA', 'HERDADA', 'PRESENTE', 'FEITA_A_MAO', 'TROCADA'];
-const fields: PassportField[] = ['NAME', 'ORIGIN', 'COMPOSITION', 'CARE', 'HISTORY'];
+const origins: PassportOrigin[] = ['UNKNOWN', 'COMPRADA', 'GARIMPADA', 'HERDADA', 'PRESENTE', 'FEITA_A_MAO', 'TROCADA', 'SOB_ENCOMENDA'];
+const fields: PassportField[] = ['NAME', 'ORIGIN', 'COMPOSITION', 'CARE', 'HISTORY', 'MANUFACTURING'];
 const eventKinds: PassportEventKind[] = ['PURCHASE', 'CARE', 'REPAIR', 'ALTERATION', 'CORRECTION'];
 type EvidenceAction = (run: () => Promise<void>, refresh?: boolean) => Promise<void>;
 
@@ -73,6 +74,7 @@ function PassportForm({ data, reload }: { data: GarmentPassport; reload: () => v
   }
   return <>
     {error && <p className={styles.error} role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
+    {data.manufacturing && <ManufacturingRecordView record={data.manufacturing} owner />}
     <section className={styles.panel}><h2>{t('passport.declarations')}</h2><p className={styles.note}>{t('passport.declarationsHint')}</p>
       <form className={styles.form} onSubmit={event => { event.preventDefault(); void action(async () => { await passportApi.update(data.id, { version: data.version, origin, composition, care }); setNotice(t('passport.saved')); }); }}>
         <Field id="passport-origin" label={t('passport.origin')}><Select id="passport-origin" value={origin} onChange={event => setOrigin(event.target.value as PassportOrigin)}>{origins.map(value => <option key={value} value={value}>{t(`passport.origin.${value}`)}</option>)}</Select></Field>
@@ -83,7 +85,7 @@ function PassportForm({ data, reload }: { data: GarmentPassport; reload: () => v
     </section>
     <section className={styles.panel}><h2>{t('passport.history')}</h2>
       {!data.events.length ? <p className={styles.note}>{t('passport.noEvents')}</p> : <ol className={styles.timeline}>{data.events.map(event => <li key={event.id}><strong>{t(`passport.event.${event.kind}`)}</strong> · {fmtDate(event.occurredOn)}
-        <p className={styles.status}>{t('passport.declared')}</p>{event.notes && (event.kind === 'DECLARATION' ? <DeclarationSnapshot notes={event.notes} /> : <p className={styles.details}>{event.notes}</p>)}{event.correctsEventId && <small>{t('passport.correctionRecorded')}</small>}
+        <p className={styles.status}>{t(event.provenance === 'SYSTEM_RECORDED' ? 'passport.systemRecorded' : 'passport.declared')}</p>{event.notes && (event.kind === 'DECLARATION' ? <DeclarationSnapshot notes={event.notes} /> : <p className={styles.details}>{event.notes}</p>)}{event.correctsEventId && <small>{t('passport.correctionRecorded')}</small>}
       </li>)}</ol>}
       <form className={styles.form} onSubmit={event => { event.preventDefault(); void action(async () => {
         await passportApi.event(data.id, { version: data.version, kind, occurredOn: date, notes, ...(kind === 'CORRECTION' ? { correctsEventId: corrects } : {}) }, retryKey('event'));

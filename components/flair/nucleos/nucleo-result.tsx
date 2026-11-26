@@ -3,8 +3,11 @@
  * Resultado da entrega: pontos (0 a 100), estrelas (60, 80 e 100), resultado, regras cumpridas ou não, as cartas que
  * pontuaram (com os pontos ou o efeito de cada uma) e os eventos. Tudo como o servidor devolveu.
  */
+import type { ReactNode } from "react";
 import { cn } from "@/components/ui";
+import { NucleoResultCampanha } from "@/components/flair/nucleos/nucleo-result-campanha";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { desfechoDe } from "@/lib/flair/nucleos/narrativa";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 
 export interface CartaNoResultado {
@@ -24,20 +27,32 @@ interface Props {
   semPlacar?: boolean;
   /** a rodada jogada: o nome dela abre o resultado */
   rodada?: string | null;
+  /** bloco próprio do jogo antes do botão (o resumo da partida do Fashion Sports) */
+  children?: ReactNode;
 }
 
 /** Quantas dicas de "o que trocar" cabem no resultado. */
 const MAX_DICAS = 4;
 
-export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlacar = false, rodada = null }: Props) {
+export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlacar = false, rodada = null, children }: Props) {
   const tx = useNucleoText();
   const estrelas = Math.max(0, Math.min(3, resultado.estrelas));
+  /** o final da história do jogo, pelo desfecho (vitória, empate, derrota; aprovado com 3 estrelas, com 1 ou 2, reprovado) */
+  const final = desfechoDe(resultado);
+  // a rodada pode ter o final dela ("o look-alvo" do Look Relâmpago); senão, o do jogo
+  const desfecho = tx.ou(`flair3d.narrativa.${codigo}.final.${rodada ?? "-"}.${final}`, tx.ou(`flair3d.narrativa.${codigo}.final.${final}`, ""));
+  /** a conta da nota quando as regras não somam direto em 100 (a Passarela soma até 70) */
+  const conta = resultado.eventos.find((e) => e.codigo === "CONTA");
+  const eventos = resultado.eventos.filter((e) => e.codigo !== "CONTA").map((e) => tx.evento(e)).filter((texto) => texto.trim() !== "");
   /** o que trocar: uma dica por regra não cumprida, sem repetir */
+  /** rodada em etapas: cada etapa entra com 1/n dos pontos dela ("8,33" para uma etapa de 25 em 3) */
+  const etapas = resultado.eventos.filter((e) => e.codigo === "ETAPA").length;
   const dicas = Array.from(new Set(resultado.regras.filter((r) => !r.ok).map((r) => tx.dica(codigo, r.codigo, tx.regra(codigo, r.codigo))))).slice(0, MAX_DICAS);
   return (
     <section className="n3d-result" aria-labelledby="n3d-result-title" data-testid="nucleo-result">
       <h2 id="n3d-result-title" className="type-h3">{tx.t("flair3d.ui.result.title")}</h2>
       {rodada && <p className="type-label" data-testid="nucleo-result-round">{tx.rodadaNome(codigo, rodada)}</p>}
+      {desfecho && <p className="n3d-desfecho" data-testid="nucleo-desfecho">{desfecho}</p>}
       {semPlacar ? <p className="n3d-result-outcome" data-no-score>{tx.t("flair3d.ui.result.noScore")}</p> : (
         <>
           <p className="n3d-result-points tabular">{tx.pontosTotal(resultado.pontos)}</p>
@@ -58,6 +73,8 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
           </li>
         ))}
       </ul>
+      {conta && !semPlacar && <p className="n3d-hint" data-testid="nucleo-result-conta">{tx.evento(conta)}</p>}
+      {etapas > 1 && !semPlacar && <p className="n3d-hint" data-testid="nucleo-result-media">{tx.t("flair3d.ui.result.media", { n: etapas })}</p>}
       {dicas.length > 0 && (
         <>
           <h3 className="type-label">{tx.t("flair3d.ui.result.hints")}</h3>
@@ -82,16 +99,18 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
           </ol>
         </>
       )}
-      {resultado.eventos.length > 0 && (
+      {eventos.length > 0 && (
         <>
           <h3 className="type-label">{tx.t("flair3d.ui.result.events")}</h3>
           <ol className="n3d-events">
-            {resultado.eventos.map((e, i) => (
-              <li key={i}>{tx.evento(e)}</li>
+            {eventos.map((texto, i) => (
+              <li key={i}>{texto}</li>
             ))}
           </ol>
         </>
       )}
+      {children}
+      <NucleoResultCampanha codigo={codigo} fechou={!resultado.status || resultado.status === "ENTREGUE"} />
       <button type="button" className="btn" onClick={onAgain}>{tx.t("flair3d.ui.result.again")}</button>
     </section>
   );

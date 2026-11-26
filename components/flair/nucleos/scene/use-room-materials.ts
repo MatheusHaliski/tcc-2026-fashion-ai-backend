@@ -39,11 +39,7 @@ function materialDe(m: MaterialDesc): THREE.Material {
   return mat;
 }
 
-/** O material faz sombra? (vidro, rede, luz acesa e céu não) */
-export function fazSombra(m: MaterialDesc | undefined): boolean {
-  if (!m) return true;
-  return m.opacidade === undefined && !m.emissiva && m.textura !== "ceu";
-}
+export { fazSombra } from "@/lib/flair/nucleos/scene/materials";
 
 export function useRoomMaterials(sala: Sala): MateriaisDaSala {
   const materiais = useMemo(() => {

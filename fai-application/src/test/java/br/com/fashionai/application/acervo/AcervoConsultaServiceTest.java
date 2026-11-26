@@ -104,6 +104,20 @@ class AcervoConsultaServiceTest {
     }
 
     @Test
+    void precoZeroGravadoPeloCadastroContaComoSemPreco() {
+        kit.usada(kit.peca(kit.ana, "Camisa", "upper_piece", "shirt", "white", "M", "120.00"), 2, LocalDate.of(2026, 11, 1));
+        WardrobeItem semPreco = kit.usada(kit.peca(kit.ana, "Saia", "lower_piece", "skirt", "green", "M", "0.00"), 3, LocalDate.of(2026, 11, 2));
+
+        Map<String, Object> resumo = kit.consulta.financeiro(de(kit.ana), null);
+
+        assertThat(resumo).containsEntry("pecasComPreco", 1).containsEntry("pecasSemPreco", 1);
+        assertThat(mapa(resumo.get("custoPorUso"))).as("só a peça com preço entra no custo por uso")
+                .containsEntry("pecas", 1).containsEntry("usos", 2).containsEntry("valor", new BigDecimal("60.00"));
+        assertThat(lista(kit.pecas.arvore(de(kit.ana)).get("pecas"))).filteredOn(p -> p.get("id").equals(semPreco.getId()))
+                .singleElement().satisfies(p -> assertThat(p).as("o cartão não mostra R$ 0,00").containsEntry("price", null));
+    }
+
+    @Test
     void listaDeDesejosCriaAtualizaApagaESoADonaMexe() {
         Map<String, Object> armario = kit.armario(kit.ana);
         UUID cabideiro = compartimento(armario, "CABIDEIRO", 0);

@@ -15,7 +15,7 @@ type Escopo = "SEM_LUGAR" | "TUDO";
 
 export function ArrumacaoDialogo({ aberto, onClose }: { aberto: boolean; onClose: () => void }) {
   const { t } = useI18n();
-  const { dados } = useAcervo();
+  const { dados, tela } = useAcervo();
   const [escopo, setEscopo] = useState<Escopo>("SEM_LUGAR");
   const [previa, setPrevia] = useState<AcervoPrevia | null>(null);
   const [fora, setFora] = useState<string[]>([]);
@@ -46,7 +46,9 @@ export function ArrumacaoDialogo({ aberto, onClose }: { aberto: boolean; onClose
   async function confirmar() {
     const movimentos = aceitos.map((m) => ({ pieceId: m.pieceId, compartimentoId: m.para.compartimentoId }));
     const ok = await dados.executar(() => acervoApi.confirmar(movimentos), t("acervo.arrumacao.feito", { count: movimentos.length }));
-    if (ok) onClose();
+    if (!ok) return;
+    if (tela.local.tipo === "SEM_LUGAR") tela.setLocal({ tipo: "TODAS" });
+    onClose();
   }
 
   return (

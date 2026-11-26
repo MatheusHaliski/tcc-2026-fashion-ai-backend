@@ -10,33 +10,45 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Definicao.Rodada;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
+import br.com.fashionai.application.flair3d.Flair3dExecucao;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
+import br.com.fashionai.application.flair3d.recurso.Flair3dDesgaste;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Núcleo 4 — vestir o personagem (12,5 por peça do figurino, 4 vagas) e acertar a resposta entre 4 (50). O objetivo mais
+ * Núcleo 4 — vestir o personagem (12,5 por parte do figurino, 4 partes; a peça inteira veste duas) e acertar a resposta entre 4 (50). O objetivo mais
  * simples é o "detetive noir", cujo título certo é {@link #CERTO}. Na rodada "cena sorteada" o personagem sai da semente
  * entre 4, cada um com o seu título inventado; em "Adivinhe a Década" a pessoa veste a década sorteada e escolhe qual é
- * entre 4. As pistas são texto da tela ({@code cena}); nenhum filme real é citado.
+ * entre 4. As pistas são texto da tela ({@code cena}); nenhum filme real é citado. A paciência do diretor é o FOCO do
+ * jogo (Flair3dDesgaste): a resposta errada tira {@value #POR_RESPOSTA_ERRADA} e cada parte do figurino fora da cena,
+ * {@value #POR_PARTE_FORA}; zerada, a cena acaba em {@value #CORTOU}, e a execução no percurso segue gastando nos erros.
  */
 public class PersonagemFilmeNucleo implements Flair3dNucleo {
     public static final double TITULO = 50;
     public static final double POR_PECA = 12.5;
     public static final String CERTO = "FILME_SOMBRAS_NA_CHUVA";
     public static final List<String> OPCOES = List.of(CERTO, "FILME_VERAO_EM_NEON", "FILME_GALAXIA_DOURADA", "FILME_BAILE_DAS_FLORES");
-    public static final List<String> VAGAS = List.of("SUP", "INF", "CAL", "ACE");
+    /** as quatro partes do figurino, cada uma vale {@link #POR_PECA} */
+    public static final List<String> PARTES = List.of("SUP", "INF", "CAL", "ACE");
+    /** a peça inteira (VES) também veste: conta como a parte de cima e a de baixo que estiverem vazias */
+    public static final List<String> VAGAS = List.of("SUP", "INF", "CAL", "ACE", "VES");
     public static final Set<String> CASACOS = Set.of("coat", "parka", "jacket", "blazer");
     public static final String CENA_SORTEADA = "CENA_SORTEADA";
+    public static final int POR_RESPOSTA_ERRADA = 15;
+    public static final int POR_PARTE_FORA = 10;
+    /** O diretor perdeu a paciência: a cena foi cortada. */
+    public static final String CORTOU = "DIRETOR_CORTOU";
     public static final String DECADA = "ADIVINHE_A_DECADA";
 
     /** Uma cena para adivinhar: o código das pistas, a resposta certa e o figurino. */
@@ -73,7 +85,7 @@ public class PersonagemFilmeNucleo implements Flair3dNucleo {
     public Definicao definicao() {
         return Definicao.cartas(codigo(), numero(),
                 Definicao.objetivo("DETETIVE_NOIR", new Regra("TITULO", TITULO), new Regra("FIGURINO", POR_PECA)),
-                List.of(Definicao.CARTAS, Definicao.RESPOSTA), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP")), false)
+                List.of(Definicao.CARTAS, Definicao.RESPOSTA), VAGAS, Deck.ate(8, Obrigatoria.uma("SUP|VES")), false)
                 .comOpcoes(OPCOES).comAvatares(Avatares.solo(new Avatares.Online(2, 4, null)))
                 .comRodadas(Rodada.de(CENA_SORTEADA, new Regra("TITULO", TITULO), new Regra("FIGURINO", POR_PECA)).comOpcoes(OPCOES),
                         Rodada.de(DECADA, new Regra("DECADA", TITULO), new Regra("FIGURINO", POR_PECA)).comOpcoes(DECADAS));
@@ -104,22 +116,51 @@ public class PersonagemFilmeNucleo implements Flair3dNucleo {
         List<RegraResultado> regras = new ArrayList<>();
         regras.add(RegraResultado.de(DECADA.equals(contexto.rodada()) ? "DECADA" : "TITULO", certa, TITULO));
         Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
-        regras.addAll(Flair3dPecas.porVaga(VAGAS, vestidas, "FIGURINO", POR_PECA, cena.figurino()));
-        List<Evento> eventos = contexto.rodada() == null ? List.of() : List.of(new Evento("RESPOSTA_CERTA", cena.resposta()));
-        return Resultado.somando(regras, eventos).comCartas(new Flair3dRateio(vestidas).cada(POR_PECA, cena.figurino()).lista());
+        regras.addAll(Flair3dPecas.porVaga(PARTES, porParte(vestidas), "FIGURINO", POR_PECA, cena.figurino()));
+        List<Evento> eventos = new ArrayList<>(contexto.rodada() == null ? List.of() : List.of(new Evento("RESPOSTA_CERTA", cena.resposta())));
+        int fora = (int) porParte(vestidas).entrySet().stream().filter(e -> PARTES.contains(e.getKey()) && !cena.figurino().test(e.getValue())).count();
+        Flair3dDesgaste paciencia = Flair3dDesgaste.de(Flair3dDesgaste.vidaDo(codigo()), contexto.andamento().usos())
+                .com("RESPOSTA_ERRADA", certa ? 0 : 1, POR_RESPOSTA_ERRADA).com("PARTE_FORA_DA_CENA", fora, POR_PARTE_FORA);
+        eventos.add(paciencia.evento());
+        Resultado r = Resultado.somando(regras, eventos).comCartas(rateio(vestidas, cena));
+        return paciencia.esgotou() ? Resultado.of(Math.min(r.pontos(), Flair3dExecucao.NOTA_DE_QUEM_ESGOTOU), CORTOU, regras, eventos).comCartas(r.cartas()) : r;
     }
 
-    /** A prévia nunca diz a resposta certa: só o figurino conta nela. */
+    /** O figurino por parte: a peça inteira (VES) veste a parte de cima e a de baixo que estiverem vazias. */
+    static Map<String, CbcRules.Card> porParte(Map<String, CbcRules.Card> vestidas) {
+        CbcRules.Card inteira = vestidas.get("VES");
+        if (inteira == null) {
+            return vestidas;
+        }
+        Map<String, CbcRules.Card> out = new LinkedHashMap<>(vestidas);
+        out.remove("VES");
+        out.putIfAbsent("SUP", inteira);
+        out.putIfAbsent("INF", inteira);
+        return out;
+    }
+
+    /** Quanto cada carta rendeu: {@link #POR_PECA} por parte do figurino que ela veste e cumpre (a peça inteira, até duas). */
+    private static List<Resultado.CartaPontos> rateio(Map<String, CbcRules.Card> vestidas, Cena cena) {
+        Flair3dRateio rateio = new Flair3dRateio(vestidas);
+        porParte(vestidas).forEach((parte, c) -> {
+            if (PARTES.contains(parte) && cena.figurino().test(c)) {
+                rateio.vaga(vestidas.containsKey(parte) ? parte : "VES", POR_PECA);
+            }
+        });
+        return rateio.lista();
+    }
+
+    /**
+     * A prévia nunca diz a resposta certa, em nenhuma rodada (nem no detetive noir): só o figurino conta nela. Trocar de
+     * título e olhar o placar não revela o certo; a pessoa deduz pelas pistas da cena.
+     */
     @Override
     public Resultado previa(Entrega entrega, Contexto contexto) {
-        if (contexto.rodada() == null) {
-            return pontuar(entrega, contexto);
-        }
         Map<String, CbcRules.Card> vestidas = contexto.vestidas(entrega);
         Cena cena = cena(contexto);
-        return Resultado.of(Flair3dPecas.quantas(vestidas.values(), cena.figurino()) * POR_PECA, Resultado.EM_PREPARO,
-                Flair3dPecas.porVaga(VAGAS, vestidas, "FIGURINO", POR_PECA, cena.figurino()), List.of())
-                .comCartas(new Flair3dRateio(vestidas).cada(POR_PECA, cena.figurino()).lista());
+        List<RegraResultado> regras = Flair3dPecas.porVaga(PARTES, porParte(vestidas), "FIGURINO", POR_PECA, cena.figurino());
+        return Resultado.of(regras.stream().mapToDouble(RegraResultado::pontos).sum(), Resultado.EM_PREPARO, regras, List.of())
+                .comCartas(rateio(vestidas, cena));
     }
 
     @Override
@@ -128,6 +169,8 @@ public class PersonagemFilmeNucleo implements Flair3dNucleo {
         if (sorteada && !contexto.emPartida()) {
             return List.of(Efeito.conformeAEtapa());
         }
-        return cena(contexto).figurino().test(carta) ? List.of(new Efeito("FIGURINO", POR_PECA)) : List.of(Efeito.motivo("FORA_DO_FIGURINO"));
+        // a peça inteira veste duas partes do figurino: vale em dobro
+        double valor = "VES".equals(carta.position()) ? 2 * POR_PECA : POR_PECA;
+        return cena(contexto).figurino().test(carta) ? List.of(new Efeito("FIGURINO", valor)) : List.of(Efeito.motivo("FORA_DO_FIGURINO"));
     }
 }

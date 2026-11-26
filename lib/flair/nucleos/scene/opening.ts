@@ -1,14 +1,17 @@
 /**
- * Abertura animada de cada salão do Fashion Detective: a câmera começa alta e aberta, mostrando o salão e a porta do
- * fundo, passa pela lateral e assenta no enquadramento normal do avatar; enquanto isso o detetive entra andando pela
- * passadeira, o segurança se posiciona, os convidados reagem e a luz do lugar acende. Puro: o tempo vem de quem chama.
- * Com "reduzir movimento" não há travelling, e a sequência vira quadro parado (director.ts).
+ * Abertura animada da partida em todos os jogos (critério da dona: o começo de cada partida): a câmera começa alta e
+ * aberta, mostrando o lugar, passa pela lateral e assenta no enquadramento normal do avatar; enquanto isso o avatar
+ * entra andando até a marca dele e as pessoas de cena recebem quem chega pelo papel (a plateia aplaude, a torcida
+ * comemora, o oponente dá a guarda, a cliente acena, os fotógrafos disparam). No caso da gala do Fashion Detective, cada
+ * salão tem a sua: o segurança se posiciona e a luz do lugar acende. Puro: o tempo vem de quem chama. Com "reduzir
+ * movimento" não há travelling, e a sequência vira quadro parado (director.ts).
  */
 import type { NucleoCodigo, V3 } from "@/lib/flair/nucleos/types";
 import type { Sequencia } from "@/lib/flair/nucleos/scene/director";
 import { AVATAR, Roteiro, fig, luzId } from "@/lib/flair/nucleos/scene/script";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
 import { limiteDaCamera } from "@/lib/flair/nucleos/scene/zones";
+import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 
 /** Duração do travelling da câmera, em segundos. */
 export const ABERTURA_S = 6;
@@ -45,17 +48,45 @@ export function cameraDaAbertura(t: number, fim: Tomada, sala: Sala): Tomada {
   return mistura(lateral, fim, suave((k - VIRADA) / (1 - VIRADA)));
 }
 
-/** Há abertura animada neste jogo? */
-export const temAbertura = (codigo: NucleoCodigo): boolean => codigo === "FASHION_DETECTIVE";
+/** Há abertura animada neste jogo? (todos; a transmissão do Fashion Sports tem o apito inicial dela) */
+export const temAbertura = (codigo: NucleoCodigo): boolean => !!codigo;
 
-/** O que os personagens fazem durante a abertura; nulo nos jogos sem abertura. */
-export function sequenciaDeAbertura(codigo: NucleoCodigo): Sequencia | null {
-  if (!temAbertura(codigo)) return null;
+/** Como cada papel recebe quem entra em cena. */
+const RECEPCAO: Record<string, string> = {
+  PLATEIA: "F_APLAUSO",
+  TORCIDA: "F_COMEMORA",
+  CONVIDADO: "F_ACENA",
+  PASSANTE: "F_ACENA",
+  CLIENTE: "F_ACENA",
+  COLEGA: "F_ACENA",
+  ESTRELA: "F_ACENA",
+  ADVERSARIO: "F_POSE",
+  OPONENTE: "F_GUARDA",
+  SEGURANCA: "F_BARRA",
+};
+
+/** A abertura da gala do Fashion Detective (a de cada salão). */
+function aberturaDaGala(): Sequencia {
   const r = new Roteiro("abertura");
   r.junto(luzId("lustre"), "L_ACENDE");
   r.junto(fig("CONVIDADO"), "F_ACENA", {}, 1.2);
   r.junto(fig("SEGURANCA", 0), "F_BARRA", {}, 2.4);
   r.depois(AVATAR, "CAMINHAR", { repete: 3, de: { z: ENTRADA_Z, giro: 180 }, mover: { z: 0 } });
+  r.depois(AVATAR, "MEIA_VOLTA", { mover: { giro: 0 } });
+  r.depois(AVATAR, "POSE_1");
+  return r.fim();
+}
+
+/** O que os personagens fazem durante a abertura. */
+export function sequenciaDeAbertura(codigo: NucleoCodigo): Sequencia | null {
+  if (!temAbertura(codigo)) return null;
+  if (codigo === "FASHION_DETECTIVE") return aberturaDaGala();
+  const r = new Roteiro("abertura");
+  for (const [papel, clip] of Object.entries(RECEPCAO)) r.junto(fig(papel), clip, {}, 1.4);
+  r.junto(luzId("flash"), "L_FLASH", {}, 2.2);
+  // o avatar entra pela frente da marca dele (no palco ou no tablado, sem sair da área do avatar)
+  const entrada = Math.min(ENTRADA_Z, salaDe(codigo).zonas.avatar.z[1]);
+  r.depois(AVATAR, "CAMINHAR", { repete: entrada > 1.5 ? 3 : 2, de: { z: entrada, giro: 180 }, mover: { z: 0 } });
   r.depois(AVATAR, "MEIA_VOLTA", { mover: { giro: 0 } });
   r.depois(AVATAR, "POSE_1");
   return r.fim();

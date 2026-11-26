@@ -11,7 +11,6 @@ import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.service.ExplorerService;
 import br.com.fashionai.application.service.LookbookService;
-import br.com.fashionai.application.service.RoomService;
 import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.domain.model.BrandProfile;
 import br.com.fashionai.domain.model.CelebrityProfile;
@@ -97,7 +96,7 @@ class InsightNewContextsTest {
     private final List<WardrobeItem> catalog = new ArrayList<>();
     private final UUID uid = UUID.randomUUID();
     private final CurrentUser me = new CurrentUser(uid, "ana", "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
-    private final LocalDate today = LocalDate.now(RoomService.ZONE);
+    private final LocalDate today = LocalDate.now(br.com.fashionai.application.service.FaiPointsService.ZONE);
 
     @BeforeEach
     void setUp() {

@@ -1,39 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.flair.CbcCardMapper;
-import br.com.fashionai.application.flair.CbcRules;
-import br.com.fashionai.application.flair.CbcStory;
-import br.com.fashionai.application.moments.MomentService;
-import br.com.fashionai.application.moments.MomentTime;
-import br.com.fashionai.application.moments.MomentViews;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.domain.model.FlairCardInstance;
-import br.com.fashionai.domain.model.FlairChallenge;
-import br.com.fashionai.domain.model.FlairChallengeGroup;
-import br.com.fashionai.domain.model.FlairChallengeSubmission;
-import br.com.fashionai.domain.model.Moment;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.UserAchievement;
-import br.com.fashionai.domain.model.enums.FlairChallengeDifficulty;
-import br.com.fashionai.domain.model.enums.FlairChallengeStatus;
-import br.com.fashionai.domain.model.enums.MomentNature;
-import br.com.fashionai.domain.model.enums.MomentStatus;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.FlairCardInstanceRepository;
-import br.com.fashionai.domain.repository.FlairChallengeGroupRepository;
-import br.com.fashionai.domain.repository.FlairChallengeRepository;
-import br.com.fashionai.domain.repository.FlairChallengeSubmissionRepository;
-import br.com.fashionai.domain.repository.MomentRepository;
-import br.com.fashionai.domain.repository.UserAchievementRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
@@ -54,6 +20,22 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.flair.*;
+import br.com.fashionai.application.moments.MomentService;
+import br.com.fashionai.application.moments.MomentTime;
+import br.com.fashionai.application.moments.MomentViews;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * FLAIR-UT F5 · §14 — Desafios de Montagem (Card Building Challenges) dentro dos Momentos.
@@ -177,7 +159,7 @@ public class FlairChallengeService {
         } catch (IllegalArgumentException e) {
             c = challenges.findBySlug(idOrSlug.toLowerCase(Locale.ROOT));
         }
-        return c.orElseThrow(() -> ApiException.notFound(Msg.t("cbc.desafio")));
+        return c.filter(x -> x.getSeries() == null).orElseThrow(() -> ApiException.notFound(Msg.t("cbc.desafio")));
     }
 
     Moment momentOf(FlairChallenge c) {
@@ -761,7 +743,7 @@ public class FlairChallengeService {
         int base = basePoints(c, b.moment(), b.window());
         String ref = c.getRepeatLimit() > 1 ? c.getId() + ":" + attempt : c.getId().toString();
         if (base > 0 && b.evaluation().ok()) {
-            out.add(new Line(c.getSeries() != null ? "FLAIR_3D" : "FLAIR_CBC", base, ref, "challenge"));
+            out.add(new Line("FLAIR_CBC", base, ref, "challenge"));
         }
         if (b.evaluation().ok() && !b.evaluation().rediscovered().isEmpty()) {
             out.add(new Line("FLAIR_CBC_REDISCOVERY", REDISCOVERY_BONUS, c.getId().toString(), "rediscovery"));

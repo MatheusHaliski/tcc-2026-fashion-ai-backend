@@ -40,7 +40,7 @@ final class AcervoFinanceiro {
     static String moeda(Collection<WardrobeItem> pecas) {
         Map<String, Integer> contagem = new LinkedHashMap<>();
         for (WardrobeItem w : pecas) {
-            if (w.getPrice() != null) {
+            if (preco(w) != null) {
                 contagem.merge(moedaDe(w), 1, Integer::sum);
             }
         }
@@ -73,12 +73,12 @@ final class AcervoFinanceiro {
         int semPreco = 0;
         int outraMoeda = 0;
         for (WardrobeItem w : pecas) {
-            if (w.getPrice() == null) {
+            if (preco(w) == null) {
                 semPreco++;
             } else if (!moeda.equals(moedaDe(w))) {
                 outraMoeda++;
             } else {
-                valor = valor.add(w.getPrice());
+                valor = valor.add(preco(w));
                 comPreco++;
             }
         }
@@ -131,8 +131,8 @@ final class AcervoFinanceiro {
         int usos = 0;
         int contadas = 0;
         for (WardrobeItem w : pecas) {
-            if (w.getPrice() != null && moeda.equals(moedaDe(w)) && w.getWearCount() > 0) {
-                valor = valor.add(w.getPrice());
+            if (preco(w) != null && moeda.equals(moedaDe(w)) && w.getWearCount() > 0) {
+                valor = valor.add(preco(w));
                 usos += w.getWearCount();
                 contadas++;
             }
@@ -145,6 +145,15 @@ final class AcervoFinanceiro {
         out.put("pecas", contadas);
         out.put("usos", usos);
         return out;
+    }
+
+    /**
+     * Preço informado pela pessoa. O cadastro grava 0 quando o preço não é informado: zero conta como "sem preço"
+     * (não entra no valor do acervo nem no custo por uso, e o cartão não mostra "R$ 0,00").
+     */
+    static BigDecimal preco(WardrobeItem w) {
+        BigDecimal p = w.getPrice();
+        return p == null || p.signum() <= 0 ? null : p;
     }
 
     private static String moedaDe(WardrobeItem w) {

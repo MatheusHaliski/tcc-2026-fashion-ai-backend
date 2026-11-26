@@ -7,12 +7,14 @@ import styles from "./editor.module.css";
 
 interface Props {
   editable: boolean;
+  /** Pode escolher o tipo e a cor (tem permissão de edição), mesmo enquanto o editor ainda carrega. */
+  canChoose?: boolean;
   dirty: boolean;
   onCreate: (file: File) => Promise<void>;
 }
 
 /** Creates a local prototype then goes through the same validated upload path as imported GLBs. */
-export function GarmentCreationPanel({ editable, dirty, onCreate }: Props) {
+export function GarmentCreationPanel({ editable, canChoose = editable, dirty, onCreate }: Props) {
   const { t } = useI18n();
   const [kind, setKind] = useState<GarmentTemplate>("tee");
   const [color, setColor] = useState("#2867ad");
@@ -43,7 +45,8 @@ export function GarmentCreationPanel({ editable, dirty, onCreate }: Props) {
   return <section className={styles.evidence}>
     <h2 className="type-h3">{t("atelier3d.create.title")}</h2>
     <p className="type-caption">{t("atelier3d.create.scope")}</p>
-    <fieldset disabled={!editable || busy} className={styles.toolbar}>
+    {/* o tipo escolhido não pode se perder: a escolha fica liberada enquanto o editor carrega e o botão diz o que cria */}
+    <fieldset disabled={!(canChoose || editable) || busy} className={styles.toolbar}>
       <legend className="sr-only">{t("atelier3d.create.title")}</legend>
       {GARMENT_TEMPLATES.map((value) => <label className={styles.check} key={value}>
         <input type="radio" name="garment-template" value={value} checked={kind === value} onChange={() => setKind(value)} />
@@ -53,7 +56,7 @@ export function GarmentCreationPanel({ editable, dirty, onCreate }: Props) {
         <Input id="garment-template-color" type="color" value={color} onChange={(event) => setColor(event.target.value)} />
       </Field>
       <Button disabled={!editable || busy} loading={busy} onClick={() => dirty ? setConfirm(true) : void create()}>
-        {t("atelier3d.create.action")}
+        {t("atelier3d.create.actionKind", { kind: t(`atelier3d.create.${kind}`) })}
       </Button>
     </fieldset>
     {error && <p role="alert">{t("atelier3d.create.error")}</p>}

@@ -25,7 +25,6 @@ export function SealSlot({ seals, size, inline, px }: { seals?: SealBadge[]; siz
     </span>
   );
 }
-
 /** Visible award row shared by garment and outfit posts. Missing awards never create placeholders. */
 export function CardSealSummary({seals}:{seals?:SealBadge[]}) {
   const {t}=useI18n();
@@ -48,4 +47,3 @@ export function SealStuds({ seals }: { seals: SealBadge[] }) {
     </div>
   );
 }
-

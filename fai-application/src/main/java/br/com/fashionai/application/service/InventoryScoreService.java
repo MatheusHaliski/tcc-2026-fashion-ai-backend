@@ -1,46 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.events.SideEffectRunner;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.ai.local.ColorMath;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.events.DomainEvents;
-import br.com.fashionai.application.room.RoomAddress;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.domain.model.ChallengeTemplate;
-import br.com.fashionai.domain.model.InventoryScoreSnapshot;
-import br.com.fashionai.domain.model.PieceUsageDiaryEntry;
-import br.com.fashionai.domain.model.RankingOptIn;
-import br.com.fashionai.domain.model.RankingPosition;
-import br.com.fashionai.domain.model.RoomLayout;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.StyleDna;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeAvailabilityChange;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.repository.ChallengeTemplateRepository;
-import br.com.fashionai.domain.repository.InventoryScoreSnapshotRepository;
-import br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository;
-import br.com.fashionai.domain.repository.RankingOptInRepository;
-import br.com.fashionai.domain.repository.RankingPositionRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeAvailabilityChangeRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -62,6 +21,26 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.acervo.AcervoLugares;
+import br.com.fashionai.application.ai.local.ColorMath;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.events.SideEffectRunner;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.wardrobe.ForgottenPieces;
+import br.com.fashionai.application.wardrobe.InventoryComboCounter;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.AvailabilityStatus;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
+import br.com.fashionai.domain.model.enums.SchemeStatus;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF34 — FAI Inventory Score (02-inventory-score-calculo.md): rubrica absoluta 0–1000 de 7 dimensões (0–100),
@@ -133,7 +112,7 @@ public class InventoryScoreService {
     private final RankingPositionRepository positions;
     private final ChallengeTemplateRepository templates;
     private final UserRepository users;
-    private final RoomService room;
+    private final AcervoLugares lugares;
     private final AchievementService achievements;
     private final SideEffectRunner sideEffects;
 
@@ -141,7 +120,7 @@ public class InventoryScoreService {
                                  PieceUsageDiaryEntryRepository diary, WardrobeAvailabilityChangeRepository availability,
                                  StyleDnaRepository dnas, InventoryScoreSnapshotRepository snapshots, RankingOptInRepository optIns,
                                  RankingPositionRepository positions, ChallengeTemplateRepository templates, UserRepository users,
-                                 RoomService room, AchievementService achievements, SideEffectRunner sideEffects) {
+                                 AcervoLugares lugares, AchievementService achievements, SideEffectRunner sideEffects) {
         this.sideEffects = sideEffects;
         this.pieces = pieces;
         this.schemes = schemes;
@@ -154,7 +133,7 @@ public class InventoryScoreService {
         this.positions = positions;
         this.templates = templates;
         this.users = users;
-        this.room = room;
+        this.lugares = lugares;
         this.achievements = achievements;
     }
 
@@ -222,7 +201,7 @@ public class InventoryScoreService {
         return w.isDisponivel() && w.getAvailabilityStatus() == AvailabilityStatus.AVAILABLE;
     }
 
-    static double entropy(Collection<String> values, int m) {
+    public static double entropy(Collection<String> values, int m) {
         if (values.isEmpty() || m <= 1) {
             return 0;
         }
@@ -419,7 +398,7 @@ public class InventoryScoreService {
         int uVal = exposed.isEmpty() ? 0 : (int) Math.round(100.0 * usedInWindow / exposed.size());
         dims.put("U", uVal);
         List<WardrobeItem> forgottenNow = all.stream().filter(w -> available(w))
-                .filter(w -> RoomService.forgotten(w, lastUse(w, usageAll), today)).toList();
+                .filter(w -> ForgottenPieces.forgotten(w, lastUse(w, usageAll), today)).toList();
         explain.add(new Dimension("U", NAMES.get("U"), uVal, WEIGHTS.get("U"), Msg.t("inventoryScore.de_pecas_expostas_disponiveis_por", (usedInWindow), exposed.size(), uVal),
                 forgottenNow.stream().sorted(Comparator.comparing(w -> Optional.ofNullable(lastUse(w, usageAll)).orElse(LocalDate.MIN)))
                         .limit(5).map(w -> Map.<String, Object>of("pieceId", w.getId(), "name", String.valueOf(w.getName()),
@@ -442,32 +421,25 @@ public class InventoryScoreService {
                                 "value", Msg.t("inventoryScore.combinacoes", (combos.perPiece().getOrDefault(w.getId(), 0))), "hint", InventoryComboCounter.occ(w).isEmpty()
                                         ? Msg.t("inventoryScore.sem_ocasiao_cadastrada_nao_forma") : Msg.t("inventoryScore.precisa_de_pecas_com_ocasiao"))).toList()));
 
-        // ---- O
-        RoomLayout layout = room.layout(userId);
-        Map<String, String> labels = room.labels(layout);
-        Map<String, String> labelSources = room.labelSources(layout);
-        Map<UUID, RoomService.Location> where = room.locateAll(userId);
+        // ---- O: o lugar de cada peça vem do ACERVO (só o guarda-roupa real, "Meu espaço"); os rótulos de gaveta eram do
+        // Meu Quarto (retirado em 15/11/2026) e a parte deles conta cheia, como para quem nunca teve gaveta ocupada
+        Map<UUID, AcervoLugares.Lugar> where = lugares.deUsuario(userId);
         long coherent = 0, located = 0;
-        Set<String> occupiedDrawers = new HashSet<>();
         List<Map<String, Object>> incoherent = new ArrayList<>();
         for (WardrobeItem w : all) {
-            RoomService.Location loc = where.get(w.getId());
-            if (loc == null) {
+            AcervoLugares.Lugar loc = where.get(w.getId());
+            if (loc == null || !loc.meuEspaco()) {
                 continue;
             }
             located++;
-            if (loc.address().zone().equals("drawer")) {
-                occupiedDrawers.add(String.valueOf(loc.address().index()));
-            }
-            if (RoomService.coherent(w, loc.address(), labels)) {
+            if (loc.tipo().equals(AcervoLugares.tipoEsperado(w))) {
                 coherent++;
             } else if (incoherent.size() < 5) {
-                incoherent.add(Map.of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "value", loc.label(), "hint", Msg.t("inventoryScore.mova_para_a_posicao_do")));
+                incoherent.add(Map.of("pieceId", w.getId(), "name", String.valueOf(w.getName()), "value", loc.caminho(), "hint", Msg.t("inventoryScore.mova_para_a_posicao_do")));
             }
         }
         double coer = located == 0 ? 1 : (double) coherent / located;
-        long labeled = occupiedDrawers.stream().filter(d -> labels.containsKey(d) && !"DEFAULT".equals(labelSources.getOrDefault(d, "DEFAULT"))).count();
-        double rot = occupiedDrawers.isEmpty() ? 1 : (double) labeled / occupiedDrawers.size();
+        double rot = 1;
         List<WardrobeItem> unavailable = all.stream().filter(w -> !available(w)).toList();
         Instant reviewCut = Instant.now().minus(REVIEW_DAYS, ChronoUnit.DAYS);
         long stale = unavailable.stream().filter(w -> w.getUpdatedAt() != null && w.getUpdatedAt().isBefore(reviewCut)).count();
@@ -475,10 +447,6 @@ public class InventoryScoreService {
         int oVal = (int) Math.round(100 * (0.5 * coer + 0.3 * rot + 0.2 * rev));
         dims.put("O", oVal);
         List<Map<String, Object>> oDown = new ArrayList<>(incoherent);
-        if (rot < 1) {
-            oDown.add(Map.of("name", Msg.t("inventoryScore.gavetas_sem_rotulo"), "value", (occupiedDrawers.size() - labeled) + " de " + occupiedDrawers.size(),
-                    "hint", Msg.t("inventoryScore.renomeie_no_modo_organizar_ou")));
-        }
         if (stale > 0) {
             oDown.add(Map.of("name", Msg.t("inventoryScore.cesto_esquecido"), "value", Msg.t("inventoryScore.peca_s_indisponivel_is_ha", (stale)), "hint", Msg.t("inventoryScore.revise_o_cesto")));
         }
@@ -495,13 +463,13 @@ public class InventoryScoreService {
             boolean forgottenAtStart = false;
             LocalDate lastBeforeStart = uses.floor(since);
             LocalDate refStart = lastBeforeStart != null ? lastBeforeStart : created.isBefore(since) ? created : null;
-            if (refStart != null && ChronoUnit.DAYS.between(refStart, since) >= RoomService.FORGOTTEN_DAYS) {
+            if (refStart != null && ChronoUnit.DAYS.between(refStart, since) >= ForgottenPieces.FORGOTTEN_DAYS) {
                 forgottenAtStart = true;
                 f.add(w.getId());
             }
             for (LocalDate u : uses) {
                 long gap = ChronoUnit.DAYS.between(prev, u);
-                if (gap >= RoomService.FORGOTTEN_DAYS && !u.isBefore(since)) {
+                if (gap >= ForgottenPieces.FORGOTTEN_DAYS && !u.isBefore(since)) {
                     // ficou esquecida (no início ou durante a janela) e voltou a um look
                     f.add(w.getId());
                     rescued.add(w.getId());
@@ -509,7 +477,7 @@ public class InventoryScoreService {
                 }
                 prev = u;
             }
-            if (!forgottenAtStart && ChronoUnit.DAYS.between(prev, today) >= RoomService.FORGOTTEN_DAYS && prev.plusDays(RoomService.FORGOTTEN_DAYS).isAfter(since)) {
+            if (!forgottenAtStart && ChronoUnit.DAYS.between(prev, today) >= ForgottenPieces.FORGOTTEN_DAYS && prev.plusDays(ForgottenPieces.FORGOTTEN_DAYS).isAfter(since)) {
                 f.add(w.getId()); // ficou esquecida durante a janela e ainda não voltou
             }
         }
@@ -600,7 +568,7 @@ public class InventoryScoreService {
         metrics.put("undiscoveredSample", combos.sample().stream().map(l -> l.stream().map(UUID::toString).toList()).toList());
         metrics.put("usageCount", usage.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().size())));
         Result result = new Result(userId, eligible, n, k, eligible ? score : null, eligible ? band(score) : null, dims, metrics, explain, Instant.now());
-        // snapshot do dia e do mês em transação própria: o quarto pede /api/me/room e /api/me/room/list ao mesmo tempo,
+        // snapshot do dia e do mês em transação própria: duas telas pedindo o score ao mesmo tempo (era o caso do quarto),
         // os dois calculam o score e a segunda gravação batia na chave única (uq_inv_snap), marcando a transação de
         // leitura como rollback-only — a tela recebia 500. Agora a corrida só perde o snapshot repetido.
         sideEffects.run("snapshot do Inventory Score", () -> snapshot(result, today));
@@ -725,7 +693,7 @@ public class InventoryScoreService {
             TreeSet<LocalDate> uses = usageAll.getOrDefault(w.getId(), new TreeSet<>());
             LocalDate prev = w.getCreatedAt() == null ? LocalDate.now(FaiPointsService.ZONE) : LocalDate.ofInstant(w.getCreatedAt(), FaiPointsService.ZONE);
             for (LocalDate d : uses) {
-                if (ChronoUnit.DAYS.between(prev, d) >= RoomService.FORGOTTEN_DAYS) {
+                if (ChronoUnit.DAYS.between(prev, d) >= ForgottenPieces.FORGOTTEN_DAYS) {
                     return true;
                 }
                 prev = d;
@@ -770,11 +738,6 @@ public class InventoryScoreService {
 
     @EventListener
     public void invalidate(DomainEvents.PieceDeleted ev) {
-        cache.remove(ev.userId());
-    }
-
-    @EventListener
-    public void invalidate(DomainEvents.RoomOrganized ev) {
         cache.remove(ev.userId());
     }
 
@@ -824,7 +787,7 @@ public class InventoryScoreService {
                 .filter(Objects::nonNull).map(s -> r.score() == null ? null : r.score() - s).orElse(null);
     }
 
-    /** RF34.CA06 — até 6 cards gerados dos dados reais, cada um com ação para ver a peça ou abrir no quarto. */
+    /** RF34.CA06 — até 6 cards gerados dos dados reais, cada um com ação para ver a peça ou abrir o ACERVO. */
     @SuppressWarnings("unchecked")
     List<Map<String, Object>> highlights(UUID userId, Result r) {
         List<WardrobeItem> all = pieces.findByUserIdOrderByCreatedAtDesc(userId).stream().filter(InventoryScoreService::alive).toList();
@@ -864,7 +827,7 @@ public class InventoryScoreService {
         m.put("imageUrl", w.getImageUrl());
         m.put("value", value);
         m.put("actions", List.of(Map.of("label", Msg.t("inventoryScore.ver_peca"), "href", "/pieces/" + w.getId()),
-                Map.of("label", Msg.t("inventoryScore.mostrar_no_quarto"), "action", "showInRoom", "pieceId", w.getId().toString())));
+                Map.of("label", Msg.t("inventoryScore.ver_no_acervo"), "href", "/acervo")));
         return m;
     }
 
@@ -975,7 +938,7 @@ public class InventoryScoreService {
         out.put("eligible", r.eligible());
         out.put("weakest", weakest);
         out.put("actions", List.of(Map.of("label", Msg.t("inventoryScore.ver_pecas_esquecidas"), "filter", "state:forgotten"),
-                Map.of("label", Msg.t("common.criar_look_com_elas"), "action", "compose_forgotten"), Map.of("label", Msg.t("inventoryScore.abrir_meu_quarto"), "href", "/flair/jogos?district=SUITE")));
+                Map.of("label", Msg.t("common.criar_look_com_elas"), "action", "compose_forgotten"), Map.of("label", Msg.t("inventoryScore.abrir_acervo"), "href", "/acervo")));
         out.put("suggestedChallenges", suggestedChallenges(r));
         return out;
     }

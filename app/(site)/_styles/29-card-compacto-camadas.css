@@ -69,6 +69,16 @@
 .scheme-card-social .c-photo.is-look img { padding: 6px; }
 .scheme-card-social .scheme-container > :is(.runway, .bento) { flex: none; height: var(--fc-photo-h); aspect-ratio: auto; }
 .scheme-card-social .scheme-container::before { top: 12px; left: 12px; font-size: 12px; padding: 2px 6px; }
+/* layouts da seção A também no card do feed: Foto hero + lista lateral (foto à esquerda, peças à direita) e Grade de
+   peças (mosaico 3×N no lugar da foto), na altura da janela da foto */
+.scheme-card-social .hero-lateral-row, .scheme-card-social .grid-pieces.is-mosaic { flex: none; height: var(--fc-photo-h); border: 0; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--fc-window-line); }
+.scheme-card-social .hero-lateral-row .c-photo.is-look { height: 100%; border-radius: 0; box-shadow: none; }
+.scheme-card-social .hero-lateral-list { background: var(--fc-window-bg); overflow-y: auto; scrollbar-width: none; }
+.scheme-card-social .piece2-sm { flex: 0 0 auto; padding: 4px 6px; }
+.scheme-card-social .piece2-sm .p-thumb { width: 28px; height: 28px; }
+.scheme-card-social .piece2-sm .min-w-0 > b { -webkit-line-clamp: 1; }
+.scheme-card-social .grid-pieces.is-mosaic { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); }
+.scheme-card-social .grid-pieces.is-mosaic .cell img { flex: 1 1 auto; min-height: 0; aspect-ratio: auto; }
 
 /* ---------- as duas janelas de dados ---------- */
 :is(.piece-card.is-social .pc-window.is-identity, .fai-card.scheme-card-social .c-titleblock) {
@@ -90,12 +100,18 @@
 .scheme-card-social .c-titleblock { flex: none; overflow: visible; }
 .scheme-card-social .pc-panels { flex: 1 0 auto; min-height: 180px; }
 .scheme-card-social .pc-panel { flex: 1 0 auto; overflow: visible; }
-.fcard:has(.piece-card.is-social .pc-seg-btn[data-tab="hype"][aria-selected="true"]),
-.piece-card.is-social:has(.pc-seg-btn[data-tab="hype"][aria-selected="true"]) { height: auto; min-height: var(--fc-h); }
-.fcard-face > .piece-card.is-social:has(.pc-seg-btn[data-tab="hype"][aria-selected="true"]) { height: auto; }
-.piece-card.is-social:has(.pc-seg-btn[data-tab="hype"][aria-selected="true"]) .pc-id { flex: 1 0 auto; overflow: visible; }
-.piece-card.is-social:has(.pc-seg-btn[data-tab="hype"][aria-selected="true"]) .pc-panels,
-.piece-card.is-social:has(.pc-seg-btn[data-tab="hype"][aria-selected="true"]) .pc-panel { flex: 1 0 auto; overflow: visible; }
+/* Info e Hype: as camadas da peça somam a altura do conteúdo (flex-basis auto), então o card cresce além do mínimo
+   --fc-h em vez de esconder as últimas células atrás da barra de ações. */
+.fcard:has(.piece-card.is-social), .piece-card.is-social { height: auto; min-height: var(--fc-h); }
+.fcard-face > .piece-card.is-social { height: auto; }
+.piece-card.is-social :is(.pc-frame, .pc-content) { flex: 1 0 auto; }
+.piece-card.is-social .pc-id { flex: 1 0 auto; overflow: visible; }
+.piece-card.is-social .pc-panels,
+.piece-card.is-social .pc-panel { flex: 1 0 auto; overflow: visible; }
+/* look: mesma regra — palco, container e janela de dados nunca encolhem abaixo do conteúdo */
+.fai-card.scheme-card-social > .scheme-stage { flex: 1 0 auto; }
+.fai-card.scheme-card-social .pc-panels,
+.fai-card.scheme-card-social .pc-panel { flex: 1 0 auto; overflow: visible; }
 .pc-info-content, .scheme-info-pieces { display: grid; gap: 12px; min-width: 0; }
 .scheme-info-pieces { padding-block: 4px; }
 
@@ -127,6 +143,15 @@
 :is(.piece-card.is-social, .scheme-card-social) .pc-panels .card-fashion-meta dd,
 :is(.piece-card.is-social, .scheme-card-social) .pc-panels .card-fashion-meta .brand-logo-name { white-space: normal; overflow-wrap: anywhere; }
 .fai-card:is(.piece-card.is-social, .scheme-card-social) .card-fashion-meta .pc-info-color i { width: 10px; height: 10px; }
+/* cada cor é um bloco inteiro: com duas cores a segunda desce para a linha de baixo, sem partir o nome no meio */
+.fai-card:is(.piece-card.is-social, .scheme-card-social) .pc-panels .card-fashion-meta .pc-info-color { white-space: nowrap; overflow-wrap: normal; }
+.fai-card:is(.piece-card.is-social, .scheme-card-social) .card-fashion-meta dd:has(.pc-info-color) { display: flex; flex-wrap: wrap; gap: 2px 8px; }
+
+/* selos escolhidos no criador: medalhão com a arte do emissor + nome */
+.selected-seals { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.selected-seal { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.selected-seal .seal-slot { position: static; flex: none; width: 40px; height: 40px; }
+.selected-seal-name { font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
 
 /* janela 2: abas Info | Hype compactas; o 🔥 + score mora no rótulo Hype (no lugar do ícone, sem fogo duplicado) */
 :is(.piece-card.is-social, .scheme-card-social) .pc-seg-btn[data-tab="hype"]:has(.hype-badge) > svg { display: none; }
@@ -142,9 +167,6 @@
 .fai-card[data-card-mode="feed"]:is(.piece-card.is-social, .scheme-card-social) .pc-info dd { font-size: 12px; line-height: 1.3; }
 :is(.piece-card.is-social, .scheme-card-social) .pc-panels .fashion-hype-cell { min-height: 0; padding: 3px 4px; }
 :is(.piece-card.is-social, .scheme-card-social) .pc-panels .fashion-hype-cell dd { font-size: 15px; }
-
-/* no ampliado a janela de identidade não existe como caixa: os itens seguem no layout de detalhe */
-.piece-card-expanded .pc-window.is-identity { display: contents; }
 
 /* ---------- grades: uma coluna por card, mesmo tamanho em todo lugar ---------- */
 .feed-compact-grid,

@@ -1,5 +1,7 @@
 # Exercício 09 — Categoria principal da marca
 
+> **Implementado em 26/11/2026.** Tabela `categorias_marca` e FK opcional `brand_profiles.categoria_marca_id` (`fk_brand_profiles_categoria_marca`, RESTRICT / RESTRICT) na migração `V114__categorias_marca_exercicio_09.sql`; o SQL simples para o Railway está em `sql/railway/09-categoria-marca.sql`. `fashion_category` continua como texto legado, sem conversão. Código: `CategoriaMarca`, `CategoriaMarcaRepository`, `BrandCategoryWriter` (400 `CATEGORIA_MARCA_INVALIDA` / `CATEGORIA_MARCA_INATIVA`), `InstitutionalProfileEditor`, `GET /api/opcoes/categorias-marca`, `components/institutional-reference-field.tsx` no Editar perfil e `categoriaPrincipal` no card de Marcas e no cabeçalho do perfil. O PATCH aceita `categoriaMarcaId` e, para limpar, `clearCategoriaMarca: true` (ou o campo com `null`). Testes: `InstitutionalReferenceChoiceTest`, `InstitutionalProfileEditCharacterizationTest`, `InstitutionalReferenceAccessTest`, `components/institutional-reference-field.test.tsx`.
+
 **Situação na revisão `9f5512a77`:** Parcial: fashion_category é texto; não há FK CategoriaMarca nesse modelo.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

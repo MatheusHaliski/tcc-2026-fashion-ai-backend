@@ -40,4 +40,3 @@ export function PostMenu({ scheme, remixInRow }: { scheme: SchemeView; remixInRo
     </>
   );
 }
-

@@ -33,7 +33,21 @@ public final class Flair3dDeck {
         return out;
     }
 
-    /** 422 DECK_INVALIDO com tamanho, máximo, repetidas e o que falta; nos núcleos sem deck não confere nada. */
+    /** As cartas que o jogo não tem onde vestir nem jogar ([{cardId, posicao}]): a peça inteira num jogo sem essa vaga. */
+    public static List<Map<String, Object>> semVaga(Definicao.Deck deck, Map<UUID, CbcRules.Card> cartas) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        cartas.forEach((id, c) -> {
+            if (!deck.aceita(c.position())) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("cardId", id);
+                m.put("posicao", c.position());
+                out.add(m);
+            }
+        });
+        return out;
+    }
+
+    /** 422 DECK_INVALIDO com tamanho, máximo, repetidas, o que falta e as cartas sem vaga; nos núcleos sem deck não confere nada. */
     public static void validar(Definicao.Deck deck, List<UUID> ids, Map<UUID, CbcRules.Card> cartas) {
         if (deck.semDeck()) {
             return;
@@ -41,7 +55,8 @@ public final class Flair3dDeck {
         List<Definicao.Obrigatoria> faltam = faltam(deck, cartas);
         boolean repetidas = ids.size() != cartas.size();
         boolean grande = deck.tamanhoMax() != null && ids.size() > deck.tamanhoMax();
-        if (faltam.isEmpty() && !repetidas && !grande && !ids.isEmpty()) {
+        List<Map<String, Object>> semVaga = semVaga(deck, cartas);
+        if (faltam.isEmpty() && !repetidas && !grande && !ids.isEmpty() && semVaga.isEmpty()) {
             return;
         }
         Map<String, Object> detalhes = new LinkedHashMap<>();
@@ -49,6 +64,7 @@ public final class Flair3dDeck {
         detalhes.put("tamanhoMax", deck.tamanhoMax());
         detalhes.put("repetidas", repetidas);
         detalhes.put("faltam", faltam);
+        detalhes.put("semVaga", semVaga);
         throw Flair3dErros.invalido("DECK_INVALIDO", "deck_invalido", detalhes);
     }
 

@@ -119,4 +119,22 @@ public final class Flair3dFixtures {
             default -> "accessory_piece";
         };
     }
+
+    /** Os botões que a execução no percurso pediu (Flair3dExecucao), apertados a tempo: +15 na nota. */
+    @SuppressWarnings("unchecked")
+    public static Acionamento perfeita(Resultado pedido) {
+        Map<String, Object> v = (Map<String, Object>) pedido.eventos().stream().filter(e -> e.codigo().equals("EXECUCAO_PEDIDA")).findFirst().orElseThrow().valor();
+        List<String> botoes = (List<String>) v.get("botoes");
+        List<Acionamento.Toque> toques = new java.util.ArrayList<>();
+        for (int i = 0; i < botoes.size(); i++) {
+            toques.add(new Acionamento.Toque(i, botoes.get(i), 300));
+        }
+        return new Acionamento(null, null, null, new Acionamento.Execucao(toques));
+    }
+
+    /** O próximo acionamento de quem joga bem: a execução perfeita quando ela é pedida; senão, seguir. */
+    public static Acionamento proximo(Resultado r) {
+        boolean pede = r.eventos().stream().anyMatch(e -> e.codigo().equals("EXECUCAO_PEDIDA"));
+        return pede ? perfeita(r) : Acionamento.NENHUM;
+    }
 }

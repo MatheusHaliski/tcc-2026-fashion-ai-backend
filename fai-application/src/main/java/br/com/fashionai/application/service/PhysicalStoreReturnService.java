@@ -1,32 +1,30 @@
 package br.com.fashionai.application.service;
 
+import java.time.Clock;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.SafeImage;
+import br.com.fashionai.application.physicalstore.*;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.PhysicalStoreOrder;
 import br.com.fashionai.domain.model.store.PhysicalStoreReturnCase;
 import br.com.fashionai.domain.model.store.PhysicalStoreReturnEvent;
 import br.com.fashionai.domain.model.store.PhysicalStoreReturnEvidence;
-import br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository;
-import br.com.fashionai.domain.repository.PhysicalStoreListingRepository;
-import br.com.fashionai.domain.repository.PhysicalStoreOrderRepository;
-import br.com.fashionai.domain.repository.PhysicalStoreVariantRepository;
+import br.com.fashionai.domain.repository.*;
 import br.com.fashionai.domain.repository.store.PhysicalStoreReturnCaseRepository;
 import br.com.fashionai.domain.repository.store.PhysicalStoreReturnEventRepository;
 import br.com.fashionai.domain.repository.store.PhysicalStoreReturnEvidenceRepository;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * RF-PESQ-02 — troca/devolução rastreável. Estados: REQUESTED → APPROVED|REJECTED|CANCELLED; APPROVED → IN_TRANSIT →

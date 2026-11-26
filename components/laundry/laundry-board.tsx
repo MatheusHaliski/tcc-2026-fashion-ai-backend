@@ -73,7 +73,7 @@ export function LaundryBoard() {
         </div>
         {selected.some((id) => missing.has(id)) && <p className="type-caption text-muted" role="note">{t("laundry.missingInBatch")}</p>}
         <Switch id="laundry-confirm" checked={confirmed} onChange={setConfirmed} label={t("laundry.confirmBatch")} hint={t("laundry.confirmHint")} />
-        <div><Button variant="primary" loading={busy} disabled={!confirmed} onClick={createBatch}>{t("laundry.sendToWash")}</Button></div>
+        <div className="flex flex-wrap items-center gap-2"><Button variant="primary" loading={busy} disabled={!confirmed} onClick={createBatch}>{t("laundry.sendToWash")}</Button>{!confirmed && <span className="type-caption text-muted" data-testid="laundry-confirm-first">{t("laundry.confirmFirst")}</span>}</div>
       </div>}
     </section>
     <LaundryClean pieces={data.cleanPieces ?? []} row={row} busy={busy} onWorn={(piece) => run(() => laundryApi.worn(piece.id), t("laundry.markedWorn", { name: piece.name }))} />

@@ -33,8 +33,15 @@ public interface PipelineJobRepository extends JpaRepository<PipelineJob, UUID> 
 
     List<PipelineJob> findTop200ByOrderByCreatedAtDesc();
 
-    /** Rascunho travado para escrita: serializa dois "Salvar" simultâneos do mesmo rascunho (idempotência do RF4). */
+    /**
+     * Rascunho DO DONO travado para escrita: serializa dois "Salvar" simultâneos do mesmo rascunho (idempotência do RF4).
+     * A busca é sempre por (id, dono) — a chave única uq_pipeline_jobs_id_user —, então o id de um rascunho de outra
+     * pessoa nunca devolve linha.
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select j from PipelineJob j where j.id = :id")
-    Optional<PipelineJob> findByIdForUpdate(@Param("id") UUID id);
+    @Query("select j from PipelineJob j where j.id = :id and j.user.id = :userId")
+    Optional<PipelineJob> findDraftForUpdate(@Param("id") UUID id, @Param("userId") UUID userId);
+
+    /** Rascunho do dono, sem trava (leitura e nova tentativa de marca). */
+    Optional<PipelineJob> findByIdAndUserId(UUID id, UUID userId);
 }

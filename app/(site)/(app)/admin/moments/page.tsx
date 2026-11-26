@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { api } from "@/lib/api/client";
+import { momentActions, momentDateOptions } from "@/lib/admin/moment-actions";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useTaxonomy, label as taxLabel } from "@/lib/api/taxonomy";
@@ -53,7 +54,6 @@ function AdminMoments() {
     try { if (form.id) await api.put(`/api/admin/moments/${form.id}`, body); else await api.post("/api/admin/moments", body); toast.success(t("adminMoments.saved")); setForm(null); list.reload(); } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   const styles = (tax?.styles ?? []).map((s) => ({ id: s, label: taxLabel(s) })); const occasions = (tax?.occasions ?? []).map((s) => ({ id: s, label: taxLabel(s) })); const colors = Object.keys(tax?.colors ?? {}).map((c) => ({ id: c, label: taxLabel(c) }));
-  const transitions = ["schedule", "feature", "unfeature", "cancel", "archive", "draft", "end"] as const;
   return (
     <>
       <PageHeader title={t("adminMoments.title")} kicker={t("adminMoments.kicker")} lead={t("adminMoments.lead")} actions={<><Button size="sm" onClick={() => act(() => api.post("/api/admin/moments/jobs/tick"), t("adminMoments.tick_done"))}>{t("adminMoments.run_tick")}</Button><Button size="sm" variant="primary" onClick={() => setForm({ ...EMPTY })}>{t("adminMoments.new")}</Button></>} />
@@ -63,12 +63,12 @@ function AdminMoments() {
             <li key={m.id} className="grid gap-2 p-3 sm:grid-cols-[1fr_auto]">
               <div className="min-w-0">
                 <p className="type-body font-semibold"><span aria-hidden>{m.theme?.icon ?? ""}</span> {m.name} <span className="type-caption text-muted">/{m.slug}</span></p>
-                <p className="type-caption text-muted">{fmtDate(m.time.startAt)} → {fmtDate(m.time.endAt)} · {m.time.timezone} · {t(`moments.type.${m.type}`)} · {t(`moments.nature.${m.nature}`)}{m.country ? ` · ${m.country}` : ""} · {t("adminMoments.challenges_n", { n: m.challenges })}</p>
+                <p className="type-caption text-muted">{fmtDate(m.time.startAt, momentDateOptions(m.time.timezone))} → {fmtDate(m.time.endAt, momentDateOptions(m.time.timezone))} · {m.time.timezone} · {t(`moments.type.${m.type}`)} · {t(`moments.nature.${m.nature}`)}{m.country ? ` · ${m.country}` : ""} · {t("adminMoments.challenges_n", { n: m.challenges })}</p>
                 <div className="mt-1 flex flex-wrap gap-1"><Badge tone={m.storedStatus === "ACTIVE" ? "thread" : m.storedStatus === "DRAFT" ? "chalk" : undefined}>{t(`moments.status.${m.storedStatus}`)}</Badge>{m.featured && <Badge tone="mark">{t("adminMoments.featured")}</Badge>}{m.sponsored && <Badge tone="mark">{t("moments.sponsored")}</Badge>}{m.pointsEnabled ? <Badge>{t("adminMoments.points_on", { x: m.pointsMultiplier })}</Badge> : <Badge>{t("adminMoments.points_off")}</Badge>}</div>
               </div>
               <div className="flex flex-wrap gap-1 content-start">
                 <Button size="sm" onClick={() => edit(m.id)}>{t("common.edit")}</Button>
-                {transitions.map((a) => <Button key={a} size="sm" variant="ghost" onClick={() => act(() => api.post(`/api/admin/moments/${m.id}/${a}`), t("adminMoments.transition_done", { action: t(`adminMoments.action.${a}`) }))}>{t(`adminMoments.action.${a}`)}</Button>)}
+                {momentActions(m.storedStatus, !!m.featured).map((a) => <Button key={a} size="sm" variant="ghost" onClick={() => act(() => api.post(`/api/admin/moments/${m.id}/${a}`), t("adminMoments.transition_done", { action: t(`adminMoments.action.${a}`) }))}>{t(`adminMoments.action.${a}`)}</Button>)}
               </div>
             </li>
           ))}

@@ -25,6 +25,67 @@ O que vale para todos os jogos e não se repete abaixo:
   verdade). O desenho descreve essas variações, mas a base só abre partida solo (`BASE_NUCLEOS.md`, "Os avatares de
   cada partida"). Onde o jogo pede adversário ou plateia, entra um figurante com nota tirada da semente.
 - **Fluidez do 3D:** não medida. O ambiente de desenvolvimento não tem placa de vídeo.
+- **Modelo cinza na ação (auditoria 3):** conferido de novo em quadros a cada 0,35 s do Dress Fighter, da entrega ao
+  resultado, sem placa de vídeo: a modelo fica vestida o tempo todo. O corpo humano só aparece com as três zonas
+  cobertas (`components/three/human-outfit.tsx`). Não reproduzido; a auditoria foi feita antes das câmeras e das
+  pessoas de cena, e a causa daqueles quadros não foi confirmada.
+- **Cor das peças e das cartas (auditoria 3):** a carta dos jogos mostra a cor cadastrada (bolinha e nome) e a foto
+  da peça sem foto vem pintada nessa cor; o corpo 3D veste a peça sem foto na cor do cadastro. Uma só fonte de cor:
+  `lib/pieces/piece-image.ts` e `defaultGarmentColor` (`lib/catalog/default-garment.ts`). As partidas clássicas e o
+  FLAIR CBC ficam com quem cuida deles.
+
+## Pedidos da dona de 15/11/2026: onde estão
+
+| Pedido | Estado |
+| --- | --- |
+| Fashion Sports com câmera de transmissão, mecânica de partida e cartas para toda ação | feito em boa parte (jogo 14, abaixo), com a mão no controle, os reinícios à vista e jogadores humanos; faltam as outras modalidades no nível do futebol |
+| Estádio com arquibancada, redes que balançam, marcações claras, jogadores sem bola com movimento automático | feito (jogo 14): o servidor decide o estado e o destino de cada jogador em cada lance, e a trave treme na bola na trave; jogadores humanos e torcida de gente leve desde a etapa das pessoas de cena |
+| Câmeras pensadas para os 15 jogos (`CAMERAS.md`, sistema de câmeras compartilhado, seletor no HUD) | feito: rigs comuns (`lib/flair/nucleos/camera`), um conjunto de 4 a 6 câmeras por jogo com a automática por momento, seletor no HUD, reduzir movimento; visto em fotos (Passarela, Dress Fighter, Detective, Super-Herói, Boutique aérea, Dress the Star em 390×844). Falta: a câmera não desvia de móveis; a exploração só faz sentido quando o avatar andar (Detective, Labirinto, Around the World) |
+| NPCs como avatares humanos do mesmo tipo do avatar da pessoa, com níveis de detalhe | feito nos 15 jogos: no Fashion Sports, jogadores e torcida (partida); no Fashion Detective, vigias e elenco; nos outros 13, os figurantes das salas (plateia sentada da Passarela, cliente da Boutique, fotógrafos, adversário, torcida, convidados, colegas de uniforme no esporte) viram gente com a roupa do papel e movimento (sentada, torcendo, fotografando). Vistos em fotos: Passarela, Boutique, Dress Fighter, Clube, Dress the Star, Fashion Sports (preparo), Batalha, Around the World. O nível LONGE usa o corpo leve (a transmissão do futebol caiu de 769 mil para 181 mil triângulos); nas salas com figurantes, no máximo 5 corpos inteiros ao mesmo tempo e o resto no corpo leve (que agora senta), sem montar o corpo inteiro de quem não o usa: a Passarela estimada em 0,52 milhão de triângulos e 210 chamadas (medida em software impossível nesta rodada, sem memória na máquina; `BASE_NUCLEOS.md`); os corpos saem da semente da partida (outra partida, outra plateia; sem partida aberta, a do jogo) |
+| Ações dos NPCs coerentes com o momento (critério da dona: animações variadas, coerentes, inimigos com movimento e combate, interação na hora certa) | parcial: as pessoas de cena seguem as sequências do diretor de cena (`lib/flair/nucleos/gente/reacoes.ts`): a plateia aplaude, se levanta ou lamenta de cabeça baixa pela nota; a cliente da Boutique prova e comemora ou devolve; o segurança barra; os passantes acenam; o adversário da Batalha posa e levanta o braço; no Dress Fighter o oponente vem em guarda até a distância da luta, recua no golpe, dá o soco no round que ganha e cai (nocaute estilizado, sem sangue) quando perde. Quem o diretor leva de um lugar a outro anda ou corre (os pés não deslizam); com reduzir movimento, o gesto fica parado. Gestos novos sem malha nova: aplaudir, lamentar, guarda, defesa, recuar e pensar (`gestos.ts`), só rotação de ossos, 0 triângulo e 0 chamada a mais. A ação dura o tempo da cena (`scene/ritmo.ts`): a luta mostra os três rounds antes do resultado (antes, 700 ms por passo cortavam a luta). Visto em fotos: a luta do Dress Fighter rodada a rodada e os gestos parados numa página de laboratório. Depois da auditoria dos jogos de 15/11 (NPCs 3,1), a reação segue o desfecho em todos os jogos apontados: na Batalha vencida o adversário lamenta e não ergue o braço (a pose dele não acena mais); no Dress Fighter a oponente ataca, guarda, esquiva e recua a cada lance e só cai ou comemora no fim; sem estrela, os fotógrafos da Passarela baixam a câmera; a estrela do Dress the Star comemora, aplaude ou lamenta pela nota; a equipe do set do Filme aplaude o título certo e lamenta o errado; os passantes do Around the World aplaudem (2 ou 3 estrelas), um acena (1) ou seguem (0) (testes das sequências; não visto na tela). Falta: jurados que deliberam; a torcida da partida de futebol comemora pelo telão, não por gol; ninguém reage à acusação na cena do Fashion Detective |
+| Cenários coerentes e bem acabados (`CENARIOS.md`, auditoria de cada sala, modelos licenciados) | parcial: auditoria das 15 salas; refeitos o estádio, o camarim do Road to Glory e o box do Piloto; na segunda revisão, peças de lugar no beco (cartazes, grafite), no tapete (parede de imprensa, cordões), no set (monitor, cabos, refletor menor e mais para trás), no hall da gala (quadros, vitrine), na boutique (prateleira de bolsas e sapatos), na passarela (arco do backstage, fosso dos fotógrafos), no labirinto (espelhos de parede) e na batalha (mesa dos jurados), todas dentro do orçamento de cada sala (teste da cena). Vistos em foto: beco, set, hall, boutique. Faltam: Clube, Cantora, Super-Herói e Around the World; nenhum GLB licenciado novo |
+| Mundos exploráveis (`MUNDOS.md`): Fashion Detective como um lugar interligado, Around the World por bairros, Labirinto desenhado | parcial: o Fashion Detective já é um lugar de nove salas; os princípios (marco, luz guia, laço, camadas, recompensa fora do caminho) estão em `MUNDOS.md` com conferência automática (`lib/flair/mundos`), e a Orla do Mirante (Around the World) e o Jardim dos Espelhos (Labirinto) existem como dados que passam nela. Falta: andar por eles na tela, o cenário 3D de cada ponto e ligar as rodadas aos mundos |
+| Fashion Detective: câmera de exploração, 8 salas ou mais com cutscene, desafio, quebra-cabeça, inimigos e esconderijos; 5 chaves em armários; pistas em papel e no bolso de inimigos; mapa; história (`FASHION_DETECTIVE_HISTORIA.md`) e cutscene final; celular 390×844 | feito em boa parte (jogo 6, abaixo): o caso "A Coleção Maré" jogável de ponta a ponta, passo a passo no servidor, com as 9 salas, cartas para cada ação, vigias com cone, bolso, 5 chaves, 12 pistas, caderno, mapa, inventário, cutscenes com legenda, acusação e final; visto em fotos a 390×844 com retratos reais do servidor. Faltam: o salvamento é por passo no servidor, não há tela de "continuar" da sala; cenários das salas novas ainda simples |
+| Dress Fighter e outros jogos de ação com câmera própria (ringue de lado, etc.) | parcial: o Dress Fighter tem a luta de lado (arcade, automática da ação) e a câmera por trás do ombro; os outros jogos de ação continuam com as câmeras de `CAMERAS.md` |
+| Começo, desenvolvimento e final de cada partida (critério da dona: abertura, cutscenes nos momentos-chave, final com cutscene que segue o desfecho) | parcial: nos 15 jogos a partida abre com a câmera da abertura (plano aberto do lugar, lateral, enquadramento do avatar), o avatar entrando até a marca e as pessoas de cena recebendo pelo papel (a plateia aplaude, a torcida comemora, o oponente dá a guarda, a cliente acena, o segurança barra) (`lib/flair/nucleos/scene/opening.ts`), e a premissa do jogo em duas linhas sobre o deck, uma vez por partida (no cartão do briefing, quando há); o meio é a sequência automática de cada jogo (desfile e reação da plateia, luta em rounds, a cliente que prova, a porta do espelho, o mapa); o final é a reação de quem está em cena ao desfecho e um texto de fim no resultado, um para cada desfecho (bom, médio, ruim: `lib/flair/nucleos/narrativa.ts`, `flair3d.narrativa.<JOGO>.final.*`). Visto em fotos: a abertura e o final da Boutique e do Dress Fighter. Falta: cutscene com câmera própria no final (hoje é a câmera do resultado do jogo); progressão de história entre rodadas além do Detective |
+| Rodada que as cartas não cumprem nunca fica em silêncio (auditoria dos jogos de 15/11, defeito 4: temas Brasil, Noite e Clássico, pedido da Boutique, marca brasileira do Rio, arenas do Dress Fighter) | feito: na escolha do deck, para a coleção e para as cartas escolhidas, e no começo da partida (premissa ou briefing), o aviso diz quando nenhuma carta pontua ou qual regra de peça nenhuma carta cumpre (`lib/flair/nucleos/viabilidade.ts`, a partir dos selos que o servidor já manda); o Dress Fighter passou a ser vencível jogando bem com cartas Bronze (a luta lance a lance) | não (testes da tela) |
+| Cartas como ação além de vestir (critério da dona: a escolha da carta move a mecânica) | feito na Passarela, Dress the Star, Boutique e Around the World: a jogada de cena (`Flair3dJogadaDeCena`, decorator do núcleo): o look avaliado deixa a partida EM_ACAO com o pedido de cor da cena sorteado da semente; a pessoa joga uma carta do deck fora do look e a cor dela dispara a ação de cena da tabela de `Flair3dCores` (flashes, holofote, a cliente que sorri, o sol da tarde) na cena; a cor pedida soma 10 (regra JOGADA_DE_CENA no resultado); seguir sem carta fecha como estava. Já eram por carta: Fashion Sports, Fashion Detective e a carta Especial do Dress Fighter. Em 19/11 o Road to Glory ganhou a mesma jogada como sessão de fotos (a fotógrafa pede a luz; `RoadToGloryNucleo` compõe o decorator sobre `RoadToGloryLook`). Ficam de fora: Filme e Labirinto (a decisão é a resposta da rodada), Batalha (a soma contra o adversário) e os jogos de zonas (não têm cartas: a decisão é a cor e o acabamento de cada zona) | não (testes do servidor e da tela) |
+| Salvamento da partida (critério da dona: a partida em andamento sobrevive a recarregar, sair e voltar, sair da conta e entrar) | feito nos 15 jogos: `GET /api/flair/3d/nucleos/{codigo}/em-andamento` devolve a partida mais recente que não fechou, refeita da semente e do que o servidor gravou (`Flair3dRetomada`); a tela abre com "Continuar partida" (no Fashion Detective, "Continuar desta sala") e volta ao ponto: a investigação no último passo, a partida por cartas na jogada da vez, a rodada em etapas na etapa da vez com as anteriores fechadas, ou o deck já escolhido. O que a pessoa escolheu na preparação e ainda não entregou fica no navegador: nos jogos de deck, por partida; nos jogos de zonas (Clube, Cantora, Piloto, Super-Herói), por jogo e rodada, com as zonas pintadas e a resposta; no MAKE UP, por brief (roupa e maquiagem); o rascunho sai quando a partida fecha. Partida fechada não volta; carta que saiu do guarda-roupa faz a partida não ser oferecida. Visto só em testes (servidor e tela) |
+
+**Câmeras e avatares hoje, jogo a jogo.** Os 15 jogos usam o sistema de câmeras comum (`CAMERAS.md`): o preparo em
+três quartos e a câmera de ação do gênero; o Fashion Sports tem ainda a transmissão com cortes e quatro câmeras do campo
+no seletor. Nenhum jogo usa mais a câmera frontal do provador como única vista. Avatares humanos nos NPCs: Fashion
+Sports (jogadores e torcida); os outros 14 ainda com figurantes simples.
+
+## Começo, cutscenes, final e salvamento, jogo a jogo
+
+Critérios da dona (15/11/2026): começo, desenvolvimento com cutscenes, final com cutscene pela lógica do desfecho,
+salvamento da partida; cartas como ação dentro da mecânica; câmeras nos momentos-chave; ações dos NPCs. Comum a todos
+os jogos de cartas e de zonas: a abertura (câmera do plano aberto ao avatar, entrada do avatar, recepção das pessoas
+de cena pelo papel), a premissa no começo, o texto de fim pelo desfecho no resultado e "Continuar partida". "Visto"
+quer dizer visto em fotos da tela real com a API simulada (sem placa de vídeo); o resto, só nos testes.
+
+| Jogo | Começo | No meio (cutscenes e momentos) | Final | Salvamento | Cartas como ação | NPCs no momento |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 · A Passarela | abertura, premissa, tema revelado no briefing | desfile até a ponta com travelling; plateia reage pela nota; flashes | plateia levanta, aplaude ou lamenta; colocação; texto de fim | deck, rodada e tema (servidor); rascunho do look | vestir; depois do look avaliado, a jogada de cena: uma carta do deck fora do look dispara a ação da cor dela (a cena pede uma cor sorteada; a cor pedida soma 10, no servidor) | plateia sentada que aplaude ou lamenta (os gestos vistos numa página de laboratório); fotógrafos |
+| 2 · Dress Fighter | abertura com o oponente em guarda, premissa, atributos no briefing | nove lances em três rounds, cada um com a carta da mão (cor = golpe), barras de vida e a leitura do próximo golpe | nocaute estilizado ou vitória nos rounds; queda só de quem perdeu a luta; texto de fim | a luta parada no lance volta (EM_ACAO) | cada lance é uma carta da mão; combos por sequência de cores | oponente ataca, guarda, esquiva, recua no dano, cai ou comemora no fim (testes) |
+| 3 · Dress the Star | abertura, premissa, estrela e pistas no briefing | entrada no palco, a estrela se revela, luz acende | reverência, plateia pela nota, texto de fim | deck e rodadas em etapas (servidor) | vestir; depois do look avaliado, a jogada de cena: uma carta do deck fora do look dispara a ação da cor dela (a cena pede uma cor sorteada; a cor pedida soma 10, no servidor) | plateia reage |
+| 4 · Personagem de Filme | abertura, premissa, a cena no briefing | claquete, ação, pose de cena, luz do gênero quando o título está certo, corta | texto de fim | deck (servidor) | vestir e escolher o título | — |
+| 5 · Road to Glory (núcleo) | abertura, premissa | flashes e poses para a câmera; a fotógrafa pede uma luz | texto de fim | rascunho (sem deck) | vestir e maquiar; depois do look avaliado, a sessão de fotos (uma carta do guarda-roupa fora do look acende a luz da cor dela) | fotógrafa |
+| 5b · FLAIR 3D MAKE UP (briefs) | o brief na tela | — | resultado com Prestígio; sem texto de fim próprio | carreira no servidor; rascunho do brief no navegador | vestir e maquiar | — |
+| 6 · Fashion Detective | caso novo: cutscene de abertura com legenda; gala: abertura de cada salão | cutscenes de cada sala, álibi, enigma, vigias | cutscene final pelo desfecho da acusação; texto de fim | "Continuar desta sala" (servidor, cada passo) | toda ação por carta da cor certa | vigias de ronda com cone; bolso; suspeitos na acusação |
+| 7 · Boutique 3D | abertura com a cliente acenando, premissa, pedido no briefing | a peça vai da arara, a cliente prova e gira, espelho acende | a cliente comemora ou devolve; texto de fim | etapas (a cliente da vez) no servidor | vestir; depois do look avaliado, a jogada de cena: uma carta do deck fora do look dispara a ação da cor dela (a cena pede uma cor sorteada; a cor pedida soma 10, no servidor) | cliente que prova e reage (visto) |
+| 8 · Clube do Coração | abertura, premissa | — (só a reação do avatar) | texto de fim (desde 25/11 as camisas dos clubes valem nota: 50 + 50) | rascunho das zonas por jogo e rodada | pintar zonas (sem cartas) | torcida |
+| 9 · My Favorite Singer | abertura, premissa | — | texto de fim | rascunho das zonas | pintar zonas | — |
+| 10 · O Labirinto | abertura, premissa, a porta no briefing | o avatar vai ao espelho; o espelho abre ou ondula; a porta abre | atravessa a porta ou tenta de novo; texto de fim | tentativas e etapas no servidor | vestir pela família de cor | — |
+| 11 · Meu Piloto Favorito | abertura, premissa | — | texto de fim | rascunho das zonas | pintar zonas | — |
+| 12 · Around the World | abertura, premissa, região no briefing | caminhada de rua, o mapa avança | carimbo ou nova tentativa; texto de fim | regiões em etapas no servidor | vestir; depois do look avaliado, a jogada de cena: uma carta do deck fora do look dispara a ação da cor dela (a cena pede uma cor sorteada; a cor pedida soma 10, no servidor) | — (a rua ainda não tem passantes) |
+| 13 · Meu Super-Herói | abertura, premissa | — | texto de fim | rascunho das zonas e do emblema | pintar zonas e escolher o emblema | — |
+| 14 · Fashion Sports | apito inicial (vinheta) | cada lance por carta, gol com abraço e adversários de cabeça baixa, intervalo, replay da peça | apito final com o desfecho; texto de fim | a partida volta na jogada da vez (servidor) | toda jogada por carta (cor = ação, poder = duelo) | jogadores e torcida |
+| 15 · Batalha de Looks | abertura, premissa, objetivo no briefing | o adversário posa ao lado; plateia; painel com a soma | o vencedor levanta o braço; texto de fim | rodadas em etapas no servidor | vestir por rodada | adversário e plateia reagem |
+
+Falta em todos: cutscene de final com câmera própria (hoje é a câmera do resultado de cada jogo); nos jogos de zonas, um
+momento de cena no meio; jogada por carta além do vestir no Filme (a escolha do título), no Labirinto (a porta) e na Batalha.
 
 ## Rodadas: o que mudou na base
 
@@ -40,6 +101,179 @@ Cada jogo passa a ter **rodadas**: o objetivo mais simples (o da base) e as roda
 | Sorteio por nome a partir da semente (a prévia não gasta) | `Contexto.sorteio(nome)` |
 | Escolha da rodada na tela | `components/flair/nucleos/nucleo-rounds.tsx` |
 
+## Campanha, enredo e salvamento (19/11/2026)
+
+Resposta à auditoria dos jogos de 15/11/2026 (`docs/auditoria/AUDITORIA_JOGOS_2026-11-15.md`, mudança 9 e as dimensões
+Enredo, Estrutura da partida e Salvamento). Vale para os núcleos 1, 2, 3, 4, 6, 7, 10, 12, 14 e 15. Nada foi visto na
+tela (máquina sem GPU): está provado por teste do servidor e da tela.
+
+**Campanha (progresso por pessoa e por jogo, no servidor).** `GET /api/flair/3d/nucleos/{codigo}/progresso` devolve as
+rodadas na ordem, com `aberta`, `vencida`, as estrelas e a melhor nota de cada uma, o total do jogo (`estrelas` de
+`maximo`), a última partida fechada e o ponto da história. Sai das partidas fechadas da tabela `flair3d_matches` (V101):
+não há tabela nem migration nova. Regras (`Flair3dCampanha`):
+
+- a primeira rodada está sempre aberta; a seguinte abre quando a anterior é vencida; nada é pago;
+- rodada vencida = partida fechada com pelo menos 1 estrela (60 pontos) e resultado que não seja derrota, empate,
+  reprovado ou "não abre"; nos jogos artísticos sem placar, concluir já conta;
+- as estrelas de uma rodada são as da melhor partida nela; perder depois não tira estrela nem fecha o que já abriu;
+- abrir partida numa rodada fechada devolve 422 `RODADA_BLOQUEADA` com a rodada que a abre (`Flair3dProgresso`,
+  conferido no controller antes de abrir);
+- no Fashion Sports (uma rodada só) a trilha são as modalidades, pela resposta da entrega, todas abertas;
+- a sequência só está ligada nos nove jogos de rodadas desta lista (`Flair3dCampanha.EM_SEQUENCIA`). Os núcleos 5, 8,
+  9, 11 e 13 já recebem as marcas e as estrelas com tudo aberto; para ligar a sequência neles basta incluir o código.
+
+Na tela, a escolha de rodada mostra a campanha em cima (estrelas do jogo, rodadas vencidas) e, em cada rodada, a marca
+de vencida, as estrelas, a melhor nota e a data, ou "Fechada: vença «X» para abrir"; a rodada fechada não se escolhe.
+
+**Enredo.** Cada jogo tem, nos catálogos dos três idiomas (`flair3d.enredo.<JOGO>.*`), uma abertura (quem a pessoa é e
+o que está em jogo), duas transições (`transicao.VENCEU` e `transicao.NAO_VENCEU`) e um fecho. A tela escolhe a frase
+pelo que o servidor gravou (`lib/flair/nucleos/progresso.ts`): a transição cita o nome da última rodada jogada, os
+pontos e as estrelas dela e a rodada que falta vencer; o fecho só aparece com todas as rodadas vencidas. A frase fica
+acima da escolha de rodada (ou do deck, no Fashion Sports) e volta no resultado, já com a partida que acabou de fechar.
+
+**Salvamento.** Além do "Continuar partida" (`Flair3dRetomada`), o look em montagem da preparação passa a ir para o
+servidor (`PUT /api/flair/3d/partidas/{id}/rascunho`, guardado no andamento da partida; não conta tentativa nem muda a
+nota; a entrega seguinte o descarta). A retomada devolve esse look às vagas em qualquer aparelho e lista o que está
+guardado (`salvo`: deck, look entregue, look em montagem, etapas e jogadas) com a data. Durante a partida e no
+resultado, a linha "Salvo no servidor às HH:MM: ..." diz o que o servidor confirmou por último.
+
+**Limites conhecidos.** A sequência pode deixar parada a conta que não tem carta para vencer uma rodada (por exemplo,
+"Treino: tema Brasil" sem peça de marca brasileira): o aviso do deck já diz isso antes de entrar, mas as rodadas
+seguintes ficam fechadas até a vitória. No Fashion Sports não há trava entre modalidades. Os jogos de zonas (8, 9, 11,
+13) e o MAKE UP continuam com o rascunho só no navegador.
+
+## Depois da reauditoria de 25/11/2026: o que mudou e a nota projetada
+
+Resposta às lacunas de `REAUDITORIA_2026-11-25.md` (PRs #566 e #568), sempre com a regra no servidor e o cliente
+mandando só valores enumerados que o servidor confere. Nada foi visto na tela (máquina sem placa de vídeo): está provado
+por testes do servidor e da tela. Já estavam na main antes desta rodada e entram na projeção: a execução no percurso nos
+12 jogos de ação jogável (`Flair3dExecucao`), o look que muda o corpo da detetive e a posição da capitã no duelo.
+
+**Base comum nova.** `recurso/Flair3dDesgaste`: o que as decisões gastam do recurso-vida do jogo (reserva inicial mais
+as peças usadas), no evento `DESGASTE`; zerado, a partida acaba em derrota, e o que sobra é a reserva com que a
+execução começa. `Flair3dTinta` (Decorator dos jogos de zonas): orçamento de latas por acabamento. Decisões em
+`docs/refactoring/gof/2026-11-25-desgaste-e-tinta.md`.
+
+| Jogo | O que mudou nesta rodada (servidor; tela) |
+| --- | --- |
+| Dress Fighter | `DressFighterDistancia`: o lance leva PERTO/LONGE pela posição da lutadora no ringue; de longe o forte e o simples não chegam e o rápido chega pela metade, mas o rápido dela não pega; o look mais lento que a oponente só lê ATAQUE ou DEFESA. Medido: quem lê e recua vence 59 de 60 lutas Bronze; sempre perto, 29 |
+| Fashion Sports | `EsporteTempo`: barra de tempo no chute e no desarme (TEMPO:0/1/2); perfeito corta a sorte ruim (nunca abaixo de −3), errar tira a sorte boa; `BarraDeTempo` na mão |
+| Fashion Detective | pega sem vida = `CAPTURADO` (derrota, cutscene própria); a acusação abre com 6 pistas (ou com o tempo esgotado); peça usada como VIDA devolve uma marca entre os passos |
+| Passarela | peça fora do tema tira 10 da confiança (FOCO); zerada, REPROVADO; o desfile começa no arco do backstage e as 3 marcas vão até a ponta |
+| Dress the Star | Modo Stylist com dedução: o perfil saiu das pistas, 25 com estilo e cor, 10 com só um, a carta não diz se bate e a prévia não dá a nota; peça fora do perfil tira 10 da confiança da estrela |
+| Personagem de Filme | resposta errada (−15) e parte do figurino fora da cena (−10) gastam a paciência do diretor (FOCO); zerada, `DIRETOR_CORTOU` |
+| Boutique 3D | a vida do jogo é a paciência da cliente (VIDA 60); peça fora do pedido tira 15; zerada, `CLIENTE_FOI_EMBORA` |
+| Road to Glory | sem deck, a peça vestida na partida pode ser usada como recurso (antes toda carta dava CARTA_FORA_DO_DECK) |
+| O Labirinto | Reflexo (ENERGIA): cada apresentação errada tira 15, a terceira sem usar peça perde a partida; sem a peça achada nem o espelho/porta que cedia |
+| Around the World | cada tentativa reprovada na volta, no elevador e no metrô tira 15 de energia; zerada, derrota; o caminho não abre mais sem cumprir |
+| Batalha de Looks | `BatalhaLooksAdversario`: o adversário veste um look da casa tirado da semente, avaliado pelas mesmas regras; a nota dele só sai na entrega |
+| Clube do Coração | orçamento de tinta; as camisas dos clubes passam a valer nota (50 + 50), o que liga a execução no percurso também nelas |
+| My Favorite Singer | orçamento de tinta; a janela do botão sai do CARISMA |
+| Meu Piloto Favorito | orçamento de tinta |
+| Meu Super-Herói | orçamento de tinta; a janela do botão sai da FORÇA |
+
+**Nota projetada por critério** (mesma escala da reauditoria; entre parênteses, a nota da reauditoria). É projeção de
+quem implementou, por leitura do código e dos testes, sem jogar no navegador: deve ser conferida por auditor
+independente.
+
+| Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Final |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| DRESS_FIGHTER | 6,2 (5) | 6 (6) | 7 (7) | 5 (5) | 6,3 (6) | 6 (5,5) | 6 (6) | **6,1** (5,8) |
+| PASSARELA | 5,3 (4) | 4,8 (4) | 6 (6) | 5,5 (5,5) | 5,5 (5,5) | 6,5 (6,5) | 6 (6) | **5,7** (5,4) |
+| DRESS_THE_STAR | 5,1 (3,5) | 4,6 (4) | 6,8 (6,5) | 5,5 (5,5) | 5,2 (5) | 6,5 (6,5) | 6 (6) | **5,7** (5,3) |
+| PERSONAGEM_FILME | 5,5 (4) | 4,4 (3,5) | 6 (6) | 5,5 (5,5) | 5 (5) | 6 (6) | 5,5 (5,5) | **5,4** (5,1) |
+| FASHION_DETECTIVE | 5,8 (5,5) | 6 (5,5) | 6,5 (6) | 4,5 (4,5) | 3,8 (2,5) | 4,5 (4,5) | 6,7 (6,5) | **5,4** (5,0) |
+| AROUND_THE_WORLD | 3,9 (3,5) | 5,3 (4,5) | 5,7 (5,5) | 4,5 (4,5) | 5 (5) | 6,5 (6,5) | 5,5 (5,5) | **5,2** (5,0) |
+| LABIRINTO | 3,9 (3,5) | 5,1 (4,5) | 6,2 (5) | 4 (4) | 5 (5) | 6,5 (6,5) | 5,5 (5,5) | **5,2** (4,9) |
+| BOUTIQUE_3D | 4 (3,5) | 4,5 (3,5) | 5,5 (5,5) | 6 (6) | 4,5 (4,5) | 6 (6) | 5 (5) | **5,1** (4,9) |
+| ROAD_TO_GLORY | 4,1 (3,5) | 3,7 (2,5) | 5,5 (5,5) | 5,5 (5,5) | 5,5 (5,5) | 6 (6) | 5 (5) | **5,0** (4,8) |
+| FASHION_SPORTS | 4,8 (3,5) | 5 (5) | 6 (6) | 4,5 (4,5) | 4,5 (4,5) | 5,2 (5) | 5 (4,5) | **5,0** (4,7) |
+| BATALHA_LOOKS | 4,3 (3) | 2,8 (2,5) | 6 (6) | 5 (5) | 4 (4) | 6,5 (6,5) | 5,5 (5,5) | **4,9** (4,6) |
+| CLUBE_CORACAO | 3,1 (2,5) | 3,7 (2,5) | 5,3 (5) | 4 (4) | 4,5 (3,5) | 6 (6) | 5 (5) | **4,5** (4,1) |
+| FAVORITE_SINGER | 3,1 (2,5) | 3,2 (2) | 5,5 (5,5) | 4 (4) | 4,3 (3,5) | 5 (5) | 5 (5) | **4,3** (3,9) |
+| PILOTO_FAVORITO | 3 (2,5) | 3,1 (2) | 5 (5) | 4,5 (4,5) | 3,5 (3) | 5 (5) | 5 (5) | **4,2** (3,9) |
+| SUPER_HEROI | 3,1 (2,5) | 3,1 (2) | 5 (5) | 4 (4) | 3,6 (3) | 5 (5) | 5 (5) | **4,1** (3,8) |
+
+Média projetada: 5,1 (reauditoria: 4,7). Nenhum jogo chega a 8 em nenhum critério.
+
+**O que ainda segura cada jogo abaixo de 8** (além de gráficos, cujo teto realista no navegador é 7 a 7,5):
+
+- **Todos:** a fase de uso é andar até 3 marcas e apertar o botão pedido; não há inimigos, física nem decisão espacial
+  rica. O recurso que se gasta agora existe, mas a roda de recursos ainda mostra só a reserva das peças, não o desgaste
+  (o desgaste aparece no HUD da execução e no resultado).
+- **Dress Fighter:** vida máxima por look, barra de fôlego por golpe e descarte da carta até o round seguinte (recursos);
+  golpe por botão de cor (comandos).
+- **Fashion Sports:** fôlego, embalo e goleiro pronto não aparecem na tela; descarte volta de graça; final de cinema e
+  cutscene de gol ainda parciais.
+- **Fashion Detective:** o culpado continua fixo (a história e as cutscenes nomeiam o Bento: trocar as pistas decisivas
+  por culpado pede reescrever o caso nos 3 idiomas); ✕ contextual sobre o objeto mais próximo e WASD só no corpo.
+- **Passarela, Dress the Star, Batalha:** desfile ainda curto de decisão; a Batalha não está no perfil peça-recurso nem
+  tem carta cansada, e o adversário não veste o look dele no 3D (só no texto do resultado).
+- **Filme, Boutique, Road to Glory:** set, loja e camarim sem interagíveis (monitor, claquete, arara, provador, balcão,
+  penteadeira); a sessão de fotos ainda é a execução comum.
+- **Labirinto e Around the World:** sem labirinto de corredores nem caminho com ramos; as salas da viagem continuam no
+  Rio para todas as regiões; a viagem ainda não troca moedas por pular a região.
+- **Jogos de zonas:** sem fase de uso própria (estreia em campo, show, volta de classificação, missão com drones); o
+  avatar veste só a cor dominante, sem emblema, capa nem capacete pintados.
+
+## Rodada de 26/11/2026: fase de uso dos jogos de zonas
+
+Continuação da lista que a rodada anterior deixou, na ordem de maior ganho da reauditoria. Desta vez a cena foi vista
+no navegador (Chromium com WebGL por software); o que foi e o que não foi visto está dito em cada item.
+
+### Item 1 (feito): fase de uso jogável em Clube do Coração, My Favorite Singer, Meu Piloto Favorito e Meu Super-Herói
+
+**Regra (servidor).** `Flair3dFaseDeUso`, dentro da mesma `Flair3dExecucao` (sem sistema paralelo; decisão em
+`docs/refactoring/gof/2026-11-26-fase-de-uso.md`). Com a peça pronta e dentro do orçamento de tinta, a partida fica
+EM_ACAO com cinco marcas (eram três), prazo de 25 s para a fase e, em cada marca, dois lances:
+
+| Lance | Botão | Janela | Pontos | Recurso |
+| --- | --- | --- | --- | --- |
+| seguro (passe curto, nota segura, poupar, desviar) | o pedido | inteira (650 a 1350 ms, pelo atributo do look) | 2 perfeito, 1 bom | não gasta |
+| ousado (drible, agudo, acelerar, golpe) | outro, sorteado da semente | 60% da janela | 4 | gasta 12, acerte ou erre |
+| erro (outro botão, tarde, antecipado, sem toque ou fora do prazo) | | | −4 | drena (15 de energia ou foco, 22 de vida) |
+
+O teto continua 15: para chegar lá é preciso ousar em pelo menos três marcas. O recurso é o que sobrou da tinta
+(`Flair3dTinta`): quem pintou caro tem menos fôlego para ousar. Recurso zerado fecha `ESGOTADO`, com no máximo 30
+pontos. Os tempos vêm do navegador, como na execução comum; o servidor confere botão, marca, reação mínima e um toque
+por marca. Testes: `Flair3dFaseDeUsoTest` (6) e os de zonas que já existiam.
+
+**Tela e cena.** A personagem sai do ateliê: o campo com o gol e a torcida (Clube), o palco com o telão e a plateia
+(Singer), a reta dos boxes com a chicane de pneus e a faixa de chegada (Piloto), o terraço com as caixas e a cidade
+(Super-Herói), em `scene/salas/fase-de-uso.ts`. As marcas passam a ser desenhadas no piso (a próxima acesa, as tocadas
+na cor da nota), em todos os jogos de percurso: antes não havia nada no piso mostrando aonde ir. Cada jogo tem o alvo
+dele (cone, feixe de luz, portão, drone), o gesto de cada lance e a reação de quem assiste. O painel mostra os dois
+lances com o custo, a barra do prazo e o recurso caindo na hora. Câmera nova "Percurso" (do alto, de frente, parada na
+direção).
+
+**Correção achada jogando.** O andar recebia as caixas dos móveis com a folga da lente (o cache de `obstaculosDaSala`
+era por sala e valia a folga de quem chamasse primeiro): a personagem batia a 20 cm dos móveis.
+
+**Visto na tela.** As quatro fases jogadas do começo ao fim com o teclado em `/lab/jogo?fase=uso` (a cena 3D e o painel
+de verdade, com um pedido de exemplo): andar até as cinco marcas, escolher o lance, ver a nota, o recurso e a marca
+mudarem, chegar à ponta. Fotos em `scratchpad/shots/jogos/<jogo>-uso-*.png`. **Não visto:** a partida inteira pela tela
+do jogo com o servidor (o laboratório não chama a API; a ligação com o resultado do servidor está nos testes da tela);
+o prazo estourando; controle e toque.
+
+**O que ainda falta nestes quatro.** O briefing não avisa, antes de pintar, que a tinta que sobra é o fôlego da fase de
+uso; a roda de recursos não mostra o desgaste; o avatar veste só a cor dominante (sem emblema, capa nem capacete
+pintados); não há adversário nem física (o cone não é driblado, o drone não atira); a pontuação não depende do caminho
+feito, só do lance e do tempo.
+
+### Nota projetada depois desta rodada
+
+Projeção de quem implementou, a conferir por auditor independente. Só mudam os quatro jogos de zonas; os outros onze
+ficam com a projeção anterior (ganharam as marcas desenhadas no piso, sem mudança de nota).
+
+| Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Final | Projeção anterior | Reauditoria |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CLUBE_CORACAO | 4,6 | 4,7 | 5,6 | 4,5 | 4,5 | 6,2 | 5 | **5,0** | 4,5 | 4,1 |
+| FAVORITE_SINGER | 4,6 | 4,4 | 5,8 | 4,5 | 4,3 | 5,3 | 5 | **4,8** | 4,3 | 3,9 |
+| PILOTO_FAVORITO | 4,6 | 4,4 | 5,4 | 4,8 | 3,5 | 5,3 | 5 | **4,7** | 4,2 | 3,9 |
+| SUPER_HEROI | 4,6 | 4,4 | 5,4 | 4,5 | 3,6 | 5,3 | 5 | **4,7** | 4,1 | 3,8 |
+
+Média projetada dos 15: 5,2 (anterior: 5,1; reauditoria: 4,7). Nenhum jogo chega a 8.
+
 ## Resumo
 
 | Nº | Jogo | Estado ao escrever este documento | Mais incompleto primeiro (ordem de trabalho) |
@@ -49,15 +283,15 @@ Cada jogo passa a ter **rodadas**: o objetivo mais simples (o da base) e as roda
 | 3 | Dress the Star | base: uma estrela fixa, sem pistas | 5 |
 | 4 | Personagem de Filme | base: um personagem, um título certo | 6 |
 | 5 | Road to Glory (MAKE UP) | 3 briefs e carreira pela tela do MAKE UP | por último |
-| 6 | Fashion Detective | caso de 6 salões e mercado (outro agente cuida) | não mexo |
+| 6 | Fashion Detective | refeito em 15/11: o caso "A Coleção Maré" em 9 salas exploráveis (os 6 salões viraram a rodada SALOES_DA_GALA) | feito depois do Fashion Sports |
 | 7 | Boutique 3D | base: uma cliente fixa | 2 |
-| 8 | Clube do Coração | base: um clube, sem placar | 10 |
+| 8 | Clube do Coração | base: um clube, com nota desde 25/11 (50 pelas zonas, 50 pelas cores) | 10 |
 | 9 | My Favorite Singer | base: uma era | 11 |
 | 10 | O Labirinto | base: um espelho; a auditoria não conseguiu vencer | 1 |
 | 11 | Meu Piloto Favorito | base: um capacete | 12 |
 | 12 | Around the World | base: uma região | 4 |
 | 13 | Meu Super-Herói Favorito | base: um arquétipo | 13 |
-| 14 | Fashion Sports | 6 modalidades e lances por cor (outro agente cuida) | não mexo |
+| 14 | Fashion Sports | refeito em 15/11: partida por cartas, transmissão de TV, estádio | feito primeiro (pedido da dona) |
 | 15 | Batalha de Looks | base: uma rodada contra nota fixa | 7 |
 | — | FLAIR CBC | 5 elencos jogáveis | não mexo |
 
@@ -84,12 +318,12 @@ Cena: `lib/flair/nucleos/scene/salas/passarela.ts` (passarela, plateia, fotógra
 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
-| Rodada "Tema surpresa": o tema só aparece depois de travar o deck, e muda de uma partida para outra | pendente | não |
-| Rodadas de treino com tema fixo: Brasil, Noite, Monocromático, Clássico | pendente | não |
-| A carta do deck mostra o selo do tema só depois de entrar (antes, "tema surpresa") | pendente | não |
-| Resultado com a colocação na sala (você e 3 desfiles da casa) e a nota de cada um | pendente | não |
-| Efeito de cor na cena 3D (flashes, aplausos, holofote, passarela acesa, silhueta, brisa) | pendente | não |
-| Resultado diz o que pontuou, por quê e o que trocar | pendente | não |
+| Rodada "Tema surpresa": o tema só aparece depois de travar o deck, e muda de uma partida para outra | feito; a surpresa sorteia só Noite, Monocromático ou Clássico: o Brasil pede marca brasileira, que peça sem marca não cumpre (auditoria 3 viu "Noite" no preparo e "Brasil" no resultado; a abertura e a entrega tiram o tema da mesma semente, e um teste do servidor confere os dois) | não |
+| Rodadas de treino com tema fixo: Brasil, Noite, Monocromático, Clássico | feito | não |
+| A carta do deck mostra o selo do tema só depois de entrar (antes, "tema surpresa") | feito | não |
+| Resultado com a colocação na sala (você e 3 desfiles da casa) e a nota de cada um | feito | não |
+| Efeito de cor na cena 3D (flashes, aplausos, holofote, passarela acesa, silhueta, brisa) | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
+| Resultado diz o que pontuou, por quê e o que trocar | feito | não |
 | Sala com 4 a 8 pessoas, cada uma desfilando na vez | pendente (online) | não |
 
 ## 2 · Dress Fighter
@@ -99,22 +333,34 @@ OVR e da carta Especial. O oponente aparece com o look dele e os atributos ficam
 luta a partir dos atributos e de um sorteio com semente. Efeito de cor: guarda, esquiva, golpe rápido, fôlego, golpe
 forte, foco.
 
-**No código hoje.** `DressFighterNucleo`: 3 rounds em etapas contra o oponente-padrão (40 em tudo), uma carta
-Especial por luta, prévia só com os atributos. Cena: `scene/salas/dress-fighter.ts`, `scene/sequences-match.ts`.
+**No código hoje (depois da auditoria dos jogos de 15/11).** Jogo de luta lance a lance: `DressFighterNucleo` compõe
+`DressFighterLuta` (vida 100 das duas, 3 rounds de 3 lances, nocaute), `DressFighterGolpes` (a cor da carta jogada é o
+golpe: vermelho golpe forte, amarelo golpe rápido, preto guarda, verde esquiva, azul fôlego, branco foco e
+contra-ataque; a Especial é o golpe especial, uma por luta) e `DressFighterCombos` (Relâmpago, Contragolpe, Muralha).
+O look dá a força (ataque, velocidade, defesa). A oponente faz o golpe da semente com o estilo da arena, anunciado um
+lance antes (a leitura). Tudo no servidor, refeito dos acionamentos guardados ("Continuar partida" retoma o lance).
+Na tela: barras de vida (`nucleo-barras-de-vida.tsx`), a mão do lance (`nucleo-trigger.tsx`, tipo LANCE), a cena de
+cada lance com recuo de quem leva dano (`scene/sequences-match.ts`), câmeras "Luta de lado" (arcade, automática da
+ação) e "Por trás do ombro". Cena: `scene/salas/dress-fighter.ts`.
 
 **[proposta adotada]**
 - O jogo usa o deck da partida (até 6 cartas, 1 calçado), como já estava na base.
-- Entre os rounds só vale a carta Especial; não há troca de peça (a opção mais simples do "se a regra permitir").
+- Dentro da luta, cada lance é uma carta da mão (o deck inteiro, peça inteira incluída), sem repetir a do lance
+  anterior; sem carta, a guarda sem técnica. Não há troca de peça do look.
 
 **Lista de conferência**
 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
-| 3 rounds decididos pela roupa, com a carta Especial entre eles | feito | sim (auditoria de 14/11) |
-| Três arenas escolhíveis, cada uma com um oponente de atributos próprios | pendente | não |
-| O oponente e os atributos dele aparecem antes da luta, ao lado dos seus | pendente | não |
-| Nas arenas 2 e 3 cada round tem um impulso tirado da semente (o mesmo na revisão) | pendente | não |
-| Efeito de cor na cena 3D (guarda, esquiva, golpes no ar, fôlego, foco) | pendente | não |
+| Luta lance a lance: a cor da carta é o golpe, vida das duas, nocaute, combos, leitura do próximo golpe da oponente | feito (com cartas Bronze, jogando pela leitura, 14, 12 e 13 vitórias em 20 sementes nas três arenas; só seguindo, nenhuma) | não (testes do servidor e da tela) |
+| Barras de vida com moldura, nome e número, que descem no valor do servidor | feito | não (teste da tela) |
+| A oponente ataca, guarda, esquiva e recua quando leva dano; a avatar recua quando leva dano; queda só no fim, de quem perdeu | feito | não (testes da sequência) |
+| Câmera de luta de lado (arcade) e por trás do ombro | feito | não |
+| Peça inteira entra no look (vaga VES) e na mão do lance | feito | não |
+| Três arenas escolhíveis, cada uma com um oponente de atributos próprios | feito | não |
+| O oponente e os atributos dele aparecem antes da luta, ao lado dos seus | feito | não |
+| Cada arena com o estilo de golpes da oponente (a veloz prefere o rápido; a blindada, a guarda); o impulso sorteado saiu | feito | não |
+| Efeito de cor na cena 3D (guarda, esquiva, golpes no ar, fôlego, foco) | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
 | Resultado diz qual atributo perdeu cada round e o que vestir para subir | pendente | não |
 | Luta contra o avatar de outra pessoa | pendente (online) | não |
 
@@ -139,11 +385,11 @@ estilo ou cor. Cena: `scene/salas/dress-the-star.ts` (palco, telão, silhueta).
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
 | Rodada "Estrela Pop dos anos 2000" (a da base) | feito | sim (auditoria de 14/11) |
-| Rodada "Modo Stylist": estrela sorteada entre 4 perfis, com 3 pistas de texto mostradas ao entrar | pendente | não |
-| O resultado do Stylist diz quantas pistas a plateia precisou abrir | pendente | não |
-| Rodada "Look Relâmpago": o look-alvo aparece por 10 segundos e some; 25 por vaga igual em tipo e cor | pendente | não |
-| Efeito de cor na cena 3D | pendente | não |
-| Resultado diz o que pontuou e o que trocar | pendente | não |
+| Rodada "Modo Stylist": estrela sorteada entre 4 perfis, com 3 pistas de texto mostradas ao entrar | feito | não |
+| O resultado do Stylist diz quantas pistas a plateia precisou abrir | feito | não |
+| Rodada "Look Relâmpago": o look-alvo aparece por 10 segundos e some; 25 por vaga igual em tipo e cor | feito | não |
+| Efeito de cor na cena 3D | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
+| Resultado diz o que pontuou e o que trocar | feito | não |
 | Rodada "Para Onde Ela Vai?" (10 perguntas com personagens vestidas) | pendente | não |
 | Partida com amigos e duelo X1 | pendente (online) | não |
 
@@ -166,10 +412,10 @@ Cena: `scene/salas/personagem-filme.ts` (set, claquete, refletores).
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
 | Rodada "Detetive noir" (a da base) | feito | sim (auditoria de 14/11) |
-| Rodada "Cena sorteada": 4 personagens, um por partida, com 3 pistas de cena | pendente | não |
-| Rodada "Adivinhe a Década": 4 décadas, pistas de moda, resposta entre 4 | pendente | não |
-| Efeito de cor na cena 3D (luz do gênero, claquete) | pendente | não |
-| Resultado diz o título certo, as peças que bateram e o que trocar | pendente | não |
+| Rodada "Cena sorteada": 4 personagens, um por partida, com 3 pistas de cena | feito | não |
+| Rodada "Adivinhe a Década": 4 décadas, pistas de moda, resposta entre 4 | feito | não |
+| Efeito de cor na cena 3D (luz do gênero, claquete) | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
+| Resultado diz o título certo, as peças que bateram e o que trocar | feito | não |
 | Partida com 2 a 4 pessoas | pendente (online) | não |
 
 ## 5 · Road to Glory (FLAIR 3D MAKE UP)
@@ -179,8 +425,8 @@ avaliado. A diferença é a câmera 3D com zoom no rosto. Sem deck. Rodadas do g
 e 5 de estilo e temporada (95 a 100).
 
 **No código hoje.** `FlairMakeUpService`, 3 briefs (`makeup/briefs/`: Ensaio de Verão, Entrevista, Primeiro
-Encontro), Prestígio e carreira, tela em `components/flair/make-up/`. O núcleo `ROAD_TO_GLORY` joga só o Ensaio de
-Verão. Maquiagem em 3 áreas (lábios, bochechas, olhos); não há cabelo, unhas, joias nem zoom nas mãos.
+Encontro), Prestígio e carreira, tela em `components/flair/make-up/`. O núcleo `ROAD_TO_GLORY` joga os três briefs como
+rodadas e termina com a sessão de fotos (carta do guarda-roupa na cor que a fotógrafa pede, +10). Maquiagem em 3 áreas (lábios, bochechas, olhos); não há cabelo, unhas, joias nem zoom nas mãos.
 
 **[proposta adotada]**
 - Os briefs novos usam só o que a paleta de hoje tem (lábios, bochechas, olhos). Cabelo e unhas dependem de recursos
@@ -192,28 +438,43 @@ Verão. Maquiagem em 3 áreas (lábios, bochechas, olhos); não há cabelo, unha
 | --- | --- | --- |
 | 3 briefs com nível mínimo, Prestígio e subida de nível | feito | sim (auditoria de 14/11) |
 | Briefs do grupo: Make Monocromática (72), Make Natural (73), Make que Conversa com a Roupa (74) | pendente | não |
-| O núcleo Road to Glory oferece os briefs como rodadas | pendente | não |
-| Resultado diz a regra que faltou e o que trocar | pendente | não |
-| Celular: a cena e a barra de botões cabem na largura | pendente | não |
+| O núcleo Road to Glory oferece os briefs como rodadas | feito | não |
+| Resultado diz a regra que faltou e o que trocar | feito (19/11): o servidor diz qual peça derrubou a regra de "todas as peças" (`FlairMakeUpPecas`), no núcleo e na tela do MAKE UP; o núcleo dá a dica de cada regra | não (testes do servidor e da tela) |
+| Selo de cada carta no brief e aviso da regra de roupa que nenhuma carta cumpre | feito (19/11): o selo é o do brief da rodada (antes era sempre o do Ensaio de Verão); o aviso aparece no começo da partida do núcleo e na tela do brief do MAKE UP | não (testes do servidor e da tela) |
+| Celular: a cena e a barra de botões cabem na largura | feito: a grade do jogo encolhe até a tela (o elenco e as abas passavam para 709 px numa tela de 390) | sim (390×844, tela real com a API simulada) |
+| A peça sem foto aparece no corpo 3D na cor do cadastro (auditoria 3: a bota preta saía laranja, a cor da ilustração da categoria) | feito em todos os jogos: a carta leva a cor cadastrada ao corpo 3D, que veste o tecido nessa cor; a mesma fonte das miniaturas (`lib/pieces/piece-image.ts`) | sim (MAKE UP: camisa branca, calça marinho e bota preta no corpo; Dress Fighter: blusa vermelha, jeans e bota preta) |
 | Cabelo, unhas, joias, temporadas e os 30 níveis com desbloqueios | pendente | não |
 
 ## 6 · Fashion Detective
 
-Outro agente cuida deste jogo nesta rodada (textos e celular). Só registro o estado.
+**Desenho (15/11/2026).** O caso "A Coleção Maré" (`FASHION_DETECTIVE_HISTORIA.md`): 9 salas interligadas, exploradas
+em terceira pessoa de ponto a ponto; toda ação com carta da cor certa; vigias de ronda com cone de visão; bolso; 5 chaves
+em armários; 12 pistas; acusação entre os suspeitos 2 a 9 decidida no servidor. A definição de 14/11 (6 salões e
+mercado) continua como a rodada `SALOES_DA_GALA`.
 
-**Desenho.** Caso de 6 salões, um look por salão; acesso, desafio automático e pista; mercado depois do salão 3;
-final automático com 5 pistas. Rodadas do grupo (42 a 48): Verdadeiro ou Falso, Quem Mudou?, Detetive de Tecido, Peça
-Intrusa, Quem é o Dono?.
-
-**No código.** `FashionDetectiveNucleo`, `FashionDetectiveCaso`, `FashionDetectiveSalao`, `FashionDetectiveMercado`;
-6 salões em 3D (`scene/salas/fashion-detective-saloes.ts`), cartão e câmera de abertura.
+**No código.** Servidor: `flair3d/detetive` (`DetetiveSala`, `DetetiveSalas`, `DetetivePartida`, `DetetiveAcoes`,
+`DetetiveVigias`, `DetetiveMao`, `DetetiveEstado`, `DetetiveCaso`), `FashionDetectiveMundo`, `FashionDetectiveAcusacao`;
+`Acionamento.alvo` leva o passo ("IR:meio", "ABRIR:...", "ACUSAR:2"). Tela: `components/flair/detetive` (palco, cena
+3D, sala, planta 2D, painel, folhas, cutscene), `lib/flair/detetive`, `components/flair/nucleos/use-modo-por-cartas.tsx`;
+textos `flair3d.detetive.*` em pt-BR, en e es.
 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
-| Caso de 6 salões com mercado e final pelo número de pistas | feito | sim (reauditoria) |
-| Cutscene de resultado diferente por salão; mercado com cena própria | pendente | não |
-| Rodadas de dedução do grupo (42 a 48) | pendente | não |
-| Celular sem texto sobre a cena | com o outro agente | — |
+| A entrega veste o look da gala; cada passo vai por /acionar com a carta e o alvo; o estado está no Andamento | feito (testes do servidor) | — |
+| 9 salas com pontos, esconderijos, armários, portas e enigma; câmera de exploração por trás do ombro, diagonal de cima e aérea | feito | sim (fotos em 390×844) |
+| Toda ação com a carta da cor certa (verde, preto, azul, amarelo, branco, vermelho); trocar carta para girar a mão; andar, esperar, enigma e acusação sem carta | feito | sim (painel nas fotos) |
+| Vigias sem arma: ronda com cone no piso; quem entra no cone é visto e o vigia persegue, um pouco mais devagar que a pessoa (2,6 m por passo contra 3,6); esconder-se, sair do alcance (5,7 m) ou da sala quebra a linha de visão, e ele procura um passo e volta à ronda; se chega a 1,3 m, a pessoa é pega: −1 vida, 30 s e de volta à porta da sala; vigia que persegue não deixa tirar do bolso e pode ser convencido com a carta azul (`DetetivePerseguicao`) | feito; na tela o vigia corre, aponta ou olha em volta pelo modo, o cone fica vermelho e um ponto acima da cabeça diz o modo (vermelho perseguindo, amarelo procurando) | não (testes do servidor e da tela) |
+| Bolso fora do cone, até um passo de distância; dá certo sem alarde ou deixa a sala em alerta | feito | sim (pista P2 do segurança e P6 de Rafa) |
+| 5 chaves em armários, portas trancadas, ajuda da casa sem carta verde (1 minuto): sempre completável | feito (teste do mundo e da partida) | — |
+| 12 pistas com o texto exato; meia folha rasgada completada pela carta branca; caderno "Pistas N de 12" | feito | sim (caderno nas fotos) |
+| Mapa das 9 salas e inventário | feito | sim (mapa nas fotos) |
+| Cutscenes de abertura e de resolução de cada sala, álibi e final, com legenda, pular e rever | feito, com câmera própria (`lib/flair/detetive/camera-da-cena.ts`): abertura em plano aberto que desce até o detetive, resolução com giro lento, álibi de baixo para o quadro dos suspeitos, final com a grua subindo; com reduzir movimento, o último quadro parado | sim (abertura, resolução, final parcial) |
+| Acusação entre os suspeitos numerados, resposta só no servidor; finais completo, parcial e revelado | feito | sim (quadro e final parcial) |
+| Vigias e elenco como gente (corpo humano do avatar, roupa do papel) | feito | sim |
+| Reduzir movimento (planta 2D, sem deslizar), 390×844 | feito (planta testada no jsdom) | sim (390×844); a planta só em teste |
+| Celular (auditoria 3: textos sobre a cena, botões e resultado cortados) | feito: a faixa de baixo cabe na largura (antes passava 20 px), a ação quebra a linha em vez de cortar ("Pegar o papel do bolso do segurança do salão", com a contração certa em pt-BR e es), o quadro termina acima da barra de navegação, a câmera mostra só o ícone e o elenco só quem joga; o resultado rola dentro da faixa; a dica do preparo fala do caso novo (antes dizia "Salão 1 de 6") | sim (tela real do jogo em 390×844 com a API simulada no navegador: preparo, sala com enigma e ações, final parcial e resultado) |
+| Salvar por sala | feito: o servidor grava cada passo; ao voltar ao jogo, "Continuar desta sala" mostra a sala, as pistas, o fôlego e o relógio e retoma dali | não (só testes) |
+| Limite de 45 minutos | feito (relógio da partida; ao passar, Iolanda chama para a passarela) | não |
 
 ## 7 · Boutique 3D
 
@@ -235,12 +496,12 @@ Cena: `scene/salas/boutique-3d.ts` (arara, balcão, espelho, cliente).
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
 | Rodada "Festa em preto" (a da base) | feito | sim (auditoria de 14/11) |
-| Rodada "Personal Stylist": 3 clientes sorteadas, um look para cada, 1 estrela por pedido (ocasião, cor, estilo) | pendente | não |
-| Rodada "Vitrine que Vende": 3 manequins para o gosto do dia; cada um no gosto atrai 10 clientes | pendente | não |
-| Rodada "Provador Lotado": 5 clientes devolvem uma peça com um motivo; 20 por substituta certa | pendente | não |
-| Um cartão apresenta a cliente da vez e o pedido dela, sem cobrir a roupa | pendente | não |
-| Efeito de cor na cena 3D (vitrine, espelho, cliente) | pendente | não |
-| Resultado diz o pedido que faltou em cada cliente | pendente | não |
+| Rodada "Personal Stylist": 3 clientes sorteadas, um look para cada, 1 estrela por pedido (ocasião, cor, estilo) | feito | não |
+| Rodada "Vitrine que Vende": 3 manequins para o gosto do dia; cada um no gosto atrai 10 clientes | feito | não |
+| Rodada "Provador Lotado": 5 clientes devolvem uma peça com um motivo; 20 por substituta certa | feito | não |
+| Um cartão apresenta a cliente da vez e o pedido dela, sem cobrir a roupa | feito | não |
+| Efeito de cor na cena 3D (vitrine, espelho, cliente) | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
+| Resultado diz o pedido que faltou em cada cliente | feito | não |
 | Pop-up de Fim de Semana (pede estoque de 16 peças), moedas, expansão e equipe | pendente | não |
 
 ## 8 · Clube do Coração
@@ -249,7 +510,8 @@ Cena: `scene/salas/boutique-3d.ts` (arara, balcão, espelho, cliente).
 de conversa. Depois de criar, salva no FAI Atelier e pode publicar numa galeria. Desafios do Grupo Ateliê 3D (49 a
 58), entre eles o Uniforme de E-sports (51).
 
-**No código hoje.** `ClubeCoracaoNucleo`: um clube (Clube Atlântico, azul e branco), 4 zonas, sem placar.
+**No código hoje.** `ClubeCoracaoNucleo`: um clube (Clube Atlântico, azul e branco), 4 zonas; desde 25/11, 50 pelas
+zonas pintadas e 50 pelas cores do clube, com orçamento de tinta (`Flair3dTinta`).
 As zonas pintadas não aparecem no manequim da cena. Sem Copilot.
 
 **[proposta adotada]**
@@ -261,11 +523,11 @@ As zonas pintadas não aparecem no manequim da cena. Sem Copilot.
 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
-| Rodada "Clube Atlântico" sem placar (a da base) | feito | sim (auditoria de 14/11) |
-| Rodada "Clube Aurora" (vermelho e preto), sem placar | pendente | não |
-| Rodada "Uniforme de E-sports" (51), com nota de 0 a 100 em 4 regras | pendente | não |
-| As zonas pintadas aparecem no manequim na hora | pendente | não |
-| Resultado diz a regra que faltou | pendente | não |
+| Rodada "Clube Atlântico" (a da base): sem placar até 25/11; agora 50 + 50 | feito | sim (auditoria de 14/11, ainda sem nota) |
+| Rodada "Clube Aurora" (vermelho e preto): sem placar até 25/11; agora 50 + 50 | feito | não |
+| Rodada "Uniforme de E-sports" (51), com nota de 0 a 100 em 4 regras | feito | não |
+| As zonas pintadas aparecem no manequim na hora | feito (faixas no busto de costura, não a malha da peça) | não |
+| Resultado diz a regra que faltou | feito | não |
 | Copilot, salvar no FAI Atelier e galeria | pendente | não |
 
 ## 9 · My Favorite Singer
@@ -284,10 +546,10 @@ peça combina com a era. Vitrine "Eras" no perfil. Desafio do grupo: Jaqueta da 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
 | Rodada "Era Neon" (a da base) | feito | sim (auditoria de 14/11) |
-| Rodada "Era Acústica" | pendente | não |
-| Rodada "Jaqueta da Banda" (50) | pendente | não |
-| As zonas pintadas aparecem no manequim na hora | pendente | não |
-| Resultado diz a regra que faltou | pendente | não |
+| Rodada "Era Acústica" | feito | não |
+| Rodada "Jaqueta da Banda" (50) | feito | não |
+| As zonas pintadas aparecem no manequim na hora | feito (faixas no busto de costura, não a malha da peça) | não |
+| Resultado diz a regra que faltou | feito | não |
 | Vitrine "Eras", voto da comunidade, Copilot | pendente | não |
 
 ## 10 · O Labirinto
@@ -304,20 +566,20 @@ avisava disso. Cena: `scene/salas/labirinto.ts`.
 **[proposta adotada]**
 - A pessoa entra com o deck da partida (até 8 cartas).
 - As peças achadas no labirinto valem só dentro da partida.
-- A peça achada entra assim: depois de 2 apresentações sem abrir, a sala oferece a peça do manequim, na família de
-  cor mais perto de fechar, e ela conta como uma peça no espelho.
+- (Até 25/11) a peça achada entrava depois de 2 apresentações sem abrir. Desde a reauditoria não há pena: cada
+  apresentação errada gasta 15 de Reflexo (a ENERGIA) e, zerado, a partida acaba em derrota.
 
 **Lista de conferência**
 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
-| A tela do deck avisa quando o deck não tem 3 cartas da mesma família de cor | pendente | não |
-| Quando o espelho não abre, a tela diz a família mais perto e quantas peças faltam, em texto comum | pendente | não |
-| Depois de 2 tentativas sem abrir, a peça achada na sala entra e o espelho pode abrir | pendente | não |
-| Rodada "Escada de Espelhos": 5 espelhos, cada um soma uma regra; 20 por espelho de primeira | pendente | não |
-| Rodada "Três Portas": 3 salas, porta fácil, média ou difícil; meta de 6 estrelas | pendente | não |
-| Rodada "Corredor de Holofotes": um look para 5 condições; 20 por holofote | pendente | não |
-| Efeito de cor na cena 3D (espelho e fechadura) | pendente | não |
+| A tela do deck avisa quando o deck não tem 3 cartas da mesma família de cor | feito | não |
+| Quando o espelho não abre, a tela diz a família mais perto e quantas peças faltam, em texto comum | feito | não |
+| Depois de 2 tentativas sem abrir, a peça achada na sala entra e o espelho pode abrir | retirado em 25/11 (o Reflexo gasta e dá derrota) | não |
+| Rodada "Escada de Espelhos": 5 espelhos, cada um soma uma regra; 20 por espelho de primeira | feito | não |
+| Rodada "Três Portas": 3 salas, porta fácil, média ou difícil; meta de 6 estrelas | feito | não |
+| Rodada "Corredor de Holofotes": um look para 5 condições; 20 por holofote | feito | não |
+| Efeito de cor na cena 3D (espelho e fechadura) | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
 | Grade de 9 salas com caminhada por toque, chaves e mala de 6 peças | pendente | não |
 
 ## 11 · Meu Piloto Favorito
@@ -336,10 +598,10 @@ Bases novas: capacete e macacão por zonas. Desafio do grupo: Tênis dos Sonhos 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
 | Rodada "Capacete da Equipe Aurora" (a da base) | feito | sim (auditoria de 14/11) |
-| Rodada "Macacão da Equipe Boreal" (tronco, mangas, pernas, gola, cinto) | pendente | não |
-| Rodada "Tênis dos Sonhos" (49) | pendente | não |
-| As zonas pintadas aparecem no manequim na hora | pendente | não |
-| Resultado diz a regra que faltou | pendente | não |
+| Rodada "Macacão da Equipe Boreal" (tronco, mangas, pernas, gola, cinto) | feito | não |
+| Rodada "Tênis dos Sonhos" (49) | feito | não |
+| As zonas pintadas aparecem no manequim na hora | feito (faixas no busto de costura, não a malha da peça) | não |
+| Resultado diz a regra que faltou | feito | não |
 | Copilot de corrida, malha de capacete e macacão no editor, número e faixas | pendente | não |
 
 ## 12 · Around the World
@@ -363,13 +625,14 @@ Cena: `scene/salas/around-the-world.ts` (calçadão, vitrine, mapa).
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
 | Rodada "Rio de Janeiro" (a da base) | feito | sim (auditoria de 14/11) |
-| Rodada "Volta ao mundo": 8 regiões em sequência; com 60 pontos a região abre a próxima; menos que isso, tenta de novo | pendente | não |
-| Um cartão apresenta a região da vez, o clima, a estética e a paleta | pendente | não |
-| Rodada "Elevador da Torre": 4 andares, até 2 trocas por andar, 25 por andar de primeira | pendente | não |
-| Rodada "Metrô de Moda": 6 estações, exatamente 1 troca por estação | pendente | não |
-| Rodada "Shopping de 4 Andares": 1 item por andar para o pedido sorteado | pendente | não |
-| Efeito de cor na cena 3D | pendente | não |
-| Resultado com as estrelas de cada região | pendente | não |
+| A dica da regra de marca brasileira diz o valor certo (25 por regra; antes dizia "cada uma soma 10", auditoria 3) | feito | não |
+| Rodada "Volta ao mundo": 8 regiões em sequência; com 60 pontos a região abre a próxima; menos que isso, tenta de novo | feito | não |
+| Um cartão apresenta a região da vez, o clima, a estética e a paleta | feito | não |
+| Rodada "Elevador da Torre": 4 andares, até 2 trocas por andar, 25 por andar de primeira | feito | não |
+| Rodada "Metrô de Moda": 6 estações, exatamente 1 troca por estação | feito | não |
+| Rodada "Shopping de 4 Andares": 1 item por andar para o pedido sorteado | feito | não |
+| Efeito de cor na cena 3D | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
+| Resultado com as estrelas de cada região | feito | não |
 | Cenário próprio de cada região, mapa com escolha de caminho, selo do passaporte | pendente | não |
 
 ## 13 · Meu Super-Herói Favorito
@@ -389,31 +652,90 @@ traços genéricos. Sem licença: nenhum uniforme, emblema ou nome protegido.
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
 | Rodada "Armadura" (a da base) | feito | sim (auditoria de 14/11) |
-| Rodada "Traje colante" | pendente | não |
-| Rodada "Vigilante da noite" | pendente | não |
-| A lista de emblemas só tem emblemas próprios | pendente | não |
-| As zonas pintadas aparecem no manequim na hora | pendente | não |
-| Resultado diz a regra que faltou | pendente | não |
+| Rodada "Traje colante" | feito | não |
+| Rodada "Vigilante da noite" | feito | não |
+| A lista de emblemas só tem emblemas próprios | feito | não |
+| A escolha do emblema fala em emblema (auditoria 3: dizia "Escolha o título do filme") | feito: "Escolha o emblema do traje antes de entregar", botão "Escolher o emblema" | não (só testes) |
+| As zonas pintadas aparecem no manequim na hora | feito (faixas no busto de costura, não a malha da peça) | não |
+| Resultado diz a regra que faltou | feito | não |
 | Copilot de heróis, emblema desenhado pela pessoa | pendente | não |
 
 ## 14 · Fashion Sports
 
-Outro agente cuida deste jogo nesta rodada (motor, quadras e legendas do placar). Só registro o estado.
+**Desenho (mudou em 15/11/2026).** A dona pediu a câmera de transmissão de TV, a mecânica real de uma partida e,
+depois, que toda ação do time passe por uma carta, com a referência do gênero dos simuladores de futebol (sem copiar
+jogo nenhum). O jogo deixou de rodar sozinho com 3 trocas no segundo tempo. A definição inteira está em `JOGOS.md`,
+jogo 14; a tabela de cores em `CORES_E_ACOES.md`, 1.2.
 
-**Desenho.** Futebol de 5 e outras modalidades que rodam sozinhas; a pessoa só veste o time; coesão do uniforme;
-troca no intervalo; a cor da peça dispara o lance. Rodadas do grupo (27 a 38): tênis, basquete 3×3, vôlei, corrida,
-skate, golfe, dança e revezamento.
+**No código.**
+- Servidor: `fai-application/.../flair3d/esporte/` — `EsporteRegras` (6 modalidades: jogadas, relógio, jogadores,
+  unidade do placar), `EsporteForcas` (atributos, físico novo, poder da carta, cansaço), `EsporteMao` (mão de 5 pela
+  semente), `EsportePartida` e `EsporteLance` (posse, 4 zonas, passe, condução, drible, desarme, recomposição,
+  pressão, goleiro), `EsporteFinalizacao` (gol, defesa, espalmada, trave, fora), `EsporteReinicio` (saída de bola, tiro
+  de meta, escanteio, lateral), `EsporteCampo` (estado e destino de cada jogador), `EsporteResumo`.
+  `FashionSportsNucleo` liga tudo.
+- Tela: `components/flair/esporte/` (transmissão 3D, estádio, gols com rede, jogadores articulados, placar de TV,
+  narração, mão de cartas no teclado e no controle, resumo) e `lib/flair/esporte/` (leitura dos eventos, campo de cada
+  modalidade, caminho da bola, linha do tempo dos lances, formação de reserva, câmera, rede).
 
-**No código.** `FashionSportsNucleo`, `FashionSportsModalidade` (6 modalidades), `FashionSportsLances`; quadras em
-`scene/salas/fashion-sports-quadras.ts`.
+**Simulado no servidor × só na tela.** O servidor decide cada jogada: quem tem a bola, em que zona, se o passe, a
+condução, o drible, o desarme ou a finalização deram certo, os gols, o relógio, o placar e o resumo. A tela só desenha:
+o caminho da bola e dos jogadores entre o ponto de saída e o de chegada de cada lance, os gestos, a rede que balança e
+a trave que treme. No futebol e no basquete cada lance leva a lista `jogadores`, com o estado e o destino de cada um no
+fim do lance, decididos em `EsporteCampo`: BOLA, RECEBE, APOIO, CORRIDA e COBERTURA para quem ataca; PRESSAO, MARCA,
+COBERTURA e RETORNO para quem defende; GOLEIRO; POSICAO na saída de bola. A tela leva cada jogador de onde ele estava
+até esse destino e não inventa posição. No vôlei, no tênis, na corrida e no skate o servidor não manda essa lista, e a
+tela mantém a formação derivada de cada lance, como antes (`lib/flair/esporte/formacao.ts`).
+
+**Reinícios.** São lances a mais, sem carta e sem gastar jogada: a saída de bola do centro no começo de cada tempo e
+depois de cada ponto (nas modalidades com bola), com os dois times nas próprias metades; e, só no futebol, o tiro de
+meta (o goleiro repõe da área depois da bola para fora ou na trave), o escanteio (do canto, depois da espalmada) e o
+lateral (da linha, quando o passe perde por mais de 10 e sai). O reinício que cairia depois do fim de um tempo não
+aparece. A bola na trave existe só no futebol: a finalização que perde por mais de 12 e até 15.
 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
-| 6 modalidades escolhidas na aba Modalidade, dois tempos, até 3 lances por cor | feito | sim (reauditoria) |
-| Placar coerente com o jogo e legenda de empate | com o outro agente | — |
-| Quadra própria de cada modalidade (rede, raias), figurantes no número certo | com o outro agente | — |
-| Vestir os 5 jogadores um a um, coesão abaixo de 100%, goleiro | pendente | não |
-| Golfe, dança e revezamento como modalidades | pendente | não |
+| Toda ação do time da pessoa por carta; a cor decide a ação e o poder decide o duelo | feito | não (só testes) |
+| Sem carta (ou janela de 30 s vencida): o time perde a bola ou deixa o adversário seguir, e a tela avisa antes | feito | não (só testes) |
+| Deck de até 15, uniforme de 3 peças, mão de 5 reposta pela semente; 422 com carta fora da mão | feito; a tela só entrega com as 3 peças do uniforme vestidas e diz o que falta ("falta parte de baixo, calçado"); antes entregava só com a parte de cima (auditoria 3, 10.6 item 8) | não (só testes) |
+| Relógio mm:ss, dois tempos de 8 jogadas, intervalo, saída de bola de cada tempo | feito | não |
+| Atributo físico (OVR e material firme) e cansaço pela resistência no segundo tempo | feito | não |
+| Mesma semente e mesmas cartas dão a mesma partida; a prévia não gasta o sorteio | feito (testes do servidor) | — |
+| Placar final, vitória/empate/derrota e resumo (posse, finalizações, defesas, desarmes, passes) saem dos lances | feito | não |
+| Câmera de transmissão (alto da lateral, segue a bola), corte para perto no chute, na defesa e no desarme, replay de quem jogou a carta | feito; no replay, quem ficaria entre a lente e o jogador da carta é escondido; em tela em pé a câmera recua para caber a mesma largura de campo | sim, em quadros parados (tela real do jogo em servidor local, com a API simulada no navegador, sem banco) |
+| Reduzir movimento: plano geral parado, campo no fim de cada lance | feito | sim (quadro parado) |
+| Placar de TV com os times, o placar, o relógio e o tempo; narração de cada lance em pt-BR, en e es | feito | não (só testes da tela) |
+| Mão de cartas com a ação e o poder; teclado (setas, Enter, Backspace) e toque | feito | sim: a mão aparece inteira em 1440×900 e as cinco cartas cabem lado a lado em 390×844 (antes desta correção a mão aparecia cortada, com 4 px de altura) |
+| Controle (gamepad) escolhendo a carta: direcional escolhe, A ou Start jogam, B segue sem carta | feito (`use-mao-controle`) | não (só testes com um controle simulado; nenhum controle de verdade foi ligado) |
+| Tela da partida em 390×844 e em 1440×900 | conferida: sem rolagem lateral, placar, narração, mão e botão dentro do quadro; no celular a régua de vagas sai durante a partida e a linha dos comandos do teclado não aparece | sim |
+| Estádio: listras de corte, marcações do futebol de 5, bandeirinhas, bancos, túnel, telão, refletores, arquibancada em três lados com torcida | feito (primitivas) | sim (quadro parado) |
+| Gols com rede de profundidade que estufa e balança quando a bola entra; quadro estufado parado com reduzir movimento | feito | a rede e a bola dentro dela sim; o balanço só nos testes |
+| Trave que treme no chute na trave | feito: o servidor tem os lances CHUTE_NA_TRAVE e RIVAL_NA_TRAVE (poste ou travessão); a bola sobe até onde bate, volta e cai; a armação do gol treme 0,9 s e para; com reduzir movimento não treme | não (só testes; a partida usada na conferência da tela não teve bola na trave) |
+| Os 10 jogadores e a bola se movem pelos lances: passe, condução, drible, chute, goleiro mergulhando, comemoração | feito | sim, em quadros parados |
+| Estado e destino de cada jogador sem a bola decididos pelo servidor (apoio, corrida, marcação, pressão, cobertura, retorno) | feito no futebol e no basquete; a planta de cima (sem WebGL ou com reduzir movimento) diz o estado de cada jogador em texto | sim, em quadros parados (escanteio com o time na área; saída de bola com cada time na sua metade) |
+| Ninguém fica em cima de ninguém, todos dentro do campo, o goleiro não sai da meta | feito (testes do servidor em 30 partidas) | na área, vistos de longe, os jogadores ficam próximos uns dos outros |
+| O time da pessoa veste as cores das peças do uniforme | feito (cor da família de cada peça) | sim |
+| Torcida e jogadores como avatares humanos de verdade (pedido da dona sobre os NPCs) | feito: jogadores com o corpo humano do avatar (elenco da semente, uniforme, goleiro de manga longa, locomoção, três níveis de detalhe); torcida em humanos leves instanciados que acenam. A figura articulada antiga só aparece enquanto o corpo do jogador monta. Falta um corpo mais leve para o nível LONGE | sim (fotos da lateral, de trás do gol e da transmissão em 390×844, em uma página de laboratório com a cena da transmissão; não numa partida de verdade com servidor) |
+| Momentos-chave da partida (critério da dona: apito inicial e final, comemoração do gol) | feito: vinheta de TV no alto do campo no apito inicial, no intervalo (saída do 2º tempo), em cada ponto ("Gol do seu time!", "Cesta do adversário", "Fim do 1º set", "Largada!", "Manobra acertada!") e no apito final com o desfecho, nas palavras de cada modalidade (`lib/flair/esporte/momentos.ts`); no gol, quem marcou comemora, os colegas correm até ele e comemoram juntos, o goleiro fica na meta e o outro time baixa a cabeça; a rede estufa e o replay mostra a peça da carta (já existiam) | não (só testes) |
+| Telão com o placar escrito | pendente | — |
+| Saída de bola do centro depois de cada gol; escanteio, lateral e tiro de meta como reinício visível, do lugar certo | feito | saída de bola depois do gol e escanteio: sim; tiro de meta e lateral: não (só testes) |
+| Outras modalidades: câmera de transmissão, placar, relógio, jogadores e bola em movimento | feito (mesmo motor; campo, pontas e narração próprios) | não |
+| Textos próprios de cada modalidade (auditoria 3: basquete e vôlei usavam "meio-campo", "drible", "goleiro") | feito: situação de cada zona, narração de cada tipo de lance, nome do tempo ("2º set", "1ª bateria") e linhas do resumo ("Arremessos", "Bloqueios") em pt-BR, en e es; sem a frase da modalidade vale a do futebol | não (só testes) |
+| Placar de cada modalidade | feito: o placar diz a unidade (gols, pontos, sets, chegadas, nota); no vôlei e no tênis os pontos do set da vez aparecem ao lado ("Set 1: 3 × 2"), porque o placar em sets só muda no fim do set | não (só testes) |
+| Câmera e bola de cada modalidade (auditoria 3: câmera colada e bola branca gigante no basquete e no vôlei) | feito: em quadra pequena (basquete, vôlei, tênis) a transmissão mostra a quadra inteira e o lance não cola no jogador; a bola tem o tamanho e a cor da modalidade (laranja no basquete, amarela no vôlei, verde-limão no tênis) | não |
+| Outras modalidades no nível do futebol (arena própria, gestos do esporte: arremesso, cortada, saque, largada) | pendente | — |
+| Fluidez do 3D | não medida (sem placa de vídeo) | — |
+
+**Nível de cada modalidade.**
+
+| Modalidade | Jogada por cartas, relógio, placar | Câmera de transmissão e movimento | Arena |
+| --- | --- | --- | --- |
+| Futebol de 5 | feito | feito | estádio |
+| Basquete 3×3 | feito (3 pontos de fora do garrafão, 2 de dentro; antes 2 e 1) | feito | quadra com cestas e uma arquibancada |
+| Vôlei de praia | feito (sets por tempo) | feito, cada dupla na sua metade | quadra com rede e uma arquibancada |
+| Tênis | feito (sets por tempo) | feito | quadra com rede e uma arquibancada |
+| Corrida e revezamento | feito (chegadas) | feito, sem bola | pista com raias e linha de chegada |
+| Skate | feito (nota a partir de 50) | feito, sem bola | pista com rampa |
 
 ## 15 · Batalha de Looks
 
@@ -435,12 +757,13 @@ Cena: `scene/salas/batalha-looks.ts` (passarela em Y, adversário, plateia, pain
 
 | Item | Estado | Visto na tela |
 | --- | --- | --- |
-| Rodada "Batalha": 3 rodadas com objetivo sorteado, soma contra o adversário, desempate pela plateia | pendente | não |
-| Rodadas de treino: Look Monocromático em azul (a da base), Dress Code do Convite, Vista o Clima | pendente | não |
-| Um cartão apresenta o objetivo de cada rodada | pendente | não |
+| Rodada "Batalha": 3 rodadas com objetivo sorteado, soma contra o adversário, desempate pela plateia | feito | não |
+| Rodadas de treino: Look Monocromático em azul (a da base), Dress Code do Convite, Vista o Clima | feito | não |
+| Um cartão apresenta o objetivo de cada rodada | feito | não |
 | O painel da cena mostra a soma dos dois | pendente | não |
-| Efeito de cor na cena 3D | pendente | não |
-| Resultado com a nota de cada rodada, sua e do adversário | pendente | não |
+| Efeito de cor na cena 3D | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
+| Resultado com a nota de cada rodada, sua e do adversário | feito | não |
+| "Cartas que pontuaram" com os pontos de cada carta nas rodadas em etapas (antes: "vale conforme o pedido da vez", auditoria 3); o resultado explica que cada etapa entra com 1/n dos pontos (o "8,33" de uma etapa de 25 em 3) | feito para todas as rodadas em etapas (Batalha, Boutique, Volta ao mundo, Labirinto): a regra de uma vaga cumprida vale para a carta dessa vaga, com o peso da etapa | não (só testes) |
 | Duelo 1×1, sala de 4 e modos com amigos | pendente (online) | não |
 
 ## FLAIR Card Building Challenge

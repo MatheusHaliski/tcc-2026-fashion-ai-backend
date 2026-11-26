@@ -1,5 +1,6 @@
 """Fixtures for inventory contracts. No application code, network or database is loaded."""
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -86,8 +87,10 @@ class Example {
  record Reply(String id) {}
 }''')
             (folder/'files.txt').write_text(str(folder/'Example.java'))
-            subprocess.run([JAVA_DEFAULT+'/javac','-cp',JAR_DEFAULT,'-d',tmp,'scripts/refactoring/SourceAst.java'],check=True,capture_output=True)
-            result=subprocess.run([JAVA_DEFAULT+'/java','-cp',tmp+':'+JAR_DEFAULT,'SourceAst',str(folder/'files.txt')],check=True,text=True,capture_output=True)
+            java_bin = Path(os.getenv('FAI_AUDIT_JAVA_BIN', JAVA_DEFAULT))
+            jar = os.getenv('FAI_AUDIT_JAVAPARSER_JAR', JAR_DEFAULT)
+            subprocess.run([str(java_bin/'javac'),'-cp',jar,'-d',tmp,'scripts/refactoring/SourceAst.java'],check=True,capture_output=True)
+            result=subprocess.run([str(java_bin/'java'),'-cp',tmp+os.pathsep+jar,'SourceAst',str(folder/'files.txt')],check=True,text=True,capture_output=True)
             row=json.loads(result.stdout)
             self.assertEqual(row['status'],'parsed')
             self.assertEqual(len(java_endpoints(row)),2)

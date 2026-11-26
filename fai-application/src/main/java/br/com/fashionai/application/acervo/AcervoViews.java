@@ -33,11 +33,11 @@ final class AcervoViews {
         out.put("color", w.getColor());
         out.put("size", w.getSizeLabel());
         out.put("brand", w.getBrandName());
-        out.put("price", w.getPrice());
+        out.put("price", AcervoFinanceiro.preco(w));
         out.put("currency", w.getPriceCurrency());
         out.put("condition", w.getCondition() == null ? null : w.getCondition().name());
         out.put("conservacao", w.getEstadoConservacao() == null ? null : w.getEstadoConservacao().getNome());
-        out.put("thumbnailUrl", w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl());
+        out.put("thumbnailUrl", imagem(w));
         out.put("favorite", w.isFavorite());
         out.put("wearCount", w.getWearCount());
         out.put("lastWornDate", w.getLastWornDate());
@@ -48,11 +48,50 @@ final class AcervoViews {
         return out;
     }
 
+    static String imagem(WardrobeItem w) {
+        return w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl();
+    }
+
+    /**
+     * Imagem e o que a tela precisa para pintar a ilustração de uma peça sem foto na cor do cadastro (a miniatura da
+     * linha de arrumação e dos looks vinculados não fica azul para uma camiseta preta).
+     */
+    static void imagemComCor(Map<String, Object> linha, WardrobeItem w) {
+        linha.put("thumbnailUrl", imagem(w));
+        linha.put("category", w.getCategory());
+        linha.put("subcategory", w.getSubcategory());
+        linha.put("color", w.getColor());
+    }
+
     static Map<String, Object> medidas(AcervoPeca linha) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("larguraCm", linha == null ? null : linha.getLarguraCm());
         out.put("comprimentoCm", linha == null ? null : linha.getComprimentoCm());
         out.put("nota", linha == null ? null : linha.getMedidasNota());
+        return out;
+    }
+
+    /**
+     * Onde a peça está guardada, para outras telas (detalhe da peça). {@code compartimentoId} é o endereço estável:
+     * não muda quando o compartimento, o móvel ou o ambiente são renomeados; os nomes vêm sempre do cadastro atual.
+     * Peça sem lugar devolve {@code guardada = false} e os demais campos nulos.
+     */
+    static Map<String, Object> lugar(UUID pieceId, AcervoMapa mapa) {
+        AcervoCompartimento c = mapa.compartimento(mapa.lugar(pieceId));
+        AcervoMovel m = mapa.movelDe(c);
+        AcervoAmbiente a = mapa.ambienteDe(m);
+        boolean guardada = a != null;
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("pieceId", pieceId);
+        out.put("guardada", guardada);
+        out.put("compartimentoId", guardada ? c.getId() : null);
+        out.put("movelId", guardada ? m.getId() : null);
+        out.put("ambienteId", guardada ? a.getId() : null);
+        out.put("tipo", guardada ? c.getTipo() : null);
+        out.put("compartimento", guardada ? c.getNome() : null);
+        out.put("movel", guardada ? m.getNome() : null);
+        out.put("ambiente", guardada ? a.getNome() : null);
+        out.put("caminho", guardada ? mapa.caminho(c.getId()) : null);
         return out;
     }
 
@@ -92,6 +131,7 @@ final class AcervoViews {
         out.put("id", a.getId());
         out.put("nome", a.getNome());
         out.put("ordem", a.getOrdem());
+        out.put("iluminacao", AcervoLightingWriter.view(a));       // exercício 07: tipo de luz e kelvin (nulos no legado)
         out.put("moveis", moveis);
         out.put("pecas", pecas);
         return out;

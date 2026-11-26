@@ -122,12 +122,17 @@ class Flair3dNucleoServiceTest {
         UUID id = (UUID) service.abrir(ana, "PASSARELA", deck(sup, inf, cal)).get("id");
 
         assertThat(status(() -> service.entregar(bia, id, vestir(sup)))).isEqualTo(403);
-        Resultado r = service.entregar(ana, id, vestir(sup, inf, cal));
-        assertThat(r.pontos()).isEqualTo(71);
-        assertThat(r.estrelas()).isEqualTo(1);
+        assertThat(service.entregar(ana, id, vestir(sup, inf, cal)).status()).isEqualTo("EM_ACAO");
+        // a jogada de cena: seguir sem carta passa à execução no percurso; os três botões perfeitos fecham a partida
+        Resultado execucao = service.acionar(ana, id, Acionamento.NENHUM);
+        assertThat(execucao.status()).isEqualTo("EM_ACAO");
+        Resultado r = service.acionar(ana, id, Flair3dFixtures.perfeita(execucao));
+        // 71 do look + 15 da execução perfeita + 1 dos atributos (a peça na vaga SUP soma carisma, que a Passarela pede)
+        assertThat(r.pontos()).isEqualTo(87);
+        assertThat(r.estrelas()).isEqualTo(Resultado.estrelas(87));
         Flair3dMatch salva = kit.dep(Flair3dMatchRepository.class).findById(id).orElseThrow();
         assertThat(salva.getStatus()).isEqualTo("ENTREGUE");
-        assertThat(salva.getPontos()).isEqualTo(71);
+        assertThat(salva.getPontos()).isEqualTo(87);
         assertThat(salva.getResultadoJson()).contains("TODAS_BR");
         assertThat(salva.getEntregaJson()).contains(sup.getId().toString());
         ApiException segunda = (ApiException) org.assertj.core.api.Assertions.catchThrowable(() -> service.entregar(ana, id, vestir(sup)));
@@ -163,7 +168,10 @@ class Flair3dNucleoServiceTest {
         assertThat(partida.get("deck")).isNull();
         assertThat(partida.get("participantes")).isEqualTo(List.of(new Avatares.Participante("MODELO_CASA", "PROTAGONISTA", "A", null)));
         Entrega e = Flair3dFixtures.comMaquiagem(vestir(sup), "LABIOS", "CORAL", "CETIM");
-        assertThat(service.entregar(ana, (UUID) partida.get("id"), e).pontos()).isEqualTo(100);
+        // o look avaliado abre a sessão de fotos (EM_ACAO); seguir sem jogar carta fecha com a nota do look
+        assertThat(service.entregar(ana, (UUID) partida.get("id"), e).status()).isEqualTo("EM_ACAO");
+        Resultado execucao = service.acionar(ana, (UUID) partida.get("id"), Acionamento.NENHUM);
+        assertThat(service.acionar(ana, (UUID) partida.get("id"), Flair3dFixtures.perfeita(execucao)).pontos()).isEqualTo(100);
     }
 
     @Test
@@ -172,11 +180,25 @@ class Flair3dNucleoServiceTest {
         FlairCardInstance gucci = carta(ana, "INF", "brand:Gucci");
         Map<String, Object> out = service.efeitos(ana, "PASSARELA",
                 new Flair3dNucleoService.PedidoEfeitos(List.of(farm.getId(), gucci.getId())));
-        assertThat(out.get("efeitos")).isEqualTo(List.of(
+        assertThat(semPerfil(out.get("efeitos"))).isEqualTo(List.of(
                 Map.of("cardId", farm.getId(), "itens", List.of(new Efeito("MARCA_BR", 10))),
                 Map.of("cardId", gucci.getId(), "itens", List.of(Efeito.motivo("MARCA_NAO_BR")))));
+        // cada carta leva o perfil da regra peça-recurso: o top na vaga SUP rende foco quando usado
+        @SuppressWarnings("unchecked")
+        Map<String, Object> perfil = (Map<String, Object>) ((List<Map<String, Object>>) out.get("efeitos")).get(0).get("perfil");
+        assertThat(perfil).containsEntry("vaga", "SUP").containsEntry("recurso", "FOCO").containsKeys("atributos", "usos", "acoes", "dominante");
         FlairCardInstance daBia = carta(bia, "SUP");
         assertThat(status(() -> service.efeitos(ana, "PASSARELA", new Flair3dNucleoService.PedidoEfeitos(List.of(daBia.getId())))))
                 .isEqualTo(422);
+    }
+
+    /** Os efeitos sem o perfil da peça (a regra peça-recurso tem teste próprio: Flair3dRecursoTabelaTest). */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> semPerfil(Object efeitos) {
+        return ((List<Map<String, Object>>) efeitos).stream().map(m -> {
+            Map<String, Object> copia = new java.util.LinkedHashMap<>(m);
+            copia.remove("perfil");
+            return copia;
+        }).toList();
     }
 }

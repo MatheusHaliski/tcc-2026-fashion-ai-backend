@@ -78,11 +78,19 @@ describe("provador veste pelo .glb do produto", () => {
     expect(p.human.body.geometry.getIndex()!.count).toBe(all);
   });
 
-  it("sem .glb, calçado ou recusa do aceite: false (o molde veste)", () => {
+  it("calçado com .glb: preso ao osso de cada pé (meshy/rigid.ts), sem passar pelo encaixe de roupa", () => {
+    const p = parts(); const P = bodyParam(p.asset, p.composed); const meshes: THREE.SkinnedMesh[] = [];
+    expect(wearGlb(p, item("casual_sneakers", "shoes_piece"), shirt(), [], lazyFrame(p, P), meshes)).toBe(true);
+    const shoes = meshes.filter((m) => m.userData.buildPath === "MESHY_GLB");
+    expect(shoes.map((m) => m.name)).toEqual([expect.stringMatching(/-esq$/), expect.stringMatching(/-dir$/)]);
+    for (const m of shoes) expect(m.userData.soleLift).toBeGreaterThan(0);
+  });
+
+  it("sem .glb ou recusa do aceite: false (o molde veste)", () => {
     const p = parts(); const P = bodyParam(p.asset, p.composed); const meshes: THREE.SkinnedMesh[] = [];
     const frame = lazyFrame(p, P);
     expect(wearGlb(p, item("shirt"), null, [], frame, meshes)).toBe(false);
-    expect(wearGlb(p, item("casual_sneakers", "shoes_piece"), shirt(), [], frame, meshes)).toBe(false);
+    expect(wearGlb(p, item("casual_sneakers", "shoes_piece"), null, [], frame, meshes)).toBe(false);
     const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
     const far = LIMITS.far; LIMITS.far = 0.001;
     try { expect(wearGlb(p, item("tank_top"), shirt(), [], frame, meshes)).toBe(false); } finally { LIMITS.far = far; info.mockRestore(); }

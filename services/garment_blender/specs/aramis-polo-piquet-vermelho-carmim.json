@@ -1,0 +1,20 @@
+{
+ "produto": "Polo Piquet Manga Curta Algodão Vermelho Carmim",
+ "marca": "Aramis",
+ "url_oficial": "https://www.aramis.com.br/polo-piquet-manga-curta-algodao-vermelho-carmim-po-10-0027-001/p",
+ "subcategoria": "polo_shirt",
+ "sexo": "MASCULINO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "malha_algodao",
+  "cor": "#9b1b2a",
+  "gramatura": 220
+ },
+ "gola": "polo",
+ "fechamento": "polo",
+ "botoes": 3,
+ "manga_curta": true,
+ "ribana": false,
+ "observacao": "piquet de manga curta, vista curta de 3 botões. Cor: a do nome (vermelho carmim).",
+ "tamanho": "M"
+}

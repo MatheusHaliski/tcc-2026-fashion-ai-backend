@@ -50,8 +50,9 @@ class CorsPreflightTest {
 
     @Test
     void preflightDaCompraAceitaAChaveDeCompra() throws Exception {
-        // sem isto o navegador bloqueia a compra: o diálogo envia Idempotency-Key para não cobrar duas vezes
-        mockMvc.perform(options("/api/points/shop/SKU-1/purchase")
+        // sem isto o navegador bloqueia o resgate: a loja física envia Idempotency-Key para não cobrar duas vezes
+        // (a loja do quarto, que também enviava, saiu com o Meu Quarto em 15/11/2026)
+        mockMvc.perform(options("/api/physical-store/listings/L-1/redeem")
                         .header("Origin", "https://fai-network.com")
                         .header("Access-Control-Request-Method", "POST")
                         .header("Access-Control-Request-Headers", "content-type,idempotency-key"))

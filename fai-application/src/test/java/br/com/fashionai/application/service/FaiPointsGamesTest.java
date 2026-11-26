@@ -49,7 +49,7 @@ class FaiPointsGamesTest {
             }
             throw new UnsupportedOperationException(name);
         });
-        service = new FaiPointsService(ledger, ruleRepo, null, null, null, null, null);
+        service = new FaiPointsService(ledger, ruleRepo, null);
     }
 
     private void rule(String code, int points, Integer dailyCap) {

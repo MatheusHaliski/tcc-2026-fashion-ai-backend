@@ -49,6 +49,14 @@ public class AcervoConsultaService {
         this.clock = clock;
     }
 
+    /**
+     * Onde uma peça da pessoa está guardada (endereço estável + nomes atuais), para o detalhe da peça. Peça de outra
+     * pessoa responde 404, como todo o ACERVO.
+     */
+    public Map<String, Object> lugar(CurrentUser user, UUID pieceId) {
+        return AcervoViews.lugar(acesso.peca(user, pieceId).getId(), acesso.mapa(user));
+    }
+
     /** Valor do acervo, por grupo, subtotal das peças selecionadas, lista de desejos (estimada) e custo por uso. */
     public Map<String, Object> financeiro(CurrentUser user, List<UUID> selecao) {
         List<WardrobeItem> pecas = acesso.pecas(user);
@@ -164,7 +172,7 @@ public class AcervoConsultaService {
                 Map<String, Object> linha = new LinkedHashMap<>();
                 linha.put("pieceId", w.getId());
                 linha.put("name", w.getName());
-                linha.put("thumbnailUrl", w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl());
+                AcervoViews.imagemComCor(linha, w);
                 linha.put("minha", minha);
                 linha.put("compartimentoId", lugar);
                 linha.put("caminho", mapa.caminho(lugar));

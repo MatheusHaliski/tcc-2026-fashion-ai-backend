@@ -1,0 +1,101 @@
+/* FLAIR 3D, Fashion Sports: a tela de carga entre o vestiário e o estádio (no lugar da tela vazia). Cobre o palco até
+   o primeiro quadro da transmissão; o placar de TV e o botão de voltar ficam por cima. */
+.fsp-carga {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 16px 16px;
+  background: radial-gradient(circle at 50% 35%, #1d2a3a 0%, #11141a 70%);
+  color: #f4f7f2;
+  text-align: center;
+}
+
+.fsp-carga-arte {
+  width: min(320px, 70%);
+  max-height: 40%;
+}
+
+.fsp-carga-bola {
+  animation: fsp-carga-bola 1.4s ease-in-out infinite alternate;
+}
+
+.fsp-carga-titulo {
+  margin: 0;
+  font-size: var(--text-h3, 1.25rem);
+  font-weight: 800;
+}
+
+.fsp-carga-jogo,
+.fsp-carga-agora {
+  margin: 0;
+  color: #c9d2dc;
+  font-size: var(--text-caption);
+}
+
+.fsp-carga-passos {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.fsp-carga-passos li {
+  display: flex;
+  gap: 8px;
+  color: #8a96a3;
+}
+
+.fsp-carga-passos li.is-feito {
+  color: #8fd6a4;
+}
+
+.fsp-carga-passos li.is-agora {
+  color: #fff;
+  font-weight: 700;
+}
+
+.fsp-carga-barra {
+  width: min(260px, 60%);
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #ffffff26;
+}
+
+.fsp-carga-barra i {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: 2px;
+  background: #e8c93c;
+  animation: fsp-carga-barra 1.2s linear infinite;
+}
+
+@keyframes fsp-carga-barra {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+
+@keyframes fsp-carga-bola {
+  from { transform: translateX(-26px); }
+  to { transform: translateX(26px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fsp-carga-bola,
+  .fsp-carga-barra i {
+    animation: none;
+  }
+
+  .fsp-carga-barra i {
+    width: 100%;
+    opacity: 0.6;
+  }
+}

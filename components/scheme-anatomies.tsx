@@ -1,7 +1,7 @@
 "use client";
 import type { SchemeView } from "@/lib/api/types";
 import { PieceImage } from "@/components/piece-image";
-import { mediaUrl, thumbUrl } from "@/lib/api/client";
+import { lookCover, lookItemImage, lookPiecePrice } from "@/lib/looks/look-media";
 import { CATEGORY_LABEL, label } from "@/lib/api/taxonomy";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { MotionFall, SeasonDecor, Spotlights } from "@/components/card-art";
@@ -114,12 +114,12 @@ export interface AnatomyPiece {
   slot: string; category?: string; size?: string;
 }
 export const toAnatomyPieces = (s: SchemeView): AnatomyPiece[] => (s.items ?? []).map((it) => ({
-  id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: thumbUrl(it.piece?.thumbnailUrl ?? it.piece?.imageUrl ?? (it.imageUrl as string), 320), brand: it.piece?.brandName, price: it.piece?.price,
+  id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: lookItemImage(it, 320), brand: it.piece?.brandName, price: lookPiecePrice(it.piece?.price),
   colorHex: it.piece?.colorHex, color: it.piece?.color, wearCount: it.piece?.wearCount ?? 0, likes: it.piece?.likes ?? it.piece?.counters?.likes ?? 0,
   slot: it.slot, category: it.piece?.category, size: it.piece?.size, material: it.piece?.material,
 }));
 /** Capa do look: a composição/foto do look ou, sem ela, a foto da primeira peça. */
-export const coverOf = (s: SchemeView) => mediaUrl(s.coverImageUrl) ?? thumbUrl(s.items?.[0]?.piece?.imageUrl ?? (s.items?.[0]?.imageUrl as string), 640);
+export const coverOf = (s: SchemeView) => lookCover(s).src;
 
 /**
  * Área estimada de cada peça no look (Espectro, âncora do Raio-X). O editor ainda não grava posição e escala por peça,
@@ -331,7 +331,6 @@ function Spectrum({ pieces }: { pieces: AnatomyPiece[] }) {
           <b className="spectrum-pct">≈ {g.share} %</b>
         </div>))}
       <p className="spectrum-note">{t("schemeAnatomies.harmonia", { harmony })}</p>
-      <How summary={t("anatomy.spectrum.how")}>{t("anatomy.spectrum.howText")}</How>
     </div>
   );
 }

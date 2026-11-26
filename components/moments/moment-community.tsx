@@ -5,7 +5,8 @@ import { useApi } from "@/lib/hooks/use-api";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { label as taxLabel } from "@/lib/api/taxonomy";
-import type { Leaderboard, MemoryLook, MomentDetail, MomentMemory, Submission, Trending, VoteDimension } from "@/lib/moments/types";
+import type { Interpretation, Leaderboard, MemoryLook, MomentDetail, MomentMemory, Submission, Trending, VoteDimension } from "@/lib/moments/types";
+import { nomeDaLeitura } from "@/lib/moments/leitura";
 import { VOTE_DIMENSIONS } from "@/lib/moments/types";
 import { Avatar, Badge, Card, EmptyState, ErrorState, Skeleton, cn, useToast } from "@/components/ui";
 import { SchemeCard } from "@/components/scheme-card";
@@ -70,7 +71,7 @@ export function MomentLeaderboard({ moment }: { moment: MomentDetail }) {
 }
 
 /** "Em alta neste Momento" (§36): estilos, cores, interpretações e looks com maior Hype contextual. */
-export function MomentTrending({ trending }: { trending?: Trending | null }) {
+export function MomentTrending({ trending, interpretations: interps }: { trending?: Trending | null; interpretations?: Interpretation[] }) {
   const { t } = useI18n();
   if (!trending || trending.basis === 0) return null;
   return (
@@ -79,7 +80,7 @@ export function MomentTrending({ trending }: { trending?: Trending | null }) {
       <div className="grid gap-2 sm:grid-cols-3">
         <TrendList title={t("moments.trending.styles")} items={trending.styles.map((x) => ({ k: taxLabel(x.key), n: x.count }))} />
         <TrendList title={t("moments.trending.colors")} items={trending.colors.map((x) => ({ k: taxLabel(x.key), n: x.count }))} />
-        <TrendList title={t("moments.trending.interpretations")} items={trending.interpretations.map((x) => ({ k: x.key, n: x.count }))} />
+        <TrendList title={t("moments.trending.interpretations")} items={trending.interpretations.map((x) => ({ k: nomeDaLeitura(x.key, interps), n: x.count }))} />
       </div>
       {trending.looks.length > 0 && <ul className="moment-trend-looks mt-2">{trending.looks.slice(0, 6).map((l) => <li key={l.schemeId}><Link href={`/schemes/${l.schemeId}`} className="moment-trend-look"><span className="moment-look-thumb">{l.coverImageUrl ? <img src={mediaUrl(l.coverImageUrl)} alt="" /> : null}</span><span className="type-caption truncate">{l.title}</span><span className="type-caption tabular text-muted">{l.contextualHype != null ? t("moments.context.hype_short", { n: l.contextualHype }) : ""}</span></Link></li>)}</ul>}
       <p className="type-caption text-muted mt-1">{t("moments.trending.basis", { n: trending.basis })}</p>
@@ -110,7 +111,7 @@ export function MomentMemoryView({ memory, moment }: { memory?: MomentMemory | n
       <ul className="moment-memory-looks">
         {highlights.filter(([, l]) => !!l).map(([k, l]) => <li key={k}><Link href={`/schemes/${l!.schemeId}`} className="moment-trend-look"><span className="moment-look-thumb">{l!.coverImageUrl ? <img src={mediaUrl(l!.coverImageUrl)} alt="" /> : null}</span><span className="min-w-0"><span className="type-label block text-muted">{t(`moments.memory.${k}`)}</span><span className="type-body-sm truncate block">{l!.title ?? t("moments.community.look")}</span>{l!.user && <span className="type-caption text-muted">@{l!.user.username}</span>}</span></Link></li>)}
       </ul>
-      {memory.interpretations && memory.interpretations.length > 0 && <p className="type-caption text-muted mt-2">{t("moments.memory.readings", { list: memory.interpretations.map((i) => `${i.key} (${i.count})`).join(", ") })}</p>}
+      {memory.interpretations && memory.interpretations.length > 0 && <p className="type-caption text-muted mt-2">{t("moments.memory.readings", { list: memory.interpretations.map((i) => `${nomeDaLeitura(i.key, moment.interpretations)} (${i.count})`).join(", ") })}</p>}
     </Card>
   );
 }

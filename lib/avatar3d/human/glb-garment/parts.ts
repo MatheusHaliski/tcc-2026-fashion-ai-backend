@@ -96,6 +96,31 @@ function bodyLimit(f: BodyFrame, side: number, clearance: number): Limit {
   };
 }
 
+/**
+ * Linha da manga da peça de braços abertos (pose T): olhando de frente, a coluna do tronco desce até a barra e a da
+ * manga acaba logo abaixo do ombro. A manga é o trecho de fora em que toda coluna tem o ponto mais baixo na metade de
+ * cima da peça; a linha é vertical e só vale na metade de cima. Null se a manga não está aberta
+ * (o punho da manga caída chega perto da barra) — aí valem o vão e a largura do corpo.
+ */
+function spreadLimit(pos: Float32Array, side: number, inner: number): Limit | null {
+  const cell = 0.01, low = new Map<number, number>(); let top = -Infinity, hem = Infinity, reach = 0;
+  for (let i = 0; i < pos.length; i += 3) {
+    const x = pos[i] * side, y = pos[i + 1]; top = Math.max(top, y);
+    if (x < 0) continue;
+    const c = Math.floor(x / cell); low.set(c, Math.min(low.get(c) ?? Infinity, y)); reach = Math.max(reach, c);
+    if (x < inner) hem = Math.min(hem, y);
+  }
+  if (!(hem < top)) return null;
+  const line = hem + 0.5 * (top - hem), first = Math.ceil(inner / cell);
+  // de fora para dentro: a manga é o trecho em que TODA coluna acaba na metade de cima (a barra em sino, mais larga que
+  // a axila, desce abaixo da linha e interrompe o trecho — ela é tronco)
+  let c = reach + 1;
+  while (c - 1 >= first && (low.get(c - 1) ?? Infinity) > line) c--;
+  // manga curta demais para girar (alça, cava), ou nenhuma coluna de tronco: não é manga aberta
+  if (c <= first || (reach - c) * cell <= 0.12) return null;
+  return (y) => (y > line ? c * cell : Infinity);
+}
+
 export function labelParts(pos: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, index?: ArrayLike<number>): Int8Array {
   const part = new Int8Array(pos.length / 3);
   const crotch = Math.min(f.joint("LeftUpLeg").y, f.joint("RightUpLeg").y) - 0.06;
@@ -103,7 +128,7 @@ export function labelParts(pos: Float32Array, f: BodyFrame, cls: GarmentClass, c
   if (cls !== "lower") for (const side of [1, -1]) {
     const shoulder = f.joint(side > 0 ? "LeftArm" : "RightArm");
     const inner = 0.5 * torsoHalfOf(f)(shoulder.y - 0.12);
-    limits.set(side, (index && gapLimit(pos, index, side, shoulder.y, inner)) || bodyLimit(f, side, clearance));
+    limits.set(side, spreadLimit(pos, side, inner) || (index && gapLimit(pos, index, side, shoulder.y, inner)) || bodyLimit(f, side, clearance));
   }
   for (let v = 0; v < part.length; v++) {
     const x = pos[v * 3], y = pos[v * 3 + 1], side = x > 0 ? 1 : -1;
@@ -111,5 +136,31 @@ export function labelParts(pos: Float32Array, f: BodyFrame, cls: GarmentClass, c
     if (limit && Math.abs(x) > limit(y)) part[v] = side;
     else if (cls !== "upper" && y < crotch) part[v] = x > 0 ? 2 : -2;
   }
+  if (cls !== "lower" && index) growCuffs(pos, part, index, f, clearance);
   return part;
+}
+
+/**
+ * Punho abaixo da linha do punho do corpo: na peça da Meshy com a manga aberta ou comprida, o punho fica abaixo da
+ * mão e a regra por altura o chama de tronco — ele não gira com a manga e vira uma faixa larga na barra. Aqui a
+ * manga cresce pela malha para o que está ligado a ela, abaixo do punho e fora da largura do tronco do corpo.
+ */
+function growCuffs(pos: Float32Array, part: Int8Array, index: ArrayLike<number>, f: BodyFrame, clearance: number) {
+  const wrist = Math.min(f.joint("LeftHand").y, f.joint("RightHand").y) - 0.06, torsoHalf = torsoHalfOf(f);
+  const free = (v: number) => part[v] === 0 && pos[v * 3 + 1] <= wrist + 0.02 && Math.abs(pos[v * 3]) > torsoHalf(pos[v * 3 + 1]) + clearance + 0.012;
+  // a costura de UV duplica o vértice (mesma posição, outro índice): os gêmeos crescem juntos
+  const twins = new Map<string, number[]>(), keyOf = (v: number) => `${Math.round(pos[v * 3] * 1e4)},${Math.round(pos[v * 3 + 1] * 1e4)},${Math.round(pos[v * 3 + 2] * 1e4)}`;
+  for (let v = 0; v < part.length; v++) if (free(v)) (twins.get(keyOf(v)) ?? twins.set(keyOf(v), []).get(keyOf(v))!).push(v);
+  for (let changed = true, pass = 0; changed && pass < 200; pass++) {
+    changed = false;
+    for (let t = 0; t < index.length; t += 3) {
+      const tri = [index[t], index[t + 1], index[t + 2]], label = tri.map((v) => part[v]).find((k) => Math.abs(k) === 1);
+      if (!label) continue;
+      for (const v of tri) {
+        if (!free(v) || Math.sign(pos[v * 3]) !== label) continue;
+        for (const u of twins.get(keyOf(v)) ?? [v]) part[u] = label;
+        changed = true;
+      }
+    }
+  }
 }

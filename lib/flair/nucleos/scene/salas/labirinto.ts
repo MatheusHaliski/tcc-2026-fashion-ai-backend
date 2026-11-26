@@ -9,6 +9,7 @@ import { marcaNoPiso } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { noLugar } from "@/lib/flair/nucleos/scene/parts";
 import type { Movel, Sala } from "@/lib/flair/nucleos/scene/types";
 import type { V3 } from "@/lib/flair/nucleos/types";
+import { espelhoDeParede } from "@/lib/flair/nucleos/scene/moveis/cenarios";
 
 const LADO = 4.2;
 const PORTA = { largura: 1.0, altura: 2.3 };
@@ -57,6 +58,11 @@ export const SALA_LABIRINTO: Sala = {
     ...parede(90, false),
     ...parede(-90, false),
     ...parede(180, false),
+    // a segunda revisão dos cenários: espelhos de verdade nas paredes do corredor
+    espelhoDeParede({ pos: [-LADO + 0.04, 0, -1.6], giro: 90 }, "dourado", "espelho"),
+    espelhoDeParede({ pos: [-LADO + 0.04, 0, 1.6], giro: 90 }, "dourado", "espelho"),
+    espelhoDeParede({ pos: [LADO - 0.04, 0, -1.6], giro: -90 }, "dourado", "espelho"),
+    espelhoDeParede({ pos: [LADO - 0.04, 0, 1.6], giro: -90 }, "dourado", "espelho"),
   ],
   figurantes: [{ papel: "MANEQUIM", tipo: "manequim", pos: [-3.2, 0, -3.2], cor: "#ECE6DC", postura: "busto", giro: 40 }],
   luzes: {

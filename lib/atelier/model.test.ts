@@ -25,7 +25,7 @@ describe("recompensas do Atelier", () => {
 
   it("projeto de exemplo tem nome, recompensa e metas traduzidas", () => {
     expect(SAMPLE_PROJECT.name).toBe("Espelho Constelação FAI");
-    expect(SAMPLE_PROJECT.reward).toContain("espelho aparece no seu quarto");
+    expect(SAMPLE_PROJECT.reward).toContain("espelho reproduz as apresentações");   // o quarto saiu (15/11/2026)
     expect(SAMPLE_PROJECT.goals.map((g) => g.label)).toEqual(["Descubra três combinações cromáticas", "Reutilize uma peça em dois cenários", "Conclua um dueto"]);
   });
 

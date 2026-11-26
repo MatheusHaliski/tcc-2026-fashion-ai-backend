@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { Chip } from "@/components/ui";
 import { api, qs } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
@@ -12,8 +13,10 @@ export type SearchTab = typeof SEARCH_TABS[number];
  * Busca sem resultado na aba aberta: confere as outras abas com o mesmo termo e oferece o atalho para as que têm
  * resultado ("jaqueta" não é nome de look, mas é de peça). Sem isso a tela dizia só "Nada encontrado".
  */
-export function SearchElsewhere({ term, current, anonymous, labelOf, onOpen }: {
+export function SearchElsewhere({ term, current, anonymous, labelOf, onOpen, autoOpen = false }: {
   term: string; current: string; anonymous: boolean; labelOf: (tab: SearchTab) => string; onOpen: (tab: SearchTab) => void;
+  /** a pessoa não escolheu a aba: abre sozinho a primeira que tem resultado (busca "jaqueta" cai em Peças, não em Looks vazio) */
+  autoOpen?: boolean;
 }) {
   const { t } = useI18n();
   const others = SEARCH_TABS.filter((tab) => tab !== current);
@@ -24,6 +27,10 @@ export function SearchElsewhere({ term, current, anonymous, labelOf, onOpen }: {
       .catch(() => null)));
     return hits.filter((tab): tab is SearchTab => tab !== null);
   }, [term, current, anonymous], { enabled: !!term.trim() });
+  const first = found.data?.[0];
+  useEffect(() => {
+    if (autoOpen && first) onOpen(first);
+  }, [autoOpen, first]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!term.trim() || !found.data?.length) return null;
   return (
     <div className="mb-3 flex flex-wrap items-center justify-center gap-1.5" role="status" data-search-elsewhere>

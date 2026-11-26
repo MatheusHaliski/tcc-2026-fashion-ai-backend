@@ -146,7 +146,6 @@ Verificar as três opções; UUID inexistente; acesso sem sessão; isolamento en
 - **E2 a produzir:** Look salvo, página recarregada, TipoLook no detalhe.
 
 Os testes e as screenshots acima são o roteiro de implementação/aceite; não foram executados nem fabricados nesta resolução documental. Nenhum SQL deste exercício foi aplicado ao banco.
-
 # Exercício 02 — Estado de conservação da peça
 
 **Situação na revisão `9f5512a77`:** FK, opções, service e formulário já implementados; reutilizar a estrutura existente.
@@ -363,6 +362,14 @@ curl --noproxy '*' -i http://127.0.0.1:8080/api/origens
 ```
 
 ## Diagnóstico: campo Origem bloqueado ou erro 401
+
+> **Atualização (16/11/2026) — a trava foi removida de forma geral.** Os campos de opções dos criadores de peça e de look
+> usam um componente só, `components/reference-select-field.tsx` (hook `lib/hooks/use-reference-options.ts`), que manda a
+> sessão de quem está criando. Um GET novo de opções (como `GET /api/origens`) carrega sem entrar em `PUBLIC_GET` e sem
+> mexer em `SecurityConfig`; os passos 1 e 2 abaixo deixam de ser necessários. Escreva o campo como
+> `<ReferenceSelectField id="origemId" path="/api/origens" messages="pieceReferences.origem" … />`. Rotas em
+> `/api/opcoes/**` também são públicas para leitura, por convenção. Receita completa:
+> [CRIADORES_ORIGEM_401](../correcoes/CRIADORES_ORIGEM_401.md).
 
 O campo em `components/piece-origem-field.tsx` só é habilitado quando `GET /api/origens` retorna com sucesso uma lista não vazia. Enquanto carrega, quando a requisição falha ou quando a lista está vazia, ele permanece desabilitado. A seleção usa o **ID da opção**, não o nome exibido.
 
@@ -1528,4 +1535,3 @@ Produto com SKU-A azul e SKU-B vermelho: SKU-A+vermelho não pode passar pelo ra
 - **E2 a produzir:** Peça criada e recarregada com a origem e a variante corretas.
 
 Os testes e as screenshots acima são o roteiro de implementação/aceite; não foram executados nem fabricados nesta resolução documental. Nenhum SQL deste exercício foi aplicado ao banco.
-

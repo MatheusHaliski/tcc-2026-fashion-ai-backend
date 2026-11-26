@@ -12,7 +12,8 @@ import { iniciarArrasto } from "@/lib/acervo/arrasto";
 import { acharCompartimento, marcadoresPorCompartimento, pecasDoCompartimento } from "@/lib/acervo/arvore";
 import type { VistaDaCena } from "@/lib/acervo/cena/camera";
 import type { ItemDoCompartimento } from "@/lib/acervo/cena/roupas";
-import type { AcervoModo } from "@/lib/acervo/types";
+import type { AcervoModo, AcervoPeca } from "@/lib/acervo/types";
+import { isWithoutPhoto, pieceImageUrl } from "@/lib/pieces/piece-image";
 import { AcervoBarra } from "../acervo-barra";
 import { useAcervo } from "../acervo-contexto";
 import { PecaFoto } from "../peca-card";
@@ -22,8 +23,14 @@ import { CenaFerramentas } from "./cena-ferramentas";
 import { GavetaExpandida } from "./gaveta-expandida";
 import { PainelConfig } from "./painel-config";
 import { PainelDream } from "./painel-dream";
+import { PainelLuz } from "./painel-luz";
 
 const MAX_NA_BANDEJA = 16;
+
+/** Miniatura (320 px) da foto própria da peça; a ilustração da categoria não entra na cena, que já mostra a cor. */
+function fotoNaCena(peca: AcervoPeca): string | undefined {
+  return isWithoutPhoto(peca) ? undefined : pieceImageUrl({ thumbnailUrl: peca.thumbnailUrl }, 320);
+}
 
 export function AcervoEspaco() {
   const { t } = useI18n();
@@ -33,12 +40,18 @@ export function AcervoEspaco() {
   const fantasmasDe = useFantasmas();
   const parados = useParados();
   const [vista, setVista] = useState<VistaDaCena>("PERSPECTIVA");
+  const [comandoDeCamera, setComandoDeCamera] = useState({ vez: 0, giro: 0 });
+  const escolherVista = (nova: VistaDaCena) => {
+    setVista(nova);
+    setComandoDeCamera((c) => ({ vez: c.vez + 1, giro: 0 }));
+  };
+  const girar = (graus: number) => setComandoDeCamera((c) => ({ vez: c.vez + 1, giro: graus }));
   const [gavetasAbertas, setGavetasAbertas] = useState(false);
   const arvore = dados.arvore;
 
   const itensDe = useCallback((id: string): ItemDoCompartimento[] => {
     if (!arvore) return [];
-    const pecas = pecasDoCompartimento(arvore, id).map((p) => ({ id: p.id, categoria: p.category, cor: corDe(p) }));
+    const pecas = pecasDoCompartimento(arvore, id).map((p) => ({ id: p.id, categoria: p.category, cor: corDe(p), foto: fotoNaCena(p) }));
     const fantasmas = fantasmasDe(id).map((d) => ({ id: d.id, categoria: d.categoria, cor: "#DDF247", fantasma: true }));
     return [...pecas, ...fantasmas];
   }, [arvore, corDe, fantasmasDe]);
@@ -48,9 +61,11 @@ export function AcervoEspaco() {
   const noModo = escolhido && escolhido.movel.modo === tela.modo ? escolhido : null;
   const ambiente = noModo?.ambiente ?? arvore.ambientes.find((a) => a.moveis.some((m) => m.modo === tela.modo)) ?? null;
   const moveis = (ambiente?.moveis ?? []).filter((m) => m.modo === tela.modo);
+  const ambienteDaLuz = ambiente ?? arvore.ambientes[0] ?? null;
   const movel = noModo?.movel ?? moveis[0] ?? null;
   const semLugar = arvore.pecas.filter((p) => !p.compartimentoId);
   const gavetas = moveis.reduce((soma, m) => soma + m.compartimentos.filter((c) => c.tipo === "GAVETA").length, 0);
+  const comRaioX = gavetas > 0 || moveis.some((m) => m.porta !== "SEM_PORTA");
   const mover = (ids: string[], id: string) => {
     void dados.mover(ids, id, t("acervo.mover.feito"));
   };
@@ -68,13 +83,15 @@ export function AcervoEspaco() {
           <EmptyState title={t(tela.modo === "DREAM_SPACE" ? "acervo.dream.vazio" : "acervo.espaco.vazio")}
             hint={t(tela.modo === "DREAM_SPACE" ? "acervo.dream.vazioDica" : "acervo.espaco.vazioDica")} />
         ) : (
-          <div className="acv-palco" data-modo={tela.modo}>
-            <Cena moveis={moveis} itensDe={itensDe} selecionado={noModo?.compartimento.id ?? null} acesos={busca.acesos} parados={parados}
+          <div className="acv-palco" data-modo={tela.modo} data-luz-tipo={ambiente?.iluminacao?.tipo?.codigo ?? ""}
+            data-luz-kelvin={ambiente?.iluminacao?.temperaturaKelvin ?? ""}>
+            <Cena moveis={moveis} itensDe={itensDe} iluminacao={ambiente?.iluminacao} selecionado={noModo?.compartimento.id ?? null} acesos={busca.acesos} parados={parados}
               marcadores={marcadoresPorCompartimento(arvore, tela.selecao)} raioX={tela.raioX} gavetasAbertas={gavetasAbertas} vista={vista}
-              reduzido={reduzido} rotulo={t("acervo.espaco.cenaRotulo", { ambiente: ambiente?.nome ?? "" })}
+              comandoDeCamera={comandoDeCamera} reduzido={reduzido} rotulo={t("acervo.espaco.cenaRotulo", { ambiente: ambiente?.nome ?? "" })}
               onEscolher={(id) => tela.setLocal({ tipo: "COMPARTIMENTO", id })} onSoltar={mover} onPeca={tela.abrirPeca} />
             {noModo && <GavetaExpandida compartimentoId={noModo.compartimento.id} onFechar={() => tela.setLocal({ tipo: "TODAS" })} />}
-            <CenaFerramentas vista={vista} onVista={setVista} gavetasAbertas={gavetasAbertas} onGavetas={setGavetasAbertas} />
+            <CenaFerramentas comRaioX={comRaioX} vista={vista} onVista={escolherVista} gavetasAbertas={gavetasAbertas}
+              onGavetas={setGavetasAbertas} onGirar={girar} />
           </div>
         )}
         {semLugar.length > 0 && moveis.length > 0 && (
@@ -96,6 +113,7 @@ export function AcervoEspaco() {
       </div>
       <aside className="acv-espaco-lateral" aria-label={t("acervo.espaco.painel")}>
         {movel && <PainelConfig movel={movel} resumo={t("acervo.config.resumo", { armarios: moveis.length, gavetas })} />}
+        {ambienteDaLuz && <PainelLuz ambiente={ambienteDaLuz} />}
         {tela.modo === "DREAM_SPACE" && <PainelDream ambienteId={ambiente?.id ?? arvore.ambientes[0]?.id ?? null} modulos={moveis.length} />}
       </aside>
     </div>

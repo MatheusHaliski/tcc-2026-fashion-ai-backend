@@ -1,29 +1,6 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.assets.PieceReferenceCatalog;
-import br.com.fashionai.application.imaging.FlatLayPipeline;
-import br.com.fashionai.application.imaging.LocalVision;
-import br.com.fashionai.application.imaging.StudioPipeline;
-import br.com.fashionai.application.imaging.SubtypeReferences;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.domain.model.PipelineJob;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.AiCallResult;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.repository.PipelineJobRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.imageio.ImageIO;
+import br.com.fashionai.application.wardrobe.draft.CaptureAnalysis;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
@@ -35,6 +12,25 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
+import javax.imageio.ImageIO;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.ai.AiCapability;
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.ai.AiOutcome;
+import br.com.fashionai.application.assets.PieceReferenceCatalog;
+import br.com.fashionai.application.imaging.*;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.domain.model.PipelineJob;
+import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.PipelineJobRepository;
+import br.com.fashionai.domain.repository.UserRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -186,7 +182,7 @@ class WardrobeAnalyzeSyntheticFlowTest {
                 .isInstanceOf(PhotoRejectedException.class);
         verify(jobs, never()).save(any());
 
-        WardrobeService.CaptureAnalysis c = service.analyzeForCapture(user, syntheticTee(), "upper_piece", true);
+        CaptureAnalysis c = service.analyzeForCapture(user, syntheticTee(), "upper_piece", true);
 
         assertThat(c.aiRan()).isTrue();
         assertThat(c.failedChecks()).extracting(br.com.fashionai.application.imaging.PhotoAcceptance.Check::id)

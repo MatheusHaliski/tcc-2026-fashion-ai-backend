@@ -18,29 +18,32 @@ ou rosto.
 
 | Cor | Ação no futebol de 5 | Efeito no servidor | Origem |
 | --- | --- | --- | --- |
-| Preto | Defesa: desarme e carrinho | tira 1 gol do adversário no segundo tempo | [dona] [feito] |
-| Verde | Chute a gol | gol se a técnica do uniforme + 5 alcança a força do adversário; senão o chute não entra | [dona] [feito] |
-| Amarelo | Drible | +6 de força do time no segundo tempo | [dona] [feito] |
-| Azul | Corrida | +4 de força do time no segundo tempo | [dona] [feito] |
-| Vermelho | Passe | +3 de força do time no segundo tempo | [dona, 14/11] [feito] |
-| Branco | Defesa do goleiro | tira 1 gol do adversário no segundo tempo | [dona, 14/11] [feito] |
+| Preto | Defesa: desarme e carrinho | desarme no duelo da jogada (1.2) | [dona] [feito] |
+| Verde | Chute a gol | finalização no duelo da jogada (1.2) | [dona] [feito] |
+| Amarelo | Drible | drible no duelo da jogada (1.2) | [dona] [feito] |
+| Azul | Corrida | corrida com a bola ou recomposição (1.2) | [dona] [feito] |
+| Vermelho | Passe | passe no duelo da jogada (1.2) | [dona, 14/11] [feito] |
+| Branco | Defesa do goleiro | prepara o goleiro para a finalização seguinte (1.2) | [dona, 14/11] [feito] |
 | Outras | Sem ação | a troca só muda os atributos do uniforme | [feito] |
 
-### 1.2 Quando a ação dispara
+### 1.2 Quando a ação dispara (mudou em 15/11/2026)
 
-A dona pediu "uma ação imediata ao ser acionada na partida". A definição anterior do jogo dizia que a pessoa só troca a
-vestimenta. As duas regras cabem juntas assim: **acionar uma carta é vestir a peça no time, e a peça que entra dispara
-na hora a ação da cor dela.** A pessoa continua sem controlar jogador nenhum.
+A dona pediu que toda ação passe por uma carta ("integre a mecânica de cartas como componente essencial para realizar
+qualquer ação"). Agora **cada jogada da partida é uma carta jogada da mão**, e a cor dela decide a ação na hora. O que
+a tabela 1.1 chamava de "efeito no servidor" (gol tirado, força somada) deixou de valer: a ação vira um duelo no campo.
 
-1. A entrega joga o primeiro tempo e a partida para no intervalo.
-2. No segundo tempo, cada troca de peça é um lance: a ação da cor acontece na hora (evento `LANCE`) e a partida espera
-   o lance seguinte.
-3. São no máximo 3 lances. Seguir sem trocar, trocar por uma peça sem cor de ação ou o terceiro lance apita o fim e sai
-   o placar.
-4. A peça que entra fica vestida: os atributos dela também contam no resto do segundo tempo.
+| Cor | Com a bola | Sem a bola |
+| --- | --- | --- |
+| Vermelho | passe: avança uma zona | pressão (metade da força) |
+| Azul | corrida com a bola: avança uma zona, duas com folga | recompõe: segura o adversário onde ele está |
+| Amarelo | drible: avança e dá embalo (+6) à jogada seguinte | pressão |
+| Verde | finalização, mais fraca longe do gol | pressão |
+| Preto | protege a bola | desarme: rouba a bola |
+| Branco | protege a bola | prepara o goleiro: +12 na próxima finalização do adversário |
+| Sem cor de ação | toque curto: protege a bola | pressão |
 
-Na tela, cada opção de troca mostra a ação: "Parte de cima: Regata cinza no lugar de Camisa verde · chute a gol". A
-carta no deck mostra o mesmo selo.
+Sem carta, o time perde a bola (com ela) ou deixa o adversário seguir (sem ela). A força de cada duelo e o atributo
+físico estão em `JOGOS.md`, jogo 14. Código: `fai-application/.../flair3d/esporte/` (`EsporteLance`, `EsporteForcas`).
 
 ### 1.3 Os outros esportes [feito]
 

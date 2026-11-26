@@ -1,38 +1,5 @@
 package br.com.fashionai.application.catalog;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.CatalogPick;
-import br.com.fashionai.application.service.WardrobeService;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.Brand;
-import br.com.fashionai.domain.model.BrandAlias;
-import br.com.fashionai.domain.model.CatalogImage;
-import br.com.fashionai.domain.model.CatalogProduct;
-import br.com.fashionai.domain.model.TaxonomyAttribute;
-import br.com.fashionai.domain.model.CatalogProductAlias;
-import br.com.fashionai.domain.model.CatalogSource;
-import br.com.fashionai.domain.model.CatalogVariant;
-import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
-import br.com.fashionai.domain.model.enums.ItemCondition;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.BrandAliasRepository;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.CatalogImageRepository;
-import br.com.fashionai.application.catalog.image.CatalogImagePipelineService;
-import br.com.fashionai.application.catalog.image.CatalogImageIdentity;
-import br.com.fashionai.domain.repository.CatalogProductAliasRepository;
-import br.com.fashionai.domain.repository.CatalogProductRepository;
-import br.com.fashionai.domain.repository.CatalogSourceRepository;
-import br.com.fashionai.domain.repository.CatalogVariantRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -48,6 +15,25 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.catalog.image.CatalogImageIdentity;
+import br.com.fashionai.application.catalog.image.CatalogImagePipelineService;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.WardrobeService;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
+import br.com.fashionai.domain.model.enums.ItemCondition;
+import br.com.fashionai.domain.model.enums.Visibility;
+import br.com.fashionai.domain.repository.*;
+
 /**
  * RF47 · Acervo & Busca Catalogada (catalog-first). Fluxo: categoria + subcategoria + marca + nome/modelo →
  * normalização em intenção estruturada → busca no catálogo interno (FULLTEXT ngram + re-rank por similaridade,
@@ -57,7 +43,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class CatalogService {
-    static final Set<CatalogIngestionStatus> VISIBLE = Set.of(CatalogIngestionStatus.VALIDATED, CatalogIngestionStatus.PERSISTABLE,
+    public static final Set<CatalogIngestionStatus> VISIBLE = Set.of(CatalogIngestionStatus.VALIDATED, CatalogIngestionStatus.PERSISTABLE,
             CatalogIngestionStatus.REFERENCE_ONLY);
     public static final double MIN_SCORE = 0.35;
 
@@ -691,11 +677,11 @@ public class CatalogService {
         }
         // Unapproved/original photos and another color never become the wardrobe image by fallback.
         String image = card!=null&&!"DEFAULT".equals(card.get("mode")) ? String.valueOf(card.get("url")) : null;
-        WardrobeService.PieceForm form = new WardrobeService.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
+        br.com.fashionai.application.wardrobe.PieceForm form = new br.com.fashionai.application.wardrobe.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
                 b.getId(), b.getName(), color, material, size, null, occasion, style, List.of(),
                 a.price() == null ? BigDecimal.ZERO : a.price(), a.visibility(), List.of(), a.notes(), a.condition(), a.purchaseDate(),
                 a.purchaseLocation(), p.getSku(), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
-                a.background());
+                a.background(), null, null, null, null, null, false, null, null, null, false);
         Views.PieceView view = wardrobe.createFromCatalog(user, form, new CatalogPick(p.getId(),
                 variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card,
                 productModels == null ? null : productModels.url(p.getId())));

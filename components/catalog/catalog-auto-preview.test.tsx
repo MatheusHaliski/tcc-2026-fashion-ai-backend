@@ -309,3 +309,20 @@ it("keeps the approved flat lay: no preview request, no stale stored preview, no
   expect(result.result.current.product.catalogImage?.whole).toEqual(whole);
   expect(result.result.current.failed).toBeNull();
 });
+
+it("a product with a published 3D model can still be picked when its photo cannot be framed", async () => {
+  const product = { id: "model3d-no-frame", imageUrl: "https://brand.example/blazer.jpg", model3dUrl: "/media/catalog/model3d/u/s.glb" } as CatalogProduct;
+  vi.spyOn(catalogApi, "previewImage").mockRejectedValue(new ApiError(422, "CATEGORY_FRAME_UNAVAILABLE", "frame"));
+  const result = renderHook(() => useCatalogPreview(product));
+  await expect(result.result.current.prepare()).resolves.toMatchObject({ id: product.id, model3dUrl: product.model3dUrl });
+  await waitFor(() => expect(result.result.current.failed).toBe("unsupported"));
+});
+it("without a 3D model the framing failure still blocks the pick, and other failures always do", async () => {
+  const plain = { id: "plain-no-frame", imageUrl: "https://brand.example/shirt.jpg" } as CatalogProduct;
+  vi.spyOn(catalogApi, "previewImage").mockRejectedValue(new ApiError(422, "CATEGORY_FRAME_UNAVAILABLE", "frame"));
+  await expect(renderHook(() => useCatalogPreview(plain)).result.current.prepare()).rejects.toMatchObject({ code: "CATEGORY_FRAME_UNAVAILABLE" });
+  vi.restoreAllMocks();
+  const withModel = { id: "model3d-fetch-failed", imageUrl: "https://brand.example/coat.jpg", model3dUrl: "/media/catalog/model3d/u/c.glb" } as CatalogProduct;
+  vi.spyOn(catalogApi, "previewImage").mockRejectedValue(new ApiError(422, "CATALOG_IMAGE_FETCH_FAILED", "fetch"));
+  await expect(renderHook(() => useCatalogPreview(withModel)).result.current.prepare()).rejects.toMatchObject({ code: "CATALOG_IMAGE_FETCH_FAILED" });
+});

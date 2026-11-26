@@ -1,30 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.catalog.CatalogService;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.domain.model.CatalogProduct;
-import br.com.fashionai.domain.model.FaiPointsLedgerEntry;
-import br.com.fashionai.domain.model.PhysicalStoreListing;
-import br.com.fashionai.domain.model.PhysicalStoreOrder;
-import br.com.fashionai.domain.model.PhysicalStoreVariant;
-import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
-import br.com.fashionai.domain.repository.CatalogProductRepository;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository;
-import br.com.fashionai.domain.repository.PhysicalStoreListingRepository;
-import br.com.fashionai.domain.repository.PhysicalStoreOrderRepository;
-import br.com.fashionai.domain.repository.PhysicalStoreVariantRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,6 +8,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.catalog.CatalogService;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.physicalstore.*;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
+import br.com.fashionai.domain.repository.*;
 
 /** Issuer-operated physical product store paid only with earned FAI Points. */
 @Service
@@ -67,7 +56,7 @@ public class PhysicalStoreService {
     public PhysicalStoreService(PhysicalStoreListingRepository listings, PhysicalStoreOrderRepository orders,
                                 PhysicalStoreVariantRepository variants, CatalogProductRepository products, BrandRepository brands,
                                 FaiPointsLedgerEntryRepository ledger, UserRepository users, Guard guard, CatalogService catalog,
-                                WardrobeCreatorService creator) {
+                                SellerIdentity sellers) {
         this.listings = listings;
         this.orders = orders;
         this.variants = variants;
@@ -77,7 +66,7 @@ public class PhysicalStoreService {
         this.users = users;
         this.guard = guard;
         this.catalog = catalog;
-        this.views = new PhysicalStoreViews(catalog, creator, users);
+        this.views = new PhysicalStoreViews(catalog, sellers, users);
     }
 
     @Transactional(readOnly = true)

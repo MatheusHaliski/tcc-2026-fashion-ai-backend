@@ -68,7 +68,7 @@ export function FittingItems({
             );
           }
           return (
-            <FittingSlotRow key={slot} item={item} slotName={slotNames[slot]} product={item.productId ? products[item.productId] : undefined} colors={colors}
+            <FittingSlotRow key={slot} item={item} slotName={item.wear === "FULL_BODY" ? t("tryOn.slot_peca_unica") : slotNames[slot]} product={item.productId ? products[item.productId] : undefined} colors={colors}
               ownedId={owned[item.key]} busyOwn={busyOwn === item.key} coveredBy={slot === "lower_piece" && fullBody ? fullBody.name : null}
               onVariantChange={onVariantChange} onOwn={onOwn} onRemove={() => onRemove(slot)} onPreview2d={onPreview2d} body={body} onSizeChange={onSizeChange} />
           );

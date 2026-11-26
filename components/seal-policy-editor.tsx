@@ -6,6 +6,7 @@ import { tr } from "@/lib/i18n/core";
 import { DIMENSION_ORDER, LEVELS } from "@/lib/hype/model";
 import type { HypeDimension, HypeLevel, HypeMomentum } from "@/lib/hype/types";
 import type { SealReferenceModel } from "@/lib/seals/reference-model";
+import { SealPolicyBrandField, type SealBrandReference } from "@/components/seal-policy-brand-field";
 
 /**
  * RF25 — política padronizada do selo. No lugar de um texto livre separado por vírgulas, o emissor monta regras que o
@@ -19,7 +20,8 @@ import type { SealReferenceModel } from "@/lib/seals/reference-model";
  */
 export type SealQuantifier = "AT_LEAST" | "ALL" | "NONE";
 export interface SealRule { quantifier: SealQuantifier; count?: number | null; color?: string | null; brand?: string | null; category?: string | null; subcategory?: string | null;
-  /** RF53 — a peça só passa no filtro com Hype atual ≥ esse nível */ hypeMin?: HypeLevel | null }
+  /** RF53 — a peça só passa no filtro com Hype atual ≥ esse nível */ hypeMin?: HypeLevel | null;
+  /** exercício 13 — marca exigida por ID (tipo + UUID); `brand` é o texto das regras antigas */ brandReference?: SealBrandReference | null }
 /** RF53 — critério de Hype da entidade avaliada: nível e score juntos = os dois precisam valer; momento = qualquer um da lista. */
 export interface SealHypeCriteria { minLevel?: HypeLevel | null; minScore?: number | null; momentum?: HypeMomentum[] | null; dimensionMins?: Partial<Record<HypeDimension, number>> }
 export interface SealPolicy { generationMode?: "MANUAL" | "COPILOT"; match: "ALL" | "ANY"; rules: SealRule[]; occasions: string[]; styles: string[]; mode?: "HYPE"; hype?: SealHypeCriteria | null; referenceModel?: SealReferenceModel; aiInferenceId?: string }
@@ -56,8 +58,9 @@ export function cleanHype(h: SealHypeCriteria | null | undefined): SealHypeCrite
 /** Regra sem filtro nenhum não diz nada: some do envio (o backend faz o mesmo). Política só com Hype é válida. */
 export function cleanPolicy(p: SealPolicy | null | undefined): SealPolicy | null {
   if (!p) return null;
-  const rules = p.rules.filter((r) => r.color || r.brand?.trim() || r.category || r.subcategory || isLevel(r.hypeMin))
-    .map((r) => ({ quantifier: r.quantifier, count: r.quantifier === "AT_LEAST" ? Math.min(4, Math.max(1, r.count ?? 1)) : null, color: r.color || null, brand: r.brand?.trim() || null, category: r.category || null, subcategory: r.subcategory || null,
+  const rules = p.rules.filter((r) => r.color || r.brand?.trim() || r.brandReference?.id || r.category || r.subcategory || isLevel(r.hypeMin))
+    .map((r) => ({ quantifier: r.quantifier, count: r.quantifier === "AT_LEAST" ? Math.min(4, Math.max(1, r.count ?? 1)) : null, color: r.color || null, brand: r.brandReference?.id ? null : r.brand?.trim() || null, category: r.category || null, subcategory: r.subcategory || null,
+      ...(r.brandReference?.id ? { brandReference: { kind: r.brandReference.kind, id: r.brandReference.id, nome: r.brandReference.nome ?? null } } : {}),
       ...(isLevel(r.hypeMin) ? { hypeMin: r.hypeMin } : {}) }));
   const hype = cleanHype(p.hype);
   // A modalidade Hype tem critérios próprios: não reaproveita referências inferidas do Copilot.
@@ -70,7 +73,8 @@ function pieceWords(r: SealRule): string {
   const w: string[] = [];
   if (r.subcategory) w.push(subcategoryLabel(r.subcategory).toLowerCase()); else if (r.category) w.push(label(r.category).toLowerCase());
   if (r.color) w.push(tr("sealPolicy.cor", { c: colorLabel(r.color).toLowerCase() }));
-  if (r.brand?.trim()) w.push(tr("sealPolicy.da_marca", { b: r.brand.trim() }));
+  const brand = r.brandReference?.id ? r.brandReference.nome || r.brandReference.id : r.brand?.trim();
+  if (brand) w.push(tr("sealPolicy.da_marca", { b: brand }));
   if (isLevel(r.hypeMin)) w.push(tr("sealPolicy.hype.com_hype_min", { level: tr(`hype.level.${r.hypeMin}`) }));
   return w.join(" ");
 }
@@ -112,19 +116,20 @@ export function describePolicy(p: SealPolicy | null, tier: SealTierId): string {
   return [head, tags].filter(Boolean).join(" · ");
 }
 
-export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {
-  value: SealPolicy; onChange: (p: SealPolicy) => void; tier: SealTierId; onTier: (t: SealTierId) => void; brandName?: string | null;
+export function SealPolicyEditor({ value, onChange, tier, onTier, showTier = true }: {
+  value: SealPolicy; onChange: (p: SealPolicy) => void; tier: SealTierId; onTier: (t: SealTierId) => void;
+  /** nome do emissor: não vira mais marca em texto na regra (exercício 13: a marca é escolhida na lista, por ID) */ brandName?: string | null;
+  /** false no modo Manual, que já escolhe o nível no campo de cima */ showTier?: boolean;
 }) {
   const { t } = useI18n();
   const tax = useTaxonomy();
-  const brand = brandName?.trim() || "";
   const setRule = (i: number, patch: Partial<SealRule>) => onChange({ ...value, rules: value.rules.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
-  const addRule = (r?: SealRule) => onChange({ ...value, rules: [...value.rules, r ?? { quantifier: tier === "PECA" ? "ALL" : "AT_LEAST", count: 1, brand: brand || null }].slice(0, MAX_RULES) });
+  const addRule = (r?: SealRule) => onChange({ ...value, rules: [...value.rules, r ?? { quantifier: tier === "PECA" ? "ALL" : "AT_LEAST", count: 1 }].slice(0, MAX_RULES) });
   // modelos prontos: os exemplos do próprio pedido de selo
   const base: { id: string; tier: SealTierId; rule: SealRule }[] = [
-    { id: "azul", tier: "LOOK", rule: { quantifier: "AT_LEAST", count: 3, color: "Azul", brand: brand || null } },
+    { id: "azul", tier: "LOOK", rule: { quantifier: "AT_LEAST", count: 3, color: "Azul" } },
     { id: "vermelha", tier: "PECA", rule: { quantifier: "ALL", color: "Vermelho" } },
-    { id: "amarela", tier: "LOOK", rule: { quantifier: "ALL", color: "Amarelo", brand: brand || null } },
+    { id: "amarela", tier: "LOOK", rule: { quantifier: "ALL", color: "Amarelo" } },
   ];
   const templates = base.map((x) => ({ ...x, text: describeRule(x.rule, x.tier) }));
   const colorOptions = [{ id: "", label: t("sealPolicy.qualquer_cor") }, ...FAMILIES.map((f) => ({ id: f, label: t("sealPolicy.familia_toda", { f: familyLabel(f) }) })),
@@ -145,12 +150,13 @@ export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {
 
   return (
     <div className="space-y-4">
-      <div>
+      {/* no modo Manual o nível já é escolhido no campo de cima: aqui não repete "Nível do selo" */}
+      {showTier && <div>
         <p className="label mb-1">{t("sealPolicy.nivel")}</p>
         <SegmentPicker label={t("sealPolicy.nivel")} value={tier} onChange={(v) => { onTier(v); onChange({ ...value, rules: value.rules.map((r) => ({ ...r, quantifier: v === "PECA" ? (r.quantifier === "NONE" ? "NONE" : "ALL") : r.quantifier })) }); }}
           options={[{ id: "LOOK", label: t("sealPolicy.nivel_look") }, { id: "PECA", label: t("sealPolicy.nivel_peca") }]} />
         <p className="help mt-1">{tier === "PECA" ? t("sealPolicy.nivel_peca_dica") : t("sealPolicy.nivel_look_dica")}</p>
-      </div>
+      </div>}
 
       <section aria-labelledby="sp-rules">
         <p id="sp-rules" className="label mb-1">{t("sealPolicy.regras")}</p>
@@ -182,14 +188,11 @@ export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {
                   <Field label={t("sealPolicy.subtipo")} id={`sp-sub-${i}`}><Dropdown id={`sp-sub-${i}`} block value={r.subcategory ?? ""} onChange={(v) => setRule(i, { subcategory: v || null })}
                     options={[{ id: "", label: t("sealPolicy.qualquer_subtipo") }, ...(tax?.subcategories?.[r.category] ?? []).map((s) => ({ id: s, label: subcategoryLabel(s) }))]} /></Field>
                 )}
-                <Field label={t("sealPolicy.marca_label")} id={`sp-brand-${i}`} hint={t("sealPolicy.marca_dica")}>
-                  <Input id={`sp-brand-${i}`} value={r.brand ?? ""} maxLength={80} placeholder={t("sealPolicy.qualquer_marca")} onChange={(e) => setRule(i, { brand: e.target.value })} />
-                </Field>
+                <SealPolicyBrandField index={i} rule={r} onChange={(patch) => setRule(i, patch)} />
                 <Field label={t("sealPolicy.hype.regra_label")} id={`sp-hype-${i}`} hint={t("sealPolicy.hype.regra_dica")}>
                   <Dropdown id={`sp-hype-${i}`} block value={(r.hypeMin ?? "") as string} options={hypeLevelOptions(t("sealPolicy.hype.qualquer_hype"))} onChange={(v) => setRule(i, { hypeMin: (v || null) as HypeLevel | null })} />
                 </Field>
               </div>
-              {brand && (r.brand ?? "").trim().toLowerCase() !== brand.toLowerCase() && <Button size="sm" type="button" className="mt-2" onClick={() => setRule(i, { brand })}>{t("sealPolicy.usar_minha_marca", { b: brand })}</Button>}
               <p className="type-caption text-muted mt-2">{describeRule(r, tier)}</p>
             </li>
           ))}

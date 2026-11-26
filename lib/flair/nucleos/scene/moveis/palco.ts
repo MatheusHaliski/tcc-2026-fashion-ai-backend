@@ -2,7 +2,7 @@
  * Móveis de palco e de luz: painel de LED, telão, trilho de spots, cortina de pregas, canhão de luz, refletor,
  * câmera no tripé, claquete, lustre, luminária de braço, poste e letreiro de neon. A frente aponta para +z.
  */
-import { caixa, chanfrada, cilindro, esfera, extrusao, movel, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
+import { caixa, chanfrada, cilindro, comGlb, esfera, extrusao, movel, toro, type Em } from "@/lib/flair/nucleos/scene/parts";
 import type { Movel, Parte } from "@/lib/flair/nucleos/scene/types";
 
 /** Painel de LED com moldura fina; `pos` é o pé do painel. */
@@ -40,7 +40,7 @@ export function trilhoSpots(em: Em, metal: string, luz: string, comprimento = 6,
     partes.push(cilindro(metal, [0.09, 0.07], 0.22, [0, -0.2, z], [25, 0, 0], 10));
     partes.push(cilindro(luz, 0.08, 0.02, [0, -0.3, z + 0.05], [25, 0, 0], 10));
   }
-  return movel("trilhoSpots", em, partes);
+  return comGlb(movel("trilhoSpots", em, partes, { metal, luz }), `trilho-spots-${comprimento}-${spots}`);
 }
 
 /** Perfil ondulado de uma cortina vista de cima: ida pela frente das pregas, volta por trás. */
@@ -70,7 +70,7 @@ export function canhaoLuz(em: Em, metal: string, luz: string): Movel {
     chanfrada(metal, [0.1, 0.24, 0.1], [0, 1.6, 0]),
     cilindro(metal, [0.16, 0.12], 0.7, [0, 1.78, 0.05], [70, 0, 0], 12),
     cilindro(luz, 0.15, 0.02, [0, 1.9, 0.39], [70, 0, 0], 12),
-  ]);
+  ], { metal, luz });
 }
 
 /** Refletor de set: tripé, caixa de luz e abas pretas. */
@@ -104,7 +104,7 @@ export function cameraTripe(em: Em, metal: string, corpo: string, lente: string)
     cilindro(lente, 0.085, 0.02, [0, 1.4, 0.49], [90, 0, 0], 12),
     chanfrada(corpo, [0.1, 0.16, 0.3], [0, 1.6, -0.02]),
     caixa(metal, [0.03, 0.03, 0.5], [0.2, 1.22, -0.28], [20, 0, 0]),
-  ]);
+  ], { metal, corpo, lente });
 }
 
 /** Corpo da claquete num caixote de set; o braço que bate é um móvel à parte (`bracoClaquete`). */
@@ -132,13 +132,14 @@ export function lustre(em: Em, latao: string, luz: string, raio = 0.7): Movel {
     const a = (i / 6) * Math.PI * 2 + 0.3;
     lampadas.push(esfera(luz, 0.05, [Math.cos(a) * raio * 0.5, -0.18, Math.sin(a) * raio * 0.5], 8));
   }
-  return movel("lustre", em, [
+  const pendente = movel("lustre", em, [
     cilindro(latao, 0.02, 0.9, [0, 0.6, 0], undefined, 8),
     esfera(latao, [0.09, 0.12, 0.09], [0, 0.12, 0], 10),
     toro(latao, raio, 0.022, [0, 0, 0], [90, 0, 0], 28),
     toro(latao, raio * 0.5, 0.02, [0, -0.26, 0], [90, 0, 0], 20),
     ...lampadas,
-  ]);
+  ], { latao, luz });
+  return comGlb(pendente, `lustre-${Math.round(raio * 100)}`);
 }
 
 /** Luminária de braço articulado presa na bancada. */
@@ -149,7 +150,7 @@ export function luminaria(em: Em, metal: string, luz: string): Movel {
     cilindro(metal, 0.012, 0.45, [0, 0.52, 0.02], [-55, 0, 0], 6),
     cilindro(metal, [0.04, 0.11], 0.14, [0, 0.6, 0.22], [35, 0, 0], 12),
     esfera(luz, 0.04, [0, 0.56, 0.25], 8),
-  ]);
+  ], { metal, luz });
 }
 
 /** Poste de rua com braço curvo e luminária. */
@@ -160,7 +161,7 @@ export function poste(em: Em, ferro: string, luz: string, altura = 4): Movel {
     cilindro(ferro, 0.03, 0.7, [0.3, altura + 0.05, 0], [0, 0, -75], 8),
     chanfrada(ferro, [0.36, 0.1, 0.2], [0.68, altura + 0.1, 0]),
     caixa(luz, [0.28, 0.02, 0.14], [0.68, altura + 0.04, 0]),
-  ]);
+  ], { ferro, luz });
 }
 
 /** Letreiro de neon: placa escura com um contorno e barras de tubo aceso. */

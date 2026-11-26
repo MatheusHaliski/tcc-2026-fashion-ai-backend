@@ -1,0 +1,21 @@
+{
+ "produto": "Body Modelador Em Renda E Microfibra Preto",
+ "marca": "Hope",
+ "url_oficial": "https://www.hopeoficial.com.br/body-modelador-em-renda-e-microfibra-preto-00la99",
+ "subcategoria": "bodysuit",
+ "sexo": "FEMININO",
+ "caimento": "justo",
+ "tecido": {
+  "tipo": "jersey",
+  "cor": "#151517",
+  "gramatura": 180
+ },
+ "ribana": false,
+ "sem_manga": true,
+ "medidas_marca": {
+  "decote_frente": 8
+ },
+ "observacao": "body de alças, fecha no gancho. A renda não é modelada. Cor: a do nome (preto).",
+ "tamanho": "M",
+ "gola": "vies"
+}

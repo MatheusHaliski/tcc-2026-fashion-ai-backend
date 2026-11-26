@@ -42,7 +42,7 @@ for r in res:
             readers[t][r['endpoint']] = min(n, len(r['reads'])) if n else len(r['reads'])
 
 PREF = {'wardrobe_items': ['GET /api/pieces/{id}', 'GET /api/me/closet'], 'schemes': ['GET /api/schemes/{id}'],
-        'dna_schemes': ['GET /api/me/dna-schemes'], 'room_layouts': ['GET /api/me/room'], 'challenge_instances': ['GET /api/challenges/{id}']}
+        'dna_schemes': ['GET /api/me/dna-schemes'], 'challenge_instances': ['GET /api/challenges/{id}']}
 SIDE = ('audit_log', 'ai_inference_log', 'notifications', 'notifications_outbox', 'item_embeddings', 'refresh_tokens')
 
 

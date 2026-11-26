@@ -90,7 +90,10 @@ class ChallengeServiceTest {
             templates.save(t);
         }
         when(kit.dep(Guard.class).deny(any(), any(), any())).thenAnswer(i -> new ApiException(403, "NEGADO", String.valueOf(i.getArgument(2, String.class))));
-        when(kit.dep(RoomService.class).hasKey(any(), any())).thenReturn(true);
+        // convites só para quem a pessoa segue (a Chave do Quarto saiu com o Meu Quarto): aqui todos se seguem
+        var follows = Kit.mock(br.com.fashionai.domain.repository.FollowRepository.class);
+        when(follows.findByFollowerIdAndFollowingId(any(), any())).thenReturn(java.util.Optional.of(new br.com.fashionai.domain.model.Follow(null, null, br.com.fashionai.domain.model.enums.FollowStatus.ACEITO)));
+        kit.with(follows);
         challenges = kit.build(ChallengeService.class);
         ana = Kit.as(world.me);
         bia = Kit.as(world.rival);
@@ -162,7 +165,6 @@ class ChallengeServiceTest {
         challenges.onSchemeSaved(new DomainEvents.SchemeSaved(world.me.getId(), UUID.randomUUID(), List.of(), "CRIAR_LOOK", true));
         Map<String, Object> me = map(challenges.detail(ana, id).get("me"));
         assertThat(me.get("value")).isEqualTo(9);
-        assertThat(map(challenges.decorations(world.me.getId()).get(0))).containsEntry("type", "quadro_cortica");
         Scheme last = saveLook(world.me, mine.get(1), mine.get(5));
         last.markCreatedAt(Instant.now().minusSeconds(3 * 86_400));
         challenges.conclude(instance(id), kit.dep(ChallengeTemplateRepository.class).findById("TEN_X_TEN").orElseThrow());
@@ -298,7 +300,6 @@ class ChallengeServiceTest {
         dailyLook(world.rival, world.looksOf(world.rival).get(0), today);
         Map<String, Object> me = map(challenges.detail(ana, id).get("me"));
         assertThat((Integer) me.get("best")).isGreaterThanOrEqualTo(2);
-        assertThat(map(challenges.decorations(world.me.getId()).get(0))).containsEntry("type", "calendario_parede");
         challenges.conclude(instance(id), kit.dep(ChallengeTemplateRepository.class).findById("NO_REPEAT").orElseThrow());
         Map<String, Object> result = Json.map(instance(id).getResultJson());
         assertThat(result).containsKeys("winners", "ranking", "teams");
@@ -326,7 +327,6 @@ class ChallengeServiceTest {
         assertThatThrownBy(() -> challenges.vote(Kit.as(Kit.user("x")), id, UUID.randomUUID())).isInstanceOf(ApiException.class);
         challenges.vote(Kit.as(world.person("duda2", 0)), id, anaLook);
 
-        assertThat(map(challenges.decorations(world.me.getId()).get(0))).containsEntry("type", "tema_espelho");
         challenges.conclude(instance(id), kit.dep(ChallengeTemplateRepository.class).findById("RUNWAY_BATTLE").orElseThrow());
         Map<String, Object> result = Json.map(instance(id).getResultJson());
         assertThat(String.valueOf(result.get("winners"))).contains("ana");
@@ -369,7 +369,6 @@ class ChallengeServiceTest {
         UUID id = id(challenges.start(ana, solo("SECOND_CHANCE", Map.of("percent", 50))));
         Map<String, Object> me = map(challenges.detail(ana, id).get("me"));
         assertThat(me.get("target")).isEqualTo(2);
-        assertThat(map(challenges.decorations(world.me.getId()).get(0))).containsEntry("type", "etiqueta_2a_chance");
         saveLook(world.me, mine.get(0), mine.get(1));
         assertThat(instance(id).getState()).isEqualTo(ChallengeService.CONCLUIDO);
     }
@@ -385,7 +384,6 @@ class ChallengeServiceTest {
         assertThat(Json.map(instance(id).getParamsJson())).containsEntry("target_days", 90);
         dailyLook(world.me, world.looksOf(world.me).get(0), LocalDate.now(FaiPointsService.ZONE));
         assertThat(map(challenges.detail(ana, id).get("me")).get("value")).isEqualTo(1);
-        assertThat((List<?>) map(challenges.decorations(world.me.getId()).get(0)).get("tapedPieceIds")).isEmpty();
         // look com peça de fora da cápsula vira violação do dia
         WardrobeItem outside = Kit.piece(world.me, "fora", "upper_piece", "shirt", "white");
         kit.dep(WardrobeItemRepository.class).save(outside);

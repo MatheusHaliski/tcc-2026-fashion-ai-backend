@@ -1,11 +1,10 @@
 /*
- * Lista do espelho (QUARTO-ESPELHO): as peças que a pessoa trouxe do quarto para provar, separadas do que está vestido.
+ * Lista do espelho (QUARTO-ESPELHO): as peças que a pessoa trouxe do guarda-roupa para provar, separadas do que está vestido.
  * Fonte única da verdade: o estado do espelho no servidor (GET /api/me/mirror → `rack` e `slots`); aqui só a forma da
- * peça da lista e a conversão para o 3D (o MESMO formato do provador). Os lugares do corpo, a peça na mão e as trocas
- * (o pedido mais recente vence) ficam em lib/room3d/mirror-session.ts.
+ * peça da lista e a conversão para o 3D (o MESMO formato do provador). A peça na mão e as trocas dentro do quarto
+ * saíram com o Meu Quarto (15/11/2026).
  *
  *   selecionada para prova  está na lista (rack), não vestida
- *   segurada                o avatar do quarto está com ela na mão (motor do quarto, lib/room3d/interaction.ts)
  *   vestida                 está num slot do espelho (`worn`)
  */
 import type { Look3dPiece } from "@/components/three/common";
@@ -16,13 +15,21 @@ export interface MirrorRackPiece {
   variation?: string | null; attributes?: Record<string, string[]> | null; available?: boolean; worn?: boolean;
   /** modelo 3D da peça: o de produto do catálogo veste o avatar (glb-garment); os outros ficam com o molde */
   model3dUrl?: string | null;
+  /** produto do catálogo de marcas vestido só para provar: a textura vem da foto do produto, como no provador */
+  source?: "wardrobe" | "catalog"; productId?: string | null; variantId?: string | null; imageId?: string | null;
 }
 
 const SLOT3D: Record<string, string> = { outer_layer: "outer_layer", upper: "upper", dress: "dress", lower: "lower", shoes: "shoes", accessory: "accessory" };
 
-/** Peça do espelho no formato do 3D — o mesmo do provador: foto recortada, processada/estúdio, modelagem e dimensões. */
+/**
+ * Peça do espelho no formato do 3D — o mesmo do provador: foto recortada, processada/estúdio, modelagem e dimensões. O
+ * produto do catálogo leva as referências do produto, da variante e da foto: a textura sai da rota do catálogo
+ * (lib/tryon/garment-photo-source.ts), a mesma do provador.
+ */
 export function mirrorLook3d(p: MirrorRackPiece, slot?: string | null): Look3dPiece {
+  const catalog = p.source === "catalog" && p.productId;
   return {
+    catalogProductId: catalog ? p.productId : null, catalogVariantId: catalog ? p.variantId ?? null : null, catalogImageId: catalog ? p.imageId ?? null : null,
     id: p.id, name: p.name, slot: SLOT3D[slot ?? p.slot ?? ""] ?? "accessory", category: p.category ?? undefined, subcategory: p.subcategory ?? undefined,
     imageUrl: p.imageUrl ?? p.thumbnailUrl ?? null, studioUrl: p.studioImageUrl ?? null, colorHex: p.colorHex ?? null,
     variation: p.variation ?? null, attributes: p.attributes ?? null, model3dUrl: p.model3dUrl ?? null,
