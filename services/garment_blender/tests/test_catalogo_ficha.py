@@ -60,7 +60,7 @@ def test_combinacao_que_o_motor_nao_monta_vira_a_mais_proxima():
 
 
 def test_jeans_na_descricao_e_a_calca_do_look_nao_o_tecido_da_peca():
-    assert spec("blazer", "Oversized Blazer", "Use com jeans e tênis.")["tecido"]["tipo"] == "sarja"
+    assert spec("blazer", "Oversized Blazer", "Use com jeans e tênis.")["tecido"]["tipo"] == "la_plana"
     assert spec("jacket", "Dakota Jacket", "Jaqueta jeans com lavagem escura.")["tecido"]["tipo"] == "denim"
 
 

@@ -34,12 +34,12 @@ FINISH = {
     "denim": Finish(0.82),
     "tricoline": Finish(0.7),
     "la_plana": Finish(0.85, sheen=0.12, sheen_roughness=0.6),
-    "couro": Finish(0.45, specular=0.35, coat=0.12, coat_roughness=0.35),
+    "couro": Finish(0.5, specular=0.05, coat=0.22, coat_roughness=0.25),
     "camurca": Finish(0.95, specular=0.04, sheen=0.5, sheen_roughness=0.45),
-    "nylon": Finish(0.5, specular=0.3),
-    "acolchoado": Finish(0.45, specular=0.32),
+    "nylon": Finish(0.55, specular=0.05, coat=0.15, coat_roughness=0.3),
+    "acolchoado": Finish(0.5, specular=0.05, coat=0.22, coat_roughness=0.22),
     "veludo": Finish(0.8, specular=0.04, sheen=0.8, sheen_roughness=0.3),
-    "cetim": Finish(0.3, specular=0.4, anisotropic=0.5),
+    "cetim": Finish(0.3, specular=0.1, coat=0.12, coat_roughness=0.2, anisotropic=0.5),
 }
 TRIM = Finish(0.7, specular=0.1)     # cadarço do zíper
 METAL = Finish(0.35, specular=0.5)   # dentes do zíper (com Metallic)

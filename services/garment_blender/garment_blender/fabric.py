@@ -20,8 +20,11 @@ from .tramas import REPEAT, SHELLS, shell_height
 SIZE = 512
 # colunas e carreiras de ponto por repetição de 5 cm e força do relevo; na sarja, diagonais por repetição
 KNITS = {"malha_la": (11, 15, 5.0), "malha_algodao": (16, 22, 3.5), "moletom": (30, 40, 1.6), "jersey": (34, 46, 1.4)}
-TWILLS = {"sarja": (70, 2.0), "denim": (60, 2.6)}
+TWILLS = {"sarja": (70, 2.0), "denim": (60, 2.2)}
 WEAVES = {"tricoline": (110, 1.1)}   # tela (um fio por cima, um por baixo): fios por repetição (par) e força
+# Inclinação do normal map por unidade de relevo × força. Era 8 (ponto de malha a 70° da superfície): o relevo tão
+# íngreme escurecia o tecido em 8 de L contra o mesmo tecido liso, e a prévia não acertava a cor dos dois ao mesmo tempo.
+SLOPE = 2.4
 
 
 def _grid():
@@ -121,7 +124,7 @@ def _normal(h: np.ndarray, strength: float) -> np.ndarray:
     hs = h * strength   # derivada circular: o relevo fecha na borda da repetição, sem emenda
     gx = (np.roll(hs, -1, 1) - np.roll(hs, 1, 1)) / 2
     gy = (np.roll(hs, -1, 0) - np.roll(hs, 1, 0)) / 2
-    n = np.stack([-gx * SIZE / 64, gy * SIZE / 64, np.ones_like(h)], -1)   # +Y para cima (convenção do glTF)
+    n = np.stack([-gx * SLOPE, gy * SLOPE, np.ones_like(h)], -1)   # +Y para cima (convenção do glTF)
     return n / np.linalg.norm(n, axis=-1, keepdims=True)
 
 

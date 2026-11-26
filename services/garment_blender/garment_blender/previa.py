@@ -19,7 +19,7 @@ from mathutils import Vector
 class Studio:
     world: float = 0.06                                     # força do mundo que ilumina (cor ``BACKDROP``)
     lights: tuple = (((2, -3, 3), 260), ((-3, -2, 2), 120), ((0, 3, 2.5), 120))   # (posição, W) das luzes de área
-    exposure: float = 0.09                                  # exposição da câmera (stops)
+    exposure: float = -0.25                                 # exposição da câmera (stops)
     size: float = 2.5                                       # lado das luzes de área (m)
 
 
