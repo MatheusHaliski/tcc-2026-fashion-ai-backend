@@ -1,7 +1,7 @@
 /** ACERVO — o que a cena de "Meu espaço" recebe, igual para o 3D e para a reserva 2D. */
 import type { VistaDaCena } from "@/lib/acervo/cena/camera";
 import type { ItemDoCompartimento } from "@/lib/acervo/cena/roupas";
-import type { AcervoMovel } from "@/lib/acervo/types";
+import type { AcervoIluminacao, AcervoMovel } from "@/lib/acervo/types";
 
 export interface CenaProps {
   moveis: AcervoMovel[];
@@ -21,6 +21,8 @@ export interface CenaProps {
   comandoDeCamera?: { vez: number; giro: number };
   reduzido: boolean;
   rotulo: string;
+  /** luz do ambiente confirmada pelo GET (exercício 07); ausente = luz padrão */
+  iluminacao?: AcervoIluminacao | null;
   onEscolher: (compartimentoId: string) => void;
   onSoltar: (pieceIds: string[], compartimentoId: string) => void;
   onPeca: (pieceId: string) => void;

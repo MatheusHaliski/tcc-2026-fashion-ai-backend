@@ -1,6 +1,7 @@
 package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.acervo.AcervoConsultaService;
+import br.com.fashionai.application.acervo.AcervoIluminacaoService;
 import br.com.fashionai.application.acervo.AcervoPecasService;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.enums.AccountStatus;
@@ -30,6 +31,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AcervoControllersTest {
     static final CurrentUser ANA = new CurrentUser(UUID.randomUUID(), "ana", "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
     static final Map<String, Object> RESPOSTA = Map.of("via", "servico");
+
+    static final class Luz extends AcervoIluminacaoService {
+        final List<Object> args = new ArrayList<>();
+
+        Luz() {
+            super(null, null, null);
+        }
+
+        @Override
+        public Map<String, Object> iluminar(CurrentUser user, UUID ambienteId, LuzForm form) {
+            args.addAll(Arrays.asList(user, ambienteId, form));
+            return RESPOSTA;
+        }
+    }
 
     static final class Pecas extends AcervoPecasService {
         final List<Object> args = new ArrayList<>();
@@ -109,11 +124,12 @@ class AcervoControllersTest {
         List<String> todas = new ArrayList<>(rotas(AcervoController.class));
         todas.addAll(rotas(AcervoPecasController.class));
 
-        assertThat(todas).hasSize(25).doesNotHaveDuplicates().allSatisfy(r -> assertThat(r.split(" ")[1]).startsWith("/api/me/acervo"));
+        assertThat(todas).hasSize(26).doesNotHaveDuplicates().allSatisfy(r -> assertThat(r.split(" ")[1]).startsWith("/api/me/acervo"));
         assertThat(new TreeSet<>(todas)).contains("GET /api/me/acervo", "POST /api/me/acervo/ambientes", "PUT /api/me/acervo/moveis/{id}",
                 "DELETE /api/me/acervo/compartimentos/{id}", "POST /api/me/acervo/pecas/mover", "POST /api/me/acervo/arrumacao/previa",
                 "POST /api/me/acervo/arrumacao/confirmar", "GET /api/me/acervo/financeiro", "GET /api/me/acervo/busca", "GET /api/me/acervo/uso",
-                "GET /api/me/acervo/pecas/{id}/looks", "GET /api/me/acervo/desejos", "DELETE /api/me/acervo/desejos/{id}");
+                "GET /api/me/acervo/pecas/{id}/looks", "GET /api/me/acervo/desejos", "DELETE /api/me/acervo/desejos/{id}",
+                "PUT /api/me/acervo/ambientes/{id}/luz");
     }
 
     @Test
@@ -130,7 +146,7 @@ class AcervoControllersTest {
     void pecasEConsultasRepassamOsArgumentos() {
         Pecas pecas = new Pecas();
         Consulta consulta = new Consulta();
-        AcervoController estrutura = new AcervoController(null, pecas);
+        AcervoController estrutura = new AcervoController(null, pecas, null);
         AcervoPecasController controller = new AcervoPecasController(pecas, consulta, null);
         UUID peca = UUID.randomUUID();
         UUID gaveta = UUID.randomUUID();
@@ -146,5 +162,16 @@ class AcervoControllersTest {
 
         assertThat(pecas.args).containsExactly(ANA, ANA, mover, "previa", ANA, null, "confirmar", ANA, confirmar);
         assertThat(consulta.args).containsExactly(ANA, List.of(peca), ANA, "camisa branca M");
+    }
+
+    @Test
+    void luzDoAmbienteRepassaDonoAmbienteEFormulario() {
+        Luz luz = new Luz();
+        AcervoController controller = new AcervoController(null, null, luz);
+        UUID ambiente = UUID.randomUUID();
+        AcervoIluminacaoService.LuzForm form = new AcervoIluminacaoService.LuzForm(UUID.randomUUID(), 3000, false, false);
+
+        assertThat(controller.iluminarAmbiente(ANA, ambiente, form)).isSameAs(RESPOSTA);
+        assertThat(luz.args).containsExactly(ANA, ambiente, form);
     }
 }

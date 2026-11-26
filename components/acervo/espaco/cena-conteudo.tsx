@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState, type MutableRefObject } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { LUZ_FRIA } from "@/lib/acervo/cena/materiais";
+import { luzDaCena } from "@/lib/acervo/luz";
 import { alturaMaxima, ladoALado, larguraTotal } from "@/lib/acervo/planta";
 import { Camera3D } from "./camera-3d";
 import type { CenaProps } from "./cena-tipos";
@@ -87,13 +88,15 @@ export function CenaConteudo(props: CenaProps & { ponte?: PonteDeArrasto; rotulo
   const largura = larguraTotal(props.moveis) / 100;
   const dream = props.moveis.some((m) => m.modo === "DREAM_SPACE");
   const altura = alturaMaxima(props.moveis) / 100 + (dream ? 0.28 : 0);
+  const luz = luzDaCena(props.iluminacao, dream);
   return (
     <>
       <Camera3D largura={largura} altura={altura} vista={props.vista} reduzido={props.reduzido} comando={props.comandoDeCamera} />
       {props.ponte && <Ponte ponte={props.ponte} />}
-      <ambientLight intensity={dream ? 1.25 : 0.9} />
-      <directionalLight position={[largura / 2 + 2, altura + 2.5, 4]} intensity={dream ? 1.4 : 1.7} castShadow shadow-mapSize={[1024, 1024]} />
-      <pointLight position={[largura / 2, altura * 0.8, 1.2]} intensity={dream ? 6 : 9} color={dream ? LUZ_FRIA : "#FFD9A0"} />
+      <ambientLight intensity={luz.ambiente} />
+      <directionalLight position={[largura / 2 + 2, altura + 2.5, 4]} intensity={luz.direcional} color={luz.corDirecional} castShadow
+        shadow-mapSize={[1024, 1024]} />
+      <pointLight position={[largura / 2, altura * 0.8, 1.2]} intensity={luz.pontual} color={luz.corPontual} />
       <Sala largura={largura} dream={dream} />
       <group name="moveis">
         {ladoALado(props.moveis).map(({ movel, x }) => (

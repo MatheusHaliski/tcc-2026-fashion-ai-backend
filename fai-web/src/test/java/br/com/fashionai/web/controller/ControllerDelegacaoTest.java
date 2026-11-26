@@ -55,7 +55,7 @@ class ControllerDelegacaoTest {
             LookbookController.class, AuraCommerceController.class, SchemeController.class,
             AdminCatalogController.class, AuraPermissionsController.class, AuraHypeDropController.class,
             BrandLogoController.class, ExchangeRateController.class, CommunityTrendController.class,
-            PieceReferenceController.class, LookReferenceController.class, SocialController.class, MetamorphoseInventoryController.class,
+            PieceReferenceController.class, LookReferenceController.class, AcervoReferenceController.class, SocialController.class, MetamorphoseInventoryController.class,
             AtelierController.class, br.com.fashionai.web.controller.fit.FitController.class,
             FlairCardModesController.class, DailyLookController.class, SealPromotionController.class,
             MultiPieceController.class, WardrobeStudioController.class);
