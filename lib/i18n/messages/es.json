@@ -10121,7 +10121,7 @@
   "flair3d.ui.batalha.adversario": "Adversario",
   "flair3d.ui.batalha.numero": "Ronda {n}",
   "flair3d.ui.batalha.conta": "{regra} de la regla + {look} del look + {recurso} del foco = {total}",
-  "flair3d.ui.batalha.cansadas": "La prenda gastada como recurso no contó: {vagas}",
+  "flair3d.ui.batalha.cansadas": "La prenda cansada no contó (desfiló en la ronda anterior o se gastó como recurso en esta): {vagas}",
   "flair3d.ui.batalha.veio": "vino de {familia}",
   "flair3d.ui.batalha.soma": "Suma",
   "flair3d.ui.batalha.regra": "La nota de cada ronda: 25 por prenda dentro de la regla, hasta 10 por el carisma y la agilidad del look y hasta 5 por el foco de la prenda que gastes en la ronda. El look de la casa pasa por la misma cuenta, sin recurso.",

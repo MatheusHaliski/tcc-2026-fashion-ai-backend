@@ -64,17 +64,27 @@ final class BatalhaLooksPlacar {
     }
 
     static DaPessoa daPessoa(BatalhaLooksRodadas.Desafio desafio, Map<String, CbcRules.Card> look, List<UsoDeRecurso> usos, int rodada) {
+        return daPessoa(desafio, look, look, usos, rodada);
+    }
+
+    /**
+     * A rodada da pessoa quando parte do look já chega cansada por ter desfilado na rodada anterior
+     * ({@code descansadas}, de {@link BatalhaLooksRodadas#descansadas}). Não contam a peça que desfilou na rodada anterior
+     * nem a gasta como recurso nesta; a peça proibida conta no look inteiro.
+     */
+    static DaPessoa daPessoa(BatalhaLooksRodadas.Desafio desafio, Map<String, CbcRules.Card> look, Map<String, CbcRules.Card> descansadas,
+            List<UsoDeRecurso> usos, int rodada) {
         Set<UUID> gastas = gastas(usos, rodada);
         Map<String, CbcRules.Card> valendo = new LinkedHashMap<>();
         List<String> cansadas = new ArrayList<>();
         look.forEach((vaga, carta) -> {
-            if (gastas.contains(carta.id())) {
+            if (gastas.contains(carta.id()) || !descansadas.containsKey(vaga)) {
                 cansadas.add(vaga);
             } else {
                 valendo.put(vaga, carta);
             }
         });
-        List<RegraResultado> regras = new ArrayList<>(BatalhaLooksRodadas.regras(desafio, valendo));
+        List<RegraResultado> regras = new ArrayList<>(BatalhaLooksRodadas.regras(desafio, valendo, look));
         int foco = Flair3dRecursoNoMotor.naEtapa(usos, FOCO, rodada - 1);
         Nota nota = new Nota((int) Math.round(BatalhaLooksRodadas.pontos(regras)), peloLook(valendo),
                 (int) Math.round(Flair3dRecursoPerfil.TETO_DO_RECURSO * Math.min(1, foco / (double) FOCO_CHEIO)));
