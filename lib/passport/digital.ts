@@ -13,8 +13,6 @@ export interface DigitalPassport {
   materials: Record<'composition' | 'catalogMaterial' | 'care' | 'washing' | 'condition' | 'origin' | 'manufacturing', SheetField>;
   sizes: SizeOptions; model3d: Representation3d & { viewerUrl: SheetField; status: string | null; displayAllowed: boolean; tryOnApproved: boolean; generatedAt: string | null };
   provenanceLegend: Provenance[]; notices: string[]; lastUpdated: string | null;
-  /** Etiqueta de cuidados da Fábrica FashionAI (só para a dona e só em peça produzida sob encomenda). */
-  careLabel?: import('@/components/garment-delivery/contracts').CareLabel | null;
 }
 const part = encodeURIComponent;
 export const digitalPassportApi = {
