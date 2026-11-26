@@ -31,6 +31,9 @@ public interface BrandProfileRepository extends JpaRepository<BrandProfile, UUID
 
     List<BrandProfile> findTop100ByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus status);
 
+    /** Exercício 13: perfis de marca aprovados como opção da política do selo (até 50, por trecho do nome). */
+    List<BrandProfile> findTop50ByApprovalStatusAndBrandNameContainingIgnoreCaseOrderByBrandNameAsc(ApprovalStatus status, String term);
+
     /** Política de verificação: já existe outro perfil oficial (aprovado) com este nome de marca? */
     boolean existsByBrandNameIgnoreCaseAndApprovalStatusAndOwner_IdNot(String brandName, ApprovalStatus status, UUID ownerId);
 }

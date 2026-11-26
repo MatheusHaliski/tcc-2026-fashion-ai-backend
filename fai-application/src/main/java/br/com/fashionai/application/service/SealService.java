@@ -72,7 +72,7 @@ public class SealService {
         issuers = new SealIssuers(brandProfiles, celebrityProfiles, guard);
         lookups = new SealHypeLookups(bonds, schemeItems, wardrobeItems, issuers, this::hype);
         SealHypeAverages averages = new SealHypeAverages(bonds, this::hype, () -> hypeCache);
-        views = new SealViews(seals, users, brandProfiles, averages);
+        views = new SealViews(seals, users, brandProfiles, averages, () -> sealBrands);
         forms = new SealFormWriter(seals, users, guard, audit, ownMedia, issuers, views, () -> sealInferenceLogs);
         drafts = new SealPolicyDraftFlow(seals, users, brandProfiles, celebrityProfiles, wardrobeItems, ai, audit, issuers,
                 () -> sealBrands, () -> sealBackgrounds);

@@ -77,8 +77,11 @@ final class SealPolicyNormalizer {
                 if (brand != null && brand.length() > 80) {
                     brand = brand.substring(0, 80);
                 }
+                // exercício 13: marca por ID; com ela, o texto digitado não entra na regra (não se mistura ID com nome)
+                Map<String, Object> brandReference = SealPolicyBrandReference.normalize(m.get("brandReference"));
+                brand = brandReference == null ? brand : null;
                 HypeLevel hypeMin = level(m.get("hypeMin"));   // RF53: Hype mínimo da peça também é filtro
-                if (color == null && brand == null && category == null && sub == null && hypeMin == null) {
+                if (color == null && brand == null && brandReference == null && category == null && sub == null && hypeMin == null) {
                     continue;                                   // regra sem filtro nenhum não diz nada
                 }
                 Map<String, Object> r = new LinkedHashMap<>();
@@ -86,6 +89,9 @@ final class SealPolicyNormalizer {
                 r.put("count", "AT_LEAST".equals(q) ? count : null);
                 r.put("color", color == null ? null : (Taxonomy.COLORS.containsKey(color.toLowerCase(Locale.ROOT)) ? color.toLowerCase(Locale.ROOT) : color));
                 r.put("brand", brand);
+                if (brandReference != null) {
+                    r.put("brandReference", brandReference);
+                }
                 r.put("category", category);
                 r.put("subcategory", sub);
                 if (hypeMin != null) {
