@@ -17,7 +17,7 @@ export interface AcervoCompartimento {
 }
 
 /** Lugar de uma peça para outras telas: `compartimentoId` é o endereço estável; os nomes são os atuais. */
-export interface AcervoLugar {
+export interface AcervoLugarDaPeca {
   pieceId: string;
   guardada: boolean;
   compartimentoId: string | null;
