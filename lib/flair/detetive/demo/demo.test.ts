@@ -133,7 +133,7 @@ describe("combate", () => {
   function frente(d: number, modo: "PATRULHA" | "PERSEGUE" = "PATRULHA"): EstadoDaDemo {
     const e = estadoInicial();
     e.jogador.x = -2.2;
-    const v = { ...e.vigias[0], x: -2.2, z: 3.8 - d, giro: 0, rota: [{ x: -2.2, z: 3.8 - d }], alvoDaRota: 0, modo };
+    const v = { ...e.vigias[0], x: -2.2, z: e.jogador.z - d, giro: 0, rota: [{ x: -2.2, z: e.jogador.z - d }], alvoDaRota: 0, modo };
     return { ...e, vigias: [v] };
   }
 
