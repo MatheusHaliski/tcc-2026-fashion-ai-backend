@@ -9,7 +9,7 @@ import { diferencaDeGiro, distancia, giroPara, linhaLivre, moverComColisao } fro
 import { caixasDe, RAIO_DO_CORPO } from "@/lib/flair/detetive/demo/mundo";
 import type { EstadoDaDemo, EventoDaDemo, Ponto, Vigia } from "@/lib/flair/detetive/demo/tipos";
 
-export const VISAO = 7;
+export const VISAO = 5.5;
 export const MEIA_VISAO = (55 * Math.PI) / 180;
 /** De tão perto o vigia percebe a pessoa mesmo de costas. */
 export const OUVE = 1.6;
