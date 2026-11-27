@@ -14,5 +14,8 @@ import java.util.UUID;
 public interface FlairProfileRepository extends JpaRepository<FlairProfile, UUID> {
     Optional<FlairProfile> findByUserId(UUID userId);
 
+    /** Os perfis FLAIR de uma página de pessoas (nível na busca de adversários do multiplayer). */
+    List<FlairProfile> findByUserIdIn(Collection<UUID> userIds);
+
     List<FlairProfile> findTop20ByOrderByRankPointsDesc();
 }
