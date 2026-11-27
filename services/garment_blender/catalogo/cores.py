@@ -31,15 +31,25 @@ def to_hex(rgb) -> str:
     return f"#{r:02x}{g:02x}{b:02x}"
 
 
+BIN = np.array([8.0, 6.0, 6.0])   # caixa do histograma em Lab
+PEAKS = 64                        # caixas mais cheias que concorrem a cor da peça
+SPREAD = 1.6                      # outra caixa leva só com essa vez a massa do pico (no lote: ≤ 1,3 ou ≥ 1,9)
+
+
 def dominant_lab(lab: np.ndarray, radius: float = 12.0) -> np.ndarray:
-    """A cor que mais aparece (pico do histograma em Lab, em caixas de 8 × 6 × 6) e a média dos pixels perto dela:
-    a sombra das dobras e a estampa não puxam a média, como puxariam numa média simples."""
+    """A cor que mais aparece (pico do histograma em Lab) e a média dos pixels perto dela: a sombra das dobras e a
+    estampa não puxam a média, como puxariam numa média simples.
+
+    O pico é a caixa mais cheia, salvo quando outra das ``PEAKS`` mais cheias junta, num raio de ``2 * radius``, mais
+    que ``SPREAD`` vezes os pixels do raio dele: na malha canelada furta-cor (Desigual rosa) os vãos escuros entre as
+    nervuras caem todos numa caixa só e as nervuras rosa se espalham por muitas — o pico era o preto do vão."""
     pts = lab.reshape(-1, 3)
     if len(pts) > 40000:
         pts = pts[np.random.default_rng(0).choice(len(pts), 40000, replace=False)]
-    bins = np.floor(pts / np.array([8.0, 6.0, 6.0])).astype(int)
-    keys, counts = np.unique(bins, axis=0, return_counts=True)
-    peak = (keys[np.argmax(counts)] + 0.5) * np.array([8.0, 6.0, 6.0])
+    keys, counts = np.unique(np.floor(pts / BIN).astype(int), axis=0, return_counts=True)
+    centers = (keys[np.argsort(-counts, kind="stable")[:PEAKS]] + 0.5) * BIN
+    mass = np.array([(np.linalg.norm(pts - c, axis=1) < 2 * radius).sum() for c in centers])
+    peak = centers[int(np.argmax(mass))] if mass.max() > SPREAD * mass[0] else centers[0]
     near = pts[np.linalg.norm(pts - peak, axis=1) < radius]
     return near.mean(0) if len(near) else peak
 
