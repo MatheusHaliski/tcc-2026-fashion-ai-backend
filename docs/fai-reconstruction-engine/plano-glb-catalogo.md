@@ -1,5 +1,10 @@
 # Plano: modelo 3D de vitrine para todas as peças do catálogo (15/11/2026)
 
+> **Atualização (27/11/2026):** o caminho principal do catálogo é o **motor próprio em Blender**
+> (`services/garment_blender`, gerador `garment-blender-1`, decisões de 24 e 25/11 em `piloto-e-decisoes.md`), e ele
+> se mantém. Este plano (Hunyuan3D na T4) **não o substitui**. Fica como alternativa para o que o motor ainda não
+> cobre ou recusa (categorias sem base, peças que ele não veste), e como comparação de qualidade no piloto.
+
 Objetivo: cada produto do catálogo (14.321 hoje) ganha um `.glb` em `catalog_product_models_3d` (V97). Nota BOM vira
 PUBLISHED; o resto fica DRAFT para revisão ou volta para a geração. O flat lay aprovado **deixa de ser obrigatório**.
 
