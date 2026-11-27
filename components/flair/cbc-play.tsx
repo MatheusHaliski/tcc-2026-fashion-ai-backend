@@ -1,8 +1,9 @@
 "use client";
 /**
  * Montagem de um Desafio de Montagem (/flair/desafios/[slug]): em cima, a cena dinâmica do desafio como quebra-cabeça
- * (uma peça por vaga: entra quando a carta é posta e encaixa conforme a sintonia que o servidor dá); embaixo, as vagas
- * em grade; ao pé da tela, a bandeja com as cartas da vaga em destaque. Pôr uma carta é um toque, um arrasto ou
+ * (uma peça por vaga: entra quando a carta é posta e encaixa conforme a sintonia que o servidor dá) — a cena desenhada
+ * ou, nos cenários dinâmicos, o vídeo / símbolo FAI em movimento recortado em peças (montagem/cbc-arte.tsx);
+ * embaixo, as vagas em grade; ao pé da tela, a bandeja com as cartas da vaga em destaque. Pôr uma carta é um toque, um arrasto ou
  * Espaço/A no teclado e no controle (use-cbc-controle.ts).
  * A lista está em cbc.tsx; os dados e a conferência, em use-cbc-mesa.ts; a jogada, em use-cbc-jogo.ts.
  */
@@ -14,14 +15,13 @@ import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { CbcPainel } from "@/components/flair/cbc-painel";
 import { CbcRewardDialog, Story, SubmissionView } from "@/components/flair/cbc-partes";
 import { CbcVagas } from "@/components/flair/cbc-vagas";
-import { CenaViva } from "@/components/flair/cenas/cena-viva";
+import { CbcArte, estiloDaArte } from "@/components/flair/montagem/cbc-arte";
 import { Bandeja } from "@/components/flair/montagem/bandeja";
 import { useCbcControle } from "@/components/flair/use-cbc-controle";
 import { useCbcJogo } from "@/components/flair/use-cbc-jogo";
 import { useCbcLabels, windowOf } from "@/components/flair/use-cbc-labels";
 import { useCbcMesa } from "@/components/flair/use-cbc-mesa";
 import { HowItWorks } from "@/components/guide/guide";
-import { cenaDoCenario } from "@/lib/flair/cenas/catalogo";
 import { useState } from "react";
 import { CbcCenarioPreferido } from "@/components/flair/cbc-cenario-preferido";
 
@@ -37,7 +37,8 @@ export function CbcPlay({ slug }: { slug: string }) {
   if (m.detail.error) return <ErrorState error={m.detail.error} onRetry={m.detail.reload} />;
   if (m.detail.loading || !d) return <Skeleton className="h-96" />;
   const w = windowOf(d, t);
-  const cena = cenaDoCenario(preferido ?? d.scenario);
+  const cenario = preferido ?? d.scenario;
+  const arte = estiloDaArte(cenario);
   const cartas = Object.fromEntries(m.available.map((c) => [c.id, c]));
   const postas: Record<string, FlairCollectionCard | undefined> = Object.fromEntries(Object.entries(m.placed).map(([k, v]) => [k, cartas[v]]));
   const sintonia = m.fresca && m.check ? Object.fromEntries(m.check.evaluation.slots.map((r) => [r.slot, r.sintonia])) : null;
@@ -63,14 +64,16 @@ export function CbcPlay({ slug }: { slug: string }) {
 
       {m.readOnly && delivered ? (
         <div className="grid gap-3">
-          <div className="cbc-stage-art is-done"><CenaViva cena={cena} pecas={d.slots.map(() => "verde")} completa /></div>
+          <div className={cn("cbc-stage-art is-done", arte.className)} style={arte.style}><CbcArte cenario={cenario} pecas={d.slots.map(() => "verde")} completa /></div>
           <SubmissionView s={delivered} scenario={d.scenario} slots={d.slots} />
         </div>
       ) : (
         <div className="cbc-play">
           <div className="cbc-play-stage">
             <div className="cbc-stage">
-              <div className="cbc-stage-art"><CenaViva cena={cena} pecas={j.pecas} completa={!!m.result} /></div>
+              <div className={cn("cbc-stage-art", arte.className)} style={arte.style}>
+                <CbcArte cenario={cenario} pecas={j.pecas} completa={!!m.result} selecionada={d.slots.findIndex((s) => s.key === j.atual?.key)} />
+              </div>
               <CbcVagas slots={d.slots} placed={postas} sintonia={sintonia} selecionada={j.atual?.key} labelOf={(s) => slotLabel(d.scenario, s)}
                 onVaga={m.readOnly ? undefined : j.selecionar} pegar={m.readOnly ? undefined : j.pegar} />
             </div>
