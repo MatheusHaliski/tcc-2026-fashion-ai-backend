@@ -9,6 +9,11 @@ import type { UserCard } from "@/lib/api/types";
 import { Avatar, Badge, Button, Dialog, EmptyState, Field, Input, Select, Skeleton, useToast } from "@/components/ui";
 import { DeckSummary, FlairCardView, STAT_META, type FlairDeck, type FlairRound } from "@/components/flair/flair-card";
 import { tr, useI18n } from "@/lib/i18n/i18n";
+import { DeckHand } from "@/components/flair/arena/deck-hand";
+import { MatchArena } from "@/components/flair/arena/match-arena";
+import { useInvite } from "@/components/flair/arena/invite-banner";
+import { FaiNetworkPicker } from "@/components/flair/network/fai-network-picker";
+import { fromDuel, fromTeamBattle } from "@/lib/flair/match-stage";
 
 /**
  * Modos clássicos do FLAIR (RF37): Duelo 1×1 e treino com a Casa, Batalha de ocasião do dia e Equipes 3×3 com liga.
@@ -82,14 +87,16 @@ function DeckSelect({ decks, value, onChange }: { decks: FlairDeck[]; value: str
 export function DuelPanel({ onPlayed, skin }: { onPlayed?: () => void; skin?: string | null }) {
   const { t } = useI18n();
   const { decks, deckId, setDeckId, busy, run } = useClassic(onPlayed);
-  const [opponent, setOpponent] = useState(""); const [duel, setDuel] = useState<DuelResult | null>(null);
+  const invite = useInvite();
+  const [opponent, setOpponent] = useState(invite.rival ?? ""); const [duel, setDuel] = useState<DuelResult | null>(null);
   const playDuel = (opp: string) => run("duel", () => api.post<DuelResult>("/api/flair/duels", { schemeId: deckId, opponent: opp }), (r) => setDuel(r));
   if (decks.loading) return <Skeleton className="h-40" />;
   return (
     <div className="grid gap-3">
       {(decks.data?.length ?? 0) === 0 ? <EmptyState title={t("flair.voce_ainda_nao_tem_decks")} hint={t("flair.crie_um_esquema_com_pecas")} action={<Link href="/schemes/new" className="btn btn-sm">{t("common.criar_esquema")}</Link>} /> : <>
         <DeckSelect decks={decks.data ?? []} value={deckId} onChange={setDeckId} />
-        <Field label={t("flair.oponente_usuario")} id="opp"><Input id="opp" placeholder="@paris_lea" value={opponent} onChange={(e) => setOpponent(e.target.value)} /></Field>
+        <DeckHand cards={(decks.data ?? []).find((d) => d.schemeId === deckId)?.cards ?? []} />
+        <FaiNetworkPicker id="opp" label={t("flair.oponente_usuario")} value={opponent ? [opponent] : []} onChange={(v) => setOpponent(v[0] ?? "")} />
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" loading={busy === "duel"} disabled={!deckId || !opponent.trim()} onClick={() => playDuel(opponent.trim())}>{t("flair.duelar")}</Button>
           <Button loading={busy === "duel"} disabled={!deckId} onClick={() => playDuel("CASA")}>{t("flair.treinar_com_a_casa")}</Button>
@@ -103,6 +110,7 @@ export function DuelPanel({ onPlayed, skin }: { onPlayed?: () => void; skin?: st
             <div className="surface p-3"><p className="type-caption text-muted">{t("flair.voce")}</p><DeckSummary deck={duel.me} compact /><div className="mt-2 flex gap-2 overflow-x-auto">{duel.me.cards.map((c) => <FlairCardView key={c.id} card={c} size="sm" skin={skin} />)}</div></div>
             <div className="surface p-3"><p className="type-caption text-muted">{duel.opponent.label}</p><DeckSummary deck={duel.opponent.deck} compact /><div className="mt-2 flex gap-2 overflow-x-auto">{duel.opponent.deck.cards.map((c) => <FlairCardView key={c.id} card={c} size="sm" />)}</div></div>
           </div>
+          <MatchArena data={fromDuel(duel)} labelA={t("flair.voce")} labelB={duel.opponent.label} />
           <Rounds rounds={duel.rounds} a={t("flair.voce")} b={duel.opponent.label} />
           <div className="flair-result"><Badge tone={OUTCOME[duel.outcome].tone}>{OUTCOME[duel.outcome].label}</Badge><b className="tabular">{duel.score.me} × {duel.score.opponent}</b>
             <span className="type-caption">{duel.rewardCapReached ? t("flair.teto_diario_de_duelos_premiados") : t("common.coins", { coins: duel.coins })}</span>
@@ -125,6 +133,7 @@ export function ArenaPanel({ onPlayed }: { onPlayed?: () => void }) {
       <p className="type-caption text-muted">{a.rule}</p>
       {(decks.data?.length ?? 0) === 0 ? <EmptyState title={t("flair.voce_ainda_nao_tem_decks")} hint={t("flair.crie_um_esquema_com_pecas")} action={<Link href="/schemes/new" className="btn btn-sm">{t("common.criar_esquema")}</Link>} /> : <>
         <DeckSelect decks={decks.data ?? []} value={deckId} onChange={setDeckId} />
+        <DeckHand cards={(decks.data ?? []).find((d) => d.schemeId === deckId)?.cards ?? []} />
         <div><Button variant="primary" loading={busy === "arena"} disabled={!deckId || joined} onClick={() => run("arena", () => api.post<Arena>("/api/flair/arena", { schemeId: deckId }), (r) => arena.setData(r))}>
           {joined ? t("flair.voce_ja_esta_na_batalha") : t("flair.inscrever_deck")}</Button></div>
       </>}
@@ -162,6 +171,7 @@ export function TeamPanel({ onPlayed }: { onPlayed?: () => void }) {
               <Field label={t("flair.desafiar_a_equipe_codigo")} id="rival" className="flex-1"><Input id="rival" placeholder="T1AB2CD" value={teamForm.rival} onChange={(e) => setTeamForm({ ...teamForm, rival: e.target.value })} /></Field>
               <Button variant="primary" loading={busy === "battle"} disabled={!teamForm.rival.trim()} onClick={() => run("battle", () => api.post<TeamBattle>("/api/flair/teams/battles", { code: teamForm.rival.trim() }), (r) => { setBattle(r); league.reload(); })}>{t("flair.duelo_de_equipes")}</Button>
             </div>
+            <Button size="sm" className="mt-2 mr-2" loading={busy === "house"} onClick={() => run("house", () => api.post<TeamBattle>("/api/flair/teams/battles", { code: "CASA" }), (r) => { setBattle(r); league.reload(); })}>{t("flair.arena.treinar_equipe_casa")}</Button>
             <Button size="sm" className="mt-2" onClick={() => run("leave", () => api.delete<League>("/api/flair/teams/me"), (r) => league.setData(r))}>{t("flair.sair_da_equipe")}</Button>
           </div>
         ) : (
@@ -188,6 +198,7 @@ export function TeamPanel({ onPlayed }: { onPlayed?: () => void }) {
       </div>
       <Dialog open={!!battle} onClose={() => setBattle(null)} size="xl" title={battle ? `${battle.teamA.name} × ${battle.teamB.name}` : ""} footer={<Button variant="primary" onClick={() => setBattle(null)}>{t("common.close")}</Button>}>
         {battle && <div className="grid gap-3">
+          <MatchArena data={fromTeamBattle(battle)} labelA={battle.teamA.name} labelB={battle.teamB.name} />
           {battle.duels.map((x) => (
             <div key={x.slot} className="surface p-3">
               <p className="type-caption text-muted">{t("flair.par", { slot: x.slot })}</p>

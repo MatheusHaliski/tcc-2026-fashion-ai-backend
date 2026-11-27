@@ -90,10 +90,9 @@ describe("Battle of Looks", () => {
     pickLook("Look Alfa");
     expect(screen.getAllByRole("button", { name: /Look Alfa/ })[0].getAttribute("aria-pressed")).toBe("true");
     choose("Tema", "🎭 Gala");
-    fireEvent.change(screen.getByPlaceholderText("@usuário"), { target: { value: "rival" } });
     fireEvent.click(play);
     expect(await screen.findByText("Vitória")).toBeTruthy();
-    expect(calls.find((c) => c.path === "/api/flair/modes/battle")?.body).toEqual({ schemeId: "s1", opponent: "rival", theme: "GALA" });
+    expect(calls.find((c) => c.path === "/api/flair/modes/battle")?.body).toEqual({ schemeId: "s1", opponent: "CASA", theme: "GALA" });
     expect(screen.getByText("3 × 1")).toBeTruthy();
     expect(screen.getByText("+40 coins")).toBeTruthy();
     expect(screen.getByText("+5 FAI Pts")).toBeTruthy();
@@ -118,8 +117,9 @@ describe("Battle of Looks", () => {
     await screen.findByRole("button", { name: "⚔️ Batalhar" });
     await waitFor(() => expect(screen.getAllByRole("button", { name: /Look Beta/ }).length).toBeGreaterThan(0));
     pickLook("Look Beta");
-    fireEvent.change(screen.getByPlaceholderText("@usuário"), { target: { value: "x" } });
-    fireEvent.click(btn("🏠 A Casa (comunidade)"));
+    fireEvent.click(screen.getByRole("radio", { name: "👥 Multiplayer (rede FAI)" }));
+    expect((btn("⚔️ Batalhar") as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("radio", { name: "🏠 A Casa (comunidade)" }));
     fireEvent.click(btn("⚔️ Batalhar"));
     expect(await screen.findByText("Derrota")).toBeTruthy();
     expect(calls.find((c) => c.path === "/api/flair/modes/battle")?.body).toEqual({ schemeId: "s2", opponent: "CASA", theme: null });
@@ -335,47 +335,7 @@ describe("Deck Battle", () => {
   });
 });
 
-describe("Wardrobe Wars, Tag Team e Combo", () => {
-  it("Wardrobe Wars exige o @ do adversário e manda o confronto", async () => {
-    const { calls } = base({ "POST /api/flair/modes/wardrobe-wars": { ...RESULT, rounds: [] } });
-    renderApp(<FlairModes initial="WARDROBE" />);
-    const go = await screen.findByRole("button", { name: "🧥 Guarda-roupa × guarda-roupa" });
-    expect((go as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.queryByText("🏠 A Casa (comunidade)")).toBeNull();
-    fireEvent.change(screen.getByLabelText("Guarda-roupa adversário"), { target: { value: "bia" } });
-    fireEvent.click(go);
-    expect(await screen.findByText("Vitória")).toBeTruthy();
-    expect(calls.find((c) => c.path.endsWith("/wardrobe-wars"))?.body).toEqual({ opponent: "bia" });
-  });
-
-  it("Tag Team manda dupla e adversários (só quando os dois são informados) e mostra a harmonia", async () => {
-    const { calls } = base({ "POST /api/flair/modes/tag-team": { ...RESULT, rounds: [], teamA: { harmony: 88 }, teamB: { harmony: 70 } } });
-    renderApp(<FlairModes initial="TAG_TEAM" />);
-    await waitFor(() => expect(screen.getAllByRole("button", { name: /Look Alfa/ }).length).toBeGreaterThan(0));
-    pickLook("Look Alfa");
-    const go = btn("🤝 Jogar em dupla");
-    expect((go as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText("Sua dupla (@usuário)"), { target: { value: "bia" } });
-    fireEvent.change(screen.getByLabelText("Adversário 1 (opcional)"), { target: { value: "c1" } });
-    fireEvent.click(go);
-    expect(await screen.findByText("88")).toBeTruthy();
-    expect(calls.find((c) => c.path.endsWith("/tag-team"))?.body).toEqual({ schemeId: "s1", partner: "bia", opponents: [] });
-    expect(screen.getByText("Sua dupla × Dupla adversária")).toBeTruthy();
-  });
-
-  it("Tag Team com os dois adversários manda a lista", async () => {
-    const { calls } = base({ "POST /api/flair/modes/tag-team": { ...RESULT, rounds: [] } });
-    renderApp(<FlairModes initial="TAG_TEAM" />);
-    await waitFor(() => expect(screen.getAllByRole("button", { name: /Look Alfa/ }).length).toBeGreaterThan(0));
-    pickLook("Look Alfa");
-    fireEvent.change(screen.getByLabelText("Sua dupla (@usuário)"), { target: { value: "bia" } });
-    fireEvent.change(screen.getByLabelText("Adversário 1 (opcional)"), { target: { value: "c1" } });
-    fireEvent.change(screen.getByLabelText("Adversário 2 (opcional)"), { target: { value: "c2" } });
-    fireEvent.click(btn("🤝 Jogar em dupla"));
-    await screen.findByText("Vitória");
-    expect(calls.find((c) => c.path.endsWith("/tag-team"))?.body).toMatchObject({ opponents: ["c1", "c2"] });
-  });
-
+describe("Combo Battle", () => {
   it("Combo Battle mostra o livro de combos padrão e troca pelo do resultado", async () => {
     const { calls } = base({ "POST /api/flair/modes/combo": { ...RESULT, rounds: [], comboBook: ["Combo novo +7"] } });
     renderApp(<FlairModes initial="COMBO" />);

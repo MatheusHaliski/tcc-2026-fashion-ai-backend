@@ -1,0 +1,69 @@
+/* ===================================================== FLAIR › Partidas: catálogo com cenário, arena, mão e rede FAI */
+/* Catálogo: a foto do cenário do modo fica no topo do cartão; selos solo/multiplayer, cartas e complexidade embaixo. */
+.mode-grid-scene { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.fm-scene { position: relative; overflow: hidden; padding-top: 0; grid-template-rows: auto; }
+.fm-scene-photo { grid-column: 1 / -1 !important; width: calc(100% + 28px); margin: 0 -14px 10px; height: 104px; object-fit: cover; filter: saturate(1.1); transition: transform .4s ease; }
+.fm-scene:hover .fm-scene-photo, .fm-scene:focus-visible .fm-scene-photo { transform: scale(1.06); }
+.fm-scene:hover { transform: translateY(-2px); box-shadow: 0 10px 24px color-mix(in srgb, var(--ink) 14%, transparent); }
+.fm-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 4px; }
+.fm-tag { font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink); }
+.fm-tag.is-multi { background: var(--thread-soft); }
+.fm-tag.is-cards { background: var(--mark-soft); color: var(--mark); }
+.fm-level { display: inline-flex; gap: 2px; margin-left: auto; }
+.fm-level i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-soft); }
+.fm-level i.on { background: var(--thread); }
+.fm-panel .fm-head { position: relative; padding: 14px; margin: -4px -4px 12px; border-radius: 12px; overflow: hidden; color: #fff;
+  background: linear-gradient(90deg, rgba(10, 8, 16, .82), rgba(10, 8, 16, .35)), var(--fm-scene) center / cover no-repeat; }
+.fm-panel .fm-head .type-h2 { color: #fff; text-shadow: 0 2px 10px rgba(0, 0, 0, .5); }
+
+/* Adversário: solo (A Casa) ou multiplayer (rede FAI) */
+.mode-players { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Busca na rede FAI */
+.fai-net { display: grid; gap: 8px; }
+.fai-net-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.fai-net-picked { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.fai-net-picked li { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 2px; border-radius: 999px; background: var(--thread-soft); font-size: 13px; font-weight: 600; }
+.fai-net-remove { width: 24px; height: 24px; border-radius: 50%; font-size: 16px; line-height: 1; }
+.fai-net-remove:hover { background: var(--surface-2); }
+.fai-net-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 280px; overflow-y: auto; }
+.fai-net-person { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--line-soft); background: var(--surface); }
+.fai-net-person.is-on { border-color: var(--thread); background: var(--thread-soft); }
+
+/* Leitura tática */
+.tactics { display: grid; gap: 6px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line-soft); background: var(--surface-2); }
+.tactics-stat { display: inline-block; margin: 0 4px 0 2px; padding: 0 6px; border-radius: 6px; background: var(--surface); }
+.tactics-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.tactics-list li { display: grid; grid-template-columns: minmax(0, 1fr) 120px 32px; align-items: center; gap: 8px; font-size: 13px; }
+.tactics-list li small { grid-column: 1 / -1; }
+.tactics-list i { height: 6px; border-radius: 3px; background: var(--line-soft); overflow: hidden; display: block; }
+.tactics-list b { display: block; height: 100%; background: linear-gradient(90deg, var(--mark), var(--thread)); }
+.tactics-list em { font-style: normal; font-weight: 700; text-align: right; }
+
+/* Mão de cartas de roupa (leque) */
+.deck-hand { margin: 0; }
+.deck-hand ul { list-style: none; margin: 0; padding: 18px 8px 8px; display: flex; justify-content: center; overflow-x: auto; }
+.deck-card { flex: none; width: 104px; margin: 0 -10px; padding: 6px; display: grid; gap: 2px; border-radius: 12px; background: var(--surface); border: 2px solid var(--line-soft);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--ink) 16%, transparent); transform: rotate(var(--fan)) translateY(var(--lift)); transform-origin: 50% 120%; transition: transform .2s ease, z-index 0s; }
+.deck-card:hover, .deck-card:focus-within { transform: rotate(0deg) translateY(-14px) scale(1.08); z-index: 2; }
+.deck-card img, .deck-card-blank { width: 100%; height: 84px; object-fit: cover; border-radius: 8px; background: var(--surface-2); display: grid; place-items: center; font-size: 28px; }
+.deck-card b { font-size: 12px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deck-card small { font-size: 12px; color: var(--muted, var(--ink)); line-height: 1.2; }
+.deck-card.rarity-premium { border-color: #c9ced6; }
+.deck-card.rarity-limited { border-color: #e9b949; }
+.deck-card.rarity-rare { border-color: #c6275e; box-shadow: 0 0 18px color-mix(in srgb, #c6275e 45%, transparent); }
+.deck-card.fx-spotlight img { box-shadow: inset 0 -30px 30px -20px rgba(255, 215, 106, .6); }
+.deck-card.fx-sparkle { background-image: radial-gradient(circle at 80% 10%, color-mix(in srgb, #ffd76a 40%, transparent), transparent 40%); }
+.deck-card.fx-aura { background-image: radial-gradient(circle at 50% 40%, color-mix(in srgb, #ff3df2 22%, transparent), transparent 70%); }
+
+/* Arena do resultado */
+.arena { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.arena-side { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; }
+.arena-mvp { display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border-radius: 12px; background: var(--chalk-soft); border: 1.5px solid color-mix(in srgb, var(--chalk) 45%, transparent); animation: arena-pop .5s ease both; }
+.arena-mvp img { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; }
+.arena-replay { display: grid; gap: 8px; }
+.arena-replay-video { width: min(100%, 480px); border-radius: 12px; background: #000; aspect-ratio: 16 / 9; }
+@keyframes arena-pop { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
+
+@media (min-width: 1024px) { .arena { grid-template-columns: minmax(0, 1fr) 300px; } .arena-side { flex-direction: column; } }
+@media (prefers-reduced-motion: reduce) { .fm-scene-photo, .deck-card, .arena-mvp { transition: none; animation: none; } .deck-card { transform: none; margin: 0 2px; } }

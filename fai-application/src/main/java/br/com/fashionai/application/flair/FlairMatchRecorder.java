@@ -105,7 +105,22 @@ public final class FlairMatchRecorder {
         out.put("rewardCapReached", !rewarded);
         out.put("faiPoints", faiPoints.game(user.id(), "FLAIR_" + mode, m.getId().toString(), outcome));   // RF41
         discoverSynergies(user, mode, mine, m);
+        rematchNotice(user, rival, mode, m, outcome);
         return out;
+    }
+
+    /**
+     * Partida contra o guarda-roupa de outra pessoa (escolhida pela busca na rede FAI): ela recebe o aviso com o link da
+     * revanche já com o rival escolhido. O bloqueio foi barrado antes, ao resolver o oponente ({@link FlairModeLooks}).
+     */
+    void rematchNotice(CurrentUser user, User rival, String mode, FlairMatch m, String outcome) {
+        if (rival == null || rival.getId().equals(user.id())) {
+            return;
+        }
+        String key = "WIN".equals(outcome) ? "flairInvite.revanche_perdeu" : "LOSS".equals(outcome) ? "flairInvite.revanche_ganhou" : "flairInvite.revanche_empate";
+        notifications.notify(rival.getId(), user.id(), NotificationType.CHALLENGE_INVITE, FlairInviteService.RESOURCE, m.getId(),
+                Msg.k("flairInvite.revanche_titulo", user.username()), Msg.k(key),
+                Map.of("href", FlairInviteService.href(mode, user.username(), null), "mode", mode));
     }
 
     /** Atelier: cada sinergia que a pessoa ativa com os PRÓPRIOS looks numa partida vira uma Assinatura de Aura (uma por sinergia). */

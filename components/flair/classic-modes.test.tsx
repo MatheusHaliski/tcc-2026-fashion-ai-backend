@@ -52,12 +52,12 @@ describe("DuelPanel", () => {
 
   it("duela com o @ informado, mostra o resultado no diálogo e fecha", async () => {
     const onPlayed = vi.fn();
-    const { calls } = loggedAs(ME, { "GET /api/flair/decks": DECKS, "POST /api/flair/duels": DUEL });
+    const { calls } = loggedAs(ME, { "GET /api/flair/decks": DECKS, "POST /api/flair/duels": DUEL, "GET /api/search": { results: [user("bia")] } });
     renderApp(<DuelPanel onPlayed={onPlayed} skin="CHAMPION" />);
     const duelar = await screen.findByRole("button", { name: "Duelar" });
     await waitFor(() => expect(screen.getByLabelText("Seu deck (look)").textContent).toContain("Deck Noite · poder 300"));
     expect((duelar as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText("Oponente (@usuário)"), { target: { value: "  bia " } });
+    fireEvent.click(await screen.findByRole("button", { name: "Convidar @bia" }));
     fireEvent.click(duelar);
     const dialog = await screen.findByRole("dialog", { name: "Duelo 1×1 · @bia" });
     expect(calls.find((c) => c.path === "/api/flair/duels")?.body).toEqual({ schemeId: "d1", opponent: "bia" });
@@ -89,7 +89,8 @@ describe("DuelPanel", () => {
   it("erro do duelo vira aviso e não abre o diálogo", async () => {
     loggedAs(ME, { "GET /api/flair/decks": DECKS, "POST /api/flair/duels": err(409, "Oponente sem deck") });
     renderApp(<DuelPanel />);
-    fireEvent.click(await screen.findByRole("button", { name: "Treinar com a Casa" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "Treinar com a Casa" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "Treinar com a Casa" }));
     expect(await screen.findByText("Oponente sem deck")).toBeTruthy();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
@@ -174,6 +175,15 @@ describe("TeamPanel", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "Sair da equipe" }));
     expect(await screen.findByLabelText("Nome da nova equipe")).toBeTruthy();
+  });
+
+  it("com equipe: treinar contra a equipe da Casa manda o código CASA e abre o resultado", async () => {
+    const practice = { teamA: team("t1", "Equipe Rosa", true), teamB: { ...team("t0", "Equipe da Casa", false), code: "CASA" }, winner: "B", score: { a: 0, b: 1 }, duels: [{ slot: 1, a: null, b: null, winner: "B", rounds: [] }] };
+    const { calls } = loggedAs(ME, { "GET /api/flair/teams": MINE, "POST /api/flair/teams/battles": practice, "GET /api/flair/decks": DECKS });
+    renderApp(<TeamPanel />);
+    fireEvent.click(await screen.findByRole("button", { name: "🏠 Treinar contra a equipe da Casa" }));
+    expect(await screen.findByRole("dialog", { name: "Equipe Rosa × Equipe da Casa" })).toBeTruthy();
+    expect(calls.find((c) => c.path === "/api/flair/teams/battles")?.body).toEqual({ code: "CASA" });
   });
 
   it("derrota e empate no duelo de equipes aparecem no resultado", async () => {

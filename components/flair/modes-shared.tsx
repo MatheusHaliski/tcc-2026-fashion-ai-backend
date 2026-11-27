@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { mediaUrl } from "@/lib/api/client";
-import { Badge, Button, Chip, cn, Field, Input } from "@/components/ui";
+import { Badge, Button, Chip, cn } from "@/components/ui";
+import { FaiNetworkPicker } from "@/components/flair/network/fai-network-picker";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 
 /** Tipos e peças de interface compartilhados pelos modos do FLAIR (PEÇA → CARD → LOOK → TEAM/DECK → COMPETIÇÃO). */
@@ -52,12 +53,22 @@ export function LookPicker({ looks, value, onChange, max = 1, label = tr("flair.
   );
 }
 
+/**
+ * Adversário de um modo: Solo (A Casa — looks públicos da comunidade, ou a IA) ou Multiplayer (convite pela busca na
+ * rede FAI; nunca digitando o @). `value` é "CASA" ou o @ escolhido (sem "@"); sem `allowHouse` só existe o convite.
+ */
 export function OpponentField({ value, onChange, allowHouse = true, label = tr("flair.modesShared.oponente") }: { value: string; onChange: (v: string) => void; allowHouse?: boolean; label?: string }) {
   const { t } = useI18n();
+  const solo = allowHouse && (value === "CASA" || value === "");
+  const [multi, setMulti] = useState(!solo);
+  const showPicker = !allowHouse || multi;
   return (
-    <div className="flex flex-wrap items-end gap-2">
-      <Field label={label} id="opp-mode" className="min-w-[180px] flex-1"><Input id="opp-mode" placeholder="@usuário" value={value === "CASA" ? "" : value} onChange={(e) => onChange(e.target.value)} /></Field>
-      {allowHouse && <Chip active={value === "CASA" || value === ""} onClick={() => onChange("CASA")}>{t("flair.modesShared.a_casa_comunidade")}</Chip>}
+    <div className="grid gap-2">
+      {allowHouse && <div className="mode-players" role="radiogroup" aria-label={label}>
+        <Chip role="radio" aria-checked={!multi} active={!multi} onClick={() => { setMulti(false); onChange("CASA"); }}>{t("flair.modesShared.a_casa_comunidade")}</Chip>
+        <Chip role="radio" aria-checked={multi} active={multi} onClick={() => { setMulti(true); if (value === "CASA") onChange(""); }}>{t("flair.network.multiplayer")}</Chip>
+      </div>}
+      {showPicker && <FaiNetworkPicker id="opp-mode" label={label} value={value && value !== "CASA" ? [value] : []} onChange={(v) => onChange(v[0] ?? "")} />}
     </div>
   );
 }
