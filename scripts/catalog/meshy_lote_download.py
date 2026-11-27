@@ -23,6 +23,8 @@ import sys
 from pathlib import Path
 
 FILES = ("modelo-web.glb", "tarefa.json")
+OPTIONAL = ("modelo-web.fit.json",)   # manifesto de encaixe do provador, quando o lote tem (motor Blender: modelo.fit.json)
+BUCKET_NAME = {"modelo-web.fit.json": "modelo.fit.json"}
 MANIFEST = ["product_id", "glb", "brand", "name", "official_product_url", "codex_product_id", "codex_quality"]
 
 
@@ -61,6 +63,15 @@ def download(client, bucket: str, row: dict, folder: Path) -> Path:
             continue
         key = f"{row['prefixo'].rstrip('/')}/{row['subcategoria']}/{row['tarefa']}/{name}"
         client.download_file(bucket, key, str(out))
+    for name in OPTIONAL:
+        out = target / name
+        if out.is_file() and out.stat().st_size > 0:
+            continue
+        key = f"{row['prefixo'].rstrip('/')}/{row['subcategoria']}/{row['tarefa']}/{BUCKET_NAME.get(name, name)}"
+        try:
+            client.download_file(bucket, key, str(out))
+        except Exception:   # lote sem manifesto (Meshy): o provador mede o .glb
+            out.unlink(missing_ok=True)
     return target
 
 

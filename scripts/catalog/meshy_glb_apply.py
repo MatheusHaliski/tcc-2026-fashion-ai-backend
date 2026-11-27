@@ -43,6 +43,15 @@ def pieces_without_model(conn, product_ids: list[str]) -> dict[str, int]:
         return {str(r["catalog_product_id"]): int(r["n"]) for r in cur.fetchall()}
 
 
+def store_manifest(storage, glb_key: str, glb_path) -> None:
+    """O manifesto de encaixe (``<glb>.fit.json`` ao lado do arquivo baixado) vai junto, no mesmo caminho do .glb com
+    ``.fit.json``: é onde o provador o procura (lib/avatar3d/meshy/manifest.ts). Sem ele, o provador mede a malha."""
+    fit = glb_path.with_name(glb_path.name[:-4] + ".fit.json") if glb_path and glb_path.name.endswith(".glb") else None
+    if fit and fit.is_file():
+        storage.client.put_object(Bucket=storage.bucket, Key=glb_key[:-4] + ".fit.json", Body=fit.read_bytes(),
+                                  ContentType="application/json")
+
+
 def store(storage, data: bytes) -> str:
     """Envia e relê; devolve a chave (servida por /media/). Conteúdo divergente é apagado e vira erro."""
     sha = hashlib.sha256(data).hexdigest()
@@ -82,6 +91,7 @@ def apply_one(conn, storage, item: dict, source: GlbSource = MESHY_CODEX) -> dic
                   "sha": item["sha"], "renditions": json.dumps(renditions), "notes": source.notes,
                   "metrics": json.dumps({"import": imported, "quality": q}, ensure_ascii=False),
                   "published_at": now if publish else None, "published_by": ACTOR if publish else None}
+        store_manifest(storage, renditions["WEB"]["key"], item.get("path"))
         url, pieces = "/media/" + renditions["WEB"]["key"], 0
         with conn.cursor() as cur:
             if publish:
