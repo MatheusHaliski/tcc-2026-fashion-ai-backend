@@ -1,12 +1,14 @@
 package br.com.fashionai.application.flair;
 
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.flair3d.cbc.FlairCbcElencos;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +53,27 @@ class CbcVestirSeedTest {
         String sql = Files.readString(SQL).replaceAll("(?m)^--.*$", "").replaceAll("\\s+", " ");
         assertThat(sql).contains("UPDATE flair_challenges SET status = 'DRAFT'", "WHERE series IS NULL AND status <> 'DRAFT' AND slug NOT IN (");
         assertThat(sql).doesNotContainIgnoringCase("DELETE ").doesNotContainIgnoringCase("DROP ").doesNotContainIgnoringCase("TRUNCATE");
+    }
+
+    /**
+     * Escopo (pedido da dona): só a montagem muda. A migration só escreve em flair_challenges (UPDATE de status e INSERT),
+     * nunca nas tabelas dos elencos, cartas, decks ou partidas do Flair; e os cinco elencos (definidos em código) seguem
+     * os mesmos. As tabelas de elenco (flair_cbc_squad_*) não referenciam flair_challenges, então não há ligação a desfazer.
+     */
+    @Test
+    void soAMontagemMudaOsElencosECartasDoFlairFicamIntactos() throws IOException {
+        // um comando por terminador no fim da linha (o texto entre aspas pode ter ponto e vírgula)
+        List<String> comandos = Arrays.stream(Files.readString(SQL).replaceAll("(?m)^--.*$", "").split("(?m);\\s*$"))
+                .map(s -> s.replaceAll("\\s+", " ").trim()).filter(s -> !s.isEmpty()).toList();
+        String sql = String.join(" ", comandos);
+        assertThat(comandos).hasSize(2);
+        assertThat(comandos.get(0)).startsWith("UPDATE flair_challenges SET status = 'DRAFT', version = version + 1, updated_at = '2026-11-26 12:00:00', "
+                + "last_modified_by = 'V110' WHERE series IS NULL");
+        assertThat(comandos.get(1)).startsWith("INSERT INTO flair_challenges (");
+        assertThat(sql.toLowerCase()).doesNotContain("flair_cbc_squad", "flair_card_instance", "flair_deck", "flair3d_", "flair_challenge_submissions",
+                "flair_challenge_groups", "flair_game_rewards", "alter table", "delete", "drop", "truncate");
+        assertThat(FlairCbcElencos.TODOS).extracting(e -> e.codigo())
+                .containsExactly("PRIMEIRO_ELENCO", "PALETA_ATELIE", "CASA_MARCA", "NOITE_ESTREIA", "ELENCO_LENDARIO");
     }
 
     @Test
