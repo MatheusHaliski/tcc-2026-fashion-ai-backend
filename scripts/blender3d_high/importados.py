@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 
 from .exportar import _gltfpack
+from .glb_texturas import reduzir_texturas
 
 RAIZ = Path(__file__).resolve().parents[2]
 ORIGEM = RAIZ / "public/heist/models"
@@ -21,6 +22,8 @@ MEDIO = RAIZ / "public/flair/3d/salas/importados"
 URL_MEDIO = "/flair/3d/salas/importados"
 #: razão de triângulos da versão média de um modelo pronto
 RAZAO_MEDIO = 0.22
+#: lado máximo das texturas da versão média
+LADO_MEDIO = 512
 CREDITO = "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
 _aberto = Path(tempfile.gettempdir()) / "fai-heist-aberto"
 
@@ -38,14 +41,15 @@ def aberto(modelo: str) -> Path:
 
 
 def medio(modelo: str) -> Path:
-    """Versão simplificada (gltfpack -si), comprimida; gerada uma vez por modelo."""
+    """Versão simplificada (gltfpack -si -sa) com texturas de 512 px, comprimida; gerada uma vez por modelo."""
     import subprocess
 
     MEDIO.mkdir(parents=True, exist_ok=True)
     destino = MEDIO / f"{modelo}-medio.glb"
     if not destino.exists():
         subprocess.run([*_gltfpack(), "-i", str(ORIGEM / f"{modelo}.glb"), "-o", str(destino), "-cc", "-si",
-                        str(RAZAO_MEDIO)], check=True, capture_output=True)
+                        str(RAZAO_MEDIO), "-sa"], check=True, capture_output=True)
+        reduzir_texturas(destino, LADO_MEDIO)
     return destino
 
 
@@ -80,3 +84,18 @@ def tirar_da_cena() -> None:
 
     for o in [o for o in bpy.data.objects if "importado" in o]:
         bpy.data.objects.remove(o)
+
+
+def main() -> int:
+    """Refaz a versão média de todos os modelos prontos que o manifesto das salas usa (sem Blender)."""
+    import json
+
+    manifesto = json.loads((MEDIO.parent / "manifest.json").read_text(encoding="utf-8"))
+    for modelo in sorted({i["model"] for s in manifesto for i in s.get("imports", [])}):
+        (MEDIO / f"{modelo}-medio.glb").unlink(missing_ok=True)
+        print(modelo, medio(modelo).stat().st_size // 1024, "KB")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

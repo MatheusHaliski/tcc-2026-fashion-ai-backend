@@ -72,6 +72,24 @@ def gerar(slug: str, pasta: Path, provas: Path | None) -> dict:
     linha["imports"] = [{"model": i.modelo, "url": f"{importados.URL}/{i.modelo}.glb",
                          "medium": f"{importados.URL_MEDIO}/{importados.medio(i.modelo).name}", "pos": list(i.pos),
                          "rotation": i.giro, "height": i.altura, "credit": importados.CREDITO} for i in sala.importados]
+    return recontar(linha)
+
+
+def recontar(linha: dict) -> dict:
+    """Soma, em cada nível, os triângulos e as chamadas dos modelos prontos (o que a sala desenha de verdade) e confere
+    o orçamento com eles."""
+    from . import exportar, perfil
+
+    for nivel, dados in linha["levels"].items():
+        tri = chamadas = 0
+        for imp in linha.get("imports", []):
+            url = imp["medium"] if nivel == "medio" and imp.get("medium") else imp["url"]
+            m = exportar.medidas(exportar.ler_glb(RAIZ / "public" / url.lstrip("/")))
+            tri, chamadas = tri + m["triangulos"], chamadas + m["chamadas"]
+        dados["withImports"] = {"triangles": dados["triangles"] + tri, "calls": dados["calls"] + chamadas}
+        fora = perfil.estouros_da_sala(linha["family"], nivel, dados["triangles"] + tri, dados["calls"] + chamadas, dados["bytes"])
+        if fora:
+            raise SystemExit(f"{linha['slug']}: fora do orçamento com os modelos prontos\n  " + "\n  ".join(fora))
     return linha
 
 
@@ -87,14 +105,20 @@ def atualizar_manifesto(linhas: list[dict], manifesto: Path, existentes: set[str
 
 
 def main(argv: list[str] | None = None) -> int:
-    from .salas import carregar
-
     opcoes = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     opcoes.add_argument("--so", nargs="*", metavar="SLUG")
     opcoes.add_argument("--listar", action="store_true")
     opcoes.add_argument("--provas", type=Path, help="pasta da foto de cada sala (fora do repositório)")
     opcoes.add_argument("--pasta", type=Path, default=PASTA)
+    opcoes.add_argument("--recontar", action="store_true", help="só refaz a conta com os modelos prontos (sem Blender)")
     args = opcoes.parse_args(sys.argv[1:] if argv is None else argv)
+    if args.recontar:
+        manifesto = args.pasta / "manifest.json"
+        atual = json.loads(manifesto.read_text(encoding="utf-8"))
+        atualizar_manifesto([recontar(linha) for linha in atual], manifesto)
+        return 0
+    from .salas import carregar
+
     salas = carregar()
     if args.listar:
         for s in salas.values():

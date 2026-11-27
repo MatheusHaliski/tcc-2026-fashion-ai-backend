@@ -50,7 +50,8 @@ class PerfilTest(unittest.TestCase):
                 glb = RAIZ / "public" / dados["url"].lstrip("/")
                 m = medidas(ler_glb(glb))
                 self.assertEqual((m["triangulos"], m["chamadas"]), (dados["triangles"], dados["calls"]), sala["slug"])
-                fora = perfil.estouros_da_sala(sala["family"], nivel, m["triangulos"], m["chamadas"], glb.stat().st_size)
+                total = dados.get("withImports", {"triangles": m["triangulos"], "calls": m["chamadas"]})
+                fora = perfil.estouros_da_sala(sala["family"], nivel, total["triangles"], total["calls"], glb.stat().st_size)
                 self.assertEqual(fora, [], sala["slug"])
             for imp in sala["imports"]:
                 self.assertTrue((RAIZ / "public" / imp["url"].lstrip("/")).exists(), imp["url"])
