@@ -88,6 +88,46 @@ async function paint(h, page) {
   return { strokes: 3, layers: 2 };
 }
 
+const STAR_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><circle cx="100" cy="100" r="92" fill="#f2c14e" stroke="#1f3a5f" stroke-width="10"/><polygon points="100,30 117,80 170,80 127,112 143,165 100,133 57,165 73,112 30,80 83,80" fill="#c8423b"/></svg>';
+const LEAF_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="#f4f1ea"/><path d="M60 15 C95 35 95 85 60 105 C25 85 25 35 60 15Z" fill="#2f6b4f"/></svg>';
+function image(envName, fallbackName, svg) {
+  const file = process.env[envName];
+  if (file) return { name: path.basename(file), mimeType: file.endsWith(".png") ? "image/png" : "image/jpeg", buffer: fs.readFileSync(file) };
+  return { name: fallbackName, mimeType: "image/svg+xml", buffer: Buffer.from(svg) };
+}
+
+async function print(h, page) {
+  await h.tab("Estampa");
+  await h.press("Listras");
+  await h.shot("09-estampa-listras");
+  await h.press("Xadrez");
+  await h.slider(/^Repetições/, 10);
+  await h.shot("10-estampa-xadrez");
+  await h.press("Poá");
+  await h.press("Camuflagem");
+  await h.shot("11-estampa-camuflagem");
+  await h.press("Remover padrão");
+  await h.part("Corpo");
+  await page.getByLabel("Escolher imagem").setInputFiles(image("DECAL_PNG", "estrela.svg", STAR_SVG));
+  await page.getByRole("img", { name: "Estampa enviada" }).waitFor();
+  await h.press("Aplicar estampa na peça");
+  await h.click([0.5, 0.45]);
+  await h.shot("12-decalque-aplicado");
+  await h.slider(/Tamanho da estampa/, 0.4);
+  await h.slider(/Rotação da estampa/, 30);
+  await h.click([0.42, 0.58]);
+  await h.shot("13-decalque-recolocado-girado");
+  await h.press("Concluir posicionamento");
+  await page.getByLabel("Escolher imagem").setInputFiles(image("TILE_PNG", "folha.svg", LEAF_SVG));
+  await h.part("Manga esquerda");
+  await h.press("Parte selecionada");
+  await h.press("Usar como padrão repetido");
+  await h.shot("14-padrao-imagem-manga");
+  await h.press("Peça inteira");
+  await h.full("15-painel-estampa");
+  return { patterns: 4, decals: 1, imageTile: 1 };
+}
+
 exports.run = async function run({ page, out, state }) {
   const h = helpers(page, out);
   await page.getByLabel("Salvar automaticamente").uncheck();
@@ -96,7 +136,7 @@ exports.run = async function run({ page, out, state }) {
   await h.shot("00-camiseta-base");
   const results = {};
   const only = (process.env.STEPS || "material,paint,print,shape,extras,export").split(",");
-  const all = { material, paint };
+  const all = { material, paint, print };
   for (const [name, step] of Object.entries(all)) if (only.includes(name)) results[name] = await step(h, page, state);
   fs.writeFileSync(path.join(out, "last-document.json"), JSON.stringify(state.saves.at(-1)?.document ?? null).slice(0, 2000));
   return results;
