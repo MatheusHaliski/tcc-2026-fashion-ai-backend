@@ -92,6 +92,10 @@ export function nivelDaSala(sala: SalaAlta, qualidade: Qualidade, larguraDaTela:
 /** O arquivo do modelo pronto no nível: no médio, a versão simplificada quando existe. */
 export const arquivoDoImportado = (i: ImportadoNaSala, n: NivelDaSala): string => (n === "medio" && i.medium ? i.medium : i.url);
 
+/** A sala high poly de um jogo FLAIR 3D (as salas de lib/flair/nucleos/scene/salas que já têm versão high poly). */
+const SALAS_DOS_JOGOS: Partial<Record<string, string>> = { PASSARELA: "passarela" };
+export const salaAltaDoJogo = (codigo: string): string | null => SALAS_DOS_JOGOS[codigo] ?? null;
+
 /** Slug da sala do Fashion Detective ("SALAO" → "detetive-salao"). */
 export const slugDoDetetive = (sala: string): string => `detetive-${sala.toLowerCase()}`;
 

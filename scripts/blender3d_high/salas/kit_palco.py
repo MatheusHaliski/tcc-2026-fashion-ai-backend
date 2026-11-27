@@ -93,7 +93,7 @@ def passarela(largura: float, comprimento: float, altura: float, laca_cor: str, 
     for s in (-1, 1):
         pecas.append(caixa("passarela-led", led, (0.03, comprimento - 0.24, 0.012), pos=(s * (largura / 2 - 0.08), 0, altura + 0.002)))
         if altura > 0.15:                                       # a passarela rente ao piso não tem saia
-            pecas.append(cortina("passarela-saia", saia, comprimento - 0.04, altura - 0.06, pregas=int(comprimento * 3), fundo=0.025,
+            pecas.append(cortina("passarela-saia", saia, comprimento - 0.04, altura - 0.06, pregas=int(comprimento * 2), fundo=0.025, linhas=12,
                                  pos=(s * (largura / 2 - 0.03), 0, 0), giro=(0, 0, 90)))
     if altura > 0.15:
         pecas.append(cortina("passarela-saia-ponta", saia, largura - 0.06, altura - 0.06, pregas=5, fundo=0.025,

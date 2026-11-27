@@ -81,7 +81,8 @@ def _grade(colunas: int, linhas: int, ponto) -> bmesh.types.BMesh:
 
 
 def cortina(nome: str, mat, largura: float, altura: float, pregas: int = 12, fundo: float = 0.07,
-            pos: V3 = (0, 0, 0), giro: V3 = (0, 0, 0), puxada: float = 0.0, espessura: float = 0.012) -> bpy.types.Object:
+            pos: V3 = (0, 0, 0), giro: V3 = (0, 0, 0), puxada: float = 0.0, espessura: float = 0.012,
+            linhas: int = 36) -> bpy.types.Object:
     """Pano pendurado no topo (z = altura) com ``pregas`` dobras; ``puxada`` (0 a 1) junta a barra para um lado,
     como a cortina presa por um laço. As pregas crescem para baixo e cada uma tem fase própria (não é uma onda só)."""
     def ponto(u: float, v: float) -> Vector:
@@ -92,7 +93,7 @@ def cortina(nome: str, mat, largura: float, altura: float, pregas: int = 12, fun
         fase = math.sin(u * pregas * 2 * math.pi) + 0.25 * math.sin(u * pregas * 5.3 * math.pi + 1.3)
         y = fundo * fase * (0.55 + 0.45 * caimento) + 0.01 * math.sin(v * 9 + u * 31)
         return Vector((x, y, z))
-    bm = _grade(pregas * 10, 36, ponto)
+    bm = _grade(pregas * 10, linhas, ponto)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     obj = _objeto(bm, nome, mat, pos, giro, liso=True)
     obj.data.set_sharp_from_angle(angle=math.radians(180))

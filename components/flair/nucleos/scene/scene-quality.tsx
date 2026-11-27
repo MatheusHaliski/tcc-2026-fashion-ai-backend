@@ -8,7 +8,9 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type * as THREE from "three";
-import { AJUSTES, pontosPorPixel, qualidadeDeLargada, qualidadeInicial, quadroMedido, type Qualidade } from "@/lib/flair/nucleos/scene/qualidade";
+import { usePreferenciaDeQualidade } from "@/components/flair/salas-altas/use-salas-altas";
+import { AJUSTES, pontosPorPixel, qualidadeInicial, quadroMedido, type Qualidade } from "@/lib/flair/nucleos/scene/qualidade";
+import { qualidadeEfetiva } from "@/lib/flair/salas-altas/preferencia";
 
 /** O nome do renderizador (a placa de vídeo, ou o desenho por software), quando o navegador informa. */
 function renderizador(gl: THREE.WebGLRenderer): string | null {
@@ -45,14 +47,17 @@ export function QualidadeDaCena({ nivel, luz = "luz-principal" }: Props) {
     if (gl.domElement?.dataset) gl.domElement.dataset.qualidade = q;
   };
 
-  // o nível de partida, uma vez, antes do primeiro quadro (as luzes da sala já estão montadas: são irmãs anteriores na
-  // cena): sem placa de vídeo a cena já larga no nível baixo
+  // a qualidade escolhida no seletor (Alta/Média/Baixa) fica parada; na Automática a cena decide e pode descer
+  const preferencia = usePreferenciaDeQualidade();
+  // o nível de partida, antes do primeiro quadro (as luzes da sala já estão montadas: são irmãs anteriores na cena):
+  // sem placa de vídeo a cena já larga no nível baixo; uma escolha nova no seletor recomeça daqui
   useEffect(() => {
-    estado.current = qualidadeInicial(qualidadeDeLargada(renderizador(gl)));
+    estado.current = qualidadeInicial(qualidadeEfetiva(preferencia, renderizador(gl)));
     aplicar(estado.current.nivel);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [preferencia]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame((_, dt) => {
+    if (preferencia !== "AUTO") return;
     const q = quadroMedido(estado.current, dt).nivel;
     if (q !== aplicado.current) aplicar(q);
   });

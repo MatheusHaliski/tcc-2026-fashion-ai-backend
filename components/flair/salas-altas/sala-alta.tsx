@@ -11,6 +11,7 @@ import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { AmbienteDaSala } from "@/components/flair/salas-altas/ambiente";
+import { BrilhoDaSala } from "@/components/flair/salas-altas/brilho";
 import { ImportadosDaSala } from "@/components/flair/salas-altas/importados";
 import { usePreferenciaDeQualidade, useSalasAltas } from "@/components/flair/salas-altas/use-salas-altas";
 import { nivelDaSala, salaAltaPorSlug, type NivelDaSala, type SalaAlta as Entrada } from "@/lib/flair/salas-altas/manifesto";
@@ -69,7 +70,8 @@ function Modelo({ url }: { url: string }) {
   return <primitive object={copia} />;
 }
 
-export function SalaAlta({ slug, reserva, children }: { slug: string | null; reserva: ReactNode; children?: ReactNode }) {
+/** `brilho`: o pós-processamento de bloom no nível alto (desligue onde a cena já tem pós próprio). */
+export function SalaAlta({ slug, reserva, children, brilho = true }: { slug: string | null; reserva: ReactNode; children?: ReactNode; brilho?: boolean }) {
   const entrada = salaAltaPorSlug(useSalasAltas(), slug);
   const nivel = useNivelDaSala(entrada);
   const arquivo = entrada && nivel ? entrada.levels[nivel] : undefined;
@@ -80,6 +82,7 @@ export function SalaAlta({ slug, reserva, children }: { slug: string | null; res
         <group name={`sala-alta-${entrada.slug}`} userData={{ nivel, triangulos: arquivo.triangles, chamadas: arquivo.calls }}>
           <Modelo url={arquivo.url} />
           {entrada.environment && <AmbienteDaSala url={entrada.environment} />}
+          {brilho && nivel === "alto" && <BrilhoDaSala />}
           {children}
         </group>
       </Suspense>
