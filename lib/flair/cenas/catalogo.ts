@@ -17,6 +17,7 @@ import { TUNEIS_DE_MODA } from "@/lib/flair/cenas/cenas/tuneis-de-moda";
 import { ZIGUE_ZAGUE } from "@/lib/flair/cenas/cenas/zigue-zague";
 import type { Cena } from "@/lib/flair/cenas/tipos";
 import { variar } from "@/lib/flair/cenas/variante";
+import { ehDinamico } from "@/lib/flair/montagem/dinamico/catalogo";
 
 const TODAS = [TUNEIS_DE_COR, ZIGUE_ZAGUE, TUNEIS_DE_MODA, LINHA_DE_CABIDES, RELOJOARIA, RIO_DE_TECIDO, TEAR, ESCADARIA, ESTEIRA, CORRIDA_DE_CONTAS];
 
@@ -50,8 +51,12 @@ export function cenaDoElenco(codigo: string): Cena {
   return CENA_DO_ELENCO[codigo] ?? CENA_RESERVA;
 }
 
-/** A tela sabe desenhar este cenário? "livre" é a cena neutra (a reserva), desenhada de propósito. */
-export const temCenaDoCenario = (cenario: string): boolean => cenario === "livre" || Object.hasOwn(CENA_DO_CENARIO, cenario);
+/**
+ * A tela sabe desenhar este cenário? "livre" é a cena neutra (a reserva), desenhada de propósito; os cenários dos
+ * quebra-cabeças dinâmicos (lib/flair/montagem/dinamico) têm vídeo ou símbolo animado em vez de cena.
+ */
+export const temCenaDoCenario = (cenario: string): boolean =>
+  cenario === "livre" || Object.hasOwn(CENA_DO_CENARIO, cenario) || ehDinamico(cenario);
 
 export function cenaDoCenario(cenario: string): Cena {
   return CENA_DO_CENARIO[cenario] ?? CENA_RESERVA;
