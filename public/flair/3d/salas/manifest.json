@@ -473,5 +473,101 @@
       }
     },
     "imports": []
+  },
+  {
+    "slug": "detetive-escritorio",
+    "title": "Escritório da direção (high poly)",
+    "family": "detetive",
+    "games": [
+      "FASHION_DETECTIVE"
+    ],
+    "author": "FashionAI",
+    "source": "scripts/blender3d_high/salas",
+    "license": "Própria",
+    "hash": "d346983d4c7c46b7",
+    "environment": "/flair/3d/salas/detetive-escritorio-ambiente.webp",
+    "levels": {
+      "alto": {
+        "url": "/flair/3d/salas/detetive-escritorio.glb",
+        "triangles": 60916,
+        "calls": 36,
+        "instanced": 240,
+        "bytes": 900496
+      },
+      "medio": {
+        "url": "/flair/3d/salas/detetive-escritorio-medio.glb",
+        "triangles": 40832,
+        "calls": 36,
+        "instanced": 240,
+        "bytes": 518584
+      }
+    },
+    "imports": [
+      {
+        "model": "loungeArmchair",
+        "url": "/heist/models/loungeArmchair.glb",
+        "medium": "/flair/3d/salas/importados/loungeArmchair-medio.glb",
+        "pos": [
+          -4.05,
+          0,
+          0.85
+        ],
+        "rotation": 90,
+        "height": 0.95,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      },
+      {
+        "model": "loungeArmchair",
+        "url": "/heist/models/loungeArmchair.glb",
+        "medium": "/flair/3d/salas/importados/loungeArmchair-medio.glb",
+        "pos": [
+          -4.05,
+          0,
+          2.15
+        ],
+        "rotation": 90,
+        "height": 0.95,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      },
+      {
+        "model": "loungeCoffee",
+        "url": "/heist/models/loungeCoffee.glb",
+        "medium": "/flair/3d/salas/importados/loungeCoffee-medio.glb",
+        "pos": [
+          -3.45,
+          0,
+          1.5
+        ],
+        "rotation": 0,
+        "height": 0.45,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      },
+      {
+        "model": "serviceBuffet",
+        "url": "/heist/models/serviceBuffet.glb",
+        "medium": "/flair/3d/salas/importados/serviceBuffet-medio.glb",
+        "pos": [
+          2.3,
+          0,
+          -3.3
+        ],
+        "rotation": 0,
+        "height": 0.95,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      },
+      {
+        "model": "monumentalVase",
+        "url": "/heist/models/monumentalVase.glb",
+        "medium": "/flair/3d/salas/importados/monumentalVase-medio.glb",
+        "pos": [
+          -4.2,
+          0,
+          -3.15
+        ],
+        "rotation": 0,
+        "height": 1.6,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      }
+    ]
   }
 ]
