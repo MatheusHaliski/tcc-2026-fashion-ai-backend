@@ -2,7 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, renderApp, screen } from "@/test-utils/render";
-import { render } from "@testing-library/react";
+import { act, render, renderHook } from "@testing-library/react";
+import { usePaineisLaterais } from "@/components/flair/nucleos/console/use-paineis-laterais";
 import { AjudaDeControles } from "@/components/flair/nucleos/console/ajuda-de-controles";
 import { RodaRadial, type ItemDaRoda } from "@/components/flair/nucleos/console/roda-radial";
 import { useControleConsole } from "@/components/flair/nucleos/console/use-controle-console";
@@ -116,5 +117,22 @@ describe("cartão de ajuda", () => {
     expect(texto).toContain("Mirar (segurar)");
     fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
     expect(onFechar).toHaveBeenCalled();
+  });
+});
+
+describe("painéis laterais", () => {
+  it("fechados por padrão; Esc (fecharUm) fecha a direita antes da esquerda; em tela estreita abrir um fecha o outro", () => {
+    const { result } = renderHook(() => usePaineisLaterais({ esquerda: "caso", direita: "acoes" }));
+    expect(result.current.aberto).toEqual({ esquerda: false, direita: false });
+    act(() => result.current.alternar("esquerda"));
+    act(() => result.current.alternar("direita"));
+    expect(result.current.aberto).toEqual({ esquerda: true, direita: true });
+    act(() => void result.current.fecharUm());
+    expect(result.current.aberto).toEqual({ esquerda: true, direita: false });
+    const antes = window.matchMedia;
+    window.matchMedia = ((q: string) => ({ matches: q.includes("max-width"), media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    act(() => result.current.alternar("direita"));
+    expect(result.current.aberto).toEqual({ esquerda: false, direita: true });
+    window.matchMedia = antes;
   });
 });

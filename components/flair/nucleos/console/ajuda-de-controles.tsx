@@ -10,9 +10,11 @@ interface Props {
   onFechar: () => void;
   /** as ações a mostrar (as chaves de AJUDA_DO_CONSOLE); sem ela, todas */
   acoes?: readonly string[];
+  /** a chave do texto de uma ação, quando o jogo a usa de outro jeito (no Detective, F usa o recurso no alvo) */
+  rotulos?: Partial<Record<string, string>>;
 }
 
-export function AjudaDeControles({ onFechar, acoes }: Props) {
+export function AjudaDeControles({ onFechar, acoes, rotulos }: Props) {
   const { t } = useI18n();
   const linhas = acoes ? AJUDA_DO_CONSOLE.filter((l) => acoes.includes(l.acao)) : AJUDA_DO_CONSOLE;
   return (
@@ -25,7 +27,7 @@ export function AjudaDeControles({ onFechar, acoes }: Props) {
         {linhas.map((l) => (
           <div key={l.acao} data-acao={l.acao}>
             <dt>{l.teclas.map((k) => <kbd key={k}>{k}</kbd>)}</dt>
-            <dd>{t(`flair3d.console.acao.${l.acao}`)}</dd>
+            <dd>{t(rotulos?.[l.acao] ?? `flair3d.console.acao.${l.acao}`)}</dd>
           </div>
         ))}
       </dl>

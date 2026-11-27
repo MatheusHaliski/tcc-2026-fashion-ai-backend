@@ -42,6 +42,20 @@ export interface DetetiveCena3DProps {
   cutscene?: string | null;
   /** o analógico leva a detetive pelos corredores até os vizinhos (detetive-jogador.tsx) */
   andar?: boolean;
+  /** perfil console: mirando (a câmera chega por cima do ombro), o anel do que E ou F alcança, e a cena parada (roda, ajuda) */
+  mirando?: boolean;
+  destaque?: { x: number; z: number; mira: boolean } | null;
+  pausado?: boolean;
+}
+
+/** O anel no piso do que dá para usar agora: dourado (E) ou vermelho (mira travada). */
+function Destaque({ d }: { d: { x: number; z: number; mira: boolean } }) {
+  return (
+    <mesh position={[d.x, 0.04, d.z]} rotation={[-Math.PI / 2, 0, 0]} name="destaque">
+      <ringGeometry args={[0.42, 0.56, 32]} />
+      <meshBasicMaterial color={d.mira ? "#FF4D52" : "#F2C230"} transparent opacity={0.9} depthWrite={false} />
+    </mesh>
+  );
 }
 
 /** Cone de visão no piso: um leque de raio = alcance, aberto 2 × meia abertura, virado para onde o vigia olha. */
@@ -55,7 +69,7 @@ function Cone({ r, x, z, olhar, visto }: { r: Retrato; x: number; z: number; olh
   );
 }
 
-function Camera({ escolha, alvo, reduzido, cutscene }: { escolha: string; alvo: React.MutableRefObject<{ x: number; z: number; giro: number }>; reduzido: boolean; cutscene?: string | null }) {
+function Camera({ escolha, alvo, reduzido, cutscene, mirando }: { escolha: string; alvo: React.MutableRefObject<{ x: number; z: number; giro: number }>; reduzido: boolean; cutscene?: string | null; mirando?: boolean }) {
   const { camera, size } = useThree();
   const pose = useRef<Pose | null>(null);
   const cena = useRef<{ id: string; desde: number } | null>(null);
@@ -70,6 +84,8 @@ function Camera({ escolha, alvo, reduzido, cutscene }: { escolha: string; alvo: 
       const tomada = tomadaDaCena(cena.current.id, reduzido ? DURACAO_DA_TOMADA : clock.elapsedTime - cena.current.desde, a);
       pedida = { ...pedida, pos: tomada.pos, alvo: tomada.alvo };
     }
+    // mirando: a câmera chega um terço mais perto do alvo e fecha a lente (por cima do ombro)
+    if (mirando && !cena.current) pedida = { ...pedida, pos: pedida.pos.map((v, i) => v + (pedida.alvo[i] - v) * 0.35) as Pose["pos"], fov: pedida.fov - 6 };
     pose.current = !pose.current || reduzido ? pedida : aproximar(pose.current, pedida, 0.08);
     camera.position.set(...pose.current.pos);
     camera.lookAt(...pose.current.alvo);
@@ -101,7 +117,7 @@ function Alerta({ v }: { v: VigiaDaSala }) {
   );
 }
 
-function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, semente, cutscene, andar = false }: Omit<DetetiveCena3DProps, "rotulo">) {
+function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, semente, cutscene, andar = false, mirando, destaque }: Omit<DetetiveCena3DProps, "rotulo">) {
   /** onde o avatar está e para onde olha: começa virado para o fundo da sala (a câmera fica atrás, do lado da porta) */
   const alvo = useRef({ x: 0, z: 0, giro: 180 });
   // o elenco da sala, já com a reação à acusação (o final ou o álibi que o servidor mandou)
@@ -149,14 +165,15 @@ function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, sement
       {r.layout.vigias.map((v) => <Alerta key={`alerta-${v.id}`} v={v} />)}
       <Elenco3D pessoas={pessoas} atores={atores} prontos={prontos} reduzido={reduzido} />
       <DetetiveJogador r={r} pecas={pecas} protagonista={protagonista} reduzido={reduzido} alvo={alvo} vizinhos={vizinhos} onIr={onIr} livre={andar && !cutscene && !r.final} />
-      <Camera escolha={camera} alvo={alvo} reduzido={reduzido} cutscene={cutscene} />
+      {destaque && <Destaque d={destaque} />}
+      <Camera escolha={camera} alvo={alvo} reduzido={reduzido} cutscene={cutscene} mirando={mirando} />
     </>
   );
 }
 
-export default function DetetiveCena3D({ rotulo, ...props }: DetetiveCena3DProps) {
+export default function DetetiveCena3D({ rotulo, pausado, ...props }: DetetiveCena3DProps) {
   return (
-    <Canvas shadows camera={{ fov: 42, position: [0, 4, 8], near: 0.1, far: 60 }} dpr={[1, 2]} aria-label={rotulo}>
+    <Canvas frameloop={pausado ? "never" : "always"} shadows camera={{ fov: 42, position: [0, 4, 8], near: 0.1, far: 60 }} dpr={[1, 2]} aria-label={rotulo}>
       <color attach="background" args={["#0E0F14"]} />
       <Cena key={props.r.sala} {...props} />
     </Canvas>
