@@ -47,4 +47,14 @@ class Atelier3dServiceTest {
   var saved=org.mockito.ArgumentCaptor.forClass(DesignSceneVersion.class);verify(versions).saveAndFlush(saved.capture());when(versions.findByProjectIdAndRequestId(project,"same-request")).thenReturn(Optional.of(saved.getValue()));
   assertThat(service.guestSave(invite,token,cmd).id()).isEqualTo(first.id());verify(versions,times(1)).saveAndFlush(any());
  }
+ @Test void photoReliefIsRefusedOnUploadButAnOrdinaryGarmentIsAccepted(){
+  guest.setRole(DesignGuestInvite.Role.EDITOR);
+  var relief=GlbInspectorTest.glb(",\"materials\":[{\"name\":\"foto-da-peca\"}]");
+  assertThatThrownBy(()->service.guestUpload(invite,token,"relevo.glb",relief))
+   .isInstanceOfSatisfying(ApiException.class,e->assertThat(e.code()).isEqualTo("ATELIER_PHOTO_RELIEF"));
+  verify(assets,never()).saveAndFlush(any());
+  when(assets.saveAndFlush(any())).thenAnswer(call->{DesignAsset a=call.getArgument(0);a.assignId(assetId);return a;});
+  var garment=GlbInspectorTest.glb(",\"materials\":[{\"name\":\"corpo\"},{\"name\":\"linha\"}]");
+  assertThat(service.guestUpload(invite,token,"camiseta.glb",garment).id()).isEqualTo(assetId);
+ }
 }

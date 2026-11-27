@@ -29,7 +29,11 @@ public record Acionamento(UUID carta, Troca troca, String alvo, Execucao execuca
         }
     }
 
-    public record Toque(int marca, String botao, int ms) {
+    /** {@code carta}: nos jogos de zonas, a carta do guarda-roupa jogada na marca ({@link Flair3dCartaDeUso}), ou nula. */
+    public record Toque(int marca, String botao, int ms, UUID carta) {
+        public Toque(int marca, String botao, int ms) {
+            this(marca, botao, ms, null);
+        }
     }
 
     /** Troca de uma peça do uniforme: a vaga e a carta que entra. */
@@ -44,6 +48,9 @@ public record Acionamento(UUID carta, Troca troca, String alvo, Execucao execuca
         }
         if (troca != null && troca.carta() != null) {
             out.add(troca.carta());
+        }
+        if (execucao != null) {
+            execucao.toques().stream().filter(t -> t != null && t.carta() != null).forEach(t -> out.add(t.carta()));
         }
         return out;
     }

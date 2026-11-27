@@ -76,3 +76,21 @@ def test_nome_que_nao_bate_com_a_medida_nao_muda_nada():
                                   ("#8a2030", "Blusa Navy", True)):          # vinho com nome errado
         got = cores.match_name(lab(measured), color_from_name(name), solid)
         assert np.allclose(got, lab(measured)), (measured, name)
+
+
+def test_malha_canelada_rosa_nao_sai_preta_pelos_vaos_entre_as_nervuras():
+    rng = np.random.default_rng(1)
+    ridges = np.column_stack([rng.uniform(40, 75, 6000), rng.uniform(30, 55, 6000), rng.uniform(8, 28, 6000)])
+    valleys = np.column_stack([rng.uniform(3, 7, 3500), rng.uniform(0, 3, 3500), rng.uniform(-2, 1, 3500)])
+    found = cores.dominant_lab(np.vstack([ridges, valleys]))
+    assert found[0] > 40 and found[1] > 25                    # rosa, não o preto do vão
+
+
+def test_branco_com_sombra_e_marinho_com_manga_cinza_ficam_na_cor_do_corpo():
+    rng = np.random.default_rng(2)
+    white = np.column_stack([rng.normal(95, 1.5, 6000), rng.normal(0, 1, 6000), rng.normal(1, 1, 6000)])
+    shade = np.column_stack([rng.uniform(70, 90, 2500), rng.normal(0, 1.5, 2500), rng.normal(2, 1.5, 2500)])
+    assert cores.dominant_lab(np.vstack([white, shade]))[0] > 92
+    navy = np.column_stack([rng.normal(15, 2, 6000), rng.normal(3, 1, 6000), rng.normal(-14, 2, 6000)])
+    grey = np.column_stack([rng.normal(55, 4, 3000), rng.normal(0, 1, 3000), rng.normal(3, 1, 3000)])
+    assert cores.dominant_lab(np.vstack([navy, grey]))[0] < 20

@@ -5,7 +5,9 @@ import {
 } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import type { GarmentState } from "./garment/state";
-import { applyGarment } from "./garment/apply";
+import { applyGarment, disposeGarment } from "./garment/apply";
+import { applyPieceEdits, withoutHiddenParts } from "./garment-scene";
+import type { DecalEdit } from "./decals";
 export type Vec3 = [number, number, number];
 export interface NodeEdit {
   position: Vec3;
@@ -19,6 +21,9 @@ export interface MaterialEdit {
   metalness: number;
   repeat: [number, number];
   rotation: number;
+  /** Cor do tecido quando a cor está na textura: a textura é recolorida (color segue sendo o fator do arquivo). */
+  tint?: string | null;
+  hidden?: boolean;
 }
 export interface SceneDocument {
   nodes: Record<string, NodeEdit>;
@@ -26,6 +31,8 @@ export interface SceneDocument {
   vertices: Record<string, Record<string, Vec3>>;
   /** Tecido, pintura, estampas, costuras e aviamentos (lib/atelier3d/garment). */
   garment?: GarmentState;
+  /** Logos e estampas projetados no tecido da peça (editor da peça); ausente em documentos anteriores. */
+  decals?: Record<string, DecalEdit>;
 }
 export interface Inspection {
   nodes: number;
@@ -224,6 +231,7 @@ export function applyDocument(asset: LoadedAsset, doc: SceneDocument) {
   }
   applyGarment(asset, doc);
   asset.gltf.scene.updateMatrixWorld(true);
+  applyPieceEdits(asset, doc);
 }
 export async function exportGlb(
   asset: LoadedAsset,
@@ -242,11 +250,11 @@ export async function exportGlb(
   });
   let result;
   try {
-    result = await new GLTFExporter().parseAsync(asset.gltf.scene, {
+    result = await withoutHiddenParts(asset, () => new GLTFExporter().parseAsync(asset.gltf.scene, {
       binary: true,
       onlyVisible: false,
       animations: asset.gltf.animations,
-    });
+    }));
   } finally {
     for (const [object, data] of internal) object.userData = data;
   }
@@ -255,6 +263,7 @@ export async function exportGlb(
   return result;
 }
 export function disposeAsset(asset: LoadedAsset) {
+  disposeGarment(asset);
   const textures = new Set<THREE.Texture>();
   asset.gltf.scene.traverse((o) => {
     const m = o as THREE.Mesh;
@@ -268,38 +277,7 @@ export function disposeAsset(asset: LoadedAsset) {
   });
   textures.forEach((t) => t.dispose());
 }
-export function updateNode(
-  document: SceneDocument,
-  key: string,
-  value: Partial<NodeEdit>,
-  baseline: SceneDocument,
-): SceneDocument {
-  return {
-    ...document,
-    nodes: {
-      ...document.nodes,
-      [key]: { ...baseline.nodes[key], ...document.nodes[key], ...value },
-    },
-  };
-}
-export function updateMaterial(
-  document: SceneDocument,
-  key: string,
-  value: Partial<MaterialEdit>,
-  baseline: SceneDocument,
-): SceneDocument {
-  return {
-    ...document,
-    materials: {
-      ...document.materials,
-      [key]: {
-        ...baseline.materials[key],
-        ...document.materials[key],
-        ...value,
-      },
-    },
-  };
-}
+export { updateNode, updateMaterial } from "./document-edits";
 export function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob),
     a = document.createElement("a");

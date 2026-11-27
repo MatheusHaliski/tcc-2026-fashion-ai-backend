@@ -91,14 +91,15 @@ public final class Flair3dExecucao implements Flair3dNucleo {
         int reserva = depoisDasDecisoes > 0 ? depoisDasDecisoes : Flair3dRecursoEstado.de(contexto.andamento().usos()).get(recurso);
         List<String> botoes = botoes(contexto);
         int janela = Flair3dAuraNaExecucao.janela(codigo(), janelaMs(atributoDaJanela(entrega, contexto)), contexto.vestidas(entrega).values(), contexto);
-        Pedido pedido = new Pedido(botoes, janela, recurso.name(), reserva, drenoDe(recurso), Flair3dFaseDeUso.riscoDe(codigo(), botoes, janela, contexto));
+        Pedido pedido = new Pedido(botoes, janela, recurso.name(), reserva, drenoDe(recurso), Flair3dFaseDeUso.riscoDe(codigo(), botoes, janela, contexto, entrega));
         List<Evento> eventos = new ArrayList<>(look.eventos());
         eventos.add(new Evento("EXECUCAO_PEDIDA", pedido.paraTela()));
         Execucao feita = daExecucao(entrega, contexto);
         if (feita == null) {
             return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, look.regras(), eventos);
         }
-        Nota nota = Flair3dAuraNaExecucao.reavaliar(codigo(), pedido, avaliar(pedido, feita), contexto.vestidas(entrega).values(), contexto, eventos);
+        Nota avaliada = pedido.risco() == null ? avaliar(pedido, feita) : Flair3dFaseDeUso.avaliar(pedido, feita, contexto.cartas());
+        Nota nota = Flair3dAuraNaExecucao.reavaliar(codigo(), pedido, avaliada, contexto.vestidas(entrega).values(), contexto, eventos);
         eventos.add(new Evento("EXECUCAO", nota.paraTela()));
         List<RegraResultado> regras = new ArrayList<>(look.regras());
         regras.add(new RegraResultado("EXECUCAO", nota.pontos() > 0, nota.pontos()));
@@ -148,10 +149,17 @@ public final class Flair3dExecucao implements Flair3dNucleo {
         }
     }
 
-    /** A nota da execução: o resultado de cada marca, os pontos (de -{@value #TETO} a +{@value #TETO}) e o recurso que sobrou. */
-    public record Nota(List<String> marcas, int pontos, int restante) {
+    /**
+     * A nota da execução: o resultado de cada marca, os pontos (de -{@value #TETO} a +{@value #TETO}), o recurso que sobrou
+     * e, na fase de uso, o detalhe (cartas jogadas, torcida, momento-chave) que a tela mostra.
+     */
+    public record Nota(List<String> marcas, int pontos, int restante, Map<String, Object> detalhe) {
+        public Nota(List<String> marcas, int pontos, int restante) {
+            this(marcas, pontos, restante, Map.of());
+        }
+
         Map<String, Object> paraTela() {
-            Map<String, Object> m = new LinkedHashMap<>();
+            Map<String, Object> m = new LinkedHashMap<>(detalhe);
             m.put("marcas", marcas);
             m.put("pontos", pontos);
             m.put("restante", restante);

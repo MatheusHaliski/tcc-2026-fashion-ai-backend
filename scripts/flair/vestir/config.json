@@ -1,0 +1,52 @@
+{
+  "_doc": "Desafios de Montagem 'vestir a cena': cada fonte tem duas metades (antes | depois). Coordenadas em pixels da metade (largura 'largura'); 'caixa' = [x0, x1, y0, y1] da roupa nova e da antiga do personagem; 'cabeca' = elipse [cx, cy, rx, ry] que nunca entra na máscara. Gerado por scripts/flair/vestir_mascaras.py.",
+  "largura": 998,
+  "altura": 667,
+  "desafios": [
+    {
+      "fonte": "desafio-1.webp", "cenario": "vestir-piscina", "slug": "gala-na-piscina", "deslocamento": 1000, "limiar": 42,
+      "pessoas": [
+        { "vaga": "creme", "caixa": [62, 302, 82, 642], "cabeca": [190, 55, 46, 58] },
+        { "vaga": "cobre", "caixa": [292, 505, 108, 642], "cabeca": [395, 68, 48, 56] },
+        { "vaga": "noite", "caixa": [498, 728, 98, 636], "cabeca": [605, 58, 68, 48] },
+        { "vaga": "petroleo", "caixa": [712, 932, 96, 632], "cabeca": [820, 72, 42, 56] }
+      ]
+    },
+    {
+      "fonte": "desafio-2.webp", "cenario": "vestir-arena", "slug": "noite-da-jaqueta-college", "deslocamento": 1000, "limiar": 40,
+      "pessoas": [
+        { "vaga": "preta", "caixa": [12, 258, 258, 548], "cabeca": [135, 205, 48, 58] },
+        { "vaga": "laranja", "caixa": [252, 498, 296, 562], "cabeca": [380, 245, 50, 54] },
+        { "vaga": "creme", "caixa": [492, 762, 262, 538], "cabeca": [615, 212, 44, 52] },
+        { "vaga": "vinho", "caixa": [748, 990, 316, 584], "cabeca": [870, 262, 48, 52] }
+      ]
+    },
+    {
+      "fonte": "desafio-3.webp", "cenario": "vestir-atelie", "slug": "atelie-do-futuro", "deslocamento": 1001, "limiar": 40,
+      "pessoas": [
+        { "vaga": "vestido", "caixa": [18, 292, 146, 612], "cabeca": [178, 100, 40, 48] },
+        { "vaga": "bomber", "caixa": [288, 492, 128, 308], "cabeca": [395, 85, 44, 50] },
+        { "vaga": "colete", "caixa": [522, 722, 160, 556], "cabeca": [608, 118, 40, 48] },
+        { "vaga": "casaco", "caixa": [718, 958, 104, 548], "cabeca": [838, 78, 32, 50] }
+      ]
+    },
+    {
+      "fonte": "desafio-4.webp", "cenario": "vestir-show", "slug": "show-no-galpao", "deslocamento": 1000, "limiar": 40,
+      "pessoas": [
+        { "vaga": "guitarra", "caixa": [0, 248, 200, 667], "cabeca": [140, 150, 55, 68] },
+        { "vaga": "voz", "caixa": [236, 562, 250, 667], "cabeca": [400, 178, 70, 74] },
+        { "vaga": "bateria", "caixa": [508, 722, 236, 424], "cabeca": [625, 185, 44, 52] },
+        { "vaga": "baixo", "caixa": [722, 998, 248, 667], "cabeca": [865, 195, 58, 62] }
+      ]
+    },
+    {
+      "fonte": "desafio-5.webp", "cenario": "vestir-praca", "slug": "praca-dos-jacarandas", "deslocamento": 1001, "limiar": 40,
+      "pessoas": [
+        { "vaga": "bicicleta", "caixa": [34, 272, 232, 442], "cabeca": [160, 205, 42, 46] },
+        { "vaga": "mochila", "caixa": [292, 518, 200, 448], "cabeca": [430, 178, 44, 54] },
+        { "vaga": "sacola", "caixa": [552, 762, 262, 462], "cabeca": [680, 215, 54, 52] },
+        { "vaga": "oculos", "caixa": [768, 992, 212, 462], "cabeca": [850, 185, 44, 52] }
+      ]
+    }
+  ]
+}

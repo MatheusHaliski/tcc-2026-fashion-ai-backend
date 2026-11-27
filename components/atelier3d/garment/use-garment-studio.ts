@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LoadedAsset, SceneDocument } from "@/lib/atelier3d/document";
-import { garmentTargets } from "@/lib/atelier3d/garment/targets";
+import { garmentTargets, primitivesOf } from "@/lib/atelier3d/garment/targets";
 import type { AccessoryKind } from "@/lib/atelier3d/garment/state";
 import type { SculptMode, Falloff } from "@/lib/atelier3d/garment/sculpt";
 
@@ -19,6 +19,8 @@ export interface GarmentStudio {
   scope: "part" | "all";
   setScope: (scope: "part" | "all") => void;
   targets: string[];
+  /** Primeira parte do objeto selecionado (camadas, bordas e estampas listadas no painel). */
+  part: string | undefined;
   mode: StudioMode;
   setMode: (mode: StudioMode) => void;
   paint: PaintBrush;
@@ -76,6 +78,7 @@ export function useGarmentStudio(asset: LoadedAsset | null, doc: SceneDocument, 
     base.current = doc;
   }, [doc]);
   const targets = useMemo(() => (asset ? garmentTargets(asset, selected, scope) : []), [asset, selected, scope]);
+  const part = useMemo(() => (asset ? primitivesOf(asset, selected)[0] : undefined), [asset, selected]);
   const commit = useCallback((next: SceneDocument) => {
     setDraft(null);
     fail(null);
@@ -88,7 +91,7 @@ export function useGarmentStudio(asset: LoadedAsset | null, doc: SceneDocument, 
     setMode("none");
   }, []);
   return {
-    tab, setTab: changeTab, scope, setScope, targets, mode, setMode, paint, setPaint, sculpt, setSculpt,
+    tab, setTab: changeTab, scope, setScope, targets, part, mode, setMode, paint, setPaint, sculpt, setSculpt,
     decal, setDecal, accessory, setAccessory, light, setLight, mannequin, setMannequin, keepColor, setKeepColor,
     draft, preview, commit, cancel, error, fail, captureRef,
   };

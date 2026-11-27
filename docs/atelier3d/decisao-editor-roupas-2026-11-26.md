@@ -32,7 +32,7 @@ Motivos:
   rasterizada no navegador; o documento salvo fica pequeno e o desfazer volta traço a traço.
 - Estampas enviadas (PNG/JPG/SVG) são rasterizadas para PNG/JPEG de até 512 px e guardadas uma vez em `images`
   (no máximo 4, ~360 kB cada), cabendo no teto de 2 MB do documento salvo pelo servidor.
-- Exportação: `GLTFExporter` embute a textura composta (PNG no bufferView), o normal map da trama e as extensões
+- Exportação: `GLTFExporter` embute a textura composta (JPEG, opaca), o normal map da trama (PNG) e as extensões
   `KHR_materials_sheen/clearcoat/transmission/volume`, todas já aceitas por `inspectGlb` e pelo `GlbInspector` Java.
   Intensidade do sheen vai embutida em `sheenColor` porque o glTF não tem fator de intensidade.
 

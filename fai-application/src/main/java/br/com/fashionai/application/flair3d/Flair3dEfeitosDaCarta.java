@@ -10,12 +10,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * O que a tela recebe de cada carta em POST .../efeitos: os itens do jogo (o selo, com o efeito da cor no fim) e o
  * perfil da regra peça-recurso — atributos, o recurso do uso, os usos e as ações que a peça destrava. Tudo calculado
- * aqui; o cliente só mostra.
+ * aqui; o cliente só mostra. Nos jogos de zonas, também o lance da carta na fase de uso ({@link Flair3dCartaDeUso}).
  */
 final class Flair3dEfeitosDaCarta {
     private Flair3dEfeitosDaCarta() {
@@ -29,6 +30,11 @@ final class Flair3dEfeitosDaCarta {
         m.put("perfil", perfil(Flair3dRecursoCalculo.daCarta(carta, null)));
         if (Flair3dAuraRegras.noJogo(n.codigo())) {
             m.put("aura", aura(carta, ctx));
+        }
+        if (Flair3dFaseDeUso.tem(n.codigo())) {
+            // na fase de uso dos jogos de zonas, o lance que a cor da carta aciona (a cor do uniforme a tela confere)
+            Flair3dCartaDeUso.Efeito uso = Flair3dCartaDeUso.de(n.codigo(), carta, Set.of());
+            m.put("uso", uso == null ? null : uso.paraTela());
         }
         return m;
     }

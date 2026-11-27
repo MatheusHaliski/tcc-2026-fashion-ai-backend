@@ -13,3 +13,12 @@ export function PieceEditorNoModel({ pieceId }: { pieceId: string }) {
   return <EmptyState title={t('editor3d.noModelTitle')} hint={t('editor3d.noModelHint')}
     action={<Link className="btn" href={`/pieces/${encodeURIComponent(pieceId)}`}>{t('editor3d.backToPiece')}</Link>} />;
 }
+
+/** Peça sem GLB próprio (relevo da foto ou modelo de fora): o modelo aparece para girar e ver, sem edição. */
+export function PieceEditorBlocked({ reason }: { reason: string }) {
+  const { t } = useI18n();
+  return <div role="status" className="rounded-lg border border-line-soft p-3" data-testid="piece-editor-blocked">
+    <p className="type-h3">{t('editor3d.blocked.title')}</p>
+    <p className="type-body-sm">{t(`editor3d.blocked.${reason}`)}</p>
+  </div>;
+}
