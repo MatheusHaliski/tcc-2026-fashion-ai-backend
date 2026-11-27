@@ -453,11 +453,15 @@ Comum e a Metamorfose renderam.
 `Flair3dNucleoServiceTest`). Vitest: `aura-na-partida.test.ts`, `nucleo-aura.test.tsx`, `batalha-fecho.test.tsx`,
 `batalha-placar.test.ts`.
 
-**Visto na tela:** a Batalha inteira com o trunfo chamado na 3ª rodada (+5 na rodada, "Comum: o primeiro erro não
-drenou o recurso" no resultado) e a Passarela com o painel e o trunfo. Capturas em `scratchpad/shots/jogos/8g/`.
-**Não visto:** Dress the Star, Personagem de Filme e Boutique na tela (mesmo componente e mesmo Decorator, cobertos
-pelos testes); celular; a Metamorfose disparando na tela (a carta Especial da bancada é ACE e o look da captura errou
-nenhuma marca com ela).
+**HUD mínimo de console** (auditoria de 27/11): fechado, o painel mostra só o resumo curto ("Aura: plateia +6", "Aura
++6 · trunfo +4"); a plateia, as famílias e o trunfo abrem como painel.
+
+**Visto na tela** (bancada): a Batalha inteira com o trunfo chamado na 3ª rodada (+5 na rodada, "Comum: o primeiro
+erro não drenou o recurso" no resultado); a Passarela com o resumo, o painel aberto, o trunfo chamado e, seguindo sem
+executar, o resultado com a plateia (+1), o Electro (+150 ms), o Comum (dreno do primeiro erro perdoado) e a
+Metamorfose do Colar branco (a marca 1 virou "bom": execução −6 em vez de −12). Capturas em
+`scratchpad/shots/jogos/8g/`. **Não visto:** Dress the Star, Personagem de Filme e Boutique na tela (mesmo componente
+e mesmo Decorator, cobertos pelos testes); celular.
 
 ### Nota projetada depois da rodada 8g
 
