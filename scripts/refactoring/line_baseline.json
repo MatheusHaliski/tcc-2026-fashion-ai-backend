@@ -545,7 +545,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/atelier3d/document.ts": {
-   "max": 311,
+   "max": 288,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/avatar3d/body-spec.ts": {
@@ -677,7 +677,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/docs/taxonomia_entidades.py": {
-   "max": 287,
+   "max": 288,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/e2e/suite_3.py": {

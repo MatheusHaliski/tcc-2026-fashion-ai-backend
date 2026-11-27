@@ -8,6 +8,8 @@ vi.mock('@/lib/atelier3d/document', () => ({
   loadGlb: vi.fn(async () => ({ gltf: { scene: {} }, nodes: new Map(), primitives: new Map(), baseline: { nodes: {}, materials: {}, vertices: {} }, originalPositions: new Map(), originalNormals: new Map(), appliedVertices: new Map(), textureTransforms: new Map() })),
   disposeAsset: vi.fn(), updateNode: vi.fn(), updateMaterial: vi.fn(),
 }));
+// o modelo simulado não tem partes; a regra do GLB próprio é testada em lib/piece3d/edit-block.test.ts
+vi.mock('@/lib/piece3d/edit-block', () => ({ editBlock: (info: { editBlockedReason?: string | null }) => info.editBlockedReason ?? null }));
 const customization = { pieceId: 'piece1', baseModelUrl: '/media/jaqueta.glb', modelAvailable: true, editable: true, viewOnly: false, assetApproval: 'IN_REVIEW', quarantine: true, tryOnApproved: false, supports: { camera: true, materials: true, transforms: true, undoRedo: true, vertices: true }, document: { nodes: {}, materials: {}, vertices: {} }, revision: 2, savedAt: null, baseChanged: false, scaleIsVisualOnly: true, affectsOfficialMeasurements: false, affectsPassport: false, fitClaim: 'NONE' };
 beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -57,5 +59,16 @@ describe('piece 3D editor', () => {
     renderApp(<PieceEditor pieceId="piece1" />);
     await screen.findByText('Não foi possível carregar o modelo 3D desta peça.');
     expect(screen.getByText('Somente visualização')).toBeTruthy();
+  });
+
+  it('relevo da foto: mostra o motivo, deixa só ver o modelo e não oferece ferramentas nem salvar', async () => {
+    loggedAs(undefined, { 'GET /api/pieces/piece1/customization': { ...customization, editable: false, modelKind: 'RELEVO_FOTO', editBlockedReason: 'CUSTOMIZATION_PHOTO_RELIEF' }, 'GET /media/jaqueta.glb': () => new Response(new ArrayBuffer(16)) });
+    renderApp(<PieceEditor pieceId="piece1" />);
+    await screen.findByTestId('viewport');
+    expect(screen.getByTestId('piece-editor-blocked').textContent).toMatch(/relevo gerado da foto/);
+    expect(screen.getByText('Esta peça não pode ser editada')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Mover (G)' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Salvar' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByText('Propriedades')).toBeNull();
   });
 });

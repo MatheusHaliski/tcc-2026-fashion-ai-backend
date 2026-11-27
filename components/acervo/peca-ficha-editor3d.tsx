@@ -24,6 +24,11 @@ export function PecaFichaEditor3d({ pieceId }: { pieceId: string }) {
     <section className="acv-editor3d" aria-label={t("acervo.integracoes.editor3d")} data-testid="acervo-editor3d">
       {!temModelo && <p className="acv-ficha-aviso" role="status">{t("editor3d.noModel")}</p>}
       {temModelo && <PieceEditorBadges info={info} />}
+      {temModelo && info.editBlockedReason && (
+        <p className="acv-ficha-aviso" role="status" data-testid="acervo-editor3d-bloqueado">
+          <strong>{t("editor3d.blocked.title")}</strong> {t(`editor3d.blocked.${info.editBlockedReason}`)}
+        </p>
+      )}
       {temModelo && !info.tryOnApproved && <p className="acv-dica">{t("sheet.notApprovedForTryOn")}</p>}
       {temModelo && (
         <ul className="acv-editor3d-lista">

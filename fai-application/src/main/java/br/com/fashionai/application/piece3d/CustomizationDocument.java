@@ -10,12 +10,23 @@ import java.util.Map;
  * deslocamentos de vértices. Validação pura: limites de tamanho, números finitos, cor em hex. Escala é ajuste visual e
  * nunca é convertida em medida oficial ou tamanho comercial.
  */
-public record CustomizationDocument(Map<String, NodeEdit> nodes, Map<String, MaterialEdit> materials, Map<String, Map<String, List<Double>>> vertices) {
+public record CustomizationDocument(Map<String, NodeEdit> nodes, Map<String, MaterialEdit> materials, Map<String, Map<String, List<Double>>> vertices,
+                                    Map<String, CustomizationDecal> decals) {
     public record NodeEdit(List<Double> position, List<Double> rotation, List<Double> scale, Boolean visible) { }
-    public record MaterialEdit(String color, Double roughness, Double metalness, List<Double> repeat, Double rotation) { }
+
+    /** {@code tint}: cor do tecido quando a cor está na textura (a textura é recolorida); {@code hidden}: parte oculta. */
+    public record MaterialEdit(String color, Double roughness, Double metalness, List<Double> repeat, Double rotation, String tint, Boolean hidden) {
+        public MaterialEdit(String color, Double roughness, Double metalness, List<Double> repeat, Double rotation) {
+            this(color, roughness, metalness, repeat, rotation, null, null);
+        }
+    }
+
+    public CustomizationDocument(Map<String, NodeEdit> nodes, Map<String, MaterialEdit> materials, Map<String, Map<String, List<Double>>> vertices) {
+        this(nodes, materials, vertices, null);
+    }
 
     public static CustomizationDocument empty() {
-        return new CustomizationDocument(Map.of(), Map.of(), Map.of());
+        return new CustomizationDocument(Map.of(), Map.of(), Map.of(), Map.of());
     }
 
     public CustomizationDocument validated() {
@@ -35,6 +46,7 @@ public record CustomizationDocument(Map<String, NodeEdit> nodes, Map<String, Mat
             MaterialEdit edit = e.getValue();
             if (edit == null) throw invalid("Material sem dados.");
             if (edit.color() != null && !edit.color().matches("#[0-9a-fA-F]{6}")) throw invalid("Cor inválida.");
+            if (edit.tint() != null && !edit.tint().matches("#[0-9a-fA-F]{6}")) throw invalid("Cor inválida.");
             unit(edit.roughness()); unit(edit.metalness()); vec(edit.repeat(), 2); finite(edit.rotation());
         }
         for (var e : v.entrySet()) {
@@ -42,7 +54,7 @@ public record CustomizationDocument(Map<String, NodeEdit> nodes, Map<String, Mat
             if (e.getValue() == null || e.getValue().size() > 20000) throw invalid("Deslocamentos demais.");
             e.getValue().values().forEach(list -> vec(list, 3));
         }
-        return new CustomizationDocument(n, m, v);
+        return new CustomizationDocument(n, m, v, CustomizationDecal.validated(decals));
     }
 
     public boolean touchesScale() {

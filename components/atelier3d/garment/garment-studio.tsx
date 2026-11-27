@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button } from "@/components/ui";
 import type { LoadedAsset, SceneDocument } from "@/lib/atelier3d/document";
+import { assetIsPhotoRelief } from "@/lib/atelier3d/garment-parts";
 import { Choice } from "./garment-fields";
 import { GarmentMaterialPanel } from "./garment-material-panel";
 import { GarmentPaintPanel } from "./garment-paint-panel";
@@ -22,8 +23,10 @@ interface Props {
 const KNOWN_ERRORS = new Set(["ATELIER_COMMAND_LIMIT", "ATELIER_COMMAND_STATIC", "ATELIER_IMAGE_TYPE", "ATELIER_IMAGE_SIZE", "ATELIER_COMMAND_TARGET"]);
 
 /** Ferramentas de roupa sobre o GLB carregado: material, pintura, estampa, modelagem e acabamentos. */
-export function GarmentStudioPanel({ studio, asset, doc, editable }: Props) {
+export function GarmentStudioPanel({ studio, asset, doc, editable: canEdit }: Props) {
   const { t } = useI18n();
+  // o relevo da foto (bloco com a imagem) não é uma peça: nada de tecido, pintura ou estampa sobre ele
+  const relief = assetIsPhotoRelief(asset), editable = canEdit && !relief;
   const panels: Partial<Record<StudioTab, ReactNode>> = {
     material: <GarmentMaterialPanel studio={studio} asset={asset} doc={doc} editable={editable} />,
     paint: <GarmentPaintPanel studio={studio} doc={doc} editable={editable} />,
@@ -46,6 +49,7 @@ export function GarmentStudioPanel({ studio, asset, doc, editable }: Props) {
       <Choice legend={t("atelier3d.garment.scope")} value={studio.scope} disabled={!editable}
         options={[{ id: "part", label: t("atelier3d.garment.scope.part") }, { id: "all", label: t("atelier3d.garment.scope.all") }]}
         onChange={studio.setScope} />
+      {relief && <p role="status" data-testid="garment-studio-relief">{t("atelier3d.photoRelief")}</p>}
       {!studio.targets.length && <p className="type-caption">{t("atelier3d.garment.noTarget")}</p>}
       {studio.error && (
         <p role="alert" className="error-text">
