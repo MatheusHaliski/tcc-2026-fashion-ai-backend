@@ -116,9 +116,17 @@
 }
 
 /* Minhas Artes: a cópia da imagem de cada elenco concluído, na proporção da própria imagem */
+.ep-art-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+}
+
 .ep-art {
   display: grid;
+  align-content: start;
   gap: 6px;
+  min-width: 0;
 }
 
 .ep-art-frame {

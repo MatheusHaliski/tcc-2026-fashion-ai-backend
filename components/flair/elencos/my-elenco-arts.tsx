@@ -35,7 +35,7 @@ export function MyElencoArts() {
           {tx.t("flair3d.elencos.arts.empty")} <Link href="/flair/elencos">{tx.t("flair3d.elencos.arts.play")}</Link>
         </p>
       ) : (
-        <div className="opt-grid">
+        <div className="ep-art-grid">
           {artes.map(({ codigo, edicao, qc }) => {
             const nome = tx.elenco(codigo);
             return (
