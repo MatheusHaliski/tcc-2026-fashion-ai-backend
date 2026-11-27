@@ -1,20 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.imaging.FlatLayPipeline;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.testkit.Kit;
-import br.com.fashionai.application.testkit.World;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.Photo;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.PhotoOrigin;
-import br.com.fashionai.domain.repository.PhotoRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -26,6 +11,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.imaging.FlatLayPipeline;
+import br.com.fashionai.application.imaging.PhotoInsights;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.testkit.Kit;
+import br.com.fashionai.application.testkit.World;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.Photo;
+import br.com.fashionai.domain.model.Scheme;
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.PhotoOrigin;
+import br.com.fashionai.domain.repository.PhotoRepository;
 
 import static br.com.fashionai.application.testkit.World.map;
 import static org.assertj.core.api.Assertions.assertThat;

@@ -22,11 +22,15 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: python -m pip install -r scripts/catalog/requirements-photo-tests.txt
       - run: python -m unittest discover -s scripts/catalog/tests
+      # testes no estilo pytest (funções de módulo com tmp_path/monkeypatch/capsys): o unittest só importa esses módulos e
+      # não executa nada deles; quem executa é o pytest. Com -p no:unittest as classes unittest.TestCase ficam só no passo
+      # de cima (não rodam duas vezes) e um módulo novo no estilo pytest entra sem precisar de lista
+      - run: python -m pytest -q -p no:unittest scripts/catalog/tests
 
   backend:
     name: API (Java 21 · mvn verify)
@@ -34,7 +38,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -49,13 +53,17 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
       - run: npm ci --no-fund
       - name: Typecheck
         run: npm run typecheck
+      # as mesmas checagens do prebuild (que a Vercel roda antes do next build): rodam antes dos testes para que um
+      # texto embutido ou estilo fora do padrão apareça aqui, e não só como deploy quebrado na Vercel
+      - name: Checagens do build da Vercel (estilos, design, i18n)
+        run: npm run -s lint:styles && node scripts/ux/check-design.cjs && node scripts/i18n/check.js --fail && node scripts/i18n/scan.js --fail
       - name: Testes (vitest)
         run: npm test
       - name: Build de produção (inclui as checagens de i18n)
@@ -85,14 +93,14 @@ jobs:
           /tmp/fashionai-lighthouse-tools/node_modules/.bin/lhci autorun
       - name: Relatório Lighthouse
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fashionai-lighthouse
           path: /tmp/fashionai-lighthouse
           if-no-files-found: ignore
       - name: Capturas e relatório da auditoria
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fashionai-ux-audit
           path: /tmp/fashionai-ux-audit

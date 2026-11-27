@@ -1,0 +1,61 @@
+{
+  "title": "Hallway where Suites are located",
+  "creator": "leyla.a",
+  "license": "CC BY-SA 2.0",
+  "source": "https://www.flickr.com/photos/53532723@N00/6195965273",
+  "provider": "flickr",
+  "file": "/flair/games/scenes/corredor-hotel.webp",
+  "notes": "Corredor das suítes com colunas caneladas, capitéis dourados, lustres e quadros; sem pessoas, sem texto. Flickr (tamanho k 2048 px).",
+  "objects": [
+    {
+      "name": "lustre pendente em primeiro plano",
+      "x": 52,
+      "y": 34
+    },
+    {
+      "name": "lustres ao fundo do corredor",
+      "x": 53,
+      "y": 47
+    },
+    {
+      "name": "coluna canelada com capitel dourado (esquerda)",
+      "x": 24,
+      "y": 45
+    },
+    {
+      "name": "coluna canelada com capitel dourado (direita)",
+      "x": 74,
+      "y": 45
+    },
+    {
+      "name": "quadros iluminados na parede esquerda",
+      "x": 34,
+      "y": 55
+    },
+    {
+      "name": "quadro com arandela na parede direita",
+      "x": 68,
+      "y": 56
+    },
+    {
+      "name": "poltronas de couro ao fundo",
+      "x": 46,
+      "y": 68
+    },
+    {
+      "name": "tapete estampado no piso",
+      "x": 51,
+      "y": 88
+    },
+    {
+      "name": "teto em caixotões iluminado",
+      "x": 51,
+      "y": 17
+    },
+    {
+      "name": "arandela de parede (direita)",
+      "x": 98,
+      "y": 29
+    }
+  ]
+}

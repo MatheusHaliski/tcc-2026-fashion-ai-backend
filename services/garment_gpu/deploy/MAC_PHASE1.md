@@ -39,5 +39,6 @@ de produto já prontas: classe `COMPLETE_PRODUCT`) e **`phase2_ids.txt`** (vesti
 ~/.venv-fai/bin/python -m services.garment_gpu.scripts.catalog_batch --ids-file ~/catalog-fase1/phase2_ids.txt \
   --limit 2000 --offset 0 --concurrency 2 --out ~/catalog-fase2/lote-0
 ```
-Repita com `--offset 2000`, `4000`, … até o fim da lista. O servidor refaz a Fase 1 dessas fotos (~1 s cada, para
+Repita com `--offset 2000`, `4000`, … até o fim da lista. Com `--ids-file` o lote usa `mode=reconstruct` (a lista já
+foi classificada aqui) e grava `retry_ids.txt` com o que precisa ser refeito. O servidor refaz a Fase 1 dessas fotos (~1 s cada, para
 ter a máscara junto do job) e gera o flat lay.

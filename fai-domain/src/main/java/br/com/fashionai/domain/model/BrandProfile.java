@@ -10,6 +10,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -65,6 +66,11 @@ public class BrandProfile extends VersionedAuditableEntity implements Reviewable
 
     @Column(name = "fashion_category", length = 80)
     private String fashionCategory;
+
+    /** Categoria principal escolhida na tabela de opções (exercício 09); nulo = não informada. O texto acima é o legado. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_marca_id")
+    private CategoriaMarca categoriaMarca;
 
     @Convert(converter = AesGcmStringConverter.class)
     @Column(name = "commercial_contact_ciphertext", length = 1024)

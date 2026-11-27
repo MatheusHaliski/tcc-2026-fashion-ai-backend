@@ -1,69 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.audit.AuditActions;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Hashing;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.hype.HypeScoreConfig;
-import br.com.fashionai.application.lens.LensService;
-import br.com.fashionai.application.ports.EmailSenderPort;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.privacy.AccountDataCleanup;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.DataExportRequest;
-import br.com.fashionai.domain.model.HypeDimensions;
-import br.com.fashionai.domain.model.HypeMilestone;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.HypeScoreSnapshot;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.UserConsent;
-import br.com.fashionai.domain.model.VerificationCode;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.ApprovalStatus;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.ConsentPurpose;
-import br.com.fashionai.domain.model.enums.ExportStatus;
-import br.com.fashionai.domain.model.enums.FollowStatus;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.NotificationType;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.model.enums.VerificationPurpose;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.AiInferenceLogRepository;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.CelebrityProfileRepository;
-import br.com.fashionai.domain.repository.CommentRepository;
-import br.com.fashionai.domain.repository.DataExportRequestRepository;
-import br.com.fashionai.domain.repository.DnaSchemeRepository;
-import br.com.fashionai.domain.repository.FollowRepository;
-import br.com.fashionai.domain.repository.HypeMilestoneRepository;
-import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
-import br.com.fashionai.domain.repository.HypeScoreSnapshotRepository;
-import br.com.fashionai.domain.repository.NotificationRepository;
-import br.com.fashionai.domain.repository.PhotoRepository;
-import br.com.fashionai.domain.repository.ReactionRepository;
-import br.com.fashionai.domain.repository.SavedItemRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserConsentRepository;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.VerificationCodeRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -74,6 +10,28 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.audit.AuditActions;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.hype.HypeScoreConfig;
+import br.com.fashionai.application.lens.LensService;
+import br.com.fashionai.application.ports.EmailSenderPort;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.privacy.AccountDataCleanup;
+import br.com.fashionai.application.privacy.ConsentPurposes;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF3 + RNF6 (LGPD): dados pessoais com reautenticação, confirmação de e-mail, transparência de finalidade,
@@ -86,32 +44,8 @@ public class AccountService {
     public static final Duration DELETION_GRACE = Duration.ofDays(30);
     public static final Duration EXPORT_TTL = Duration.ofDays(7);
 
-    /** Finalidades, base legal e artigo exibidos em cada controle da seção Privacidade (artefato #6). */
-    public static final Map<ConsentPurpose, String[]> PURPOSES = new LinkedHashMap<>();
-
-    static {
-        PURPOSES.put(ConsentPurpose.AI_RECOMMENDATION, new String[]{Msg.k("account.recomendacoes_por_ia"),
-                Msg.k("account.enviar_metadados_do_seu_acervo"),
-                "Consentimento", Msg.k("account.art_7_i")});
-        PURPOSES.put(ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, new String[]{Msg.k("account.processamento_de_fotos_por_terceiros"),
-                Msg.k("account.enviar_fotos_das_pecas_a"),
-                "Consentimento", Msg.k("account.art_7_i")});
-        PURPOSES.put(ConsentPurpose.HISTORY_FOR_RECOMMENDATION, new String[]{Msg.k("account.historico_para_personalizacao"),
-                Msg.k("account.usar_seu_historico_de_interacoes"), "Consentimento", Msg.k("account.art_7_i")});
-        PURPOSES.put(ConsentPurpose.PERSONALIZED_ADS, new String[]{Msg.k("account.anuncios_personalizados"),
-                Msg.k("account.mostrar_promocoes_de_marcas_conforme"), "Consentimento", Msg.k("account.art_7_i")});
-        PURPOSES.put(ConsentPurpose.PARTNER_SHARING, new String[]{Msg.k("account.compartilhamento_com_parceiros"),
-                Msg.k("account.compartilhar_dados_agregados_com_marcas"), "Consentimento", Msg.k("account.art_7_i")});
-        PURPOSES.put(ConsentPurpose.BODY_MEASUREMENTS, new String[]{Msg.k("account.medidas_corporais_dado_sensivel"),
-                Msg.k("account.usar_porte_e_tom_de"), Msg.k("account.consentimento_especifico_e_destacado"),
-                Msg.k("account.art_11_i")});
-        PURPOSES.put(ConsentPurpose.FACIAL_RECOGNITION, new String[]{Msg.k("account.reconhecimento_facial_dado_sensivel"),
-                Msg.k("account.nao_utilizado_pelo_fashion_ai"), Msg.k("account.consentimento_especifico_e_destacado"), Msg.k("account.art_11_i")});
-        PURPOSES.put(ConsentPurpose.LOCATION_HISTORY, new String[]{Msg.k("account.localizacao_para_clima"),
-                Msg.k("account.usar_sua_localizacao_aproximada_para"), "Consentimento", Msg.k("account.art_7_i")});
-        PURPOSES.put(ConsentPurpose.AI_MODEL_TRAINING, new String[]{Msg.k("account.treino_dos_modelos_de_visao"),
-                Msg.k("account.usar_fotos_e_correcoes_das_pecas"), "Consentimento", Msg.k("account.art_7_i")});
-    }
+    /** Finalidades, base legal e artigo exibidos em cada controle da seção Privacidade (ver {@link ConsentPurposes}). */
+    public static final Map<ConsentPurpose, String[]> PURPOSES = ConsentPurposes.ALL;
 
     private final UserRepository users;
     private final UserPreferencesRepository preferences;

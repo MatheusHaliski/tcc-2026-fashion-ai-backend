@@ -1,6 +1,16 @@
 package br.com.fashionai.application.service;
 
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import org.springframework.stereotype.Service;
+
 import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.avatar.Avatar3dBodyRules;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.imaging.ImageOps;
@@ -8,14 +18,6 @@ import br.com.fashionai.application.ports.BodyMeasurementPort;
 import br.com.fashionai.application.ports.RateLimitPort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
-import org.springframework.stereotype.Service;
-
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * Avatar 3D mais fiel com GPU: uma foto de corpo inteiro vai ao SAM 3D Body (worker privado → T4 no Vertex) e voltam só

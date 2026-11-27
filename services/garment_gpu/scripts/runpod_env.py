@@ -53,8 +53,9 @@ SECRETS = REQUIRED + ("FAI_API_KEYS", "FAI_API_KEY", "HF_TOKEN")
 PASS_PREFIXES = ("RECON_", "QA_", "MASK_", "S3_", "HF_", "FAI_", "WORKER_", "RATE_LIMIT_", "MAX_", "JOB_",
                  "SEGMENT_", "RECONSTRUCT_", "BOX_", "TEXT_", "DETECTOR_", "SEGMENTER_", "RETENTION_", "METRICS_",
                  "LOG_LEVEL")
-# Topologia do pod: sempre local, nunca vem do painel.
-LOCAL_ONLY = ("REDIS_URL", "S3_ENDPOINT", "PRIVATE_BIND")
+# Topologia do pod: sempre local, nunca vem do painel. HF_HOME é escolhido por pick_hf_home.
+LOCAL_ONLY = ("REDIS_URL", "S3_ENDPOINT", "PRIVATE_BIND", "HF_HOME")
+QWEN_CACHE = "hub/models--Qwen--Qwen-Image-Edit-2511"   # ~58 GB: baixar de novo custa ~20 min de pod pago
 
 SAFE_SECRET = re.compile(r"^[!#-&(-\[\]-~]+$")   # ASCII visível sem espaço, aspas nem barra invertida
 TEMPLATE = re.compile(r"\{\{.*\}\}")
@@ -86,13 +87,42 @@ def _problems(env) -> list[str]:
     return problems
 
 
+def cached_bytes(folder: str) -> int:
+    """Tamanho dos pesos da Fase 2 já baixados numa pasta HF_HOME (0 se não houver)."""
+    total = 0
+    for root, _, files in os.walk(os.path.join(folder, QWEN_CACHE)):
+        for name in files:
+            try:
+                total += os.path.getsize(os.path.join(root, name))
+            except OSError:
+                pass
+    return total
+
+
+def pick_hf_home(env, workspace: str = WORKSPACE, size=cached_bytes) -> str:
+    """Pasta dos pesos no volume. A imagem PyTorch do RunPod define HF_HOME=/workspace/.cache/huggingface e pods
+    anteriores usaram /workspace/hf: seguir um ou outro às cegas baixou os 58 GB de novo (02-03/11/2026). Ordem:
+    FAI_HF_HOME explícito; a pasta que já tem mais pesos do Qwen; o HF_HOME da imagem, se estiver no volume;
+    <workspace>/hf."""
+    explicit = env.get("FAI_HF_HOME", "").strip().rstrip("/")
+    if explicit:
+        return explicit
+    image = env.get("HF_HOME", "").strip().rstrip("/")
+    candidates = list(dict.fromkeys(c for c in (image, f"{workspace}/.cache/huggingface", f"{workspace}/hf") if c))
+    sizes = {c: size(c) for c in candidates}
+    best = max(candidates, key=lambda c: sizes[c])
+    if sizes[best] > 0:
+        return best
+    return image if image.startswith(workspace.rstrip("/") + "/") else f"{workspace}/hf"
+
+
 def build(env, workspace: str = WORKSPACE) -> dict[str, str]:
     """Junta padrões + variáveis do pod + topologia local e valida tudo como o worker e a API fariam ao subir."""
     problems = _problems(env)
     if problems:
         raise PodConfigError("configuração do pod incompleta:\n  - " + "\n  - ".join(dict.fromkeys(problems)))
     merged = dict(DEFAULTS)
-    merged["HF_HOME"] = f"{workspace}/hf"
+    merged["HF_HOME"] = pick_hf_home(env, workspace)
     for name, value in env.items():
         if name in LOCAL_ONLY:
             continue

@@ -77,7 +77,6 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
   const onSealChange = useCallback((id: string, requests: SealRequest[], valid: boolean) => setSealChoices((old) => ({ ...old, [id]: { requests, valid } })), []);
   const sealsValid = cells.every((c) => sealChoices[c.schemeId]?.valid !== false);
   const byId = useMemo(() => new Map((b?.schemes ?? []).map((s) => [s.id, s])), [b]);
-  useEffect(() => { if (b?.defaultVisibility && !initial) setForm((f) => ({ ...f, visibility: b.defaultVisibility })); }, [b, initial]);
   const effNarrative = form.target === "DNA_COMPLETO" ? narrative : null;
   // cartela e animação são da narrativa B11: quando ela deixa de valer — outra narrativa, anatomia base, elemento-alvo
   // que não é o DNA completo, proposta da IA — saem do fundo; senão o card as usaria como arte comum

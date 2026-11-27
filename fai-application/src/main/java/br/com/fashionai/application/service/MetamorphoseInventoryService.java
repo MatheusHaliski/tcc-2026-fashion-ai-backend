@@ -23,8 +23,12 @@ public class MetamorphoseInventoryService {
   this.offers=offers; this.licenses=licenses; this.rewards=rewards; this.guard=guard;
  }
  public record Art(String code, String name, Map<String,Object> config, String source, Instant expiresAt) {}
+ /** Lista as artes da própria pessoa (só leitura): basta a sessão; usar uma arte ao gravar passa por {@link #require}. */
  @Transactional(readOnly=true) public List<Art> mine(CurrentUser user) {
-  guard.requireCanCreate(user);
+  guard.requireSession(user);
+  return owned(user);
+ }
+ private List<Art> owned(CurrentUser user) {
   Map<String,Art> owned=new LinkedHashMap<>();
   for (var license:licenses.findByOwnerIdOrderByPurchasedAtDesc(user.id()))
    add(owned,license.getPresetCode(),"STORE",null);
@@ -50,7 +54,8 @@ public class MetamorphoseInventoryService {
   boolean composition=config.get("compositionPreset") instanceof Map<?,?> p && "METAMORPHOSE".equals(p.get("family"));
   Object code=config.get("auraEntitlementCode");
   if (!active && !composition && code == null) return;
-  for (Art art:mine(user)) {
+  guard.requireCanCreate(user);
+  for (Art art:owned(user)) {
    if (!art.code().equals(code)) continue;
    boolean matches=true;
    // An offer owns every field it defines, including complete nested palettes/materials.

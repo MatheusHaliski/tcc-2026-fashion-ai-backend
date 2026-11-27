@@ -1,0 +1,50 @@
+{
+  "title": "Walk-In Wardrobe",
+  "creator": "blueprinthomes.com.au",
+  "license": "CC BY 2.0",
+  "source": "https://www.flickr.com/photos/187015085@N02/49740365653",
+  "provider": "flickr",
+  "file": "/flair/games/scenes/closet-luxo.webp",
+  "objects": [
+    {
+      "name": "cômoda de gavetas",
+      "x": 48,
+      "y": 76
+    },
+    {
+      "name": "armários superiores",
+      "x": 48,
+      "y": 28
+    },
+    {
+      "name": "nicho com chapéu de palha",
+      "x": 33,
+      "y": 55
+    },
+    {
+      "name": "nicho com potes de vidro",
+      "x": 56,
+      "y": 53
+    },
+    {
+      "name": "camisas listradas penduradas",
+      "x": 72,
+      "y": 44
+    },
+    {
+      "name": "chapéu na prateleira",
+      "x": 85,
+      "y": 52
+    },
+    {
+      "name": "arara com blusas",
+      "x": 87,
+      "y": 72
+    },
+    {
+      "name": "camisa xadrez no cabide",
+      "x": 14,
+      "y": 50
+    }
+  ]
+}

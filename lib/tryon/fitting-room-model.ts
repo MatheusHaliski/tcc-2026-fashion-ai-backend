@@ -3,6 +3,8 @@ import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { label } from "@/lib/api/taxonomy";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { SceneProduct } from "@/lib/scene3d/scene";
+import { isCategoryIllustration } from "@/lib/avatar3d/human/default-outfit";
+import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
 import {
   slotOf,
   wearOf,
@@ -121,6 +123,9 @@ export function fromCatalog(
     textureImageId: imageId ?? null,
     textureRevision: `${(hash >>> 0).toString(16)}-${revision.length}`,
     processedUrl: processedImageOf(p),
+    // modelo de vitrine do produto (etapa 3): a peça já chega com 3D e o provador não pede outra geração
+    model3dUrl: p.model3dUrl ?? null,
+    model3dStatus: p.model3dUrl ? "COMPLETED" : null,
     officialUrl:
       p.source?.productUrl && p.source.productUrl !== "null"
         ? p.source.productUrl
@@ -136,6 +141,7 @@ export function fromCatalog(
 /** Adapta uma entrada do guarda-roupa para o mesmo contrato usado pelo catálogo. */
 export function fromWardrobe(e: Entry): FittingItem {
   const p = e.piece;
+  const noPhoto = p.defaultImage === true || isCategoryIllustration(p.imageUrl ?? p.thumbnailUrl);
 
   return {
     key: `w:${p.id}`,
@@ -158,6 +164,8 @@ export function fromWardrobe(e: Entry): FittingItem {
     colorHex: p.colorHex ?? null,
     colorName: p.color ? label(p.color) : null,
     pieceId: p.id,
+    noPhoto,
+    thumbUrl: noPhoto ? defaultGarmentUrl(p.category, p.subcategory, p.colorHex, p.color) : null,
     addedAt: nextTick(),
     model3dUrl: p.model3dUrl ?? null,
     model3dStatus: p.model3dStatus ?? null,
@@ -213,6 +221,6 @@ export const toLook3d = (i: FittingItem): Look3dPiece => ({
   colorHex: i.colorHex,
   model3dUrl: i.model3dUrl,
   model3dStatus: i.model3dStatus,
-  defaultImage: !i.imageUrl && !i.processedUrl,
+  defaultImage: i.noPhoto === true || (!i.imageUrl && !i.processedUrl),
   sizeLabel: i.size ?? null,
 });

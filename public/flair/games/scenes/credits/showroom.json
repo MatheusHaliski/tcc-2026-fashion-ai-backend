@@ -1,0 +1,18 @@
+{
+  "title": "Women clothes in fashion store. Shopping mall. Women fashion shopping concept.",
+  "creator": "Artem Beliaikin",
+  "license": "CC BY 2.0",
+  "source": "https://www.flickr.com/photos/157635012@N07/47955063506",
+  "provider": "flickr",
+  "file": "/flair/games/scenes/showroom.webp",
+  "notes": "Showroom/loja de moda sem pessoas: araras com cabides pretos, peças rosa, brancas e vermelhas, mesa expositora e trilhos de luz no teto. Tratamento de cor do autor (tom quente/frio).",
+  "objects": [
+    { "name": "arara com cabides pretos", "x": 52, "y": 38 },
+    { "name": "vestidos rosa plissados", "x": 37, "y": 78 },
+    { "name": "suéteres vermelhos na arara", "x": 66, "y": 45 },
+    { "name": "mesa expositora", "x": 16, "y": 52 },
+    { "name": "trilhos de spots no teto", "x": 40, "y": 10 },
+    { "name": "araras ao fundo da loja", "x": 22, "y": 33 },
+    { "name": "coluna espelhada", "x": 6, "y": 35 }
+  ]
+}

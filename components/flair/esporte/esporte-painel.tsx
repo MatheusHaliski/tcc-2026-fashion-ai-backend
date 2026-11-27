@@ -1,0 +1,149 @@
+"use client";
+/**
+ * A faixa de baixo do Fashion Sports durante a partida, no lugar do deck: a situação da jogada em uma frase, o relógio
+ * da janela e a mão de cartas. Cada carta mostra a ação que a cor dela dispara e o poder dela. Jogar uma carta é a
+ * jogada; "seguir sem carta" (ou deixar a janela acabar) deixa o time sem fazer nada de útil, e a tela diz isso antes.
+ * Setas escolhem a carta, Enter ou Espaço jogam, Backspace segue sem carta; no controle, o direcional escolhe, A ou
+ * Start jogam e B segue sem carta (use-mao-controle).
+ */
+import { useEffect, useRef, useState } from "react";
+import { cn } from "@/components/ui";
+import type { ApiError } from "@/lib/api/client";
+import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
+import { NucleoCard } from "@/components/flair/nucleos/nucleo-card";
+import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { narracao, nomeDaAcao, situacaoEmTexto } from "@/components/flair/esporte/esporte-texto";
+import { useMaoNoControle } from "@/components/flair/esporte/use-mao-controle";
+import { BarraDeTempo } from "@/components/flair/esporte/barra-de-tempo";
+import { useReducedMotion } from "@/components/three/common";
+import { precisaDeTempo, type FaixaDoTempo } from "@/lib/flair/esporte/tempo";
+import type { Jogada, Situacao } from "@/lib/flair/esporte/types";
+import type { EfeitoItem } from "@/lib/flair/nucleos/types";
+
+/** Quanto tempo a pessoa tem para jogar a carta, em segundos. */
+export const JANELA_S = 30;
+/** Quantos lances a narração guarda na tela. */
+const ULTIMOS = 3;
+
+export interface CartaNaMao {
+  card: FlairCollectionCard;
+  acao: string;
+  poder: number;
+}
+
+/** A ação e o poder de cada carta da mão, pelos selos do servidor (ACAO_<ação> e PODER). */
+export function cartasDaMao(mao: string[], cartas: FlairCollectionCard[], itens: (cardId: string) => EfeitoItem[] | undefined): CartaNaMao[] {
+  return mao.flatMap((id) => {
+    const card = cartas.find((c) => c.id === id);
+    if (!card) return [];
+    const selos = itens(id) ?? [];
+    const acao = selos.find((i) => i.codigo.startsWith("ACAO_"))?.codigo.slice("ACAO_".length) ?? "TOQUE";
+    const poder = selos.find((i) => i.codigo === "PODER")?.valor;
+    return [{ card, acao, poder: typeof poder === "number" ? poder : 0 }];
+  });
+}
+
+interface Props {
+  modalidade: string;
+  /** os lances que já apareceram (a narração mostra os últimos) */
+  jogadas: Jogada[];
+  /** a jogada da vez, quando a partida espera a carta e os lances anteriores já passaram na tela */
+  situacao: Situacao | null;
+  mao: CartaNaMao[];
+  ocupado: boolean;
+  erro: ApiError | null;
+  /** joga a carta (ou nenhuma: seguir sem carta), com o acerto da barra de tempo no chute e no desarme */
+  onJogar: (cardId: string | null, tempo?: FaixaDoTempo | null) => void;
+  /** pula a animação dos lances que faltam aparecer */
+  onPular: () => void;
+}
+
+export function EsportePainel({ modalidade, jogadas, situacao, mao, ocupado, erro, onJogar, onPular }: Props) {
+  const tx = useNucleoText();
+  const reduzido = useReducedMotion();
+  const [foco, setFoco] = useState(0);
+  const [resta, setResta] = useState(JANELA_S);
+  /** a carta que chuta ou desarma espera a barra de tempo antes de ir ao servidor */
+  const [tempo, setTempo] = useState<{ cardId: string; acao: string } | null>(null);
+  const apertar = useRef<(() => void) | null>(null);
+  const jogar = useRef(onJogar);
+  jogar.current = onJogar;
+  const aberta = !!situacao && !ocupado;
+  const vez = situacao?.jogada ?? 0;
+  const escolher = (c: CartaNaMao) => {
+    if (precisaDeTempo(c.acao)) setTempo({ cardId: c.card.id, acao: nomeDaAcao(tx, modalidade, c.acao) });
+    else jogar.current(c.card.id, null);
+  };
+  useEffect(() => setTempo(null), [vez]);
+
+  // a janela da jogada: conta os segundos e, no fim, segue sem carta
+  useEffect(() => {
+    if (!aberta) return;
+    setResta(JANELA_S);
+    setFoco(0);
+    const timer = window.setInterval(() => setResta((r) => r - 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [aberta, vez]);
+  useEffect(() => {
+    if (aberta && resta <= 0) jogar.current(null);
+  }, [aberta, resta]);
+
+  // teclado e controle: escolher a carta, jogar a carta em foco, seguir sem carta
+  useMaoNoControle({
+    ativo: aberta,
+    onMover: (dir) => setFoco((f) => (f + dir + Math.max(1, mao.length)) % Math.max(1, mao.length)),
+    onJogar: () => {
+      if (tempo) apertar.current?.();
+      else if (mao[foco]) escolher(mao[foco]);
+    },
+    onSeguir: () => jogar.current(null),
+  });
+
+  const ultimos = jogadas.slice(-ULTIMOS);
+  return (
+    <section className="fsp-painel" aria-label={tx.t("flair3d.esporte.painel")} data-testid="esporte-painel" data-aberta={aberta || undefined}>
+      <ol className="fsp-lances" aria-live="polite">
+        {ultimos.map((j) => (
+          <li key={j.n} className={j.ok ? "is-ok" : "is-miss"}>{narracao(tx, modalidade, j)}</li>
+        ))}
+      </ol>
+      {situacao ? (
+        <>
+          <p className="fsp-situacao" role="status" data-testid="esporte-situacao">
+            <strong>{tx.t("flair3d.esporte.jogada", { n: situacao.jogada, total: situacao.total })}</strong> {situacaoEmTexto(tx, situacao, modalidade)}
+          </p>
+          <p className="fsp-janela tabular" data-testid="esporte-janela">{tx.t("flair3d.esporte.janela", { n: Math.max(0, resta) })}</p>
+          <p className="n3d-hint fsp-capita">{tx.t("flair3d.esporte.capita")}</p>
+          {tempo && <BarraDeTempo acao={tempo.acao} reduzido={reduzido} apertar={apertar} onFim={(faixa) => jogar.current(tempo.cardId, faixa)} />}
+          {mao.length === 0 ? <p className="n3d-hint">{tx.t("flair3d.esporte.semMao")}</p> : (
+            <div className="fsp-mao" role="group" aria-label={tx.t("flair3d.esporte.mao", { n: situacao.baralho })}>
+              {mao.map((c, i) => {
+                const acao = nomeDaAcao(tx, modalidade, c.acao);
+                const rotulo = tx.t("flair3d.esporte.carta", { nome: c.card.name, acao, poder: c.poder });
+                return (
+                  <button key={c.card.id} type="button" className={cn("fsp-carta", i === foco && "is-foco")} aria-label={rotulo} title={rotulo} disabled={!aberta || !!tempo}
+                    data-acao={c.acao} onFocus={() => setFoco(i)} onClick={() => escolher(c)}>
+                    <NucleoCard card={c.card} tamanho="mini" />
+                    <span className="fsp-carta-acao">{acao}</span>
+                    <span className="fsp-carta-poder tabular">{tx.t("flair3d.esporte.poder", { n: c.poder })}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <button type="button" className="btn btn-sm fsp-seguir" disabled={!aberta} onClick={() => onJogar(null)} title={tx.t("flair3d.esporte.semCartaAviso")}>
+            {tx.t("flair3d.esporte.semCarta")}
+          </button>
+          <p className="n3d-hint fsp-aviso">{tx.t("flair3d.esporte.semCartaAviso")}</p>
+          <p className="n3d-hint fsp-comandos">{tx.t("flair3d.esporte.comandos")}</p>
+        </>
+      ) : (
+        <div className="fsp-espera">
+          <p className="n3d-hint" role="status">{tx.t(ocupado ? "flair3d.esporte.resolvendo" : "flair3d.esporte.emCampo")}</p>
+          <button type="button" className="btn btn-sm" onClick={onPular}>{tx.t("flair3d.esporte.pular")}</button>
+        </div>
+      )}
+      {erro && <p className="n3d-error" role="alert">{tx.ou(`flair3d.ui.trigger.error.${erro.code ?? ""}`, tx.t("flair3d.ui.trigger.error.default", { msg: erro.message }))}</p>}
+    </section>
+  );
+}

@@ -1,0 +1,150 @@
+/* ── FLAIR Card Building Challenge · elencos em quebra-cabeça (components/flair/elencos/*) ─────────────────────────
+   A lista (.ep-list), a tela do elenco (.ep-game: quebra-cabeça, requisitos, vagas) e o modal de conclusão
+   (.ep-complete). As peças do quebra-cabeça estão em 39-flair-elencos-quebra-cabeca.css e as vagas em
+   48-flair-elencos-vagas.css. Movimento reduzido: as transições somem pela regra global de 01. */
+.ep-game {
+  display: grid;
+  gap: 12px;
+  /* a bandeja fica presa ao pé da tela: o fim da página não fica atrás dela */
+  padding-bottom: 12px;
+}
+
+.ep-meter {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.ep-meter span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #f08a24, #c6275e);
+  transition: width 0.4s ease;
+}
+
+.ep-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ep-list-item {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.ep-list-item:hover,
+.ep-list-item:focus-visible {
+  border-color: var(--line);
+}
+
+.ep-list-thumb {
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #16161a;
+}
+
+.ep-list-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* ainda a montar: a imagem aparece apagada, como o fundo do quebra-cabeça */
+  filter: grayscale(0.6) brightness(0.8);
+}
+
+.ep-list-item.is-done .ep-list-thumb img {
+  filter: none;
+}
+
+.ep-list-name {
+  font-weight: 700;
+}
+
+.ep-complete {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+}
+
+/* o quadro tem a proporção do próprio vídeo (--ep-ar): ocupa a largura toda que cabe em 60dvh de altura, sem faixas */
+.ep-complete-video {
+  display: block;
+  width: min(100%, calc(60dvh * var(--ep-ar, 1)));
+  aspect-ratio: var(--ep-ar, 1);
+  height: auto;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+.ep-complete .ep-puzzle {
+  width: min(100%, 52dvh);
+}
+
+/* tela larga: o quebra-cabeça e os requisitos à esquerda, as vagas à direita, tudo à vista de uma vez */
+@media (min-width: 1100px) {
+  .ep-game {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .ep-game > * {
+    grid-column: 1 / -1;
+  }
+
+  .ep-game > .ep-puzzle {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .ep-game > .ep-req,
+  .ep-game > .ep-vagas {
+    grid-column: 2;
+  }
+}
+
+/* Minhas Artes: a cópia da imagem de cada elenco concluído, na proporção da própria imagem */
+.ep-art-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+}
+
+.ep-art {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ep-art-frame {
+  display: block;
+  aspect-ratio: var(--ep-ar, 1);
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.ep-art-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ep-art-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

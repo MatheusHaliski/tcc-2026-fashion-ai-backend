@@ -5,6 +5,7 @@ import br.com.fashionai.application.ports.CounterStorePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.PieceAvailability;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AccountStatus;
@@ -95,7 +96,7 @@ class PieceRemixTest {
 
     @Test
     void donaRemixaAPropriaPecaMesmoIndisponivel() {
-        piece.markAvailable(false);
+        PieceAvailability.mark(piece, false);
         assertThat(social.remix(owner, TargetType.PIECE, piece.getId()).get("next")).isEqualTo("/schemes/new?pieces=" + piece.getId());
         assertThatThrownBy(() -> social.remix(other, TargetType.PIECE, piece.getId()))
                 .satisfies(e -> assertThat(((ApiException) e).status()).isEqualTo(409));

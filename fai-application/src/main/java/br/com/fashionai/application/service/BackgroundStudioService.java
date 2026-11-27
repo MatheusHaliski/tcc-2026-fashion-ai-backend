@@ -1,34 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.assets.AssetCatalogService;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.imaging.ImageOps;
-import br.com.fashionai.application.imaging.ImageProviderPorts;
-import br.com.fashionai.application.imaging.SchemeCardRenderer;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.domain.model.AssetPreset;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.BackgroundAnimation;
-import br.com.fashionai.domain.model.enums.ContainerOrigin;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.PhotoOrigin;
-import br.com.fashionai.domain.repository.AssetPresetRepository;
-import br.com.fashionai.domain.repository.CelebrityProfileRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -39,6 +10,25 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.ai.*;
+import br.com.fashionai.application.assets.AssetCatalogService;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.imaging.ImageProviderPorts;
+import br.com.fashionai.application.imaging.SchemeCardRenderer;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.studio.StudioArtworkRules;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF11 — Background Studio (etapa 4 do Criar Look): 4.1 arte do esquema (1 · Cor & Gradiente, 2 · Arte com AI)
@@ -108,7 +98,7 @@ public class BackgroundStudioService {
     }
 
     /** RF11 §7.6 — formato do Preset Aura + material. */
-    public static final List<String> AURA_FORMATS = List.of("IMAGEM_UNICA", "MOSAICO");
+    public static final List<String> AURA_FORMATS = StudioArtworkRules.AURA_FORMATS;
 
     /** As quatro direções visuais do RF11 (Recommendation) — cada uma re-renderiza os wearstyles no seu estilo. */
     public static final Map<String, Map<String, Object>> DIRECTIONS = new LinkedHashMap<>();
@@ -145,7 +135,7 @@ public class BackgroundStudioService {
     private AuraPermissionsService auraPermissions;
     @org.springframework.beans.factory.annotation.Autowired
     public void setAuraPermissions(AuraPermissionsService permissions) { this.auraPermissions = permissions; }
-    void requireAuraAccess(CurrentUser user, Object config) {
+    public void requireAuraAccess(CurrentUser user, Object config) {
         if (auraPermissions == null) return; // legacy unit constructors; managed runtime always injects the guard
         if (!(config instanceof Map<?,?> outer)) return;
         if (outer.get("scheme") instanceof Map<?,?> nested) requireAuraAccess(user,nested);
@@ -627,7 +617,7 @@ public class BackgroundStudioService {
         requireAuraAccess(user, cfg);
         WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         guard.requireOwner(user, w.getUser().getId(), "piece:" + pieceId);
-        Object saved = withRevision(w.getBackgroundConfigJson(), cfg);
+        Object saved = StudioArtworkRules.pieceBackground(w.getBackgroundConfigJson(), cfg, id -> assets.auraVariant(id).isPresent());
         w.setBackgroundConfigJson(saved == null ? null : Json.write(saved));
         return Map.of("pieceId", pieceId, "background", saved == null ? Map.of() : saved);
     }

@@ -80,9 +80,10 @@ def clean_mask(mask, box=None, min_island_fraction: float = 0.02, keep_open=None
         for idx in range(1, count + 1):
             if keep[idx] and sizes[idx - 1] != largest and not (inside & (labels == idx)).any():
                 keep[idx] = False
-    cleaned = ndimage.binary_fill_holes(keep[labels])
-    if keep_open is not None:  # e.g. a hand inside the garment: never paste it into the cut-out
-        cleaned &= ~np.asarray(keep_open, dtype=bool)
+    kept = keep[labels]
+    cleaned = ndimage.binary_fill_holes(kept)
+    if keep_open is not None:  # e.g. skin: hole filling must never paste a hand into the cut-out
+        cleaned &= ~(np.asarray(keep_open, dtype=bool) & ~kept)   # only pixels the filling would add
     return cleaned.astype(np.uint8)
 
 

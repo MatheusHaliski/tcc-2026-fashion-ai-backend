@@ -1,0 +1,40 @@
+rf_avaliacao,id_origem,tipo,area,funcionalidade,nota,confianca,detalhe
+RF-AVAL-001,CC-01,Avaliação de funcionalidade existente; não RF oficial,"Peças, looks e catálogo",Cadastrar e editar peça do guarda-roupa,8.3,média,avaliacao-por-rf.md#rf-aval-001
+RF-AVAL-002,CC-02,Avaliação de funcionalidade existente; não RF oficial,"Peças, looks e catálogo","Exibir cards de peça e look com informações, selos e Hype",7.9,média,avaliacao-por-rf.md#rf-aval-002
+RF-AVAL-003,CC-03,Avaliação de funcionalidade existente; não RF oficial,"Peças, looks e catálogo",Organizar e filtrar guarda-roupa pessoal,8.3,média,avaliacao-por-rf.md#rf-aval-003
+RF-AVAL-004,CC-04,Avaliação de funcionalidade existente; não RF oficial,"Peças, looks e catálogo","Criar, editar, publicar e reutilizar looks",8.2,média,avaliacao-por-rf.md#rf-aval-004
+RF-AVAL-005,CC-05,Avaliação de funcionalidade existente; não RF oficial,"Peças, looks e catálogo",Pesquisar catálogo oficial e adicionar produto ao guarda-roupa,8.2,média,avaliacao-por-rf.md#rf-aval-005
+RF-AVAL-006,CC-06,Avaliação de funcionalidade existente; não RF oficial,"Peças, looks e catálogo","Busca unificada de peças, looks e perfis",7.9,média,avaliacao-por-rf.md#rf-aval-006
+RF-AVAL-007,CC-07,Avaliação de funcionalidade existente; não RF oficial,"Peças, looks e catálogo",Captura orientada e padronização da fotografia da peça,7.6,média,avaliacao-por-rf.md#rf-aval-007
+RF-AVAL-008,CC-08,Avaliação de funcionalidade existente; não RF oficial,"Peças, looks e catálogo","Gerar, revisar, aprovar e descartar foto de estúdio",8.3,média,avaliacao-por-rf.md#rf-aval-008
+RF-AVAL-009,CC-09,Avaliação de funcionalidade existente; não RF oficial,"Peças, looks e catálogo",Analisar cápsula e versatilidade do guarda-roupa,7.5,média,avaliacao-por-rf.md#rf-aval-009
+RF-AVAL-010,3D-01,Avaliação de funcionalidade existente; não RF oficial,"Avatar, prova e caimento","Criar, ajustar e versionar avatar por fotografia",7.8,média,avaliacao-por-rf.md#rf-aval-010
+RF-AVAL-011,3D-02,Avaliação de funcionalidade existente; não RF oficial,"Avatar, prova e caimento",Estimar proporções do corpo por SAM 3D Body,7.7,média,avaliacao-por-rf.md#rf-aval-011
+RF-AVAL-012,3D-03,Avaliação de funcionalidade existente; não RF oficial,"Avatar, prova e caimento",Provar combinações de lojas e guarda-roupa no avatar,8.0,média,avaliacao-por-rf.md#rf-aval-012
+RF-AVAL-013,3D-04,Avaliação de funcionalidade existente; não RF oficial,"Avatar, prova e caimento",Escolher tamanho e visualizar folga no molde,6.7,média,avaliacao-por-rf.md#rf-aval-013
+RF-AVAL-014,3D-05,Avaliação de funcionalidade existente; não RF oficial,"Avatar, prova e caimento",Recomendar tamanho por tabela de produto e feedback,7.3,média,avaliacao-por-rf.md#rf-aval-014
+RF-AVAL-015,3D-06,Avaliação de funcionalidade existente; não RF oficial,"Avatar, prova e caimento",Gerar modelo GLB de vitrine a partir da fotografia,6.8,média,avaliacao-por-rf.md#rf-aval-015
+RF-AVAL-016,3D-07,Avaliação de funcionalidade existente; não RF oficial,"Avatar, prova e caimento",Provar roupa na fotografia com IA,7.4,média,avaliacao-por-rf.md#rf-aval-016
+RF-AVAL-017,3D-08,Avaliação de funcionalidade existente; não RF oficial,"Avatar, prova e caimento",Organizar quarto e experimentar no espelho 3D,6.7,média,avaliacao-por-rf.md#rf-aval-017
+RF-AVAL-018,3D-09,Avaliação de funcionalidade existente; não RF oficial,"Avatar, prova e caimento",Aprovar assets vestíveis e sincronizar sessão entre plataformas,7.3,média,avaliacao-por-rf.md#rf-aval-018
+RF-AVAL-019,AT-01,Avaliação de funcionalidade existente; não RF oficial,"Design, IA e circularidade",Projetos colaborativos de design,8.1,média,avaliacao-por-rf.md#rf-aval-019
+RF-AVAL-020,AT-02,Avaliação de funcionalidade existente; não RF oficial,"Design, IA e circularidade",Editor interativo de arquivos GLB,7.4,média,avaliacao-por-rf.md#rf-aval-020
+RF-AVAL-021,AT-03,Avaliação de funcionalidade existente; não RF oficial,"Design, IA e circularidade",Convidados externos no editor,7.7,média,avaliacao-por-rf.md#rf-aval-021
+RF-AVAL-022,AT-04,Avaliação de funcionalidade existente; não RF oficial,"Design, IA e circularidade",Ficha técnica versionada e exportável,7.8,média,avaliacao-por-rf.md#rf-aval-022
+RF-AVAL-023,AT-05,Avaliação de funcionalidade existente; não RF oficial,"Design, IA e circularidade",Votação de interesse em criações,7.2,média,avaliacao-por-rf.md#rf-aval-023
+RF-AVAL-024,AT-06,Avaliação de funcionalidade existente; não RF oficial,"Design, IA e circularidade",Copilot de combinações e orientação,7.8,média,avaliacao-por-rf.md#rf-aval-024
+RF-AVAL-025,AT-07,Avaliação de funcionalidade existente; não RF oficial,"Design, IA e circularidade",Autopiloto de looks diários e semanais,8.2,média,avaliacao-por-rf.md#rf-aval-025
+RF-AVAL-026,AT-08,Avaliação de funcionalidade existente; não RF oficial,"Design, IA e circularidade",DNA de estilo e identidade de moda,7.6,média,avaliacao-por-rf.md#rf-aval-026
+RF-AVAL-027,AT-09,Avaliação de funcionalidade existente; não RF oficial,"Design, IA e circularidade",Passaporte digital e compartilhamento privado,8.4,média,avaliacao-por-rf.md#rf-aval-027
+RF-AVAL-028,AT-10,Avaliação de funcionalidade existente; não RF oficial,"Design, IA e circularidade",Transferência e apoio à segunda vida da peça,8.0,média,avaliacao-por-rf.md#rf-aval-028
+RF-AVAL-029,SOC01,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo",Feed e interações sociais de moda,8.0,média,avaliacao-por-rf.md#rf-aval-029
+RF-AVAL-030,SOC02,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo","Perfis, conexões e privacidade social",8.0,média,avaliacao-por-rf.md#rf-aval-030
+RF-AVAL-031,SOC03,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo","HypeScore, tendências e explicabilidade",7.8,média,avaliacao-por-rf.md#rf-aval-031
+RF-AVAL-032,SOC04,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo",Auras e personalização licenciada dos cards,7.7,média,avaliacao-por-rf.md#rf-aval-032
+RF-AVAL-033,SOC05,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo",Selos de marcas/celebridades e vínculo com looks,7.9,média,avaliacao-por-rf.md#rf-aval-033
+RF-AVAL-034,SOC06,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo",Desafios de looks e tendências comunitárias,7.8,média,avaliacao-por-rf.md#rf-aval-034
+RF-AVAL-035,SOC07,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo","FAI Points, progressão e recompensas",8.0,média,avaliacao-por-rf.md#rf-aval-035
+RF-AVAL-036,SOC08,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo",FLAIR e jogos de moda,7.2,média,avaliacao-por-rf.md#rf-aval-036
+RF-AVAL-037,SOC09,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo",Cupons e benefícios de marcas,7.9,média,avaliacao-por-rf.md#rf-aval-037
+RF-AVAL-038,SOC10,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo",Loja de produtos físicos com FAI Points,7.8,média,avaliacao-por-rf.md#rf-aval-038
+RF-AVAL-039,SOC11,Avaliação de funcionalidade existente; não RF oficial,"Social, gamificação e varejo","Conta, consentimentos e controle de dados",8.1,média,avaliacao-por-rf.md#rf-aval-039

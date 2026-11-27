@@ -1,0 +1,112 @@
+"use client";
+/**
+ * Tela de um núcleo (/flair/3d/[nucleo]) pelos quatro momentos da partida: deck (núcleos com deck), preparação, ação
+ * e resultado, os três últimos dentro do quadro de jogo. Antes de entrar, a campanha do jogo (a história, as estrelas e
+ * as rodadas vencidas, do servidor) fica acima da escolha de rodada e do deck. Sem resposta da API, a definição do
+ * arquivo do núcleo mantém a tela de pé (o servidor continua decidindo a nota).
+ */
+import { useState } from "react";
+import Link from "next/link";
+import { Badge, EmptyState, PageHeader, SkeletonGrid, UiIcon } from "@/components/ui";
+import { NucleoCampanha } from "@/components/flair/nucleos/nucleo-campanha";
+import { NucleoContinuar } from "@/components/flair/nucleos/nucleo-continuar";
+import { NucleoDeck } from "@/components/flair/nucleos/nucleo-deck";
+import { NucleoGame } from "@/components/flair/nucleos/nucleo-game";
+import { NucleoRounds } from "@/components/flair/nucleos/nucleo-rounds";
+import { useNucleoMatch } from "@/components/flair/nucleos/use-nucleo-match";
+import { useNucleoMoments } from "@/components/flair/nucleos/use-nucleo-moments";
+import { useNucleoPreview } from "@/components/flair/nucleos/use-nucleo-preview";
+import { useNucleoProgresso } from "@/components/flair/nucleos/use-nucleo-progresso";
+import { useNucleoRetomada } from "@/components/flair/nucleos/use-nucleo-retomada";
+import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { codigoDaRota } from "@/lib/flair/nucleos/registry";
+import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
+
+function Partida({ codigo }: { codigo: NucleoCodigo }) {
+  const tx = useNucleoText();
+  const m = useNucleoMatch(codigo);
+  const retomada = useNucleoRetomada(codigo);
+  const campanha = useNucleoProgresso(codigo);
+  const d = m.definicao;
+  /** cada "jogar de novo" começa uma tela de jogo nova (seleção, câmera e efeitos zerados) */
+  const [rodada, setRodada] = useState(0);
+  const previa = useNucleoPreview({ partida: m.garantirPartida });
+  const jogarDeNovo = () => {
+    setRodada((r) => r + 1);
+    previa.limpar();
+    m.reiniciar();
+    // a partida que acabou de fechar já conta: a campanha volta do servidor com a rodada marcada e a seguinte aberta
+    campanha.recarregar();
+  };
+  const { momento, fimDaAcao, reabrir } = useNucleoMoments({ codigo, semDeck: m.semDeck, precisaDeck: m.precisaDeck, entregue: !!m.resultado });
+  /** fim da ação: a partida que segue ABERTA (LABIRINTO) volta à preparação com a tentativa guardada */
+  const fim = () => {
+    if (m.resultado?.status !== "ABERTA") return fimDaAcao();
+    m.retomar();
+    reabrir();
+  };
+  const cabecalho = (
+    <div className="flair-section-head">
+      <Link href="/flair/3d" className="btn btn-sm"><UiIcon name="chevronLeft" size={18} />{tx.t("flair3d.ui.back")}</Link>
+      <PageHeader title={tx.nome(codigo)} kicker={tx.t("flair3d.ui.number", { n: d.numero })}
+        actions={<div className="flex flex-wrap gap-2">{d.recursos.map((r) => <Badge key={r} tone="thread">{tx.t(`flair3d.ui.recurso.${r}`)}</Badge>)}</div>} />
+    </div>
+  );
+  let corpo;
+  const aRetomar = !m.partida ? retomada.retomada : null;
+  if (m.carregando || retomada.carregando || (m.banco.loading && !m.banco.data && d.recursos.includes("CARTAS"))) {
+    corpo = <SkeletonGrid n={3} />;
+  } else if (aRetomar) {
+    corpo = <NucleoContinuar codigo={codigo} retomada={aRetomar} onNova={retomada.decidir} onContinuar={() => {
+      m.continuar(aRetomar);
+      retomada.decidir();
+    }} />;
+  } else if (m.precisaRodada) {
+    corpo = <NucleoRounds definicao={m.inteira} onEscolher={m.escolherRodada} progresso={campanha.progresso} />;
+  } else if (m.precisaDeck && d.deck) {
+    corpo = <NucleoDeck codigo={codigo} regras={d.deck} cartas={m.todas} entrando={m.entrando} erro={m.erroEntrar} rodada={m.rodada} regrasDaRodada={d.objetivo.regras.map((r) => r.codigo)} onEntrar={(deck) => void m.entrar(deck)} />;
+  } else {
+    corpo = (
+      <NucleoGame
+        key={rodada}
+        definicao={d}
+        cartas={m.cartasDaPartida}
+        momento={momento === "DECK" ? "PREPARACAO" : momento}
+        resultado={m.resultado}
+        entregando={m.entregando}
+        erro={m.erroEntrega}
+        previa={previa.previa}
+        onPrevia={previa.pedir}
+        tentativa={m.tentativa}
+        partida={m.partida}
+        onEntregar={(sel, avatar) => {
+          previa.limpar();
+          void m.entregar(sel, avatar);
+        }}
+        onAcionar={(p) => void m.acionar({ cardId: p.cardId, vaga: p.vaga, alvo: p.alvo, execucao: p.execucao })}
+        acionando={m.acionando}
+        erroAcionar={m.erroAcionar}
+        onFimAcao={fim}
+        onAgain={jogarDeNovo}
+      />
+    );
+  }
+  const noQuadro = !m.precisaDeck && !m.precisaRodada && !m.carregando && !aRetomar;
+  return (
+    <>
+      {!noQuadro && cabecalho}
+      {m.definicaoErro && <p className="n3d-offline" role="status">{tx.t("flair3d.ui.offline")}</p>}
+      {!noQuadro && !aRetomar && !m.carregando && campanha.progresso && <NucleoCampanha progresso={campanha.progresso} lista={campanha.progresso.porResposta} />}
+      {corpo}
+    </>
+  );
+}
+
+export function NucleoScreen({ nucleo }: { nucleo: string }) {
+  const tx = useNucleoText();
+  const codigo = codigoDaRota(nucleo);
+  if (!codigo) {
+    return <EmptyState title={tx.t("flair3d.ui.notFound")} action={<Link href="/flair/3d" className="btn btn-sm">{tx.t("flair3d.ui.back")}</Link>} />;
+  }
+  return <Partida key={codigo} codigo={codigo} />;
+}

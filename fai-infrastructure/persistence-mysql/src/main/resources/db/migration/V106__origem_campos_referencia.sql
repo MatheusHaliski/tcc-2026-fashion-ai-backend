@@ -1,0 +1,15 @@
+SET @ddl = IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'origem' AND COLUMN_NAME = 'nome') = 0,
+  'ALTER TABLE origem ADD COLUMN nome VARCHAR(80) NOT NULL DEFAULT ''''', 'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @ddl = IF((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'origem' AND COLUMN_NAME = 'ativo') = 0,
+  'ALTER TABLE origem ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT TRUE', 'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+UPDATE origem SET nome = CASE codigo
+  WHEN 'ADQUIRIDA' THEN 'Adquirida'
+  WHEN 'HERDADA' THEN 'Herdada'
+  WHEN 'TROCADA' THEN 'Trocada'
+  ELSE codigo
+END
+WHERE nome IS NULL OR nome = '';

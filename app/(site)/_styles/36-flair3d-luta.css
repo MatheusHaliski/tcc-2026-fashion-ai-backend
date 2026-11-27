@@ -1,0 +1,80 @@
+/* ── FLAIR 3D · barras de vida do Dress Fighter (components/flair/nucleos/nucleo-barras-de-vida.tsx): a da avatar no
+   alto à esquerda, a da oponente no alto à direita, cada uma mais estreita que a faixa ao lado da zona da roupa; o
+   placar do round fica no alto, no meio, acima da cabeça. */
+.n3d-luta {
+  position: absolute;
+  z-index: 3;
+  top: 60px;
+  right: 8px;
+  left: 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+  color: #fff;
+  font-size: var(--text-caption);
+}
+
+.n3d-vida {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 6px;
+  width: calc(var(--n3d-zona-x, 30%) - 16px);
+  padding: 4px 8px;
+  border: 1px solid #fff6;
+  border-radius: var(--radius-sm);
+  background: #000a;
+}
+
+.n3d-vida.is-oponente {
+  direction: rtl;
+}
+
+.n3d-vida-nome {
+  font-weight: 600;
+}
+
+.n3d-vida-trilho {
+  grid-column: 1 / -1;
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid #fff8;
+  border-radius: 999px;
+  background: #fff2;
+}
+
+.n3d-vida-cheia {
+  display: block;
+  height: 100%;
+  background: #3fbf7f;
+  transform-origin: left center;
+  transition: transform 0.4s ease-out;
+}
+
+.n3d-vida.is-oponente .n3d-vida-cheia {
+  background: #d9534f;
+  transform-origin: right center;
+}
+
+.n3d-vida[data-baixa] .n3d-vida-cheia {
+  background: #e0b04d;
+}
+
+.n3d-luta-placar {
+  margin: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: #000a;
+  text-align: center;
+}
+
+.n3d-luta-combo {
+  color: #e0b04d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .n3d-vida-cheia {
+    transition: none;
+  }
+}

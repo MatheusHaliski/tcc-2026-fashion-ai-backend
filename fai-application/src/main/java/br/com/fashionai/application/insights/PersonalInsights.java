@@ -1,31 +1,5 @@
 package br.com.fashionai.application.insights;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.hype.HypeQueryService;
-import br.com.fashionai.application.hype.HypeScoreConfig;
-import br.com.fashionai.application.hype.StyleCompatibility;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.CopilotService;
-import br.com.fashionai.application.service.LookbookService;
-import br.com.fashionai.application.service.RoomService;
-import br.com.fashionai.application.service.WardrobeService;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.UserPreferences;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.HypeMomentum;
-import br.com.fashionai.domain.model.enums.HypeStatus;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -39,6 +13,21 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.HypeScoreConfig;
+import br.com.fashionai.application.hype.StyleCompatibility;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.CopilotService;
+import br.com.fashionai.application.service.LookbookService;
+import br.com.fashionai.application.service.WardrobeService;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.application.wardrobe.ForgottenPieces;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static br.com.fashionai.application.insights.Insight.CAPSULE;
 import static br.com.fashionai.application.insights.Insight.HYPE_V2;
@@ -60,7 +49,7 @@ import static br.com.fashionai.application.insights.InsightMath.round1;
 /**
  * Insights pessoais (Cápsula, Copilot, Autopiloto, Histórico, Guarda-roupa e Looks). Regras do produto, sempre:
  * o Hype aparece AO LADO da compatibilidade com o DNA e/ou do uso real (nunca sozinho, nunca como critério único);
- * redescoberta do que está parado (a régua única {@link RoomService#FORGOTTEN_DAYS}) vem antes de qualquer compra; a
+ * redescoberta do que está parado (a régua única {@link ForgottenPieces#FORGOTTEN_DAYS}) vem antes de qualquer compra; a
  * sugestão de compra é genérica (subcategoria + cor, nunca marca) e só entra no fim; texto descritivo, sem juízo de valor.
  */
 final class PersonalInsights {
@@ -111,12 +100,12 @@ final class PersonalInsights {
 
         /** "Esquecida": a régua única do app (60+ dias desde o último uso ou, se nunca usada, desde o cadastro). */
         boolean idle(WardrobeItem w) {
-            return RoomService.forgotten(w, w.getLastWornDate(), today) && HypeQueryService.idleDays(w, today) >= RoomService.FORGOTTEN_DAYS;
+            return ForgottenPieces.forgotten(w, w.getLastWornDate(), today) && HypeQueryService.idleDays(w, today) >= ForgottenPieces.FORGOTTEN_DAYS;
         }
     }
 
     Personal load(CurrentUser user) {
-        LocalDate today = LocalDate.now(RoomService.ZONE);
+        LocalDate today = LocalDate.now(br.com.fashionai.application.service.FaiPointsService.ZONE);
         List<WardrobeItem> all = Optional.ofNullable(pieces.findByUserIdOrderByCreatedAtDesc(user.id())).orElse(List.of()).stream()
                 .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList();
         List<WardrobeItem> available = all.stream().filter(w -> w.isDisponivel() && w.getAvailabilityStatus() == AvailabilityStatus.AVAILABLE).toList();
@@ -170,7 +159,7 @@ final class PersonalInsights {
                     .ifPresent(e -> out.add(insight("CAPSULE_BASE_RISING", POSITIVE, 0.8, "insights.capsule_base_rising.text",
                             args(name(e.getKey()), e.getValue(), fmt0(InsightMath.trend(p.scored(e.getKey().getId())))),
                             metric("insights.metric.trend", round(InsightMath.trend(p.scored(e.getKey().getId()))), "pts"),
-                            action("insights.action.experimentar", "/room?espelho=1&vestir=" + e.getKey().getId()), CAPSULE, HYPE_V2, WARDROBE_USAGE)));
+                            action("insights.action.experimentar", "/mirror?vestir=" + e.getKey().getId()), CAPSULE, HYPE_V2, WARDROBE_USAGE)));
             // sustentabilidade: mais um uso da peça-base pouco usada é o que mais dilui o custo por uso (preço ÷ usos)
             cards.stream().map(Map.Entry::getKey)
                     .filter(w -> w.getPrice() != null && w.getPrice().compareTo(BigDecimal.ZERO) > 0 && w.getWearCount() >= 1)
@@ -337,7 +326,7 @@ final class PersonalInsights {
                     double score = p.scored(w.getId()).getScore().doubleValue();
                     Integer compat = p.compat(w);
                     Insight.Metric metric = metric("insights.metric.hype", round(score), "pts");
-                    Insight.Action action = action("insights.action.experimentar", "/room?espelho=1&vestir=" + w.getId());
+                    Insight.Action action = action("insights.action.experimentar", "/mirror?vestir=" + w.getId());
                     return compat == null
                             ? insight("PIECE_HYPE_AND_STYLE", NEUTRAL, rel, "insights.piece_hype_and_style.text_no_dna", args(name(w), fmt0(score), w.getWearCount()),
                             metric, action, HYPE_V2, WARDROBE_USAGE)
@@ -379,7 +368,7 @@ final class PersonalInsights {
             return Optional.empty();
         }
         Insight.Metric metric = metric("insights.metric.variacao", round1(delta), "pts");
-        Insight.Action action = action("insights.action.experimentar", "/room?espelho=1&vestir=" + w.getId());
+        Insight.Action action = action("insights.action.experimentar", "/mirror?vestir=" + w.getId());
         if (!up) {
             return Optional.of(insight("PIECE_COOLING", NEUTRAL, rel, "insights.piece_cooling.text",
                     args(name(w), fmt1(Math.abs(delta)), config.deltaWindowDays(), w.getWearCount()), metric, action, HYPE_V2, WARDROBE_USAGE));
@@ -401,7 +390,7 @@ final class PersonalInsights {
                 .map(w -> {
                     double r = InsightMath.dims(p.hype().get(w.getId())).getRarity().doubleValue();
                     return insight("RARE_PIECE", NEUTRAL, rel, "insights.rare_piece.text", args(name(w), fmt0(r), w.getWearCount()),
-                            metric("insights.metric.raridade", round(r), "pts"), action("insights.action.experimentar", "/room?espelho=1&vestir=" + w.getId()),
+                            metric("insights.metric.raridade", round(r), "pts"), action("insights.action.experimentar", "/mirror?vestir=" + w.getId()),
                             HYPE_V2, WARDROBE_USAGE);
                 });
     }
@@ -438,7 +427,7 @@ final class PersonalInsights {
             basis.add(HYPE_V2);
             basis.add(WARDROBE_USAGE);
             return Optional.of(insight(code, POSITIVE, rel, key, a, metric("insights.metric.dias_sem_uso", idle, "dias"),
-                    action("insights.action.experimentar", "/room?espelho=1&vestir=" + w.getId()), basis.toArray(String[]::new)));
+                    action("insights.action.experimentar", "/mirror?vestir=" + w.getId()), basis.toArray(String[]::new)));
         }
         return Optional.empty();
     }
@@ -450,7 +439,7 @@ final class PersonalInsights {
         }
         List<String> basis = new ArrayList<>(List.of(extraBasis));
         basis.add(WARDROBE_USAGE);
-        return Optional.of(insight(code, ATTENTION, rel, "insights.idle_pieces.text", args(n, RoomService.FORGOTTEN_DAYS),
+        return Optional.of(insight(code, ATTENTION, rel, "insights.idle_pieces.text", args(n, ForgottenPieces.FORGOTTEN_DAYS),
                 metric("insights.metric.pecas", n, "peças"), action("insights.action.ver_paradas", "/closet?sort=idle"), basis.toArray(String[]::new)));
     }
 
@@ -461,11 +450,11 @@ final class PersonalInsights {
             return Optional.empty();
         }
         long active = p.available().stream().filter(w -> w.getLastWornDate() != null
-                && ChronoUnit.DAYS.between(w.getLastWornDate(), p.today()) < RoomService.FORGOTTEN_DAYS).count();
+                && ChronoUnit.DAYS.between(w.getLastWornDate(), p.today()) < ForgottenPieces.FORGOTTEN_DAYS).count();
         double pct = 100.0 * active / total;
         Insight.Tone tone = pct >= 60 ? POSITIVE : pct < 30 ? ATTENTION : NEUTRAL;
         return Optional.of(insight("WARDROBE_ACTIVE_SHARE", tone, rel, "insights.wardrobe_active_share.text",
-                args(fmt0(pct), RoomService.FORGOTTEN_DAYS, active, total), metric("insights.metric.usadas", round(pct), "%"), null, WARDROBE_USAGE));
+                args(fmt0(pct), ForgottenPieces.FORGOTTEN_DAYS, active, total), metric("insights.metric.usadas", round(pct), "%"), null, WARDROBE_USAGE));
     }
 
     Optional<Insight> dnaStatus(Personal p, double rel, boolean alignment) {

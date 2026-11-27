@@ -3,6 +3,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { RequireAuth } from "@/components/app-shell";
 import { PageHeader } from "@/components/ui";
 import { DnaBuilder } from "@/components/dna-builder";
+import { SavedDnaList } from "@/components/dna/saved-dna-list";
 
 /**
  * Aba DNA de estilo (RF13): só o criador de look DNA — igual ao Criar Look (RF5), com a diferença de que a lista de
@@ -14,6 +15,7 @@ function Dna() {
   return (
     <>
       <PageHeader title={t("nav.dna")} kicker={t("dna.rf13_hu20")} lead={t("dna.crie_esquemas_do_tipo_dna")} />
+      <SavedDnaList />
       <DnaBuilder />
     </>
   );

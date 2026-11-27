@@ -7,15 +7,15 @@ import { FaiIcon } from "@/components/fai-icon";
 import { SealSuggestionHype } from "@/components/hype/hype-seals";
 import type { HypeLevel } from "@/lib/hype/types";
 
-/** `hype`: HypeScore atual do look avaliado (RF53) — o backend já ordena as sugestões por Hype. */
-export interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string; eraLabel?: string | null; hype?: { score: number | null; level: HypeLevel | null } | null }
+/** `hype`: HypeScore atual do look avaliado (RF53) — o backend já ordena as sugestões por Hype. `pieceIds`: as peças distintas que contaram para a regra do selo (ex. 12). */
+export interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence?: number; justification?: string; pieceIds?: string[]; eraLabel?: string | null; hype?: { score: number | null; level: HypeLevel | null } | null }
 export interface SealSearch { loading: boolean; list: SealOption[]; message?: string | null; unregisteredMessage?: string | null; failed?: boolean }
 
 /**
  * Selos do look (RF21): a IA procura sozinha, a partir das peças, do estilo e da ocasião, as marcas e celebridades com
  * que o look pode ter selo. Enquanto procura, avisa; a pessoa marca as que quer pedir e o pedido segue ao salvar.
  */
-export function SealSuggestions({ search, picked, onToggle, consent, onConsent, onRetry }: { search: SealSearch; picked: string[]; onToggle: (id: string) => void; consent: boolean; onConsent: (v: boolean) => void; onRetry: () => void }) {
+export function SealSuggestions({ search, picked, onToggle, consent, onConsent, onRetry, selectionOnly = false }: { search: SealSearch; picked: string[]; onToggle: (id: string) => void; consent: boolean; onConsent: (v: boolean) => void; onRetry: () => void; selectionOnly?: boolean }) {
   const { t, fmtNumber } = useI18n();
   const celebrityPicked = search.list.some((s) => s.kind === "CELEBRITY" && picked.includes(s.targetOwnerId));
   return (
@@ -26,20 +26,20 @@ export function SealSuggestions({ search, picked, onToggle, consent, onConsent, 
             const on = picked.includes(s.targetOwnerId);
             return (
               <button key={s.targetOwnerId} type="button" role="checkbox" aria-checked={on} onClick={() => onToggle(s.targetOwnerId)} className={`list-row is-action flex items-center gap-3 text-left ${on ? "is-active" : ""}`}>
-                <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-line-soft bg-surface">{s.logoUrl ? <img src={mediaUrl(s.logoUrl)} alt="" className="h-full w-full object-contain" /> : <FaiIcon id={s.kind === "CELEBRITY" ? "ACT-27" : "ACT-26"} size={20} decorative />}</span>
-                <span className="min-w-0 flex-1"><span className="block type-body"><b>{s.name}</b> <span className="text-faint">· {s.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}{s.eraLabel ? ` · ${s.eraLabel}` : ""}</span></span>{s.justification && <span className="block type-caption text-muted">{s.justification}</span>}<SealSuggestionHype hype={s.hype} /></span>
-                <span className="type-data text-muted">{fmtNumber(Math.round(s.confidence * 100))}%</span>
+                <span className="grid h-[45px] w-[45px] shrink-0 place-items-center overflow-hidden rounded-[4px] border border-line-soft bg-surface">{s.logoUrl ? <img src={mediaUrl(s.logoUrl)} alt="" className="h-full w-full object-contain" /> : <FaiIcon id={s.kind === "CELEBRITY" ? "ACT-27" : "ACT-26"} size={20} decorative />}</span>
+                <span className="min-w-0 flex-1"><span className="block type-body"><b>{s.name}</b> <span className="text-faint">· {s.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}{s.eraLabel ? ` · ${s.eraLabel}` : ""}</span></span>{s.justification && <span className="block type-caption text-muted">{s.justification}</span>}{!!s.pieceIds?.length && <span className="block type-caption text-muted" data-seal-counted={s.pieceIds.length}>{t("lookSeals.counted", { count: s.pieceIds.length })}</span>}<SealSuggestionHype hype={s.hype} /></span>
+                {s.confidence != null && <span className="type-data text-muted">{fmtNumber(Math.round(s.confidence * 100))}%</span>}
                 <span aria-hidden className={`grid h-5 w-5 place-items-center rounded border ${on ? "border-ink bg-ink text-surface" : "border-line"}`}>{on ? "✓" : ""}</span>
               </button>
             );
           })}
           {!search.list.length && <p className="type-body-sm text-muted">{search.failed ? t("schemeBuilder.selos_indisponiveis") : search.message ?? t("schemeBuilder.nenhum_selo")}</p>}
           {search.unregisteredMessage && <p className="type-caption text-faint">{search.unregisteredMessage}</p>}
-          {celebrityPicked && <label className="flex items-start gap-2 type-body-sm"><input type="checkbox" checked={consent} onChange={(e) => onConsent(e.target.checked)} className="mt-1" />{t("schemeBuilder.consentimento_imagem")}</label>}
+          {!selectionOnly && celebrityPicked && <label className="flex items-start gap-2 type-body-sm"><input type="checkbox" checked={consent} onChange={(e) => onConsent(e.target.checked)} className="mt-1" />{t("schemeBuilder.consentimento_imagem")}</label>}
         </>
       )}
       <Button size="sm" disabled={search.loading} onClick={onRetry}>{t("lookSeals.verify")}</Button>
-      <p className="type-caption text-faint">{t("schemeBuilder.selos_vem_de_marca")}</p>
+      <p className="type-caption text-faint">{t(selectionOnly ? "selectedSeals.help" : "schemeBuilder.selos_vem_de_marca")}</p>
     </div>
   );
 }

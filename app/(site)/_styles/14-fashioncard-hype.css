@@ -204,9 +204,9 @@
 .history-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: inherit; }
 .history-meta { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40ch; }
 @media (max-width: 639px) { .history-row { grid-template-columns: 56px minmax(0, 1fr) auto; } .history-row .history-meta { grid-column: 2 / -1; grid-row: 2; } }
-.copilot-scores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; margin: 8px 0 0; font-size: 12px; }
+.copilot-scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 4px 10px; margin: 8px 0 0; font-size: 12px; }
 .copilot-scores > div { display: flex; justify-content: space-between; gap: 6px; padding: 3px 6px; border-radius: 6px; background: var(--surface); }
-.copilot-scores dt { color: var(--muted); }
+.copilot-scores dt { min-width: 0; color: var(--muted); overflow-wrap: anywhere; }
 .copilot-scores dd { margin: 0; font-family: var(--font-data); font-weight: 700; }
 .trend-rank { display: inline-flex; align-items: center; font-family: var(--font-data); font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--ink); color: var(--surface); }
 /* Em alta › marcas e criadores (lista ranqueada, não cards: a unidade é o grupo, não um item) */

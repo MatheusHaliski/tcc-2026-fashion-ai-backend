@@ -8,7 +8,7 @@ import { Button, UiIcon, useToast } from "@/components/ui";
 
 /**
  * RF23 — customização salva por usuário: a pessoa reordena os grupos do menu lateral (ex.: Guarda-roupa primeiro) e os
- * itens dentro de cada grupo (ex.: Meu Quarto no topo do Guarda-roupa). Cada mudança já vale no menu e é salva no perfil;
+ * itens dentro de cada grupo (ex.: ACERVO no topo do Guarda-roupa). Cada mudança já vale no menu e é salva no perfil;
  * "Restaurar" volta à ordem padrão. Grupo e item têm controles visualmente diferentes (o grupo, botões com texto; o item,
  * setas e alça de arrastar) para não se confundir qual dos dois está sendo movido. As setas funcionam no teclado, no
  * leitor de tela e no celular; arrastar é o atalho no computador e só reordena dentro do mesmo grupo.

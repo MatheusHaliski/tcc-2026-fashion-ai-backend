@@ -15,15 +15,16 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); nav.search = new URLSearchPa
 const fail = (status: number, message: string) => () => new Response(JSON.stringify({ status, code: "ERRO", message }), { status, headers: { "content-type": "application/json" } });
 const CATALOG = { activeCount: 1, maxActive: 3, note: "Escolha um desafio",
   challenges: [
-    { code: "NO_BUY", name: "Sem compras", rule: "Use só o que tem", todayRule: "Hoje: só preto", durationDays: 7, modes: ["SOLO", "DUELO"], improves: ["Criatividade"], effortDots: 2, reward: "+40 pts", playingNow: 5, author: "bia", roomDecoration: "Vaso", highlight: "Novo" },
+    { code: "NO_BUY", name: "Sem compras", rule: "Use só o que tem", todayRule: "Hoje: só preto", durationDays: 7, modes: ["SOLO", "DUELO"], improves: ["Criatividade"], effortDots: 2, reward: "+40 pts", playingNow: 5, author: "bia", highlight: "Novo" },
     { code: "WEEK", name: "Tema da semana", rule: "Regra base", weeklyTheme: "Anos 90", modes: ["EQUIPE"], improves: [], eligible: false, reason: "Limite atingido" },
     { code: "PLAIN", name: "Simples", rule: "Regra simples", modes: ["GRUPO"], improves: [], eligible: false },
+    { code: "DAY", name: "Desafio do Dia", rule: "Um look hoje", durationDays: 1, modes: ["SOLO"], improves: [], effortDots: 1, reward: "+10 pts" },
   ] };
 const INSTANCE = { id: "i1", code: "NO_BUY", name: "Sem compras ativo", mode: "SOLO", state: "ACTIVE", daysLeft: 3, endsAt: "2026-11-01T00:00:00Z", progress: { value: 2, target: 7, fraction: 2 / 7, label: "looks" } };
 const tab = async (name: RegExp) => fireEvent.click(await screen.findByRole("tab", { name }, { timeout: 4000 }));
 
 describe("desafios — catálogo e início", () => {
-  it("mostra o catálogo com destaque, regra do dia/tema, esforço, autor, decoração e botões de elegibilidade", async () => {
+  it("mostra o catálogo com destaque, regra do dia/tema, esforço, autor e botões de elegibilidade", async () => {
     nav.search = new URLSearchParams("start=NO_BUY");
     loggedAs(undefined, { "GET /api/challenges/catalog": CATALOG, "GET /api/me/challenges": {}, "GET /api/challenges/votes": [] });
     renderApp(<ChallengesPage />);
@@ -32,10 +33,11 @@ describe("desafios — catálogo e início", () => {
     expect(screen.getByText("1/3 ativos")).toBeTruthy();
     expect(screen.getByText("Novo")).toBeTruthy();
     expect(screen.getByText("7 dias · esforço ●●○ · +40 pts")).toBeTruthy();
-    expect(screen.getByText("5 jogando agora · por @bia · decoração: Vaso")).toBeTruthy();
+    expect(screen.getByText("1 dia · esforço ●○○ · +10 pts")).toBeTruthy();   // auditoria 10.1: era "1 dias"
+    expect(screen.getByText("5 jogando agora · por @bia")).toBeTruthy();
     expect(screen.getByText("Anos 90")).toBeTruthy();
     expect(screen.getByText("Regra simples")).toBeTruthy();
-    expect(screen.getAllByText(/^— dias · esforço ●○○/)).toHaveLength(2);
+    expect(screen.getAllByText(/^sem prazo fixo · esforço ●○○/)).toHaveLength(2);
     expect((screen.getByRole("button", { name: "Limite atingido" }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: "indisponível" }) as HTMLButtonElement).disabled).toBe(true);
     // o desafio vindo de ?start= fica realçado
@@ -50,9 +52,9 @@ describe("desafios — catálogo e início", () => {
     fireEvent.click((await screen.findAllByRole("button", { name: "Começar" }, { timeout: 4000 }))[0]);
     const dlg = await screen.findByRole("dialog", { name: "Sem compras" });
     expect(within(dlg).getByText("Use só o que tem")).toBeTruthy();
-    expect(within(dlg).queryByLabelText("Convidar (usernames ou ids, vírgula)")).toBeNull();
-    fireEvent.click(within(dlg).getByRole("button", { name: "DUELO" }));
-    fireEvent.change(within(dlg).getByLabelText("Convidar (usernames ou ids, vírgula)"), { target: { value: "ana, , bia " } });
+    expect(within(dlg).queryByLabelText("Convidar (usernames separados por vírgula)")).toBeNull();
+    fireEvent.click(within(dlg).getByRole("button", { name: "Duelo" }));
+    fireEvent.change(within(dlg).getByLabelText("Convidar (usernames separados por vírgula)"), { target: { value: "ana, , bia " } });
     fireEvent.click(within(dlg).getAllByRole("button", { name: "Começar" }).at(-1)!);
     await waitFor(() => expect(loc.href).toBe("/challenges/novo"));
     expect(calls.find((c) => c.method === "POST" && c.path === "/api/challenges")!.body).toEqual({ code: "NO_BUY", mode: "DUELO", params: {}, invitees: ["ana", "bia"] });
@@ -97,7 +99,7 @@ describe("desafios — meus desafios", () => {
     renderApp(<ChallengesPage />);
     await tab(/Meus desafios/);
     expect(await screen.findByText("Convites")).toBeTruthy();
-    expect(screen.getByText(/SOLO · ACTIVE · 3 dias · até/)).toBeTruthy();
+    expect(screen.getByText(/Solo · ACTIVE · 3 dias · até/)).toBeTruthy();
     expect(screen.getByText("2/7 looks")).toBeTruthy();
     expect(screen.getByText("7/7")).toBeTruthy();
     expect(screen.getByText("Concluídos")).toBeTruthy();
@@ -159,8 +161,8 @@ describe("desafios — votação e proposta", () => {
     fireEvent.change(document.getElementById("pname")!, { target: { value: "Só verde" } });
     fireEvent.change(document.getElementById("prule")!, { target: { value: "Um item verde" } });
     fireEvent.change(document.getElementById("pdays")!, { target: { value: "5" } });
-    fireEvent.click(screen.getByRole("button", { name: "DUELO" }));
-    fireEvent.click(screen.getByRole("button", { name: "SOLO" }));
+    fireEvent.click(screen.getByRole("button", { name: "Duelo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Solo" }));
     fireEvent.click(send);
     expect(await screen.findByText("Proposta enviada para curadoria.")).toBeTruthy();
     expect(calls.find((c) => c.path === "/api/challenges/proposals")!.body).toEqual({ name: "Só verde", blocks: [{ type: "RULE", text: "Um item verde" }], modes: ["DUELO"], durationDays: 5 });

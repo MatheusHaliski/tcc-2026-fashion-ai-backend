@@ -54,7 +54,7 @@ def prefetched(products: list[dict], workers: int):
 
 def process(product: dict, download, engine, settings, out: Path, keep_full: bool) -> dict:
     row = {"id": product["id"], "name": product.get("product_name"), "category": product.get("category"),
-           "class": "FAILED", "metrics": {}}
+           "class": "FAILED", "metrics": {}, **catalog_source.image_ref(product)}
     try:
         raw = download.result()
         category = catalog_source.CATEGORY_MAP.get(product.get("category"), "auto")

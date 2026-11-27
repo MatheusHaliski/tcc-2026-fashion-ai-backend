@@ -38,6 +38,10 @@ export interface FittingItem {
   sourceDomain?: string | null;
   /** foto processada no nosso armazenamento (fundo removido, CORS): a única que o 3D consegue ler; null = só a externa */
   processedUrl?: string | null;
+  /** peça do guarda-roupa sem foto (a imagem é a ilustração da categoria): veste só a cor e não pede modelo 3D */
+  noPhoto?: boolean;
+  /** miniatura da linha quando não é a própria imagem (peça sem foto: a ilustração na cor do cadastro) */
+  thumbUrl?: string | null;
   /** modelagem e dimensões declaradas (caimento no 3D) */
   material?: string | null;
   variation?: string | null;

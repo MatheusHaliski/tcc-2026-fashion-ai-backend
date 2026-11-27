@@ -21,27 +21,45 @@ from services.garment_gpu.jobstore import JobStore, now_iso
 log = logging.getLogger("fai.worker")
 
 
+HEARTBEAT_SECONDS = 15
+HEARTBEAT_TTL = 120   # 8 batidas: um worker vivo nunca some da fila por uma batida atrasada
+
+
 def gpu_info(settings) -> dict:
+    """Nome e memória total da GPU, lidos UMA vez na subida. Consultar a GPU a cada batida (mem_get_info) pode esperar
+    a geração em andamento (~40 s por peça na Fase 2): com a chave de 60 s, a API via o worker sumir e, no mode=auto,
+    devolvia só o recorte da Fase 1 (57 de 144 peças do lote 220 em 03/11/2026, com o worker no ar)."""
     info = {"device": settings.device}
     try:
         import torch
 
         if settings.device == "cuda" and torch.cuda.is_available():
-            free, total = torch.cuda.mem_get_info()
-            info.update(gpu=torch.cuda.get_device_name(0), vram_total_mb=total // 2 ** 20,
-                        vram_used_mb=(total - free) // 2 ** 20)
+            info.update(gpu=torch.cuda.get_device_name(0),
+                        vram_total_mb=torch.cuda.get_device_properties(0).total_memory // 2 ** 20)
     except Exception:  # metrics are best effort
         pass
     return info
 
 
-def heartbeat(redis, name: str, stage: str, settings, stop: threading.Event, interval: int = 15) -> None:
+def vram_used_mb() -> int | None:
+    """Memória reservada por este processo, das estatísticas do alocador do PyTorch: não toca na GPU."""
+    try:
+        import torch
+
+        return torch.cuda.memory_reserved() // 2 ** 20 if torch.cuda.is_available() else None
+    except Exception:
+        return None
+
+
+def heartbeat(redis, name: str, stage: str, settings, stop: threading.Event, interval: int = HEARTBEAT_SECONDS,
+              static: dict | None = None) -> None:
     started = now_iso()
+    static = gpu_info(settings) if static is None else static
     while not stop.is_set():
         payload = {"name": name, "stage": stage, "host": socket.gethostname(), "started_at": started,
-                   "seen_at": now_iso(), **gpu_info(settings)}
+                   "seen_at": now_iso(), **static, "vram_used_mb": vram_used_mb()}
         try:
-            redis.set(f"fai:worker:{name}", json.dumps(payload), ex=interval * 4)
+            redis.set(f"fai:worker:{name}", json.dumps(payload), ex=HEARTBEAT_TTL)
         except Exception as exc:
             log.warning("heartbeat falhou: %s", exc)
         stop.wait(interval)
@@ -87,7 +105,8 @@ def main(argv=None) -> int:
     queue_name = settings.segment_queue if args.stage == "segment" else settings.reconstruct_queue
     name = settings.worker_name or f"{args.stage}-{socket.gethostname()}-{os.getpid()}"
     stop = threading.Event()
-    beat = threading.Thread(target=heartbeat, args=(redis, name, args.stage, settings, stop), daemon=True)
+    beat = threading.Thread(target=heartbeat, args=(redis, name, args.stage, settings, stop),
+                            kwargs={"static": gpu_info(settings)}, daemon=True)   # GPU lida aqui, antes dos jobs
     beat.start()
     try:
         worker = SimpleWorker([Queue(queue_name, connection=redis)], connection=redis, name=name)

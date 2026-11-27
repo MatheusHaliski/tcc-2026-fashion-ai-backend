@@ -1,39 +1,5 @@
 package br.com.fashionai.application.hype;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.service.SchemeService;
-import br.com.fashionai.application.service.WardrobeService;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.HypeDimensions;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.HypeScoreSnapshot;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.StyleDna;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.HypeMomentum;
-import br.com.fashionai.domain.model.enums.HypeStatus;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.ApprovalStatus;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
-import br.com.fashionai.domain.repository.HypeScoreSnapshotRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -57,6 +23,23 @@ import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.service.SchemeService;
+import br.com.fashionai.application.service.WardrobeService;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
+
 /**
  * HypeScore v2 — leitura. Nada aqui recalcula: lê o estado gravado pelo {@link HypeSnapshotService} (e o cache por
  * geração). Toda leitura respeita a visibilidade de quem pede; ranking e tendência públicos usam só entidades
@@ -65,8 +48,8 @@ import java.util.stream.Collectors;
 @Service
 public class HypeQueryService {
     public static final int MAX_BATCH = 100;
-    /** Peça esquecida: a régua única do app (RoomService.FORGOTTEN_DAYS, também usada pelo Copilot e pelo Meu Quarto). */
-    static final int FORGOTTEN_DAYS = br.com.fashionai.application.service.RoomService.FORGOTTEN_DAYS;
+    /** Peça esquecida: a régua única do app (ForgottenPieces.FORGOTTEN_DAYS, também usada pelo Copilot e pelos desafios). */
+    static final int FORGOTTEN_DAYS = br.com.fashionai.application.wardrobe.ForgottenPieces.FORGOTTEN_DAYS;
 
     private final HypeScoreConfig config;
     private final HypeScoreCurrentRepository current;

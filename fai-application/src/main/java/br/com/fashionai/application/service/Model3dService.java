@@ -7,8 +7,8 @@ import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.ai.local.LocalSchemeComposer;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.ImageProviderPorts;
+import br.com.fashionai.application.imaging.Model3dCutout;
 import br.com.fashionai.application.imaging.ReliefModelGenerator;
 import br.com.fashionai.application.ports.WebFetchPort;
 import br.com.fashionai.domain.model.PipelineJob;
@@ -226,34 +226,16 @@ public class Model3dService {
         if (in == null) {
             return;
         }
-        BufferedImage cutout = ImageOps.toArgb(ImageOps.decode(in.png()));
-        double heightM = heightOf(in.slot(), in.subcategory());
-        List<AiEngine.RemoteStep<Started>> steps = new ArrayList<>();
-        for (ImageProviderPorts.Model3dPort p : providers) {
-            steps.add(new AiEngine.RemoteStep<>() {
-                public String provider() {
-                    return p.providerId();
-                }
-
-                public String model() {
-                    return p.async() ? "image-to-3d" : "stable-fast-3d";
-                }
-
-                public boolean available() {
-                    return p.available();
-                }
-
-                public AiEngine.RemoteResult<Started> call() {
-                    if (p.async()) {
-                        String task = p.submit(in.png()).orElseThrow(() -> new IllegalStateException(p.providerId() + " recusou a tarefa"));
-                        return new AiEngine.RemoteResult<>(new Started(p.providerId(), task, null, p.costUsd(), false, null), p.costUsd(), "tarefa " + task);
-                    }
-                    byte[] glb = p.generateNow(in.png()).filter(ReliefModelGenerator::isGlb)
-                            .orElseThrow(() -> new IllegalStateException(p.providerId() + " não devolveu um GLB válido"));
-                    return new AiEngine.RemoteResult<>(new Started(p.providerId(), null, glb, p.costUsd(), false, null), p.costUsd(), glb.length / 1024 + " KB");
-                }
-            });
+        Model3dCutout.Prepared cut;
+        try {        // a foto com fundo vira recorte aqui; sem recorte confiável, nada de bloco com a foto
+            cut = Model3dCutout.prepare(in.png());
+        } catch (Model3dCutout.NoCutoutException e) {
+            tx.executeWithoutResult(s -> jobs.findById(jobId).ifPresent(j -> fail(j, "SEM_RECORTE", Msg.t("model3d.sem_recorte", e.getMessage()))));
+            return;
         }
+        BufferedImage cutout = cut.cutout();
+        double heightM = heightOf(in.slot(), in.subcategory());
+        List<AiEngine.RemoteStep<Started>> steps = Model3dProviderSteps.of(providers, cut.png());
         // o reprocessamento grátis não consome cota: a chamada entra sem usuário no controle de cota (fica no log)
         AiOutcome<Started> outcome = ai.execute(in.freeRetry() ? null : in.userId(), AiCapability.THREE_D_GENERATOR,
                 List.of(Msg.t("common.recorte_da_peca_png_sem"), "categoria " + in.category()), null, null, steps,
@@ -268,7 +250,7 @@ public class Model3dService {
             job.setFallbackUsed(outcome.fallbackUsed() || st.local());
             job.setTotalCostUsd(st.costUsd());
             List<Map<String, Object>> stages = new ArrayList<>();
-            stages.add(stage("FOTO", "local", Msg.t("model3d.recorte_sem_fundo_do_rf4", cutout.getWidth(), cutout.getHeight())));
+            stages.add(stage("FOTO", cut.removedHere() ? "local-recorte" : "local", Msg.t("model3d.recorte_sem_fundo_do_rf4", cutout.getWidth(), cutout.getHeight())));
             if (st.taskId() != null) {
                 job.setExternalJobId(st.taskId());
                 stages.add(stage("ENVIO", st.provider(), "tarefa " + st.taskId()));
@@ -332,7 +314,7 @@ public class Model3dService {
             byte[] bytes = w == null ? null : imageBytes(w);
             if (bytes != null) {
                 try {
-                    ReliefModelGenerator.Model m = ReliefModelGenerator.generate(ImageOps.toArgb(ImageOps.decode(bytes)),
+                    ReliefModelGenerator.Model m = ReliefModelGenerator.generate(Model3dCutout.prepare(bytes).cutout(),
                             heightOf(LocalSchemeComposer.slotOf(w), w.getSubcategory()));
                     stages.add(stage("RECONSTRUCAO", p.provider(), "falhou: " + why));
                     stages.add(stage("MALHA", "local-relevo", Msg.t("model3d.vertices_plano_b", (m.vertices()))));

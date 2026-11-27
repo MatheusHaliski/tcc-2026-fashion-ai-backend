@@ -27,6 +27,13 @@ describe("product data survives the fitting adapters",()=>{
     product.catalogImage!.whole = { url: "/media/whole-shorts.png", box: { x: 0, y: 0, w: 1, h: 1 }, processed: true, rendered: true };
     expect(processedImageOf(product)).toBe("/media/whole-shorts.png");
   });
+  it("carries the product showcase model so the fitting room never asks for another 3D generation", () => {
+    const base = { id: "tee", brand: null, productName: "Tee", category: "upper_piece", subcategory: "t_shirt",
+      catalogImage: { imageId: "f", mode: "PROCESSED", url: "/media/tee.jpg" } } as unknown as CatalogProduct;
+    const withModel = fromCatalog({ ...base, model3dUrl: "/media/catalog/model3d/x/tee.glb" }, null, undefined)!;
+    expect(withModel).toMatchObject({ model3dUrl: "/media/catalog/model3d/x/tee.glb", model3dStatus: "COMPLETED" });
+    expect(fromCatalog(base, null, undefined)).toMatchObject({ model3dUrl: null, model3dStatus: null });
+  });
   it("keeps catalogue material, product color and high-rise name through to the render spec",()=>{
     const product={id:"jeans",brand:null,productName:"Jeans cintura alta",category:"lower_piece",subcategory:"jeans",material:"DENIM",colorHex:"#234567",variation:"SKINNY",attributes:{RISE:["LOW_RISE"]}} as CatalogProduct;
     const fitting=fromCatalog(product,null,undefined)!;
@@ -39,6 +46,15 @@ describe("product data survives the fitting adapters",()=>{
     const render=toLook3d(fromWardrobe({piece,slot:"upper_piece",wear:"TOP"}));
     expect(render.imageUrl).toBe("/shirt.webp");expect(render.material).toBe("SILK");
     expect(specFor(render)).toMatchObject({placket:false,sleeve:.33,fabric:"SILK"});
+  });
+  it("reauditoria: peça do guarda-roupa com a ilustração da categoria no lugar da foto é marcada como sem foto", () => {
+    const piece = { id: "saia", name: "Saia verde", category: "lower_piece", subcategory: "skirt", colorHex: "#2e8b57", imageUrl: "/assets_pecas/02_Parte_inferior/12_saia.png", defaultImage: true } as unknown as PieceView;
+    const fitting = fromWardrobe({ piece, slot: "lower_piece", wear: "BOTTOM" });
+    expect(fitting.noPhoto).toBe(true);
+    expect(fitting.thumbUrl).toMatch(/^\/api\/catalog\/default-asset\?.*color=%232e8b57/);
+    expect(toLook3d(fitting)).toMatchObject({ defaultImage: true, colorHex: "#2e8b57" });
+    const comFoto = fromWardrobe({ piece: { ...piece, imageUrl: "http://localhost/media/saia.png", defaultImage: false } as PieceView, slot: "lower_piece", wear: "BOTTOM" });
+    expect(comFoto.noPhoto).toBe(false);
   });
   it("treats a processed-only product photograph as its own artwork, not a default", () => {
     const product = { id: "logo-shirt", brand: null, productName: "Camisa", category: "upper_piece", subcategory: "shirt", imageUrl: null, processedUrl: "/media/unique-shirt.png" } as unknown as CatalogProduct;

@@ -9,6 +9,7 @@ import type { CatalogSearchContext } from "@/components/catalog/catalog-search";
 import { useTaxonomy } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
+import { validateSavedSizes } from "@/lib/tryon/saved-size-check";
 import { useFittingSession } from "@/lib/hooks/use-fitting-session";
 import { useFittingScene, type FittingSearchResults } from "@/lib/hooks/use-fitting-scene";
 import { useFittingShare } from "@/lib/hooks/use-fitting-share";
@@ -78,8 +79,13 @@ export function FittingRoom() {
   }
 
   function restoreSaved(saved: SavedTry) {
-    session.commit(saved.items.map((item) => ({ ...item, addedAt: nextTick() })));
-    setStatus(t("tryOn.prova_vestida", { title: saved.title }));
+    // RF — tamanho CA9/CA10: o tamanho salvo volta com a prova; se deixou de estar disponível, a pessoa escolhe de novo.
+    void validateSavedSizes(saved.items).then(({ items, unavailable }) => {
+      session.commit(items.map((item) => ({ ...item, addedAt: nextTick() })));
+      setStatus(unavailable.length
+        ? t("size.salvo_indisponivel", { title: saved.title, pieces: unavailable.map((piece) => `${piece.name} ${piece.size}`).join(", ") })
+        : t("tryOn.prova_vestida", { title: saved.title }));
+    });
   }
 
   function clear() {

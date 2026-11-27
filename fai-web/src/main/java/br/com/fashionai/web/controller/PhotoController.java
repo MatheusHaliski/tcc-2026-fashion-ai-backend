@@ -1,10 +1,9 @@
 package br.com.fashionai.web.controller;
 
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.imaging.ImageOps;
-import br.com.fashionai.application.service.PhotoService;
-import br.com.fashionai.web.support.Uploads;
-import br.com.fashionai.domain.model.enums.PhotoOrigin;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpHeaders;
@@ -13,9 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.PhotoService;
+import br.com.fashionai.domain.model.enums.PhotoOrigin;
+import br.com.fashionai.web.support.Uploads;
 
 @RestController
 @Tag(name = "RF12 — Fotos, curadoria e momentos-chave")
@@ -33,7 +34,7 @@ public class PhotoController {
                                     @RequestParam(required = false) String color, @RequestParam(required = false) String month,
                                     @RequestParam(required = false) Integer days,
                                     @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "60") int size) {
-        return photos.gallery(user, new br.com.fashionai.application.service.PhotoInsights.Filter(origin, occasion, style, color, month, days), page, size);
+        return photos.gallery(user, new br.com.fashionai.application.imaging.PhotoInsights.Filter(origin, occasion, style, color, month, days), page, size);
     }
 
     @GetMapping("/api/me/photos/insights")

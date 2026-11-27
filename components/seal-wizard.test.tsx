@@ -25,12 +25,15 @@ function Harness({ initial = EMPTY, onForm, onSave = async () => true }: { initi
 }
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+/** Selo novo abre no Manual (o Copilot precisa da IA online): os testes do Copilot escolhem o modo. */
+const copilotMode = () => fireEvent.click(screen.getByRole("radio", { name: "Política com Copilot" }));
 
 describe("RF25 — criador de selo em etapas", () => {
   it("abre o Copilot especializado e impede avançar sem modelo da IA", () => {
     mockApi({ "GET /api/taxonomy": TAXONOMY });
     renderApp(<Harness />);
-    expect(screen.getByText("#createsealpolicy")).toBeTruthy();
+    copilotMode();
+    expect(screen.queryByText("#createsealpolicy")).toBeNull();   // o comando interno não aparece na conversa
     expect(screen.queryByRole("radio", { name: /Sem IA/ })).toBeNull();
     expect(screen.getByRole("button", { name: "Avançar" }).hasAttribute("disabled")).toBe(true);
   });
@@ -40,6 +43,7 @@ describe("RF25 — criador de selo em etapas", () => {
       "POST /api/copilot/seal-policy": { status: "INCOMPLETE", questions: ["Quais selos são necessários?"] },
     });
     renderApp(<Harness />);
+    copilotMode();
     fireEvent.click(screen.getByRole("radio", { name: "Perfil" }));
     expect(screen.getByRole("radio", { name: "Peça" })).toBeTruthy();
     expect(screen.getByRole("radio", { name: "Look" })).toBeTruthy();
@@ -78,6 +82,7 @@ describe("RF25 — criador de selo em etapas", () => {
     });
     let form = EMPTY;
     renderApp(<Harness onForm={(f) => { form = f; }} />);
+    copilotMode();
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Duas peças azuis da Zara" } });
     fireEvent.click(screen.getByRole("button", { name: /Enviar/ }));
     expect(await screen.findByRole("button", { name: "Aplicar política ao criador" })).toBeTruthy();
@@ -95,6 +100,7 @@ describe("RF25 — criador de selo em etapas", () => {
       "POST /api/copilot/seal-policy": { status: "INCOMPLETE", questions: ["Qual marca?"] },
     });
     renderApp(<Harness />);
+    copilotMode();
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Duas peças azuis" } });
     fireEvent.click(screen.getByRole("button", { name: /Enviar/ }));
     expect(await screen.findByText("Qual marca?")).toBeTruthy();
@@ -109,6 +115,7 @@ describe("RF25 — criador de selo em etapas", () => {
     const api = mockApi({ "GET /api/taxonomy": TAXONOMY });
     let form = EMPTY;
     renderApp(<Harness onForm={(next) => { form = next; }} />);
+    copilotMode();
     fireEvent.click(screen.getByRole("radio", { name: "Selo de Hype" }));
     expect(screen.queryByRole("radio", { name: "Perfil" })).toBeNull();
     fireEvent.change(screen.getByLabelText("Score mínimo de Hype (0–100)"), { target: { value: "90" } });
@@ -127,6 +134,7 @@ describe("RF25 — criador de selo em etapas", () => {
   it("recupera o nível Perfil do Copilot ao voltar de uma política Hype de Look", () => {
     mockApi(); let form = EMPTY;
     renderApp(<Harness onForm={(next) => { form = next; }} />);
+    copilotMode();
     fireEvent.click(screen.getByRole("radio", { name: "Perfil" }));
     fireEvent.click(screen.getByRole("radio", { name: "Selo de Hype" }));
     expect(form.tier).toBe("LOOK");
@@ -202,5 +210,29 @@ describe("RF25 — medalhão por tipo de selo", () => {
   it("desenhos antigos sem tipo continuam circulares (gerados)", () => {
     expect(sealKind(DEFAULT_DESIGN)).toBe("CIRCULAR");
     expect(sealKind({ template: "folha/mat-01" })).toBe("FOLHA");
+  });
+});
+
+/** Regressão da auditoria (relatório de selos, defeitos 9 e 10). */
+describe("criador de selo — passo 1 no modo Manual e nome obrigatório no passo Dados", () => {
+  it("no modo Manual o passo 1 não se chama mais \"Copilot · Definir selo\"", () => {
+    mockApi({ "GET /api/taxonomy": TAXONOMY });
+    renderApp(<Harness />);
+    // selo novo já abre no Manual, com um único "Nível do selo" e o botão de ajuste sem falar em Copilot
+    expect(screen.getByRole("radio", { name: "Manual" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getAllByText("Nível do selo")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /Copilot · Definir selo/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Definir selo/ })).toBeTruthy();
+  });
+
+  it("sem nome não avança do passo Dados e a tela diz o que falta", () => {
+    mockApi({ "GET /api/taxonomy": TAXONOMY });
+    renderApp(<Harness initial={{ ...EMPTY, id: "s1", name: "" }} />);
+    fireEvent.click(screen.getByRole("button", { name: /Dados/ }));
+    expect(screen.getByText("Dê um nome ao selo (mínimo 2 caracteres).")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Avançar" }).hasAttribute("disabled")).toBe(true);
+    fireEvent.change(screen.getByLabelText(/^Nome/), { target: { value: "Zara Azul" } });
+    expect(screen.queryByText("Dê um nome ao selo (mínimo 2 caracteres).")).toBeNull();
+    expect(screen.getByRole("button", { name: "Avançar" }).hasAttribute("disabled")).toBe(false);
   });
 });

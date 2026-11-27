@@ -1,0 +1,236 @@
+[
+  {
+    "rf": "CC-01",
+    "nota_historica": 8.3,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar cadastro/edição por teclado e em celular, rascunho recuperável e tarefa concluída sem assistência."
+  },
+  {
+    "rf": "CC-02",
+    "nota_historica": 7.9,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Comparar cards em feed, ranking e detalhe; zoom 200%, leitor de tela e selos excedentes sem anúncio duplicado."
+  },
+  {
+    "rf": "CC-03",
+    "nota_historica": 8.3,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Paginar e filtrar no banco; medir latência e memória com inventários grandes sem perda de resultados."
+  },
+  {
+    "rf": "CC-04",
+    "nota_historica": 8.2,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Completar TipoLook no builder e no contrato Java; testar criar, editar sem alteração, limpar e referência indisponível."
+  },
+  {
+    "rf": "CC-05",
+    "nota_historica": 8.2,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Exibir data/origem de preço e estoque; testar SKU indisponível e variação durante inclusão no guarda-roupa."
+  },
+  {
+    "rf": "CC-06",
+    "nota_historica": 7.9,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Remover truncamento anterior aos filtros; testar recall e paginação com mais de 200 candidatos."
+  },
+  {
+    "rf": "CC-07",
+    "nota_historica": 7.6,
+    "situacao": "Fallback e rótulo implementados; validação fotográfica pendente",
+    "aceite_pendente": "Validar proporção, remoção de humanos e fidelidade em amostra anotada; distinguir foto e ilustração em todas as superfícies."
+  },
+  {
+    "rf": "CC-08",
+    "nota_historica": 8.3,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Validar aprovação concorrente, retenção e recuperação de mídia; comprovar que falha de limpeza não elimina imagem aprovada."
+  },
+  {
+    "rf": "CC-09",
+    "nota_historica": 7.5,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Avaliar recomendações de cápsula com tarefas e critérios de cobertura explícitos, sem alegar planejamento não implementado."
+  },
+  {
+    "rf": "3D-01",
+    "nota_historica": 7.8,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Medir fidelidade e clipping em corpos/fotos diversos; testar restauração e exclusão sem referências órfãs."
+  },
+  {
+    "rf": "3D-02",
+    "nota_historica": 7.7,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Calibrar erro das medidas contra referência consentida; explicitar limites e contratos sem tratar corpo como roupa."
+  },
+  {
+    "rf": "3D-03",
+    "nota_historica": 8.0,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Reconciliar sessão local com serviço multiplataforma; testar troca de dispositivo e conflito de versão."
+  },
+  {
+    "rf": "3D-04",
+    "nota_historica": 6.7,
+    "situacao": "Tabela específica exposta; integração com malha pendente",
+    "aceite_pendente": "Integrar tamanho do produto ao asset graduado validado; medir folgas contra tabela, sem escalar malha genericamente."
+  },
+  {
+    "rf": "3D-05",
+    "nota_historica": 7.3,
+    "situacao": "Consulta à tabela integrada; recomendação e feedback pendentes",
+    "aceite_pendente": "Conectar perfil autorizado, recomendação e feedback ao diálogo; comprovar ambiguidades, protocolos e ausência de tabela com testes reais."
+  },
+  {
+    "rf": "3D-06",
+    "nota_historica": 6.8,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Implementar contrato por peça/variante/tamanho e estados recuperáveis; validar UV, textura, identidade e tempo de processamento."
+  },
+  {
+    "rf": "3D-07",
+    "nota_historica": 7.4,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Avaliar fidelidade e falhas por categoria; delimitar itens não suportados e validar descarte de dados por provedor."
+  },
+  {
+    "rf": "3D-08",
+    "nota_historica": 6.7,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar limites de câmera e clipping por corpo/roupa/dispositivo; preservar o escopo vigente de cada ambiente."
+  },
+  {
+    "rf": "3D-09",
+    "nota_historica": 7.3,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Executar contratos web/mobile/Unreal e aprovação de asset em ambiente integrado, com recuperação após desconexão."
+  },
+  {
+    "rf": "AT-01",
+    "nota_historica": 8.1,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar revisão concorrente e permissões por papel; medir conclusão de tarefa de criação colaborativa."
+  },
+  {
+    "rf": "AT-02",
+    "nota_historica": 7.4,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Validar importação, edição, desfazer e exportação de GLB sem perda de UV/material; delimitar recursos industriais não existentes."
+  },
+  {
+    "rf": "AT-03",
+    "nota_historica": 7.7,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar expiração/revogação durante edição e exportação; especificar presença e resolução de conflito antes de prometer tempo real."
+  },
+  {
+    "rf": "AT-04",
+    "nota_historica": 7.8,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Conferir revisão exportada e unidades com designer; testar lacunas obrigatórias sem alegar prontidão fabril."
+  },
+  {
+    "rf": "AT-05",
+    "nota_historica": 7.2,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Validar votos por revisão/prazo e coleta consentida de tamanho, quantidade e faixa de preço se adotada."
+  },
+  {
+    "rf": "AT-06",
+    "nota_historica": 7.8,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Persistir histórico com retenção controlada e testar ações vinculadas a peças existentes; avaliar qualidade e segurança das sugestões."
+  },
+  {
+    "rf": "AT-07",
+    "nota_historica": 8.2,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar planejamento com disponibilidade, lavagem e conflitos, além de aprovação/rejeição idempotente."
+  },
+  {
+    "rf": "AT-08",
+    "nota_historica": 7.6,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Explicar pesos e permitir correção das preferências; validar utilidade com participantes sem alegar validação psicométrica."
+  },
+  {
+    "rf": "AT-09",
+    "nota_historica": 8.4,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Distinguir declaração e atestação verificável; testar compartilhamento revogado, minimização e evidência inacessível."
+  },
+  {
+    "rf": "AT-10",
+    "nota_historica": 8.0,
+    "situacao": "Correção implementada; validação integrada pendente",
+    "aceite_pendente": "Validar transferência concorrente/expirada e representação por categoria com persistência real; testar que dados pessoais e selos não seguem."
+  },
+  {
+    "rf": "SOC01",
+    "nota_historica": 8.0,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Substituir limites prévios por paginação consistente; medir diversidade, integridade e custo em massa de dados representativa."
+  },
+  {
+    "rf": "SOC02",
+    "nota_historica": 8.0,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar bloqueio/privacidade cruzando feed, busca e perfil; validar compreensão do cabeçalho em celular."
+  },
+  {
+    "rf": "SOC03",
+    "nota_historica": 7.8,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Verificar consistência e explicação do score sem equivalência com qualidade física; avaliar compreensão com usuários."
+  },
+  {
+    "rf": "SOC04",
+    "nota_historica": 7.7,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar nível/entitlement no servidor e configuração licenciada completa; validar seleção e contrastes por teclado/celular."
+  },
+  {
+    "rf": "SOC05",
+    "nota_historica": 7.9,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar emissão, consentimento e revogação em todos os cards; medir conclusão do wizard por marca/celebridade."
+  },
+  {
+    "rf": "SOC06",
+    "nota_historica": 7.8,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar fraude, expiração e propriedade; exigir prova definida antes de conceder recompensa por ação física."
+  },
+  {
+    "rf": "SOC07",
+    "nota_historica": 8.0,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar concorrência, duplicidade e reconciliação do ledger; mostrar claramente limites e natureza dos pontos."
+  },
+  {
+    "rf": "SOC08",
+    "nota_historica": 7.2,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Avaliar retenção e retorno às tarefas de moda; testar acessibilidade, economia e recuperação das sessões de jogo."
+  },
+  {
+    "rf": "SOC09",
+    "nota_historica": 7.9,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Validar resgate e conciliação com varejista em sandbox; tratar expiração, rejeição e uso duplicado."
+  },
+  {
+    "rf": "SOC10",
+    "nota_historica": 7.8,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Implementar seleção/reserva de SKU e estoque por tamanho/cor; testar concorrência, cancelamento e estorno."
+  },
+  {
+    "rf": "SOC11",
+    "nota_historica": 8.1,
+    "situacao": "Não alterada",
+    "aceite_pendente": "Testar exportação/exclusão ponta a ponta, revogação e fornecedores; executar revisão de segurança com evidência independente."
+  }
+]

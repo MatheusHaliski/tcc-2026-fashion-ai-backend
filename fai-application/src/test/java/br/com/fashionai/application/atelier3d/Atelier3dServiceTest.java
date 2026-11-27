@@ -20,6 +20,13 @@ class Atelier3dServiceTest {
  @Test void assetFromAnotherProjectCannotBeReadEvenWithAValidInvitation(){var asset=new DesignAsset();asset.setProjectId(UUID.randomUUID());when(assets.findById(assetId)).thenReturn(Optional.of(asset));assertThatThrownBy(()->service.guestContent(invite,token,assetId)).isInstanceOf(ApiException.class);}
  @Test void staleRevisionCannotOverwriteAnotherEditorsWork(){guest.setRole(DesignGuestInvite.Role.EDITOR);var prior=new DesignSceneVersion();prior.setSequenceNumber(2);when(versions.findFirstByProjectIdOrderBySequenceNumberDesc(project)).thenReturn(Optional.of(prior));var cmd=new Atelier3dService.Save(1,assetId,"request",new Atelier3dService.Document(Map.of(),Map.of(),Map.of()),List.of(),null,null);assertThatThrownBy(()->service.guestSave(invite,token,cmd)).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.status()).isEqualTo(409));verify(versions,never()).saveAndFlush(any());}
  @Test void geometryEditsCannotCorruptRiggedAssets(){var i=new GlbInspector.Inspection(1,1,1,3,true,false,false,Map.of("n0.p0",3),List.of());var doc=new Atelier3dService.Document(Map.of(),Map.of(),Map.of("n0.p0",Map.of("0",List.of(1d,2d,3d))));assertThatThrownBy(()->Atelier3dService.validate(doc,i)).isInstanceOf(ApiException.class);}
+ @Test void garmentEditsAreAcceptedOnlyWithKnownSections(){
+  var i=new GlbInspector.Inspection(1,1,1,3,false,false,false,Map.of("n0.p0",3),List.of());
+  var garment=Map.<String,Object>of("fabrics",Map.of("n0.p0",Map.of("preset","denim")),"decals",List.of());
+  assertThatCode(()->Atelier3dService.validate(new Atelier3dService.Document(Map.of(),Map.of(),Map.of(),garment),i)).doesNotThrowAnyException();
+  assertThatThrownBy(()->Atelier3dService.validate(new Atelier3dService.Document(Map.of(),Map.of(),Map.of(),Map.of("script","x")),i)).isInstanceOf(ApiException.class);
+  assertThatCode(()->Atelier3dService.validate(new Atelier3dService.Document(Map.of(),Map.of(),Map.of()),i)).doesNotThrowAnyException();
+ }
  @Test void editorUploadKeepsUnicodeFilenameAndDeduplicatesOriginal(){
   guest.setRole(DesignGuestInvite.Role.EDITOR);
   when(assets.saveAndFlush(any())).thenAnswer(call->{DesignAsset a=call.getArgument(0);a.assignId(assetId);return a;});

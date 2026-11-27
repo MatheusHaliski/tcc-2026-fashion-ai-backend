@@ -38,7 +38,10 @@ class FakeGpu(BaseHTTPRequestHandler):
     back view, announced in the job's `images` like the real API does."""
 
     jobs: dict = {}
+    outputs: dict = {}
     broken_back = False
+    reconstruct_alive = True     # heartbeat of the Phase 2 worker, as the real API checks it
+    modes: list = []
 
     def log_message(self, *a):
         pass
@@ -54,6 +57,12 @@ class FakeGpu(BaseHTTPRequestHandler):
     def do_POST(self):
         assert self.headers.get("X-API-Key") == "k" * 64
         body = self.rfile.read(int(self.headers["Content-Length"]))
+        field = body.index(b"\r\n\r\n", body.index(b'name="mode"')) + 4
+        mode = body[field:body.index(b"\r\n--", field)].decode()
+        FakeGpu.modes.append(mode)
+        if mode == "reconstruct" and not self.reconstruct_alive:
+            return self._send(503, {"detail": {"code": "RECONSTRUCT_UNAVAILABLE",
+                                               "message": "Nenhum worker de reconstrução ativo"}})
         start = body.index(b"\r\n\r\n", body.index(b'name="image"')) + 4
         raw = body[start:body.index(b"\r\n--", start)]
         with Image.open(io.BytesIO(raw)) as image:
@@ -63,11 +72,17 @@ class FakeGpu(BaseHTTPRequestHandler):
         cutout.putalpha(Image.fromarray((mask * 255).astype(np.uint8)))
         job_id = f"{len(self.jobs):032x}"
         FakeGpu.jobs[job_id] = {"mask": png(Image.fromarray((mask * 255).astype(np.uint8))), "final": png(cutout)}
-        if (np.asarray(rgb) == SKIN).all(-1).any():
+        worn = bool((np.asarray(rgb) == SKIN).all(-1).any())
+        if mode == "reconstruct" or (mode == "auto" and worn and self.reconstruct_alive):
             FakeGpu.jobs[job_id]["reconstructed_back"] = png(Image.new("RGB", (60, 90), (10, 20, 200)))
+            FakeGpu.outputs[job_id] = "generative_reconstruction_requires_review"
+        else:
+            FakeGpu.outputs[job_id] = "needs_reconstruction_unavailable" if mode == "auto" and worn else "flat_product"
         self._send(202, {"job_id": job_id, "status": "queued"})
 
     def do_GET(self):
+        if self.path == "/health":
+            return self._send(200, {"status": "ok", "service": "fai-garment-api"})
         job_id = self.path.split("/v1/jobs/")[1].split("/")[0].split("?")[0]
         job = self.jobs[job_id]
         if "/image" in self.path:
@@ -76,6 +91,7 @@ class FakeGpu(BaseHTTPRequestHandler):
                 return self._send(410, {"detail": {"code": "EXPIRED", "message": "Imagem expirada"}})
             return self._send(200, job[variant], "image/png")
         body = {"job_id": job_id, "status": "completed", "images": {name: "/..." for name in job},
+                "output": self.outputs[job_id],
                 "segmentation": {"mask_score": 0.98, "detection_label": "t-shirt"}}
         if "reconstructed_back" in job:
             body["reconstruction"] = {"back": {"inferred": True, "quality": {"verdict": "warn"}}}
@@ -88,8 +104,8 @@ class FakeGpu(BaseHTTPRequestHandler):
 @pytest.fixture
 def gpu_url():
     server = HTTPServer(("127.0.0.1", 0), FakeGpu)
-    FakeGpu.jobs = {}
-    FakeGpu.broken_back = False
+    FakeGpu.jobs, FakeGpu.outputs, FakeGpu.modes = {}, {}, []
+    FakeGpu.broken_back, FakeGpu.reconstruct_alive = False, True
     threading.Thread(target=server.serve_forever, daemon=True).start()
     yield f"http://127.0.0.1:{server.server_port}"
     server.shutdown()

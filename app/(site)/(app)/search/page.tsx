@@ -23,6 +23,7 @@ import { hypeLevelFilter } from "@/components/hype/hype-filters";
 import { InsightStrip } from "@/components/insights/insight-strip";
 import { PublicProfileCard } from "@/components/public-profile-card";
 import { SearchEntityCard } from "@/components/search-entity-card";
+import { SearchElsewhere } from "@/components/search/search-elsewhere";
 
 type Tab = "LOOKS" | "PECAS" | "ACERVO" | "PESSOAS" | "MARCAS" | "CELEBRIDADES";
 interface Brand { id?: string; userId?: string; slug?: string; name?: string; logoUrl?: string | null; registered?: boolean; publicPieces?: number; avatarUrl?: string | null; }
@@ -48,6 +49,7 @@ function SearchInner() {
   const { t } = useI18n(); const { user } = useAuth(); const params = useSearchParams(); const router = useRouter(); const tax = useTaxonomy();
   const [q, setQ] = useState(params.get("q") ?? ""); const [term, setTerm] = useState(params.get("q") ?? "");
   const [tab, setTab] = useState<Tab>(((params.get("tab") as Tab) ?? "LOOKS"));
+  const [tabChosen, setTabChosen] = useState(!!params.get("tab"));   // aba escolhida pela pessoa (ou no endereço) não troca sozinha
   const [f, setF] = useState<Filters>(NO_FILTERS);
   const [items, setItems] = useState<Row[]>([]); const [next, setNext] = useState<string | null>(null);
   const [meta, setMeta] = useState<Omit<Page, "items" | "nextCursor"> | null>(null);
@@ -96,7 +98,7 @@ function SearchInner() {
         <Button type="submit" variant="primary"><FaiIcon id="NAV-09" size={24} decorative />{t("common.search")}</Button>
         {term && <Button type="button" onClick={() => submit("")}>{t("search.limpar_busca")}</Button>}
       </form>
-      <Tabs tabs={tabs} value={tab} onChange={(v) => setTab(v)} />
+      <Tabs tabs={tabs} value={tab} onChange={(v) => { setTab(v); setTabChosen(true); }} />
       {/* RF53 · Lote A5 (P3-15): o que cresce entre peças e looks públicos e o que o filtro Em alta alcança (no recorte de categoria) */}
       {filterable && <InsightStrip context="SEARCH" params={{ window: 7, category: f.category }} collapsible className="mb-3" />}
       {filterable && (
@@ -132,6 +134,7 @@ function SearchInner() {
       {empty && (
         <div className="surface p-4">
           <EmptyState title={meta?.empty?.message ?? (archive ? t("search.acervo_vazio") : active.length ? t("search.nenhum_resultado_com_esses_filtros") : t("common.empty"))} hint={active.length ? t("search.remova_um_dos_filtros_acima") : undefined} />
+          {!archive && <SearchElsewhere term={term} current={tab} anonymous={!user} labelOf={(id) => tabs.find((x) => x.id === id)?.label ?? id} onOpen={(id) => { setTab(id); setTabChosen(true); }} autoOpen={!tabChosen} />}
           {meta?.empty?.alternatives?.length ? <div className="mb-3 flex flex-wrap items-center justify-center gap-1.5"><span className="type-caption text-muted">{t("search.tente")}</span>{meta.empty.alternatives.map((a) => <Chip key={a} onClick={() => submit(a.replace(/_/g, " "))}>{label(a)}</Chip>)}</div> : null}
           {meta?.empty?.trending?.length ? <><h2 className="type-h3 mb-2">{t("search.em_alta_na_comunidade")}</h2><div className="grid-looks social-card-grid">{meta.empty.trending.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div></> : null}
         </div>

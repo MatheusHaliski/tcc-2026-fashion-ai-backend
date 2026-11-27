@@ -1,37 +1,5 @@
 package br.com.fashionai.application.catalog;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.service.WardrobeService;
-import br.com.fashionai.application.taxonomy.Taxonomy;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.Brand;
-import br.com.fashionai.domain.model.BrandAlias;
-import br.com.fashionai.domain.model.CatalogImage;
-import br.com.fashionai.domain.model.CatalogProduct;
-import br.com.fashionai.domain.model.TaxonomyAttribute;
-import br.com.fashionai.domain.model.CatalogProductAlias;
-import br.com.fashionai.domain.model.CatalogSource;
-import br.com.fashionai.domain.model.CatalogVariant;
-import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
-import br.com.fashionai.domain.model.enums.ItemCondition;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.BrandAliasRepository;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.CatalogImageRepository;
-import br.com.fashionai.application.catalog.image.CatalogImagePipelineService;
-import br.com.fashionai.application.catalog.image.CatalogImageIdentity;
-import br.com.fashionai.domain.repository.CatalogProductAliasRepository;
-import br.com.fashionai.domain.repository.CatalogProductRepository;
-import br.com.fashionai.domain.repository.CatalogSourceRepository;
-import br.com.fashionai.domain.repository.CatalogVariantRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -47,6 +15,25 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.catalog.image.CatalogImageIdentity;
+import br.com.fashionai.application.catalog.image.CatalogImagePipelineService;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.WardrobeService;
+import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
+import br.com.fashionai.domain.model.enums.ItemCondition;
+import br.com.fashionai.domain.model.enums.Visibility;
+import br.com.fashionai.domain.repository.*;
+
 /**
  * RF47 · Acervo & Busca Catalogada (catalog-first). Fluxo: categoria + subcategoria + marca + nome/modelo →
  * normalização em intenção estruturada → busca no catálogo interno (FULLTEXT ngram + re-rank por similaridade,
@@ -56,7 +43,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class CatalogService {
-    static final Set<CatalogIngestionStatus> VISIBLE = Set.of(CatalogIngestionStatus.VALIDATED, CatalogIngestionStatus.PERSISTABLE,
+    public static final Set<CatalogIngestionStatus> VISIBLE = Set.of(CatalogIngestionStatus.VALIDATED, CatalogIngestionStatus.PERSISTABLE,
             CatalogIngestionStatus.REFERENCE_ONLY);
     public static final double MIN_SCORE = 0.35;
 
@@ -71,6 +58,7 @@ public class CatalogService {
     private final OfficialCatalogDiscovery discovery;
     private final WardrobeService wardrobe;
     private CatalogTextInterpreter textInterpreter;
+    private CatalogProductModels productModels;
     private final CatalogNormalizer norm = CatalogNormalizer.get();
     private final CatalogMatchScorer scorer = new CatalogMatchScorer(norm);
 
@@ -94,6 +82,18 @@ public class CatalogService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     void setTextInterpreter(CatalogTextInterpreter textInterpreter) {
         this.textInterpreter = textInterpreter;
+    }
+
+    /** Modelo 3D de vitrine publicado do produto (etapa 3, V97): sem ele, os cards saem como antes, sem model3dUrl. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setProductModels(CatalogProductModels productModels) {
+        this.productModels = productModels;
+    }
+
+    private void withModels(List<Map<String, Object>> cards) {
+        if (productModels != null) {
+            productModels.decorate(cards);
+        }
     }
 
     /** Campos do formulário de busca (qualquer combinação de 2–3 já basta). */
@@ -285,7 +285,7 @@ public class CatalogService {
             : products.browse(brand == null ? null : brand.getId().toString(), cat, sub,
                 words.size() > 0 ? words.get(0) : null, words.size() > 1 ? words.get(1) : null, words.size() > 2 ? words.get(2) : null,
                 color, gender, PageRequest.of(page, size));
-        out.put("items", cards(pg.getContent()));
+        out.put("items", cards(pg.getContent(), identifier, color));
         out.put("page", page);
         out.put("size", size);
         out.put("total", pg.getTotalElements());
@@ -326,6 +326,11 @@ public class CatalogService {
 
     /** Cards de uma lista do acervo (foto canônica ou principal, variantes, marca), na ordem recebida, sem pontuação. */
     List<Map<String, Object>> cards(List<CatalogProduct> list) {
+        return cards(list, null, null);
+    }
+
+    /** Com identificador (SKU/código), o card já vem na variante que ele aponta, com a cor e a foto dessa variante. */
+    List<Map<String, Object>> cards(List<CatalogProduct> list, String identifier, String color) {
         if (list.isEmpty()) {
             return List.of();
         }
@@ -339,10 +344,14 @@ public class CatalogService {
             if (CatalogPhotoEligibility.excluded(p)) continue;
             Brand b = brandById.computeIfAbsent(p.getBrandId(), id -> brands.findById(id).orElse(null));
             List<CatalogVariant> productVariants = variantsBy.getOrDefault(p.getId(), List.of());
-            Map<String, Object> m = card(p, b, primary.get(p.getId()), productVariants);
-            m.put("variants", productVariants.stream().map(this::variantMap).toList());
+            CatalogVariant byCode = CatalogVariantIdentity.byIdentifier(productVariants, identifier, color);
+            Map<String, Object> m = card(p, b, byCode == null ? primary.get(p.getId()) : CatalogPhotoChoice.select(p,
+                    images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()), productVariants, byCode, null), productVariants);
+            m.put("variants", productVariants.stream().map(CatalogCards::variantMap).toList());
+            if (byCode != null) CatalogCards.applyVariant(m, byCode);
             out.add(m);
         }
+        withModels(out);
         return out;
     }
 
@@ -430,9 +439,9 @@ public class CatalogService {
             CatalogImage selectedPhoto=selectedVariant==null?primary.get(p.getId())
                     :CatalogPhotoChoice.select(p,colorPhotos.getOrDefault(p.getId(),List.of()),vs,selectedVariant,null);
             Map<String, Object> m = card(p, b, selectedPhoto, vs);
-            m.put("variants", vs.stream().map(this::variantMap).toList());
+            m.put("variants", vs.stream().map(CatalogCards::variantMap).toList());
             // a variante da cor pedida ("501 preto" → variante Black) vem pré-selecionada
-            if (selectedVariant != null) applyVariant(m, selectedVariant);
+            if (selectedVariant != null) CatalogCards.applyVariant(m, selectedVariant);
             m.put("matchScore", s.toMap());
             m.put("matchPercent", (int) Math.round(s.total() * 100));
             out.add(m);
@@ -441,7 +450,9 @@ public class CatalogService {
         // o "% compatível" mostrado não muda
         out.sort(Comparator.comparingDouble((Map<String, Object> m) -> orderScore(m)).reversed()
                 .thenComparing(m -> -((Number) m.get("ownersCount")).intValue()));
-        return out.size() > limit ? out.subList(0, limit) : out;
+        List<Map<String, Object>> top = out.size() > limit ? out.subList(0, limit) : out;
+        withModels(top);
+        return top;
     }
 
     static CatalogMatchScorer.Candidate candidate(CatalogProduct p, Brand b, List<String> aliases, List<CatalogVariant> vs) {
@@ -478,44 +489,7 @@ public class CatalogService {
     }
 
     private Map<String, Object> card(CatalogProduct p, Brand b, CatalogImage img, List<CatalogVariant> productVariants) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", p.getId());
-        m.put("brand", b == null ? null : Map.of("id", b.getId(), "name", b.getName(), "slug", b.getSlug(),
-                "logoUrl", String.valueOf(b.getLogoUrl())));
-        // produtos importados antes da limpeza podem trazer marcação HTML da loja no título
-        m.put("productName", CatalogIngestService.plainText(p.getProductName()));
-        m.put("modelName", CatalogIngestService.plainText(p.getModelName()));
-        m.put("category", p.getCategory());
-        m.put("subcategory", p.getSubcategory());
-        m.put("color", p.getColor());
-        m.put("colorName", p.getColorName());
-        m.put("colorHex", p.getColor() == null ? null : Taxonomy.hex(p.getColor()));
-        m.put("material", p.getMaterial());
-        m.put("variation", p.getVariationCode());
-        m.put("attributes", TaxonomyAttribute.toMap(p.getAttributes(), java.util.Set.of()));
-        m.put("collection", p.getCollection());
-        m.put("description", p.getDescription());
-        DesignTraits design = designOf(p);
-        m.put("design", design.isEmpty() ? null : design.toMap());
-        m.put("gender", p.getGender());
-        m.put("productCode", p.getProductCode());
-        m.put("sku", p.getSku());
-        Map<String, Object> catalogImage = CatalogImagePipelineService.cardImage(img, p, productVariants);
-        UUID effective = CatalogImageIdentity.effectiveVariantId(img, p, productVariants);
-        if (effective != null) {
-            if (catalogImage != null) catalogImage.put("variantId", effective);
-            productVariants.stream().filter(v -> effective.equals(v.getId())).findFirst().ifPresent(v -> applyVariant(m, v));
-        }
-        m.put("imageUrl", catalogImage == null ? null : catalogImage.get("url"));
-        m.put("imageProcessingStatus", catalogImage != null ? "READY" : img != null && List.of("PENDING", "DOWNLOADING").contains(img.getProcessingStatus()) ? "PENDING" : "ERROR");
-        m.put("catalogImage", catalogImage);
-        m.put("imageSource", img == null ? null : CatalogIngestService.provenance(img));
-        m.put("source", Map.of("type", p.getSourceType().name(), "domain", String.valueOf(p.getSourceDomain()),
-                "productUrl", String.valueOf(p.getOfficialProductUrl()), "status", p.getSourceStatus().name(),
-                "lastVerifiedAt", String.valueOf(p.getLastVerifiedAt())));
-        m.put("ingestionStatus", p.getIngestionStatus().name());
-        m.put("ownersCount", p.getOwnersCount());
-        return m;
+        return CatalogCards.card(p, b, img, productVariants);
     }
 
     private Map<String, Object> intentMap(Resolved r) {
@@ -597,7 +571,8 @@ public class CatalogService {
         CatalogImage selected=variantId==null&&imageId==null ? mainImagesFor(List.of(p),Map.of(p.getId(),productVariants)).get(p.getId())
                 : CatalogPhotoChoice.select(p,imgs,productVariants,requested,imageId);
         Map<String, Object> m = card(p, b, selected, productVariants);
-        if (requested!=null) applyVariant(m,requested);
+        withModels(List.of(m));
+        if (requested!=null) CatalogCards.applyVariant(m,requested);
         // CatalogProductImage: viewType, qualityScore, sourceUrl, processedUrl e papel (canônica, alternativa, detalhe)
         m.put("images", imgs.stream().filter(i -> CatalogImageIdentity.matches(i,p,null,productVariants)).map(i -> {
             Map<String, Object> im = new LinkedHashMap<>();
@@ -616,28 +591,9 @@ public class CatalogService {
             im.put("provenance", CatalogIngestService.provenance(i));
             return im;
         }).toList());
-        m.put("variants", productVariants.stream().map(this::variantMap).toList());
+        m.put("variants", productVariants.stream().map(CatalogCards::variantMap).toList());
         m.put("aliases", productAliases.findByProductId(p.getId()).stream().map(CatalogProductAlias::getAlias).toList());
         return m;
-    }
-
-    private Map<String, Object> variantMap(CatalogVariant v) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", v.getId());
-        m.put("key", v.getVariantKey());
-        m.put("color", v.getColor());
-        m.put("colorName", v.getColorName());
-        m.put("code", v.getVariantCode());
-        m.put("sku", v.getSku());
-        return m;
-    }
-
-    private void applyVariant(Map<String, Object> card, CatalogVariant variant) {
-        String color = variant.getColor() == null ? (String) card.get("color") : variant.getColor();
-        card.put("selectedVariant", variantMap(variant));
-        card.put("color", color);
-        if (variant.getColorName() != null) card.put("colorName", variant.getColorName());
-        card.put("colorHex", color == null ? null : Taxonomy.hex(color));
     }
 
     /**
@@ -695,8 +651,9 @@ public class CatalogService {
             throw ApiException.badRequest("PRODUTO_RECUSADO", Msg.t("catalog.produto_recusado"));
         }
         Brand b = brands.findById(p.getBrandId()).orElseThrow(() -> ApiException.notFound(Msg.t("common.brand")));
-        CatalogVariant variant = a.variantId() == null ? null : variants.findById(a.variantId())
+        CatalogVariant chosenVariant = a.variantId() == null ? null : variants.findById(a.variantId())
                 .filter(v -> v.getProductId().equals(p.getId())).orElseThrow(()->ApiException.notFound("Catalog variant"));
+        CatalogVariant variant = chosenVariant;
         List<CatalogVariant> productVariants=variants.findByProductIdOrderByVariantKey(p.getId());
         CatalogImage chosen = variant==null ? mainImagesFor(List.of(p),Map.of(p.getId(),productVariants)).get(p.getId())
                 : CatalogPhotoChoice.select(p,images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()),productVariants,variant,null);
@@ -704,6 +661,7 @@ public class CatalogService {
             UUID effective = CatalogImageIdentity.effectiveVariantId(chosen,p,productVariants);
             variant = productVariants.stream().filter(v -> v.getId().equals(effective)).findFirst().orElse(null);
         }
+        String color = CatalogVariantIdentity.color(a.color(), chosenVariant, variant, p);
         // escolhido por alguém: o candidato descoberto passa a ser catálogo (o próximo usuário acha localmente)
         if (p.getIngestionStatus() == CatalogIngestionStatus.DISCOVERED) {
             p.setIngestionStatus(CatalogIngestionStatus.REFERENCE_ONLY);
@@ -711,9 +669,8 @@ public class CatalogService {
         p.setOwnersCount(p.getOwnersCount() + 1);
         p.setLastVerifiedAt(p.getLastVerifiedAt() == null ? Instant.now() : p.getLastVerifiedAt());
         products.save(p);
-        String color = firstValid(a.color(), variant == null ? null : variant.getColor(), p.getColor(), Taxonomy.COLORS::containsKey, "black");
-        String material = firstValid(a.material(), p.getMaterial(), null, Taxonomy.MATERIALS::contains, "BLEND");
-        String sex = firstValid(a.sex(), p.getGender(), null, Taxonomy.SEXES::contains, "UNISSEX");
+        String material = CatalogVariantIdentity.firstValid(a.material(), p.getMaterial(), null, Taxonomy.MATERIALS::contains, "BLEND");
+        String sex = CatalogVariantIdentity.firstValid(a.sex(), p.getGender(), null, Taxonomy.SEXES::contains, "UNISSEX");
         // o Provador guarda a peça sem formulário (sem tamanho): antes a validação recusava com "Corrija os campos destacados"
         String size = sizeOf(a.size(), p.getCategory());
         List<String> occasion = a.occasion() == null || a.occasion().isEmpty()
@@ -729,13 +686,14 @@ public class CatalogService {
         }
         // Unapproved/original photos and another color never become the wardrobe image by fallback.
         String image = card!=null&&!"DEFAULT".equals(card.get("mode")) ? String.valueOf(card.get("url")) : null;
-        WardrobeService.PieceForm form = new WardrobeService.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
+        br.com.fashionai.application.wardrobe.PieceForm form = new br.com.fashionai.application.wardrobe.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
                 b.getId(), b.getName(), color, material, size, null, occasion, style, List.of(),
                 a.price() == null ? BigDecimal.ZERO : a.price(), a.visibility(), List.of(), a.notes(), a.condition(), a.purchaseDate(),
-                a.purchaseLocation(), p.getSku(), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
-                a.background());
-        Views.PieceView view = wardrobe.createFromCatalog(user, form, new WardrobeService.CatalogPick(p.getId(),
-                variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card));
+                a.purchaseLocation(), CatalogVariantIdentity.sku(variant, p), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
+                a.background(), null, null, null, null, null, false, null, null, null, false);
+        Views.PieceView view = wardrobe.createFromCatalog(user, form, new CatalogPick(p.getId(),
+                variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card,
+                productModels == null ? null : productModels.url(p.getId())));
         if (Boolean.TRUE.equals(a.favorite())) {
             view = wardrobe.toggles(user, view.id(), true, null, null);
         }
@@ -755,15 +713,6 @@ public class CatalogService {
             }
         }
         return "upper_piece".equals(category) || "lower_piece".equals(category) || "full_body_piece".equals(category) ? "m" : "one_size";
-    }
-
-    private static String firstValid(String a, String b, String c, java.util.function.Predicate<String> valid, String fallback) {
-        for (String v : new String[]{a, b, c}) {
-            if (v != null && valid.test(v)) {
-                return v;
-            }
-        }
-        return fallback;
     }
 
     // ───────────────────────────── Explorador (RF26): marcas do catálogo sem perfil cadastrado

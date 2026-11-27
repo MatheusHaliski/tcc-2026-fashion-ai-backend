@@ -1,13 +1,15 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.ApiException;
-import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.avatar.Avatar3dModelRules;
+import br.com.fashionai.application.common.ApiException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

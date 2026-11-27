@@ -1,0 +1,341 @@
+{
+  "source": "scripts/icons/fai_occasion_icons.py (moldura do NAV-07, objeto desenhado)",
+  "icons": [
+    {
+      "id": "OCC-01",
+      "slug": "occ-01",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "work",
+      "label": {
+        "PT_BR": "Trabalho",
+        "EN": "Work",
+        "ES": "Trabajo"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "briefcase",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-01-normal-512.png",
+          "96": "/icons/fai/occ-01-normal-96.png",
+          "48": "/icons/fai/occ-01-normal-48.png",
+          "24": "/icons/fai/occ-01-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-02",
+      "slug": "occ-02",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "college",
+      "label": {
+        "PT_BR": "Faculdade",
+        "EN": "College",
+        "ES": "Facultad"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "mortarboard",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-02-normal-512.png",
+          "96": "/icons/fai/occ-02-normal-96.png",
+          "48": "/icons/fai/occ-02-normal-48.png",
+          "24": "/icons/fai/occ-02-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-03",
+      "slug": "occ-03",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "dinner",
+      "label": {
+        "PT_BR": "Jantar",
+        "EN": "Dinner",
+        "ES": "Cena"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "plate",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-03-normal-512.png",
+          "96": "/icons/fai/occ-03-normal-96.png",
+          "48": "/icons/fai/occ-03-normal-48.png",
+          "24": "/icons/fai/occ-03-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-04",
+      "slug": "occ-04",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "date",
+      "label": {
+        "PT_BR": "Encontro",
+        "EN": "Date",
+        "ES": "Cita"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "hearts",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-04-normal-512.png",
+          "96": "/icons/fai/occ-04-normal-96.png",
+          "48": "/icons/fai/occ-04-normal-48.png",
+          "24": "/icons/fai/occ-04-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-05",
+      "slug": "occ-05",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "party",
+      "label": {
+        "PT_BR": "Festa",
+        "EN": "Party",
+        "ES": "Fiesta"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "balloons",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-05-normal-512.png",
+          "96": "/icons/fai/occ-05-normal-96.png",
+          "48": "/icons/fai/occ-05-normal-48.png",
+          "24": "/icons/fai/occ-05-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-06",
+      "slug": "occ-06",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "gym",
+      "label": {
+        "PT_BR": "Academia",
+        "EN": "Gym",
+        "ES": "Gimnasio"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "dumbbell",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-06-normal-512.png",
+          "96": "/icons/fai/occ-06-normal-96.png",
+          "48": "/icons/fai/occ-06-normal-48.png",
+          "24": "/icons/fai/occ-06-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-07",
+      "slug": "occ-07",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "beach",
+      "label": {
+        "PT_BR": "Praia",
+        "EN": "Beach",
+        "ES": "Playa"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "umbrella",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-07-normal-512.png",
+          "96": "/icons/fai/occ-07-normal-96.png",
+          "48": "/icons/fai/occ-07-normal-48.png",
+          "24": "/icons/fai/occ-07-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-08",
+      "slug": "occ-08",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "trip",
+      "label": {
+        "PT_BR": "Viagem",
+        "EN": "Trip",
+        "ES": "Viaje"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "suitcase",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-08-normal-512.png",
+          "96": "/icons/fai/occ-08-normal-96.png",
+          "48": "/icons/fai/occ-08-normal-48.png",
+          "24": "/icons/fai/occ-08-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-09",
+      "slug": "occ-09",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "home",
+      "label": {
+        "PT_BR": "Casa",
+        "EN": "Home",
+        "ES": "Casa"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "house",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-09-normal-512.png",
+          "96": "/icons/fai/occ-09-normal-96.png",
+          "48": "/icons/fai/occ-09-normal-48.png",
+          "24": "/icons/fai/occ-09-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-10",
+      "slug": "occ-10",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "walk",
+      "label": {
+        "PT_BR": "Passeio",
+        "EN": "Walk",
+        "ES": "Paseo"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "tree",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-10-normal-512.png",
+          "96": "/icons/fai/occ-10-normal-96.png",
+          "48": "/icons/fai/occ-10-normal-48.png",
+          "24": "/icons/fai/occ-10-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-11",
+      "slug": "occ-11",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "surprise",
+      "label": {
+        "PT_BR": "Surpreenda-me",
+        "EN": "Surprise me",
+        "ES": "Sorpréndeme"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "sparkle",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-11-normal-512.png",
+          "96": "/icons/fai/occ-11-normal-96.png",
+          "48": "/icons/fai/occ-11-normal-48.png",
+          "24": "/icons/fai/occ-11-normal-24.png"
+        }
+      },
+      "available": true
+    },
+    {
+      "id": "OCC-12",
+      "slug": "occ-12",
+      "family": "OCC",
+      "rf": "RF28",
+      "occasion": "repeat",
+      "label": {
+        "PT_BR": "Repetir último pedido",
+        "EN": "Repeat last request",
+        "ES": "Repetir último pedido"
+      },
+      "states": [
+        "normal"
+      ],
+      "singleState": true,
+      "glyph": "repeat",
+      "ai": false,
+      "drawn": "scripts/icons/fai_occasion_icons.py",
+      "files": {
+        "normal": {
+          "512": "/icons/fai/occ-12-normal-512.png",
+          "96": "/icons/fai/occ-12-normal-96.png",
+          "48": "/icons/fai/occ-12-normal-48.png",
+          "24": "/icons/fai/occ-12-normal-24.png"
+        }
+      },
+      "available": true
+    }
+  ]
+}

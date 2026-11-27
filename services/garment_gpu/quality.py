@@ -138,3 +138,26 @@ def compare(original: Image.Image, original_mask: np.ndarray, candidate: Image.I
             "silhouette_iou": round(iou, 4), "background_clean": round(background_clean, 4),
             "extra_skin": round(extra_skin, 4),
             "requires_human_review": ["logos", "crests", "text", "stitching"]}
+
+
+def garment_delta_e(front: Image.Image, back: Image.Image, step: int = 5) -> float:
+    """ΔE between the dominant colours of two generated views on white (front × back of the same garment). The
+    RunPod test had a charcoal shirt come out black in front and navy behind; each view alone can pass the QA."""
+    labs = []
+    for view in (front.convert("RGB"), back.convert("RGB")):
+        pixels = np.asarray(view)[white_background_mask(view)][::step]
+        if len(pixels) == 0:
+            return float("inf")
+        labs.append(srgb_to_lab(pixels))
+    return color_delta_e(labs[0], labs[1])
+
+
+def flag_back_color(back_qa: dict, front: Image.Image, back: Image.Image, settings) -> dict:
+    """Adds BACK_COLOR_MISMATCH (and caps the verdict at warn) when the back drifts from the front's colour."""
+    delta = garment_delta_e(front, back)
+    back_qa["front_back_delta_e"] = round(delta, 2) if np.isfinite(delta) else None
+    if delta > settings.qa_max_delta_e:
+        back_qa["flags"] = [*back_qa.get("flags", []), "BACK_COLOR_MISMATCH"]
+        if back_qa.get("verdict") == "pass":
+            back_qa["verdict"] = "warn"
+    return back_qa

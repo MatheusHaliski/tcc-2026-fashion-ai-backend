@@ -1,0 +1,20 @@
+{
+ "produto": "Malis Summer Joggers",
+ "marca": "Napapijri",
+ "url_oficial": "https://www.napapijri.com/en-gb/products/malis-summer-joggers-np0a4h8c041",
+ "subcategoria": "jogger_pants",
+ "tamanho": "40",
+ "sexo": "MASCULINO",
+ "tecido": {
+  "tipo": "moletom",
+  "cor": "#1c1c1f",
+  "gramatura": 300
+ },
+ "fechamento": "cordao",
+ "bolsos": [
+  "faca"
+ ],
+ "observacao": "cor: código 041 da variante (preto), não amostrada da foto.",
+ "caimento": "regular",
+ "ribana": false
+}

@@ -21,6 +21,7 @@ import { HypeBadge } from "./hype-badge";
 import { HypeSealProgressList } from "./hype-seals";
 import { HypeIssuerSealOffers } from "./hype-seal-offers";
 import { HypeGuide, HypeGuideIcon, useHypeGuide } from "./hype-guide";
+import { AuraUnlocksPanel } from "./aura-unlocks-panel";
 
 const path = (type: HypeEntity, id: string) => `/api/hype/${type === "PIECE" ? "pieces" : "looks"}/${id}`;
 
@@ -47,12 +48,12 @@ export function signalRows(byType?: Record<string, { current: number; previous: 
  * de quem vê. Só busca dados quando abre. Vai para o <body> num portal: aberto a partir do verso de um card, o
  * rotateY do card viraria o "containing block" do position:fixed e o painel ficaria preso dentro do card.
  */
-export function HypeAnalyticsDrawer(props: { type: HypeEntity; id: string; name: string; open: boolean; onClose: () => void }) {
+export function HypeAnalyticsDrawer(props: { type: HypeEntity; id: string; name: string; open: boolean; onClose: () => void; focusUnlocks?: boolean }) {
   if (typeof document === "undefined") return null;
   return createPortal(<DrawerContent {...props} />, document.body);
 }
 
-function DrawerContent({ type, id, name, open, onClose }: { type: HypeEntity; id: string; name: string; open: boolean; onClose: () => void }) {
+function DrawerContent({ type, id, name, open, onClose, focusUnlocks }: { type: HypeEntity; id: string; name: string; open: boolean; onClose: () => void; focusUnlocks?: boolean }) {
   const { t, relative } = useI18n();
   const { user } = useAuth();
   const detail = useApi<HypeDetail>((signal) => api.get(path(type, id), { signal }), [type, id], { enabled: open });
@@ -85,6 +86,8 @@ function DrawerContent({ type, id, name, open, onClose }: { type: HypeEntity; id
           </div>
         ) : state.kind === "not_calculated" ? <p className="hype-state" role="status">{t("hype.drawer.calculating")}</p> : <HypeStateNotice state={state} onRetry={detail.reload} />}
         {segment === "summary" && <p className="type-body">{t("hypeGuide.score_scale")}</p>}
+        {/* Circuito Aura: para que serve este Hype — o que a faixa já libera e o que vem na próxima */}
+        {segment === "summary" && <AuraUnlocksPanel key={`${type}:${id}`} type={type} id={id} enabled={open} focus={focusUnlocks} onSeeSeals={() => setSegment("seals")} />}
         {segment === "summary" && positions.data?.eligible && positions.data.positions.length > 0 && (
           <section aria-label={t("hype.drawer.positions")}>
             <h3 className="type-h3 mb-2">{t("hype.drawer.positions")}</h3>

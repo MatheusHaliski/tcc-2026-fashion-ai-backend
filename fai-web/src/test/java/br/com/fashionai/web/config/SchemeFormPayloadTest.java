@@ -58,4 +58,26 @@ class SchemeFormPayloadTest {
         assertNull(f.season());
         assertEquals(Mood.COMFORTABLE, f.mood());
     }
+
+    /** Exercício 04: o recorte do POST/PUT do look com o nível térmico escolhido ou o pedido explícito de limpar. */
+    @Test
+    void nivelTermicoEClearExplicitoChegamAoFormulario() throws Exception {
+        String id = "9e2d4c1a-7b3f-4a5e-8c6d-1f2a3b4c5d6e";
+        SchemeService.SchemeForm escolhido = json.readValue(PAYLOAD.replace("\"cardSkin\"", "\"nivelTermicoId\":\"" + id + "\",\"clearNivelTermico\":false,\"cardSkin\""),
+                SchemeService.SchemeForm.class);
+        assertEquals(java.util.UUID.fromString(id), escolhido.nivelTermicoId());
+        assertEquals(Boolean.FALSE, escolhido.clearNivelTermico());
+        SchemeService.SchemeForm limpar = json.readValue(PAYLOAD.replace("\"cardSkin\"", "\"clearNivelTermico\":true,\"cardSkin\""), SchemeService.SchemeForm.class);
+        assertNull(limpar.nivelTermicoId());
+        assertEquals(Boolean.TRUE, limpar.clearNivelTermico());
+        assertNull(json.readValue(PAYLOAD, SchemeService.SchemeForm.class).nivelTermicoId());
+    }
+
+    @Test
+    void oVistaMeRecebeONivelTermicoComoCriterio() throws Exception {
+        String id = "9e2d4c1a-7b3f-4a5e-8c6d-1f2a3b4c5d6e";
+        var body = json.readValue("{\"prompt\":\"trabalho\",\"anchorIds\":[],\"keepMirror\":false,\"nivelTermicoId\":\"" + id + "\"}",
+                br.com.fashionai.web.controller.MirrorController.VistaMeRequest.class);
+        assertEquals(java.util.UUID.fromString(id), body.nivelTermicoId());
+    }
 }

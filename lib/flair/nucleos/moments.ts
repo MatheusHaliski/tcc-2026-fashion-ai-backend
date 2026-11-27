@@ -1,0 +1,109 @@
+/**
+ * Os quatro momentos da partida (docs/flair/flair-3d/DESENHO_DA_TELA.md, seção 4) como estado explícito: deck,
+ * preparação, ação e resultado, com o que a pessoa pode fazer com a carta em cada um e o acionamento que cada jogo
+ * permite. Puro (State como tabela de transições): a tela guarda o momento e pergunta aqui o que vale.
+ */
+import type { NucleoAcao, NucleoCodigo } from "@/lib/flair/nucleos/types";
+
+export type Momento = "DECK" | "PREPARACAO" | "ACAO" | "RESULTADO";
+
+export type MomentoEvento =
+  | { type: "ENTRAR" }
+  | { type: "ENTREGUE" }
+  | { type: "FIM_ACAO" }
+  /** a ação terminou e a partida segue aberta (LABIRINTO: o espelho não abriu): de volta à preparação */
+  | { type: "REABERTA" }
+  | { type: "REINICIAR"; semDeck: boolean };
+
+/** Núcleo sem deck (zonas do editor, guarda-roupa liberado) começa direto na preparação. */
+export function momentoInicial(semDeck: boolean): Momento {
+  return semDeck ? "PREPARACAO" : "DECK";
+}
+
+/** Transição; evento que não vale no momento atual não muda nada. */
+export function proximoMomento(momento: Momento, evento: MomentoEvento): Momento {
+  switch (evento.type) {
+    case "ENTRAR":
+      return momento === "DECK" ? "PREPARACAO" : momento;
+    case "ENTREGUE":
+      return momento === "PREPARACAO" ? "ACAO" : momento;
+    case "FIM_ACAO":
+      return momento === "ACAO" ? "RESULTADO" : momento;
+    case "REABERTA":
+      return momento === "ACAO" ? "PREPARACAO" : momento;
+    case "REINICIAR":
+      return momentoInicial(evento.semDeck);
+  }
+}
+
+/** O que a pessoa faz com a carta (e com a tela) em algum momento da partida. */
+export type AcaoDeCarta =
+  | "ESCOLHER"
+  | "VESTIR"
+  | "TROCAR"
+  | "TIRAR"
+  | "AMPLIAR"
+  | "ENTREGAR"
+  | "ACIONAR"
+  | "CAMERA"
+  | "PULAR";
+
+/** Acionamento pela pessoa: um por jogo, no momento em que a tabela do desenho permite. */
+export type AcionamentoTipo = "ESPECIAL" | "ESPELHO" | "TROCA" | "RESPOSTA" | "MERCADO" | "CARTA" | "JOGADA" | "LANCE" | "EXECUCAO";
+
+export interface Acionamento {
+  tipo: AcionamentoTipo;
+  momento: Momento;
+}
+
+export const ACIONAMENTOS: Partial<Record<NucleoCodigo, Acionamento>> = {
+  // a luta lance a lance: em cada lance a pessoa joga uma carta da mão e a cor é o golpe
+  DRESS_FIGHTER: { tipo: "LANCE", momento: "ACAO" },
+  PERSONAGEM_FILME: { tipo: "RESPOSTA", momento: "PREPARACAO" },
+  LABIRINTO: { tipo: "ESPELHO", momento: "PREPARACAO" },
+  // a partida é jogada por cartas: cada jogada é uma carta da mão
+  FASHION_SPORTS: { tipo: "CARTA", momento: "ACAO" },
+  FASHION_DETECTIVE: { tipo: "MERCADO", momento: "ACAO" },
+  // a jogada de cena: depois do look avaliado, uma carta do deck fora do look dispara a ação da cor dela
+  PASSARELA: { tipo: "JOGADA", momento: "ACAO" },
+  DRESS_THE_STAR: { tipo: "JOGADA", momento: "ACAO" },
+  BOUTIQUE_3D: { tipo: "JOGADA", momento: "ACAO" },
+  AROUND_THE_WORLD: { tipo: "JOGADA", momento: "ACAO" },
+  // a sessão de fotos: a fotógrafa pede uma luz e a carta do guarda-roupa fora do look acende a cor dela
+  ROAD_TO_GLORY: { tipo: "JOGADA", momento: "ACAO" },
+};
+
+export function acionamentoDe(codigo: NucleoCodigo): Acionamento | null {
+  return ACIONAMENTOS[codigo] ?? null;
+}
+
+const PERMITIDO: Record<Momento, AcaoDeCarta[]> = {
+  DECK: ["ESCOLHER", "AMPLIAR"],
+  PREPARACAO: ["VESTIR", "TROCAR", "TIRAR", "AMPLIAR", "ENTREGAR", "CAMERA"],
+  ACAO: ["CAMERA", "PULAR"],
+  RESULTADO: ["CAMERA"],
+};
+
+/** A ação vale neste momento? "ACIONAR" só no momento do acionamento do jogo (e só nos jogos que têm um). */
+export function permitido(momento: Momento, acao: AcaoDeCarta, codigo?: NucleoCodigo): boolean {
+  if (acao === "ACIONAR") return !!codigo && acionamentoDe(codigo)?.momento === momento;
+  return PERMITIDO[momento].includes(acao);
+}
+
+const DO_COMANDO: Record<NucleoAcao, AcaoDeCarta> = {
+  NAVEGAR: "VESTIR",
+  TROCAR_ABA: "VESTIR",
+  VESTIR: "VESTIR",
+  TIRAR: "TIRAR",
+  GIRAR: "CAMERA",
+  ZOOM: "CAMERA",
+  POSAR: "CAMERA",
+  DESFILAR: "VESTIR",
+  ENTREGAR: "ENTREGAR",
+  VER_OBJETIVO: "CAMERA",
+};
+
+/** Comando do controle (teclado, toque, gamepad) aceito no momento: na ação e no resultado só câmera e objetivo. */
+export function comandoPermitido(momento: Momento, acao: NucleoAcao): boolean {
+  return permitido(momento, DO_COMANDO[acao]);
+}

@@ -1,18 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.hype.HypeScoreConfig;
-import br.com.fashionai.application.imaging.FlatLayPipeline;
-import br.com.fashionai.application.imaging.StudioPipeline;
-import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.ItemCondition;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.PhotoProcessingStatus;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
-import org.junit.jupiter.api.Test;
-
 import java.awt.image.BufferedImage;
 import java.lang.reflect.RecordComponent;
 import java.math.BigDecimal;
@@ -21,6 +8,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.hype.ClosetHype;
+import br.com.fashionai.application.hype.HypeScoreConfig;
+import br.com.fashionai.application.imaging.FlatLayPipeline;
+import br.com.fashionai.application.imaging.FlatLayRemoteStep;
+import br.com.fashionai.application.imaging.StudioPipeline;
+import br.com.fashionai.application.studio.PieceStudioHints;
+import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
+import br.com.fashionai.application.wardrobe.PieceCopy;
+import br.com.fashionai.application.wardrobe.PieceForm;
+import br.com.fashionai.application.wardrobe.PieceTaxonomyWriter;
+import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -155,22 +159,22 @@ class WardrobeCollaboratorsTest {
     void subcategoriaLegadaPreservaTodosOsOutrosCamposDoFormulario() throws Exception {
         TaxonomyRegistry reg = TaxonomyRegistry.get();
         var legacy = reg.legacySubcategories().stream().filter(l -> reg.resolve(l.code()) != null).findFirst().orElseThrow();
-        WardrobeService.PieceForm f = new WardrobeService.PieceForm(UUID.randomUUID(), true, "Peça", legacy.category(), legacy.code(),
+        PieceForm f = new PieceForm(UUID.randomUUID(), true, "Peça", legacy.category(), legacy.code(),
                 "UNISSEX", UUID.randomUUID(), "Marca", "white", "COTTON", "m", "SS26", List.of("casual"), List.of("basic"),
                 List.of("selo"), new BigDecimal("10"), Visibility.PUBLIC, List.of("tag"), "nota", ItemCondition.GOOD,
                 LocalDate.of(2026, 1, 2), "Loja", "SKU1", "Lavar à mão", true, false, "/logo.png", "WEB", "ref",
-                Map.of("aura", "x"), UUID.randomUUID(), null, Map.of(), List.of("name"), UUID.randomUUID(), true);
+                Map.of("aura", "x"), UUID.randomUUID(), null, Map.of(), List.of("name"), UUID.randomUUID(), true, UUID.randomUUID(),
+                UUID.randomUUID(), null, false);
 
-        WardrobeService.PieceForm r = PieceTaxonomyWriter.resolveLegacy(f);
+        PieceForm r = PieceTaxonomyWriter.resolveLegacy(f);
 
         assertThat(r).isNotSameAs(f);
         assertThat(r.subcategory()).isEqualTo(reg.resolve(legacy.code()).subcategory());
         Set<String> derivados = Set.of("subcategory", "material", "variation", "attributes");
-        for (RecordComponent c : WardrobeService.PieceForm.class.getRecordComponents()) {
+        for (RecordComponent c : PieceForm.class.getRecordComponents()) {
             if (!derivados.contains(c.getName())) {
                 assertThat(c.getAccessor().invoke(r)).as(c.getName()).isEqualTo(c.getAccessor().invoke(f));
             }
         }
-        assertThat(f.resolveTaxonomy()).isEqualTo(r);
     }
 }

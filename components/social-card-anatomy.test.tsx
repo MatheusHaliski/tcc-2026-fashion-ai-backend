@@ -8,13 +8,13 @@ import {CardFashionMeta} from './card-fashion-meta';
 afterEach(cleanup);
 const seals=[{label:'Marca',name:'Seleção oficial',owner:'marca',tier:'PECA'}];
 it('keeps garment awards and readable fashion facts outside the Hype tab',()=>{
- mockApi({});const {container}=renderApp(<PieceCard piece={PIECE} seals={seals} flip={false}/>);
+ mockApi({});const {container}=renderApp(<PieceCard piece={PIECE} seals={seals} allowFlip={false}/>);
  const media=container.querySelector<HTMLElement>('.pc-media')!;expect(media.style.aspectRatio).toBe('4 / 3');
  expect(container.querySelector('.card-seals')?.textContent).toContain('MAR');
  const meta=container.querySelector('.card-fashion-meta')!;
  expect([...meta.querySelectorAll('dt')].map(e=>e.textContent)).toEqual(['Marca','Cor','Ocasião','Estilo']);
  expect(meta.textContent).toContain('Nike');expect(meta.textContent).toContain('Casual');
- fireEvent.click(screen.getByRole('tab',{name:'Hype'}));expect(meta.closest('[role="tabpanel"]')).toBeNull();
+ fireEvent.click(screen.getByRole('tab',{name:/^Hype/}));expect(meta.closest('[role="tabpanel"]')).toBeNull();
  expect(meta.isConnected).toBe(true);expect(screen.getByTitle('Seleção oficial · @marca · PECA').isConnected).toBe(true);
 });
 it('shortens outfit posts without losing the full item list in expanded view',()=>{
@@ -27,7 +27,7 @@ it('shortens outfit posts without losing the full item list in expanded view',()
  expect(full.container.querySelector('.piece2, .piece-layout')).toBeTruthy();expect(full.container.textContent).toContain(PIECE_2.name);
 });
 it('never manufactures metadata or treats a sustainability attribute as an approved award',()=>{
- mockApi({});const {container}=renderApp(<PieceCard piece={{...PIECE,seals:['SUSTAINABLE'],style:[],occasion:[],brandName:null,color:''}} flip={false}/>);
+ mockApi({});const {container}=renderApp(<PieceCard piece={{...PIECE,seals:['SUSTAINABLE'],style:[],occasion:[],brandName:null,color:''}} allowFlip={false}/>);
  expect(container.querySelector('.card-seals')).toBeNull();
  expect(within(container.querySelector('.card-fashion-meta') as HTMLElement).getAllByText('—')).toHaveLength(4);
 });

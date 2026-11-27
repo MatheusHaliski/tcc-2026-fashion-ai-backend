@@ -26,4 +26,10 @@ public interface BrandRepository extends JpaRepository<Brand, UUID> {
     List<Brand> findTop20ByNameContainingIgnoreCaseOrderByName(String term);
 
     List<Brand> findAllByOrderByName();
+
+    /** Exercício 13: opções de marca do catálogo para a política do selo (até 50, por trecho do nome). */
+    List<Brand> findTop50ByNameContainingIgnoreCaseOrderByNameAsc(String term);
+
+    /** FLAIR 3D: a marca de uma carta FLAIR (que guarda só o nome), para saber o país. */
+    Optional<Brand> findFirstByNameIgnoreCase(String name);
 }

@@ -68,7 +68,7 @@ export function FittingItems({
             );
           }
           return (
-            <FittingSlotRow key={slot} item={item} slotName={slotNames[slot]} product={item.productId ? products[item.productId] : undefined} colors={colors}
+            <FittingSlotRow key={slot} item={item} slotName={item.wear === "FULL_BODY" ? t("tryOn.slot_peca_unica") : slotNames[slot]} product={item.productId ? products[item.productId] : undefined} colors={colors}
               ownedId={owned[item.key]} busyOwn={busyOwn === item.key} coveredBy={slot === "lower_piece" && fullBody ? fullBody.name : null}
               onVariantChange={onVariantChange} onOwn={onOwn} onRemove={() => onRemove(slot)} onPreview2d={onPreview2d} body={body} onSizeChange={onSizeChange} />
           );
@@ -101,7 +101,7 @@ function useFittingModel3d(item: FittingItem, ownedId: string | undefined, onOwn
     if (!pieceId || !st || st.status != null) return;
     if (st.featureEnabled === false) { setPaused(t("tryOn.m3d.desligado")); return; }
     // guardada pelo Provador (ownedId) conta como do guarda-roupa: antes só o item do menu pedia o 3D depois de guardar
-    const auto = (item.source === "wardrobe" || !!ownedId) && !AUTO_QUEUED.has(pieceId);
+    const auto = (item.source === "wardrobe" || !!ownedId) && !item.noPhoto && !AUTO_QUEUED.has(pieceId);
     if (!auto && !wantAfterOwn.current) return;
     wantAfterOwn.current = false;
     AUTO_QUEUED.set(pieceId, null);
@@ -157,7 +157,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
   ];
   return (
     <>
-      <PieceRowCompact kicker={slotName} thumb={item.imageUrl} glyph={SLOT_GLYPH[item.wear === "FULL_BODY" ? "dress" : item.slot]}
+      <PieceRowCompact kicker={slotName} thumb={item.thumbUrl ?? item.imageUrl} glyph={SLOT_GLYPH[item.wear === "FULL_BODY" ? "dress" : item.slot]}
         brand={item.brand ? { name: item.brand.name, logoUrl: item.brand.logoUrl } : null} showBrand
         source={{ label: t(catalog ? "tryOn.origem_loja" : "tryOn.origem_guarda_roupa"), tone: catalog ? "thread" : "chalk" }}
         name={`${item.name}${item.colorName ? ` — ${item.colorName}` : ""}`} href={href} external={!item.pieceId && !ownedId}
@@ -170,7 +170,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
           {m3d.pieceId && (m3d.progress.phase !== "none" || m3d.paused) && <Model3dStepBar progress={m3d.progress} paused={m3d.paused} idle={m3d.idle} canRetryFree={!!m3d.model.st?.canRetryFree} busy={m3d.model.busy}
             onRetry={() => void m3d.model.request()} />}
           {size && onSizeChange && (
-            <SizePicker grid={size.grid} options={size.options} chosen={item.size ?? null} natural={size.natural} fit={size.fit}
+            <SizePicker grid={size.grid} options={size.options} chosen={item.size ?? null} natural={size.natural} fit={size.fit} productId={item.productId ?? null}
               feedback={size.feedback} personalized={!!body?.personalized}
               label={t("size.tamanho_de", { name: item.name })} onPick={(label) => onSizeChange(item, label)} />
           )}
@@ -200,10 +200,10 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
 /** The wearable preview is immediate; a separately saved GLB is not its loading state. */
 function GarmentPreviewStatus({ item, photo, body }: { item: FittingItem; photo?: PhotoState; body: "carregando" | "pronto" | "erro" }) {
   const { t } = useI18n();
-  const state = photo ?? (!item.imageUrl && !item.processedUrl && !item.productId ? "sem-foto" : "carregando");
+  const state = item.noPhoto ? "sem-foto" : photo ?? (!item.imageUrl && !item.processedUrl && !item.productId ? "sem-foto" : "carregando");
   const label = body === "erro" ? t("tryOn.avatar_load_failed")
     : body === "carregando" && !photo ? t("tryOn.corpo_carregando")
-    : t(state === "ok" ? "tryOn.preview.ready" : state === "sem-foto" ? "tryOn.preview.colorOnly" : state === "falhou" ? "tryOn.preview.failed" : "tryOn.preview.loading");
+    : t(state === "ok" ? "tryOn.preview.ready" : state === "sem-foto" ? (item.noPhoto ? "tryOn.preview.noPhotoColor" : "tryOn.preview.colorOnly") : state === "falhou" ? "tryOn.preview.failed" : "tryOn.preview.loading");
   return <span className="fitting-slot-state" role="status" data-preview-photo={state}>
     <span>{label}</span>
     {(state === "falhou" || state === "sem-foto" && !!item.productId) && body === "pronto" && <Button size="sm" onClick={() => requestPhotoRetry(item.key)}>{t("tryOn.preview.retry")}</Button>}

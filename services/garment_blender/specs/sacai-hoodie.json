@@ -1,0 +1,22 @@
+{
+ "produto": "sacai x Carhartt WIP Cotton Jersey Hoodie",
+ "marca": "Carhartt WIP",
+ "url_oficial": "https://www.carhartt-wip.com/p/sacai-x-carhartt-wip-cotton-jersey-hoodie-sacai-ivory-122",
+ "subcategoria": "hoodie",
+ "tamanho": "M",
+ "sexo": "MASCULINO",
+ "caimento": "amplo",
+ "tecido": {
+  "tipo": "moletom",
+  "cor": "#e1d4c6",
+  "gramatura": 380
+ },
+ "gola": "capuz",
+ "fechamento": "ziper_inteiro",
+ "cor_ziper": "#c9a24a",
+ "bolsos": [
+  "canguru"
+ ],
+ "ribana": true,
+ "observacao": "cor: mediana da foto de entrada (lote meshy-2026-11-19-pose-t); zíper dourado e bolso canguru dividido como na foto"
+}

@@ -26,7 +26,7 @@ export function PassportPublic({ token }: { token: string }) {
         {data.care != null && <p className={styles.details}><strong>{t('passport.care')}: </strong>{data.care}</p>}
         <p className={styles.note}>{t('passport.expires')}: {fmtDate(data.expiresAt)}</p>
       </section>
-      {data.events && <section className={styles.panel}><h2>{t('passport.history')}</h2><ol className={styles.timeline}>{data.events.map((event, index) => <li key={`${event.kind}-${event.occurredOn}-${index}`}><strong>{t(`passport.event.${event.kind}`)}</strong><p>{fmtDate(event.occurredOn)}</p><small>{t('passport.declared')}</small></li>)}</ol></section>}
+      {data.events && <section className={styles.panel}><h2>{t('passport.history')}</h2><ol className={styles.timeline}>{data.events.map((event, index) => <li key={`${event.kind}-${event.occurredOn}-${index}`}><strong>{t(`passport.event.${event.kind}`)}</strong><p>{fmtDate(event.occurredOn)}</p><small>{t(event.provenance === 'SYSTEM_RECORDED' ? 'passport.systemRecorded' : 'passport.declared')}</small></li>)}</ol></section>}
     </>}
   </main>;
 }

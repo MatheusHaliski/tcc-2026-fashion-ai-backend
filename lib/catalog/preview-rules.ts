@@ -42,7 +42,14 @@ export function hasUsableCatalogPreview(product: PreviewContext) {
   if (image?.photoSet && !["READY", "DEFAULT"].includes(image.photoSet.status)) return false;
   return matchesVariant(product) && matchesPhotoContext(product) && !!image?.url && (image.mode === "DEFAULT" || image.mode === "PROCESSED" || (image?.mode === "SEMANTIC_CROP" && !!image.crop));
 }
+/**
+ * Flat lay aprovado da GPU própria (FLAT_LAY_V1): a foto final já vem pronta na listagem. Pedir a prévia de novo trocava
+ * o card por outra resposta (ou por uma prévia guardada antiga) sem o Total frame, e o asset padrão voltava.
+ */
+export const hasFlatLay = (product: PreviewContext) =>
+  product.catalogImage?.whole?.version === "FLAT_LAY_V1" && !!product.catalogImage.whole.url;
 export function hasCachedPreview(product: PreviewContext) {
+  if (hasFlatLay(product)) return true;
   const state = product.catalogImage?.previewCache;
   if(product.catalogImage?.photoSet?.version === "CATALOG_PHOTO_SET_V2" && ["READY","DEFAULT"].includes(product.catalogImage.photoSet.status)) return hasUsableCatalogPreview(product);
   return hasUsableCatalogPreview(product) && state?.version === "CATALOG_PREVIEW_FRAMES_V2" && state.status === "READY";

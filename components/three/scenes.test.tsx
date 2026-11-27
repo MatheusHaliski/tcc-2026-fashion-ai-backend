@@ -35,6 +35,7 @@ import LookViewer from "./look-viewer";
 import FittingRoomScene from "./fitting-room-scene";
 import { posedStops } from "./fitting-camera";
 import AvatarViewer from "./avatar-viewer";
+import { MIRROR_BOOTH } from "./mirror-booth";
 import { CapsuleMannequin, Mannequin, bodyParamsOf, mannequinSex } from "./mannequin";
 import { outfitOf } from "./human-outfit";
 import { SKIN, rng, type Look3d, type Look3dPiece, type Mannequin3d } from "./common";
@@ -283,4 +284,23 @@ describe("cenas 3D", () => {
       await r.unmount();
     }
   });
+
+  it("espelho: o reflexo fica dentro da cabine do Provador — parede do fundo, tapete e luz da prova, a parede do espelho fora de cena", async () => {
+    await serveBodyAsset();
+    const r = await mount3d(<><AvatarViewer avatar={null} sex="FEMININO" skinTone="media" framing="full" view="front" pieces={PIECES.slice(0, 3)} controls={false} still booth /><CameraProbe /></>);
+    await frames(r, 3);
+    const scene = r.scene.instance, byName = (n: string) => scene.getObjectByName(n);
+    for (const n of ["conceptual-fitting-studio", "studio-back-wall", "studio-rug", "studio-bench-and-hangers", "studio-identity-neutral"]) expect(byName(n), n).toBeTruthy();
+    expect(byName("studio-back-wall")!.visible).toBe(true);
+    expect(byName("studio-front-wall")!.visible).toBe(false);                     // é a parede do espelho, do lado da câmera
+    expect(byName("studio-rug")!.visible).toBe(true);
+    expect((scene.background as THREE.Color).getHexString()).toBe(MIRROR_BOOTH.palette.wall.slice(1).toLowerCase());
+    // a luz é a do provador (spot com sombra no tapete), não a de retrato: o avatar pisa no chão da cabine
+    expect(scene.children.some((o) => (o as THREE.SpotLight).isSpotLight && o.castShadow)).toBe(true);
+    // a câmera fica na altura do peito, olhando de leve para baixo: corpo inteiro e a placa acima da cabeça
+    const cam = probe.camera!;
+    expect(cam.position.z).toBeGreaterThan(4);
+    expect(new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion).y).toBeLessThan(0);
+    await r.unmount();
+  }, 20000);
 });

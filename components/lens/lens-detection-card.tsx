@@ -11,6 +11,7 @@ import { Button, cn, useToast } from "@/components/ui";
 import { useLens, useLensReading } from "./lens-context";
 import { LensCardBack, LensCrop, LensFitTrend, LensFlipButton, LensMetric, LensPortal, LensSwatch } from "./lens-parts";
 import { LensCorrectButton, LensOwnDialog } from "./lens-correct";
+import { LensCategoryPick } from "./lens-category-pick";
 
 /** Nome do padrão lido (PatternAnalyzer) no idioma corrente. */
 export function usePatternLabel() {
@@ -87,6 +88,7 @@ export function LensDetectionCard({ detection, index, total }: { detection: Lens
           <div className="lens-det-body">
             <p className="lens-det-n">{t("lens.detection.n", { n: index + 1 })}{detection.status === "CORRECTED" && <span className="badge badge-thread">{t("lens.status.corrected")}</span>}</p>
             <h3 className="lens-det-title">{detection.label}</h3>
+            {!detection.category && <LensCategoryPick detection={detection} />}
             <p className="lens-det-meta">
               {color && <LensSwatch hex={color.hex} name={label(color.name)} />}
               {sub && <span>{sub}</span>}

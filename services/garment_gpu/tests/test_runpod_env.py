@@ -103,3 +103,32 @@ def test_falha_de_configuracao_sai_com_codigo_2_sem_gravar(tmp_path):
          "--redis-conf", str(tmp_path / "redis.conf")],
         env={"PYTHONPATH": os.getcwd(), "PATH": "/usr/bin:/bin"}, capture_output=True, text=True)
     assert proc.returncode == 2 and "REDIS_PASSWORD" in proc.stderr and not out.exists()
+
+
+def fake_weights(folder, megabytes):
+    blob = folder / runpod_env.QWEN_CACHE / "blobs"
+    blob.mkdir(parents=True)
+    (blob / "transformer.safetensors").write_bytes(b"x" * megabytes * 1024)
+
+
+def test_pesos_ficam_na_pasta_do_volume_que_ja_tem_mais_do_qwen(tmp_path):
+    ws = str(tmp_path)
+    fake_weights(tmp_path / ".cache" / "huggingface", 56)     # baixados pelo primeiro pod (HF_HOME da imagem)
+    fake_weights(tmp_path / "hf", 18)                          # download pela metade de outra tentativa
+    assert runpod_env.pick_hf_home({}, ws) == f"{ws}/.cache/huggingface"
+    assert runpod_env.pick_hf_home({"HF_HOME": f"{ws}/hf"}, ws) == f"{ws}/.cache/huggingface"
+    assert runpod_env.pick_hf_home({"FAI_HF_HOME": f"{ws}/outra/"}, ws) == f"{ws}/outra"   # pedido explícito vence
+
+
+def test_volume_sem_pesos_usa_o_hf_home_da_imagem_so_se_estiver_no_volume(tmp_path):
+    ws = str(tmp_path)
+    assert runpod_env.pick_hf_home({"HF_HOME": f"{ws}/.cache/huggingface/"}, ws) == f"{ws}/.cache/huggingface"
+    assert runpod_env.pick_hf_home({"HF_HOME": "/root/.cache/huggingface"}, ws) == f"{ws}/hf"   # disco do contêiner
+    assert runpod_env.pick_hf_home({}, ws) == f"{ws}/hf"
+
+
+def test_hf_home_do_ambiente_nao_passa_por_cima_da_escolha(tmp_path):
+    ws = str(tmp_path)
+    fake_weights(tmp_path / ".cache" / "huggingface", 4)
+    values = runpod_env.build(pod_env(HF_HOME=f"{ws}/hf", HF_HUB_ENABLE_HF_TRANSFER="1"), workspace=ws)
+    assert values["HF_HOME"] == f"{ws}/.cache/huggingface" and values["HF_HUB_ENABLE_HF_TRANSFER"] == "1"

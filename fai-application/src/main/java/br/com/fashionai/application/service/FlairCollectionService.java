@@ -217,7 +217,7 @@ public class FlairCollectionService {
     }
 
     /** Estilos, ocasiões, cor e material da peça (requisitos e sintonia dos Desafios de Montagem, FLAIR-UT §14.5). */
-    static Map<String, Object> tagsOf(WardrobeItem w) {
+    public static Map<String, Object> tagsOf(WardrobeItem w) {
         Map<String, Object> t = new LinkedHashMap<>();
         t.put("styles", w == null ? List.of() : Json.csv(w.getStyleTags()));
         t.put("occasions", w == null ? List.of() : Json.csv(w.getOccasionTags()));

@@ -1,25 +1,28 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.*;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.events.DomainEvents;
-import br.com.fashionai.application.hype.*;
-import br.com.fashionai.application.security.*;
-import br.com.fashionai.domain.model.*;
-import br.com.fashionai.domain.model.enums.*;
-import br.com.fashionai.domain.repository.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.context.ApplicationEventPublisher;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Supplier;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationEventPublisher;
+
+import br.com.fashionai.application.ai.*;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.OwnMedia;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.hype.*;
+import br.com.fashionai.application.seal.SealPolicies;
+import br.com.fashionai.application.security.*;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;

@@ -1,39 +1,23 @@
 package br.com.fashionai.application.catalog;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.WardrobeService;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.application.testkit.MemoryRepository;
 import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.Brand;
-import br.com.fashionai.domain.model.BrandAlias;
-import br.com.fashionai.domain.model.CatalogProduct;
-import br.com.fashionai.domain.model.CatalogImage;
-import br.com.fashionai.domain.model.CatalogSource;
-import br.com.fashionai.domain.model.CatalogVariant;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.BrandSource;
-import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
-import br.com.fashionai.domain.model.enums.CatalogImageUsage;
-import br.com.fashionai.domain.model.enums.CatalogImageType;
-import br.com.fashionai.domain.model.enums.CatalogSourceType;
-import br.com.fashionai.domain.repository.BrandAliasRepository;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.CatalogProductRepository;
-import br.com.fashionai.domain.repository.CatalogImageRepository;
-import br.com.fashionai.domain.repository.CatalogSourceRepository;
-import br.com.fashionai.domain.repository.CatalogVariantRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static br.com.fashionai.application.testkit.World.map;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -268,13 +252,13 @@ class CatalogServiceTest {
         assertThat(CatalogService.sizeOf("40", "lower_piece")).isEqualTo("br_40");
         assertThat(CatalogService.sizeOf("br_38", "lower_piece")).isEqualTo("br_38");
         assertThat(CatalogService.sizeOf("gigante", "lower_piece")).isEqualTo("m");
-        org.mockito.ArgumentCaptor<WardrobeService.PieceForm> form = org.mockito.ArgumentCaptor.forClass(WardrobeService.PieceForm.class);
+        org.mockito.ArgumentCaptor<br.com.fashionai.application.wardrobe.PieceForm> form = org.mockito.ArgumentCaptor.forClass(br.com.fashionai.application.wardrobe.PieceForm.class);
         CatalogProduct p = MemoryRepository.<CatalogProduct>rows(kit.dep(CatalogProductRepository.class)).get(0);
         WardrobeService wardrobe = kit.dep(WardrobeService.class);
         when(wardrobe.createFromCatalog(any(), form.capture(), any())).thenReturn(Views.piece(Kit.piece(user, "x", "shoes_piece", "casual_sneakers", "white"), null, null));
         catalog.addToWardrobe(ana, new CatalogService.AddRequest(p.getId(), null, null, null, null, null, null, null, null, null,
                 br.com.fashionai.domain.model.enums.Visibility.PRIVATE, null, null, null, null, null, null, null));
-        WardrobeService.PieceForm f = form.getValue();
+        br.com.fashionai.application.wardrobe.PieceForm f = form.getValue();
         assertThat(br.com.fashionai.application.taxonomy.Taxonomy.pieceErrors(f.category(), f.subcategory(), f.sex(), f.color(),
                 f.material(), f.size(), f.occasion(), f.style())).doesNotContainKey("size");
     }
@@ -366,7 +350,7 @@ class CatalogServiceTest {
         UUID alternateId=alternate.getId();
         assertThatThrownBy(()->catalog.product(p.getId(),alternateId,canonical.getId())).isInstanceOf(ApiException.class);
         assertThat(canonical.isCanonical()).isTrue();assertThat(selected.isCanonical()).isFalse();
-        org.mockito.ArgumentCaptor<WardrobeService.CatalogPick> picked=org.mockito.ArgumentCaptor.forClass(WardrobeService.CatalogPick.class);
+        org.mockito.ArgumentCaptor<br.com.fashionai.application.catalog.CatalogPick> picked=org.mockito.ArgumentCaptor.forClass(br.com.fashionai.application.catalog.CatalogPick.class);
         when(kit.dep(WardrobeService.class).createFromCatalog(any(),any(),picked.capture()))
                 .thenReturn(Views.piece(Kit.piece(user,"Red product",p.getCategory(),p.getSubcategory(),"red"),null,null));
         catalog.addToWardrobe(ana,new CatalogService.AddRequest(p.getId(),alternateId,null,null,null,null,null,null,null,null,

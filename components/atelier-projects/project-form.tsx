@@ -4,7 +4,7 @@ import { useI18n } from '@/lib/i18n/i18n';
 import { SPEC_FIELDS, type ProjectDraft, type ProjectVisibility, type Specification } from './contracts';
 import styles from './atelier-projects.module.css';
 
-export function ProjectForm({ draft, onChange, disabled = false }: { draft: ProjectDraft; onChange: (draft: ProjectDraft) => void; disabled?: boolean }) {
+export function ProjectForm({ draft, onChange, disabled = false, rightsMissing = false }: { draft: ProjectDraft; onChange: (draft: ProjectDraft) => void; disabled?: boolean; rightsMissing?: boolean }) {
   const { t } = useI18n();
   function spec<K extends keyof Specification>(key: K, value: Specification[K]) { onChange({ ...draft, specification: { ...draft.specification, [key]: value } }); }
   return <fieldset disabled={disabled} className={styles.stack}>
@@ -24,6 +24,17 @@ export function ProjectForm({ draft, onChange, disabled = false }: { draft: Proj
       <Button type="button" onClick={() => spec('measurements', draft.specification.measurements.filter((_, i) => i !== index))}>{t('atelierProjects.remove')}</Button>
     </div>)}
     <div><Button type="button" disabled={draft.specification.measurements.length >= 40} onClick={() => spec('measurements', [...draft.specification.measurements, { point: '', protocol: '', centimeters: 0 }])}>{t('atelierProjects.addMeasurement')}</Button></div>
-    <label className={styles.check}><input type="checkbox" required checked={draft.rightsAccepted} onChange={e => onChange({ ...draft, rightsAccepted: e.target.checked })}/><span>{t('atelierProjects.rights')}</span></label>
+    <label className={styles.check}>
+      <input
+        id="project-rights"
+        type="checkbox"
+        checked={draft.rightsAccepted}
+        aria-invalid={rightsMissing && !draft.rightsAccepted ? true : undefined}
+        aria-describedby={rightsMissing && !draft.rightsAccepted ? 'project-rights-error' : undefined}
+        onChange={e => onChange({ ...draft, rightsAccepted: e.target.checked })}
+      />
+      <span>{t('atelierProjects.rights')}</span>
+    </label>
+    {rightsMissing && !draft.rightsAccepted && <p id="project-rights-error" role="alert" className="error-text">{t('atelierProjects.rightsMissing')}</p>}
   </fieldset>;
 }

@@ -17,11 +17,11 @@ async function shell(prefs: unknown) {
 }
 
 describe("menu lateral na ordem da pessoa", () => {
-  it("aplica a ordem vinda do perfil: Guarda-roupa primeiro e Meu Quarto no topo do grupo", async () => {
-    await shell({ navOrder: { groups: ["nav.group.wardrobe"], items: { "nav.group.wardrobe": ["/room"] } } });
+  it("aplica a ordem vinda do perfil: Guarda-roupa primeiro e Espelho no topo do grupo", async () => {
+    await shell({ navOrder: { groups: ["nav.group.wardrobe"], items: { "nav.group.wardrobe": ["/mirror"] } } });
     await waitFor(() => expect(groupTitles()[0]).toBe("Guarda-roupa"));
     expect(groupTitles()[1]).toBe("Descobrir");
-    expect(wardrobeLinks()[0]).toBe("/room");
+    expect(wardrobeLinks()[0]).toBe("/mirror");
     expect(wardrobeLinks()).toContain("/closet");                // o que a ordem salva não cita continua no menu
   });
 

@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Field, Input, Select } from "@/components/ui";
 import type { GenderEvidence } from "./contracts";
 import styles from "./editor.module.css";
+import { lookTypeName } from "@/lib/api/look-type";
 export function GenderPanel({
   ids,
   onSources,
@@ -118,7 +119,7 @@ export function GenderPanel({
           <option value="">{t("atelier3d.gender.confirm")}</option>
           {evidence?.options.map((o) => (
             <option key={o.id} value={o.id}>
-              {o.nome}
+              {lookTypeName(o, t)}
             </option>
           ))}
         </Select>

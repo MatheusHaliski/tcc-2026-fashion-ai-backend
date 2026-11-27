@@ -8,7 +8,6 @@ import { FaiIcon } from "@/components/fai-icon";
 import { PieceCard } from "@/components/piece-card";
 import { SealMedallion } from "@/components/seal-medallion";
 import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
-import { CbcSceneArt } from "@/components/flair/cbc-scene";
 import { FlairHubIcon } from "@/components/flair/hub-icons";
 import type { HubModeId } from "@/lib/flair/hub";
 
@@ -21,6 +20,7 @@ import type { HubModeId } from "@/lib/flair/hub";
 import { demoPiece, demoCard, DEMO_SCHEME_SEAL, DEMO_HYPE, DEMO_BRAND, POINTS_NAME, DEMO_PIECE_NAME_2 } from "./demo-data";
 export { demoPiece, demoCard, DEMO_SCHEME_SEAL } from "./demo-data";
 import { FeedGuideDemo } from "./feed-guide-demo";
+import { CbcDemo } from "./cbc-guide-demo";
 
 export function GuideDemo({ demo }: { demo: DemoId }) {
   useEffect(() => { primeHype("PIECE", DEMO_HYPE); }, []);
@@ -39,7 +39,6 @@ export function GuideDemo({ demo }: { demo: DemoId }) {
     case "brandVisitor": return <BrandDemo operator={false} />;
     case "brandOperator": return <BrandDemo operator />;
     case "points": return <PointsDemo />;
-    case "shop": return <ShopDemo />;
     case "pointsEarn": return <PointsEarnDemo />;
     case "highlights": return <HighlightsDemo />;
     case "flairMatch": return <FlairMatchDemo />;
@@ -121,7 +120,7 @@ function FlairCardsDemo() {
   const { t } = useI18n();
   return (
     <div className="gd-convert">
-      <div className="gd-card-frame"><PieceCard piece={demoPiece()} flip={false} /></div>
+      <div className="gd-card-frame"><PieceCard piece={demoPiece()} allowFlip={false} /></div>
       <div className="gd-convert-arrow" aria-hidden><span className="btn btn-sm">{t("flairCollection.convert")}</span><span className="gd-arrow">→</span></div>
       <div className="gd-anim-show"><FlairGameCard card={demoCard()} size="sm" flip={false} /></div>
     </div>
@@ -179,25 +178,6 @@ function FlairQuestsDemo() {
   );
 }
 
-function CbcDemo() {
-  const { t } = useI18n();
-  return (
-    <div className="gd-cbc">
-      <div className="gd-mosaic">
-        <CbcSceneArt scenario="primavera" />
-        <div className="gd-tiles" aria-hidden>
-          <i className="gd-tile-cover is-filled" /><i className="gd-tile-cover gd-anim-reveal" /><i className="gd-tile-cover" /><i className="gd-tile-cover" />
-        </div>
-        <span className="gd-req">{t("guide.demo.cbc.requirement")}</span>
-      </div>
-      <div className="gd-cbc-bank">
-        <div className="gd-anim-fly"><FlairGameCard card={demoCard({ tier: "PRATA", ovr: 70 })} size="sm" flip={false} /></div>
-        <span className="type-caption">{t("guide.demo.cbc.bank")}</span>
-      </div>
-    </div>
-  );
-}
-
 function CalendarDemo() {
   const { t } = useI18n();
   const days = Array.from({ length: 28 }, (_, i) => i + 1);
@@ -241,8 +221,8 @@ function SchemeSealDemo() {
   const { t } = useI18n();
   return (
     <div className="gd-compare">
-      <figure><div className="gd-card-frame"><PieceCard piece={demoPiece()} flip={false} /></div><figcaption>{t("guide.demo.seal.without")}</figcaption></figure>
-      <figure><div className="gd-card-frame"><PieceCard piece={demoPiece()} flip={false} seals={[DEMO_SCHEME_SEAL]} /></div><figcaption>{t("guide.demo.seal.with")}</figcaption></figure>
+      <figure><div className="gd-card-frame"><PieceCard piece={demoPiece()} allowFlip={false} /></div><figcaption>{t("guide.demo.seal.without")}</figcaption></figure>
+      <figure><div className="gd-card-frame"><PieceCard piece={demoPiece()} allowFlip={false} seals={[DEMO_SCHEME_SEAL]} /></div><figcaption>{t("guide.demo.seal.with")}</figcaption></figure>
     </div>
   );
 }
@@ -365,15 +345,3 @@ function PointsDemo() {
   );
 }
 
-function ShopDemo() {
-  const { t } = useI18n();
-  return (
-    <div className="gd-shop">
-      <div className="gd-shop-step surface"><b>{t("guide.demo.shop.item")}</b><span className="gd-price"><FaiIcon id="ACT-40" size={20} decorative /> <b className="tabular">180</b></span><span className="type-caption">{t("guide.demo.shop.requirement")}</span></div>
-      <span className="gd-arrow" aria-hidden>→</span>
-      <div className="gd-shop-step surface gd-anim-show"><b>{t("guide.demo.shop.confirm")}</b><span className="type-caption">{t("guide.demo.shop.effect")}</span></div>
-      <span className="gd-arrow" aria-hidden>→</span>
-      <div className="gd-shop-step surface gd-anim-show2"><b>{t("guide.demo.shop.delivered")}</b><span className="type-caption">{t("guide.demo.shop.balance")}</span></div>
-    </div>
-  );
-}

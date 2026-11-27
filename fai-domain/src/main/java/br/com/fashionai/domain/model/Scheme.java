@@ -42,6 +42,16 @@ public class Scheme extends VersionedAuditableEntity {
     @JoinColumn(name = "tipo_look_id")
     private TipoLook tipoLook;
 
+    /** Coleção do look (FK para a tabela colecao). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "colecao_id")
+    private Colecao colecao;
+
+    /** Intensidade térmica do look (FK para a tabela intensidade_termica). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "intensidade_termica_id")
+    private IntensidadeTermica intensidadeTermica;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -123,6 +133,11 @@ public class Scheme extends VersionedAuditableEntity {
 
     @Column(name = "card_skin", length = 20)
     private String cardSkin = "atelier";
+
+    /** Nível térmico do look (tabela niveis_termicos); opcional: look sem nível fica nulo. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nivel_termico_id")
+    private NivelTermico nivelTermico;
 
     @Column(name = "layout_anatomy", length = 40)
     private String layoutAnatomy = "LISTA_VERTICAL";

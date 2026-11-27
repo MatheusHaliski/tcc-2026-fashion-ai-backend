@@ -41,6 +41,9 @@
   gap: 0.4rem;
 }
 .tree button {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
   text-align: start;
   overflow-wrap: anywhere;
 }
@@ -95,4 +98,23 @@
   .inspector {
     max-height: none;
   }
+}
+
+/* Controles nativos do editor no visual do app: marcadores na cor da tinta e botão de arquivo como os demais botões. */
+.check input[type="radio"],
+.check input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--ink);
+}
+.toolbar input[type="file"]::file-selector-button {
+  margin-inline-end: 0.6rem;
+  padding: 0.35rem 0.9rem;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }

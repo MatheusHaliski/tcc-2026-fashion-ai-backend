@@ -1,5 +1,6 @@
 package br.com.fashionai.web.controller;
 
+import br.com.fashionai.application.view.PieceReferenceViews;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.repository.TipoLookRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +19,6 @@ public class TipoLookController {
     @Transactional(readOnly = true)
     @Operation(summary = "Defesa — Opções do campo Tipo de look, obtidas da tabela TipoLook")
     public List<Views.TipoLookView> tiposLook() {
-        return tipos.findAllByOrderByNomeAsc().stream().map(Views::tipoLook).toList();
+        return tipos.findAllByOrderByNomeAsc().stream().map(PieceReferenceViews::tipoLook).toList();
     }
 }

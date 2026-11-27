@@ -1,0 +1,1192 @@
+{
+  "blender": "4.3.2",
+  "source": "Local generated/editor-exported fixtures; not production garments",
+  "files": [
+    {
+      "filename": "export-skirt.glb",
+      "bytes": 12296,
+      "sha256": "f202e8ec20ac7da93f158e38e0ca2153e5e9a727428af7a14b759e1fb5bfb513",
+      "source_unchanged": true,
+      "static": true,
+      "mesh_objects": 2,
+      "triangles": 288,
+      "meshes": [
+        {
+          "name": "Skirt",
+          "dimensions_file_units": [
+            1.0399999618530273,
+            0.7799999713897705,
+            0.6499999761581421
+          ],
+          "triangles": 192,
+          "topology_imported": {
+            "vertices": 147,
+            "edges": 338,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 100,
+            "nonmanifold_edges_including_boundaries": 100,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 144,
+            "edges": 336,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0",
+              "base_color_linear_rgba": [
+                0.4019777774810791,
+                0.05780543014407158,
+                0.01599629409611225,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Waistband",
+          "dimensions_file_units": [
+            0.5600000023841858,
+            0.42000001668930054,
+            0.050000011920928955
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_1",
+              "base_color_linear_rgba": [
+                0.4019777774810791,
+                0.05780543014407158,
+                0.01599629409611225,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        }
+      ]
+    },
+    {
+      "filename": "export-tee.glb",
+      "bytes": 24520,
+      "sha256": "604db95cfb185787477642d5f5b199ed77d41f6b51c354121464a15a2aeeff53",
+      "source_unchanged": true,
+      "static": true,
+      "mesh_objects": 4,
+      "triangles": 576,
+      "meshes": [
+        {
+          "name": "Body",
+          "dimensions_file_units": [
+            0.5799999833106995,
+            0.3190000057220459,
+            0.7599999904632568
+          ],
+          "triangles": 288,
+          "topology_imported": {
+            "vertices": 196,
+            "edges": 483,
+            "faces": 288,
+            "components": 1,
+            "boundary_edges": 102,
+            "nonmanifold_edges_including_boundaries": 102,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 192,
+            "edges": 480,
+            "faces": 288,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.001",
+              "base_color_linear_rgba": [
+                0.021219009533524513,
+                0.13563333451747894,
+                0.41788506507873535,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Sleeve_left",
+          "dimensions_file_units": [
+            0.29999998211860657,
+            0.2549999952316284,
+            0.29999998211860657
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_1.001",
+              "base_color_linear_rgba": [
+                0.021219009533524513,
+                0.13563333451747894,
+                0.41788506507873535,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Sleeve_right",
+          "dimensions_file_units": [
+            0.29999998211860657,
+            0.2549999952316284,
+            0.29999998211860657
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_2",
+              "base_color_linear_rgba": [
+                0.021219009533524513,
+                0.13563333451747894,
+                0.41788506507873535,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Neck_opening",
+          "dimensions_file_units": [
+            0.30000001192092896,
+            0.16500000655651093,
+            0.02499997615814209
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_3",
+              "base_color_linear_rgba": [
+                0.021219009533524513,
+                0.13563333451747894,
+                0.41788506507873535,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        }
+      ]
+    },
+    {
+      "filename": "export-trousers.glb",
+      "bytes": 24396,
+      "sha256": "35325b203a7393caef354020d70e0e69f71c32910a02c19bfed56ece0f6531b8",
+      "source_unchanged": true,
+      "static": true,
+      "mesh_objects": 4,
+      "triangles": 576,
+      "meshes": [
+        {
+          "name": "Waist",
+          "dimensions_file_units": [
+            0.6800000071525574,
+            0.40799999237060547,
+            0.22999995946884155
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.002",
+              "base_color_linear_rgba": [
+                0.022173885256052017,
+                0.0423114113509655,
+                0.09758734703063965,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Leg_left",
+          "dimensions_file_units": [
+            0.3400000035762787,
+            0.3059999942779541,
+            0.8600000143051147
+          ],
+          "triangles": 192,
+          "topology_imported": {
+            "vertices": 147,
+            "edges": 338,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 100,
+            "nonmanifold_edges_including_boundaries": 100,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 144,
+            "edges": 336,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_1.002",
+              "base_color_linear_rgba": [
+                0.022173885256052017,
+                0.0423114113509655,
+                0.09758734703063965,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Leg_right",
+          "dimensions_file_units": [
+            0.3400000035762787,
+            0.3059999942779541,
+            0.8600000143051147
+          ],
+          "triangles": 192,
+          "topology_imported": {
+            "vertices": 147,
+            "edges": 338,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 100,
+            "nonmanifold_edges_including_boundaries": 100,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 144,
+            "edges": 336,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_2.001",
+              "base_color_linear_rgba": [
+                0.022173885256052017,
+                0.0423114113509655,
+                0.09758734703063965,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Waistband",
+          "dimensions_file_units": [
+            0.6800000071525574,
+            0.40799999237060547,
+            0.05000007152557373
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_3.001",
+              "base_color_linear_rgba": [
+                0.022173885256052017,
+                0.0423114113509655,
+                0.09758734703063965,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        }
+      ]
+    },
+    {
+      "filename": "fai-skirt-prototype.glb",
+      "bytes": 12004,
+      "sha256": "5f216794d6f740817edc67e6047ca436ec46fa050726d3621f7bf74609cd96da",
+      "source_unchanged": true,
+      "static": true,
+      "mesh_objects": 2,
+      "triangles": 288,
+      "meshes": [
+        {
+          "name": "Skirt",
+          "dimensions_file_units": [
+            1.0399999618530273,
+            0.7799999713897705,
+            0.6499999761581421
+          ],
+          "triangles": 192,
+          "topology_imported": {
+            "vertices": 147,
+            "edges": 338,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 100,
+            "nonmanifold_edges_including_boundaries": 100,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 144,
+            "edges": 336,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.003",
+              "base_color_linear_rgba": [
+                0.4019777774810791,
+                0.05780543014407158,
+                0.01599629409611225,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Waistband",
+          "dimensions_file_units": [
+            0.5600000023841858,
+            0.42000001668930054,
+            0.050000011920928955
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.003",
+              "base_color_linear_rgba": [
+                0.4019777774810791,
+                0.05780543014407158,
+                0.01599629409611225,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        }
+      ]
+    },
+    {
+      "filename": "fai-tee-prototype.glb",
+      "bytes": 23824,
+      "sha256": "f31cbf26643c24634556d8c3786fcb7a6f20a6cace8da71f40921554eeae38a2",
+      "source_unchanged": true,
+      "static": true,
+      "mesh_objects": 4,
+      "triangles": 576,
+      "meshes": [
+        {
+          "name": "Body",
+          "dimensions_file_units": [
+            0.6800000071525574,
+            0.37400001287460327,
+            0.7599999904632568
+          ],
+          "triangles": 288,
+          "topology_imported": {
+            "vertices": 196,
+            "edges": 483,
+            "faces": 288,
+            "components": 1,
+            "boundary_edges": 102,
+            "nonmanifold_edges_including_boundaries": 102,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 192,
+            "edges": 480,
+            "faces": 288,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.004",
+              "base_color_linear_rgba": [
+                0.021219009533524513,
+                0.13563333451747894,
+                0.41788506507873535,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Sleeve left",
+          "dimensions_file_units": [
+            0.29999998211860657,
+            0.2549999952316284,
+            0.29999998211860657
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.004",
+              "base_color_linear_rgba": [
+                0.021219009533524513,
+                0.13563333451747894,
+                0.41788506507873535,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Sleeve right",
+          "dimensions_file_units": [
+            0.29999998211860657,
+            0.2549999952316284,
+            0.29999998211860657
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.004",
+              "base_color_linear_rgba": [
+                0.021219009533524513,
+                0.13563333451747894,
+                0.41788506507873535,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Neck opening",
+          "dimensions_file_units": [
+            0.30000001192092896,
+            0.16500000655651093,
+            0.02499997615814209
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.004",
+              "base_color_linear_rgba": [
+                0.021219009533524513,
+                0.13563333451747894,
+                0.41788506507873535,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        }
+      ]
+    },
+    {
+      "filename": "fai-trousers-prototype.glb",
+      "bytes": 23704,
+      "sha256": "66bcbbf19c352fc13dc62a9b6078e77050d12fdbd4db2e9cf5ddfc76a5a11ef9",
+      "source_unchanged": true,
+      "static": true,
+      "mesh_objects": 4,
+      "triangles": 576,
+      "meshes": [
+        {
+          "name": "Waist",
+          "dimensions_file_units": [
+            0.6800000071525574,
+            0.40799999237060547,
+            0.22999995946884155
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.005",
+              "base_color_linear_rgba": [
+                0.022173885256052017,
+                0.0423114113509655,
+                0.09758734703063965,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Leg left",
+          "dimensions_file_units": [
+            0.3400000035762787,
+            0.3059999942779541,
+            0.8600000143051147
+          ],
+          "triangles": 192,
+          "topology_imported": {
+            "vertices": 147,
+            "edges": 338,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 100,
+            "nonmanifold_edges_including_boundaries": 100,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 144,
+            "edges": 336,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.005",
+              "base_color_linear_rgba": [
+                0.022173885256052017,
+                0.0423114113509655,
+                0.09758734703063965,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Leg right",
+          "dimensions_file_units": [
+            0.3400000035762787,
+            0.3059999942779541,
+            0.8600000143051147
+          ],
+          "triangles": 192,
+          "topology_imported": {
+            "vertices": 147,
+            "edges": 338,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 100,
+            "nonmanifold_edges_including_boundaries": 100,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 144,
+            "edges": 336,
+            "faces": 192,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.005",
+              "base_color_linear_rgba": [
+                0.022173885256052017,
+                0.0423114113509655,
+                0.09758734703063965,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        },
+        {
+          "name": "Waistband",
+          "dimensions_file_units": [
+            0.6800000071525574,
+            0.40799999237060547,
+            0.05000007152557373
+          ],
+          "triangles": 96,
+          "topology_imported": {
+            "vertices": 98,
+            "edges": 193,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 98,
+            "nonmanifold_edges_including_boundaries": 98,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "topology_welded_analysis_only_tolerance_1e_6": {
+            "vertices": 96,
+            "edges": 192,
+            "faces": 96,
+            "components": 1,
+            "boundary_edges": 96,
+            "nonmanifold_edges_including_boundaries": 96,
+            "wire_edges": 0,
+            "zero_area_faces": 0
+          },
+          "has_uv": true,
+          "uv_layers": 1,
+          "uv_bounds": {
+            "min": [
+              0.0,
+              0.0
+            ],
+            "max": [
+              1.0,
+              1.0
+            ]
+          },
+          "normals_finite": true,
+          "materials": [
+            {
+              "name": "Material_0.005",
+              "base_color_linear_rgba": [
+                0.022173885256052017,
+                0.0423114113509655,
+                0.09758734703063965,
+                1.0
+              ],
+              "textures": []
+            }
+          ],
+          "armature_modifiers": 0,
+          "shape_keys": false
+        }
+      ]
+    }
+  ]
+}

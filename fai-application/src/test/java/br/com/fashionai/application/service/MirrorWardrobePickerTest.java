@@ -53,13 +53,12 @@ class MirrorWardrobePickerTest {
     void setUp() {
         mirrors = mock(MirrorStateRepository.class);
         wardrobe = mock(WardrobeService.class);
-        RoomService room = mock(RoomService.class);
+        br.com.fashionai.application.acervo.AcervoLugares lugares = mock(br.com.fashionai.application.acervo.AcervoLugares.class);
         ai = mock(AiEngine.class);
         ObjectProvider<MirrorService.PieceRestrictionProvider> restrictions = mock(ObjectProvider.class);
         when(restrictions.orderedStream()).thenAnswer(i -> Stream.empty());
-        when(room.outOfSeason(userId)).thenReturn(Set.of());
-        when(room.locateAll(userId)).thenReturn(Map.of());
-        service = new MirrorService(mirrors, mock(WardrobeItemRepository.class), wardrobe, room, mock(SchemeService.class),
+        when(lugares.deUsuario(userId)).thenReturn(Map.of());
+        service = new MirrorService(mirrors, mock(WardrobeItemRepository.class), wardrobe, lugares, mock(SchemeService.class),
                 mock(SchemeRepository.class), mock(SchemeItemRepository.class), mock(DailyLookService.class), mock(StyleDnaRepository.class),
                 restrictions, ai, mock(Audit.class), mock(ApplicationEventPublisher.class), mock(HypeQueryService.class), mock(br.com.fashionai.domain.repository.TipoLookRepository.class));
     }

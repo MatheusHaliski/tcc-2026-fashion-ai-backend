@@ -1,47 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.ai.local.Similarity;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.hype.HypeScoreConfig;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.AcervoGroup;
-import br.com.fashionai.domain.model.DailyLook;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.SavedItem;
-import br.com.fashionai.domain.model.Scheme;
-import br.com.fashionai.domain.model.SchemeGrouping;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.DailyLookSource;
-import br.com.fashionai.domain.model.enums.GroupingType;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.HypeScorePanelVersion;
-import br.com.fashionai.domain.model.enums.HypeStatus;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.model.enums.SchemeStatus;
-import br.com.fashionai.domain.model.enums.TargetType;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.AcervoGroupRepository;
-import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
-import br.com.fashionai.domain.repository.SavedItemRepository;
-import br.com.fashionai.domain.repository.SchemeGroupingRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -59,6 +17,23 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.ai.AiCapability;
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.ai.AiOutcome;
+import br.com.fashionai.application.ai.local.Similarity;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.hype.HypeScoreConfig;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.studio.EraEditorial;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * RF6 — Perfil Lookbook: abas Closet Digital, Looks Salvos (próprios + salvos de terceiros com origem), Look do Dia
@@ -362,7 +337,7 @@ public class LookbookService {
         } else {
             out.put("empty", Map.of("message", Msg.t("lookbook.nenhum_look_do_dia_marcado"), "actions", List.of(
                     Map.of("label", Msg.t("lookbook.marcar_um_look_salvo"), "href", "/u/" + u.getUsername() + "?tab=looks"), Map.of("label", Msg.t("lookbook.usar_o_autopiloto"), "href", "/autopilot"),
-                    Map.of("label", Msg.t("lookbook.vista_me_no_espelho"), "href", "/room?espelho=1"))));
+                    Map.of("label", Msg.t("lookbook.vista_me_no_espelho"), "href", "/mirror"))));
         }
         out.put("history", dailyLooks.history(user));
         out.put("feedbackReminder", dailyLooks.pendingFeedback(user));

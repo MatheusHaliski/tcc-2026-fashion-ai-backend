@@ -1,0 +1,1075 @@
+{
+ "DUEL": {
+  "photo": "palco-show",
+  "a": [
+   {
+    "x": 17,
+    "y": 65,
+    "fx": "screen",
+    "size": 10,
+    "on": "telão esquerdo"
+   },
+   {
+    "x": 25,
+    "y": 45,
+    "fx": "spot",
+    "size": 8,
+    "on": "canhões de luz da esquerda"
+   },
+   {
+    "x": 35,
+    "y": 72,
+    "fx": "spot",
+    "size": 9,
+    "on": "lado esquerdo do palco"
+   }
+  ],
+  "b": [
+   {
+    "x": 82,
+    "y": 65,
+    "fx": "screen",
+    "size": 10,
+    "on": "telão direito"
+   },
+   {
+    "x": 72,
+    "y": 45,
+    "fx": "spot",
+    "size": 8,
+    "on": "canhões de luz da direita"
+   },
+   {
+    "x": 62,
+    "y": 72,
+    "fx": "spot",
+    "size": 9,
+    "on": "lado direito do palco"
+   }
+  ],
+  "credit": {
+   "title": "Beach-Please-2022-crowd-stage-lights-night-performance.jpg",
+   "creator": "PinkBeachPlanet",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Beach-Please-2022-crowd-stage-lights-night-performance.jpg"
+  }
+ },
+ "TREINO": {
+  "photo": "estudio-foto",
+  "a": [
+   {
+    "x": 24,
+    "y": 42,
+    "fx": "lamp",
+    "size": 6,
+    "on": "tocha esquerda"
+   },
+   {
+    "x": 32,
+    "y": 38,
+    "fx": "spot",
+    "size": 9,
+    "on": "softbox esquerda"
+   },
+   {
+    "x": 12,
+    "y": 45,
+    "fx": "daylight",
+    "size": 8,
+    "on": "rebatedor esquerdo"
+   },
+   {
+    "x": 38,
+    "y": 85,
+    "fx": "spot",
+    "size": 10,
+    "on": "piso infinito à esquerda"
+   }
+  ],
+  "b": [
+   {
+    "x": 80,
+    "y": 34,
+    "fx": "lamp",
+    "size": 6,
+    "on": "tocha direita"
+   },
+   {
+    "x": 72,
+    "y": 35,
+    "fx": "spot",
+    "size": 9,
+    "on": "softbox direita"
+   },
+   {
+    "x": 95,
+    "y": 45,
+    "fx": "daylight",
+    "size": 6,
+    "on": "rebatedor direito"
+   },
+   {
+    "x": 62,
+    "y": 85,
+    "fx": "spot",
+    "size": 10,
+    "on": "piso infinito à direita"
+   }
+  ],
+  "credit": {
+   "title": "set-up",
+   "creator": "tim-johnson",
+   "license": "CC BY 2.0",
+   "source": "https://www.flickr.com/photos/83451854@N00/3391792777"
+  }
+ },
+ "ARENA": {
+  "photo": "salao-gala",
+  "a": [
+   {
+    "x": 10,
+    "y": 47,
+    "fx": "candle",
+    "size": 9,
+    "on": "lustre da esquerda"
+   },
+   {
+    "x": 25,
+    "y": 70,
+    "fx": "mirror",
+    "size": 8,
+    "on": "espelho dourado"
+   },
+   {
+    "x": 45,
+    "y": 58,
+    "fx": "candle",
+    "size": 6,
+    "on": "lustre central esquerdo"
+   }
+  ],
+  "b": [
+   {
+    "x": 77,
+    "y": 25,
+    "fx": "candle",
+    "size": 16,
+    "on": "lustre de cristal"
+   },
+   {
+    "x": 93,
+    "y": 48,
+    "fx": "candle",
+    "size": 8,
+    "on": "lustre da direita"
+   },
+   {
+    "x": 73,
+    "y": 58,
+    "fx": "candle",
+    "size": 6,
+    "on": "lustre central direito"
+   }
+  ],
+  "credit": {
+   "title": "Palazzo Reale di Torino - Sala da ballo.jpg",
+   "creator": "CarlinoNabbo",
+   "license": "CC0 1.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Palazzo_Reale_di_Torino_-_Sala_da_ballo.jpg"
+  }
+ },
+ "TEAM": {
+  "photo": "closet-luxo",
+  "a": [
+   {
+    "x": 12,
+    "y": 40,
+    "fx": "rack",
+    "size": 8,
+    "on": "camisa pendurada"
+   },
+   {
+    "x": 31,
+    "y": 55,
+    "fx": "lamp",
+    "size": 8,
+    "on": "nicho com chapéu"
+   },
+   {
+    "x": 40,
+    "y": 70,
+    "fx": "lamp",
+    "size": 14,
+    "on": "gaveteiro"
+   }
+  ],
+  "b": [
+   {
+    "x": 73,
+    "y": 40,
+    "fx": "rack",
+    "size": 8,
+    "on": "arara da direita"
+   },
+   {
+    "x": 85,
+    "y": 52,
+    "fx": "lamp",
+    "size": 6,
+    "on": "chapéu na prateleira"
+   },
+   {
+    "x": 85,
+    "y": 65,
+    "fx": "rack",
+    "size": 12,
+    "on": "blusas penduradas"
+   }
+  ],
+  "credit": {
+   "title": "Walk-In Wardrobe",
+   "creator": "blueprinthomes.com.au",
+   "license": "CC BY 2.0",
+   "source": "https://www.flickr.com/photos/187015085@N02/49740365653"
+  }
+ },
+ "BATTLE": {
+  "photo": "boate",
+  "a": [
+   {
+    "x": 22,
+    "y": 22,
+    "fx": "spot",
+    "size": 7,
+    "on": "lustre"
+   },
+   {
+    "x": 15,
+    "y": 80,
+    "fx": "neon",
+    "size": 12,
+    "on": "sofás vermelhos"
+   },
+   {
+    "x": 30,
+    "y": 52,
+    "fx": "neon",
+    "size": 10,
+    "on": "guarda-corpo do mezanino"
+   }
+  ],
+  "b": [
+   {
+    "x": 75,
+    "y": 38,
+    "fx": "neon",
+    "size": 14,
+    "on": "bar iluminado"
+   },
+   {
+    "x": 78,
+    "y": 20,
+    "fx": "screen",
+    "size": 12,
+    "on": "telão"
+   },
+   {
+    "x": 62,
+    "y": 66,
+    "fx": "neon",
+    "size": 10,
+    "on": "bar inferior"
+   }
+  ],
+  "credit": {
+   "title": "LAX Nightclub Las Vegas Interior 2.jpg",
+   "creator": "MIXEvent",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:LAX_Nightclub_Las_Vegas_Interior_2.jpg"
+  }
+ },
+ "SQUAD": {
+  "photo": "restaurante",
+  "a": [
+   {
+    "x": 15,
+    "y": 70,
+    "fx": "candle",
+    "size": 8,
+    "on": "castiçal"
+   },
+   {
+    "x": 22,
+    "y": 78,
+    "fx": "candle",
+    "size": 12,
+    "on": "mesa da esquerda"
+   },
+   {
+    "x": 47,
+    "y": 55,
+    "fx": "candle",
+    "size": 8,
+    "on": "lareira"
+   }
+  ],
+  "b": [
+   {
+    "x": 72,
+    "y": 62,
+    "fx": "candle",
+    "size": 8,
+    "on": "castiçal da direita"
+   },
+   {
+    "x": 78,
+    "y": 78,
+    "fx": "candle",
+    "size": 12,
+    "on": "mesa da direita"
+   },
+   {
+    "x": 60,
+    "y": 70,
+    "fx": "candle",
+    "size": 10,
+    "on": "mesa central"
+   }
+  ],
+  "credit": {
+   "title": "Restaurant Tangaro.JPG",
+   "creator": "Wikitan2012",
+   "license": "CC BY-SA 3.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Restaurant_Tangaro.JPG"
+  }
+ },
+ "LEAGUE": {
+  "photo": "palco-show",
+  "a": [
+   {
+    "x": 17,
+    "y": 65,
+    "fx": "screen",
+    "size": 10,
+    "on": "telão esquerdo"
+   },
+   {
+    "x": 25,
+    "y": 45,
+    "fx": "spot",
+    "size": 8,
+    "on": "canhões de luz da esquerda"
+   },
+   {
+    "x": 35,
+    "y": 72,
+    "fx": "spot",
+    "size": 9,
+    "on": "lado esquerdo do palco"
+   }
+  ],
+  "b": [
+   {
+    "x": 82,
+    "y": 65,
+    "fx": "screen",
+    "size": 10,
+    "on": "telão direito"
+   },
+   {
+    "x": 72,
+    "y": 45,
+    "fx": "spot",
+    "size": 8,
+    "on": "canhões de luz da direita"
+   },
+   {
+    "x": 62,
+    "y": 72,
+    "fx": "spot",
+    "size": 9,
+    "on": "lado direito do palco"
+   }
+  ],
+  "credit": {
+   "title": "Beach-Please-2022-crowd-stage-lights-night-performance.jpg",
+   "creator": "PinkBeachPlanet",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Beach-Please-2022-crowd-stage-lights-night-performance.jpg"
+  }
+ },
+ "TOUR": {
+  "photo": "aeroporto",
+  "a": [
+   {
+    "x": 15,
+    "y": 20,
+    "fx": "screen",
+    "size": 10,
+    "on": "painel de partidas"
+   },
+   {
+    "x": 25,
+    "y": 72,
+    "fx": "daylight",
+    "size": 12,
+    "on": "cadeiras da esquerda"
+   },
+   {
+    "x": 26,
+    "y": 45,
+    "fx": "lamp",
+    "size": 5,
+    "on": "pilar"
+   }
+  ],
+  "b": [
+   {
+    "x": 85,
+    "y": 28,
+    "fx": "screen",
+    "size": 8,
+    "on": "painéis da direita"
+   },
+   {
+    "x": 68,
+    "y": 68,
+    "fx": "daylight",
+    "size": 14,
+    "on": "cadeiras da direita"
+   },
+   {
+    "x": 62,
+    "y": 48,
+    "fx": "daylight",
+    "size": 10,
+    "on": "janela da pista"
+   }
+  ],
+  "credit": {
+   "title": "Empty gate area at Heathrow",
+   "creator": "Grendelkhan",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Empty_gate_area_at_Heathrow.jpg"
+  }
+ },
+ "CONQUEST": {
+  "photo": "torre-vidro",
+  "a": [
+   {
+    "x": 20,
+    "y": 45,
+    "fx": "screen",
+    "size": 14,
+    "on": "fachada azul"
+   },
+   {
+    "x": 40,
+    "y": 45,
+    "fx": "lamp",
+    "size": 5,
+    "on": "poste"
+   },
+   {
+    "x": 33,
+    "y": 60,
+    "fx": "vitrine",
+    "size": 10,
+    "on": "entrada envidraçada"
+   }
+  ],
+  "b": [
+   {
+    "x": 68,
+    "y": 65,
+    "fx": "spot",
+    "size": 7,
+    "on": "escultura laranja"
+   },
+   {
+    "x": 85,
+    "y": 40,
+    "fx": "vitrine",
+    "size": 12,
+    "on": "átrio dourado"
+   },
+   {
+    "x": 91,
+    "y": 40,
+    "fx": "lamp",
+    "size": 5,
+    "on": "poste da direita"
+   }
+  ],
+  "credit": {
+   "title": "Münster, LVM -- 2017 -- 9287-93.jpg",
+   "creator": "Dietmar Rabich",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:M%C3%BCnster,_LVM_--_2017_--_9287-93.jpg"
+  }
+ },
+ "DECK": {
+  "photo": "showroom",
+  "a": [
+   {
+    "x": 12,
+    "y": 55,
+    "fx": "vitrine",
+    "size": 12,
+    "on": "mesa expositora"
+   },
+   {
+    "x": 18,
+    "y": 35,
+    "fx": "rack",
+    "size": 9,
+    "on": "arara do fundo"
+   },
+   {
+    "x": 35,
+    "y": 80,
+    "fx": "rack",
+    "size": 12,
+    "on": "vestidos rosa"
+   }
+  ],
+  "b": [
+   {
+    "x": 55,
+    "y": 50,
+    "fx": "rack",
+    "size": 14,
+    "on": "arara principal"
+   },
+   {
+    "x": 72,
+    "y": 48,
+    "fx": "rack",
+    "size": 10,
+    "on": "blusa vermelha"
+   },
+   {
+    "x": 90,
+    "y": 45,
+    "fx": "rack",
+    "size": 8,
+    "on": "arara da direita"
+   }
+  ],
+  "credit": {
+   "title": "Women clothes in fashion store. Shopping mall. Women fashion shopping concept.",
+   "creator": "Artem Beliaikin",
+   "license": "CC BY 2.0",
+   "source": "https://www.flickr.com/photos/157635012@N07/47955063506"
+  }
+ },
+ "WARDROBE": {
+  "photo": "closet-luxo",
+  "a": [
+   {
+    "x": 12,
+    "y": 40,
+    "fx": "rack",
+    "size": 8,
+    "on": "camisa pendurada"
+   },
+   {
+    "x": 31,
+    "y": 55,
+    "fx": "lamp",
+    "size": 8,
+    "on": "nicho com chapéu"
+   },
+   {
+    "x": 40,
+    "y": 70,
+    "fx": "lamp",
+    "size": 14,
+    "on": "gaveteiro"
+   }
+  ],
+  "b": [
+   {
+    "x": 73,
+    "y": 40,
+    "fx": "rack",
+    "size": 8,
+    "on": "arara da direita"
+   },
+   {
+    "x": 85,
+    "y": 52,
+    "fx": "lamp",
+    "size": 6,
+    "on": "chapéu na prateleira"
+   },
+   {
+    "x": 85,
+    "y": 65,
+    "fx": "rack",
+    "size": 12,
+    "on": "blusas penduradas"
+   }
+  ],
+  "credit": {
+   "title": "Walk-In Wardrobe",
+   "creator": "blueprinthomes.com.au",
+   "license": "CC BY 2.0",
+   "source": "https://www.flickr.com/photos/187015085@N02/49740365653"
+  }
+ },
+ "RUNWAY": {
+  "photo": "palco-show",
+  "a": [
+   {
+    "x": 17,
+    "y": 65,
+    "fx": "screen",
+    "size": 10,
+    "on": "telão esquerdo"
+   },
+   {
+    "x": 25,
+    "y": 45,
+    "fx": "spot",
+    "size": 8,
+    "on": "canhões de luz da esquerda"
+   },
+   {
+    "x": 35,
+    "y": 72,
+    "fx": "spot",
+    "size": 9,
+    "on": "lado esquerdo do palco"
+   }
+  ],
+  "b": [
+   {
+    "x": 82,
+    "y": 65,
+    "fx": "screen",
+    "size": 10,
+    "on": "telão direito"
+   },
+   {
+    "x": 72,
+    "y": 45,
+    "fx": "spot",
+    "size": 8,
+    "on": "canhões de luz da direita"
+   },
+   {
+    "x": 62,
+    "y": 72,
+    "fx": "spot",
+    "size": 9,
+    "on": "lado direito do palco"
+   }
+  ],
+  "credit": {
+   "title": "Beach-Please-2022-crowd-stage-lights-night-performance.jpg",
+   "creator": "PinkBeachPlanet",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Beach-Please-2022-crowd-stage-lights-night-performance.jpg"
+  }
+ },
+ "DRAFT": {
+  "photo": "showroom",
+  "a": [
+   {
+    "x": 12,
+    "y": 55,
+    "fx": "vitrine",
+    "size": 12,
+    "on": "mesa expositora"
+   },
+   {
+    "x": 18,
+    "y": 35,
+    "fx": "rack",
+    "size": 9,
+    "on": "arara do fundo"
+   },
+   {
+    "x": 35,
+    "y": 80,
+    "fx": "rack",
+    "size": 12,
+    "on": "vestidos rosa"
+   }
+  ],
+  "b": [
+   {
+    "x": 55,
+    "y": 50,
+    "fx": "rack",
+    "size": 14,
+    "on": "arara principal"
+   },
+   {
+    "x": 72,
+    "y": 48,
+    "fx": "rack",
+    "size": 10,
+    "on": "blusa vermelha"
+   },
+   {
+    "x": 90,
+    "y": 45,
+    "fx": "rack",
+    "size": 8,
+    "on": "arara da direita"
+   }
+  ],
+  "credit": {
+   "title": "Women clothes in fashion store. Shopping mall. Women fashion shopping concept.",
+   "creator": "Artem Beliaikin",
+   "license": "CC BY 2.0",
+   "source": "https://www.flickr.com/photos/157635012@N07/47955063506"
+  }
+ },
+ "TAG_TEAM": {
+  "photo": "camarote",
+  "a": [
+   {
+    "x": 25,
+    "y": 40,
+    "fx": "lamp",
+    "size": 16,
+    "on": "sofá branco"
+   },
+   {
+    "x": 30,
+    "y": 55,
+    "fx": "lamp",
+    "size": 8,
+    "on": "mesa do camarote"
+   },
+   {
+    "x": 37,
+    "y": 88,
+    "fx": "neon",
+    "size": 10,
+    "on": "garrafas iluminadas"
+   }
+  ],
+  "b": [
+   {
+    "x": 85,
+    "y": 32,
+    "fx": "lamp",
+    "size": 10,
+    "on": "sofá do fundo"
+   },
+   {
+    "x": 75,
+    "y": 65,
+    "fx": "neon",
+    "size": 10,
+    "on": "garrafas coloridas"
+   },
+   {
+    "x": 93,
+    "y": 55,
+    "fx": "neon",
+    "size": 8,
+    "on": "garrafas azuis"
+   }
+  ],
+  "credit": {
+   "title": "Bob Beaman Nightclub Munich 8.jpg",
+   "creator": "Arnold Jaeger Werner",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Bob_Beaman_Nightclub_Munich_8.jpg"
+  }
+ },
+ "BOSS": {
+  "photo": "salao-gala",
+  "a": [
+   {
+    "x": 10,
+    "y": 47,
+    "fx": "candle",
+    "size": 9,
+    "on": "lustre da esquerda"
+   },
+   {
+    "x": 25,
+    "y": 70,
+    "fx": "mirror",
+    "size": 8,
+    "on": "espelho dourado"
+   },
+   {
+    "x": 45,
+    "y": 58,
+    "fx": "candle",
+    "size": 6,
+    "on": "lustre central esquerdo"
+   }
+  ],
+  "b": [
+   {
+    "x": 77,
+    "y": 25,
+    "fx": "candle",
+    "size": 16,
+    "on": "lustre de cristal"
+   },
+   {
+    "x": 93,
+    "y": 48,
+    "fx": "candle",
+    "size": 8,
+    "on": "lustre da direita"
+   },
+   {
+    "x": 73,
+    "y": 58,
+    "fx": "candle",
+    "size": 6,
+    "on": "lustre central direito"
+   }
+  ],
+  "credit": {
+   "title": "Palazzo Reale di Torino - Sala da ballo.jpg",
+   "creator": "CarlinoNabbo",
+   "license": "CC0 1.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Palazzo_Reale_di_Torino_-_Sala_da_ballo.jpg"
+  }
+ },
+ "COMBO": {
+  "photo": "estudio-foto",
+  "a": [
+   {
+    "x": 24,
+    "y": 42,
+    "fx": "lamp",
+    "size": 6,
+    "on": "tocha esquerda"
+   },
+   {
+    "x": 32,
+    "y": 38,
+    "fx": "spot",
+    "size": 9,
+    "on": "softbox esquerda"
+   },
+   {
+    "x": 12,
+    "y": 45,
+    "fx": "daylight",
+    "size": 8,
+    "on": "rebatedor esquerdo"
+   },
+   {
+    "x": 38,
+    "y": 85,
+    "fx": "spot",
+    "size": 10,
+    "on": "piso infinito à esquerda"
+   }
+  ],
+  "b": [
+   {
+    "x": 80,
+    "y": 34,
+    "fx": "lamp",
+    "size": 6,
+    "on": "tocha direita"
+   },
+   {
+    "x": 72,
+    "y": 35,
+    "fx": "spot",
+    "size": 9,
+    "on": "softbox direita"
+   },
+   {
+    "x": 95,
+    "y": 45,
+    "fx": "daylight",
+    "size": 6,
+    "on": "rebatedor direito"
+   },
+   {
+    "x": 62,
+    "y": 85,
+    "fx": "spot",
+    "size": 10,
+    "on": "piso infinito à direita"
+   }
+  ],
+  "credit": {
+   "title": "set-up",
+   "creator": "tim-johnson",
+   "license": "CC BY 2.0",
+   "source": "https://www.flickr.com/photos/83451854@N00/3391792777"
+  }
+ },
+ "MONOPOLY": {
+  "photo": "rua-neon",
+  "a": [
+   {
+    "x": 22,
+    "y": 37,
+    "fx": "neon",
+    "size": 12,
+    "on": "letreiro azul"
+   },
+   {
+    "x": 17,
+    "y": 18,
+    "fx": "neon",
+    "size": 5,
+    "on": "letreiro vertical"
+   },
+   {
+    "x": 30,
+    "y": 72,
+    "fx": "neon",
+    "size": 10,
+    "on": "carros na rua"
+   }
+  ],
+  "b": [
+   {
+    "x": 57,
+    "y": 22,
+    "fx": "neon",
+    "size": 16,
+    "on": "letreiro vermelho"
+   },
+   {
+    "x": 81,
+    "y": 25,
+    "fx": "neon",
+    "size": 9,
+    "on": "placa de alfaiate"
+   },
+   {
+    "x": 77,
+    "y": 77,
+    "fx": "neon",
+    "size": 6,
+    "on": "totem iluminado"
+   }
+  ],
+  "credit": {
+   "title": "Portland Street neon signs 2015.jpg",
+   "creator": "Wpcpey",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Portland_Street_neon_signs_2015.jpg"
+  }
+ },
+ "CHESS": {
+  "photo": "galeria-arte",
+  "a": [
+   {
+    "x": 6,
+    "y": 55,
+    "fx": "spot",
+    "size": 6,
+    "on": "escultura preta"
+   },
+   {
+    "x": 40,
+    "y": 57,
+    "fx": "spot",
+    "size": 6,
+    "on": "pedestal com esculturas"
+   },
+   {
+    "x": 30,
+    "y": 88,
+    "fx": "spot",
+    "size": 14,
+    "on": "esferas laranja"
+   }
+  ],
+  "b": [
+   {
+    "x": 92,
+    "y": 58,
+    "fx": "spot",
+    "size": 7,
+    "on": "escultura da direita"
+   },
+   {
+    "x": 75,
+    "y": 52,
+    "fx": "spot",
+    "size": 5,
+    "on": "pedestal do fundo"
+   },
+   {
+    "x": 55,
+    "y": 47,
+    "fx": "spot",
+    "size": 5,
+    "on": "orquídea"
+   }
+  ],
+  "credit": {
+   "title": "HK Sheung Wan 220 Hollywood Road art gallery exhibition hall interior June-2012.JPG",
+   "creator": "Shumingsoayiunge",
+   "license": "CC BY-SA 3.0",
+   "source": "https://commons.wikimedia.org/wiki/File:HK_Sheung_Wan_220_Hollywood_Road_art_gallery_exhibition_hall_interior_June-2012.JPG"
+  }
+ },
+ "ULTIMATE": {
+  "photo": "auditorio",
+  "a": [
+   {
+    "x": 8,
+    "y": 75,
+    "fx": "candle",
+    "size": 10,
+    "on": "frisas da esquerda"
+   },
+   {
+    "x": 22,
+    "y": 60,
+    "fx": "spot",
+    "size": 6,
+    "on": "boca de cena"
+   },
+   {
+    "x": 40,
+    "y": 60,
+    "fx": "spot",
+    "size": 14,
+    "on": "cortina do palco"
+   }
+  ],
+  "b": [
+   {
+    "x": 85,
+    "y": 65,
+    "fx": "candle",
+    "size": 12,
+    "on": "frisas da direita"
+   },
+   {
+    "x": 86,
+    "y": 30,
+    "fx": "candle",
+    "size": 10,
+    "on": "camarote superior"
+   },
+   {
+    "x": 58,
+    "y": 60,
+    "fx": "spot",
+    "size": 6,
+    "on": "boca de cena direita"
+   }
+  ],
+  "credit": {
+   "title": "ROH auditorium 001.jpg",
+   "creator": "FA2010",
+   "license": "Public domain",
+   "source": "https://commons.wikimedia.org/wiki/File:ROH_auditorium_001.jpg"
+  }
+ }
+}

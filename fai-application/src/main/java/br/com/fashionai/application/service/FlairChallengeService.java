@@ -1,45 +1,10 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.flair.CbcRules;
-import br.com.fashionai.application.flair.CbcStory;
-import br.com.fashionai.application.moments.MomentService;
-import br.com.fashionai.application.moments.MomentTime;
-import br.com.fashionai.application.moments.MomentViews;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.domain.model.FlairCardInstance;
-import br.com.fashionai.domain.model.FlairChallenge;
-import br.com.fashionai.domain.model.FlairChallengeGroup;
-import br.com.fashionai.domain.model.FlairChallengeSubmission;
-import br.com.fashionai.domain.model.Moment;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.UserAchievement;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.FlairChallengeDifficulty;
-import br.com.fashionai.domain.model.enums.FlairChallengeStatus;
-import br.com.fashionai.domain.model.enums.MomentNature;
-import br.com.fashionai.domain.model.enums.MomentStatus;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.FlairCardInstanceRepository;
-import br.com.fashionai.domain.repository.FlairChallengeGroupRepository;
-import br.com.fashionai.domain.repository.FlairChallengeRepository;
-import br.com.fashionai.domain.repository.FlairChallengeSubmissionRepository;
-import br.com.fashionai.domain.repository.MomentRepository;
-import br.com.fashionai.domain.repository.UserAchievementRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -55,6 +20,22 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.flair.*;
+import br.com.fashionai.application.moments.MomentService;
+import br.com.fashionai.application.moments.MomentTime;
+import br.com.fashionai.application.moments.MomentViews;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 /**
  * FLAIR-UT F5 · §14 — Desafios de Montagem (Card Building Challenges) dentro dos Momentos.
@@ -178,7 +159,7 @@ public class FlairChallengeService {
         } catch (IllegalArgumentException e) {
             c = challenges.findBySlug(idOrSlug.toLowerCase(Locale.ROOT));
         }
-        return c.orElseThrow(() -> ApiException.notFound(Msg.t("cbc.desafio")));
+        return c.filter(x -> x.getSeries() == null).orElseThrow(() -> ApiException.notFound(Msg.t("cbc.desafio")));
     }
 
     Moment momentOf(FlairChallenge c) {
@@ -215,7 +196,7 @@ public class FlairChallengeService {
         List<Map<String, Object>> memories = new ArrayList<>();
         for (FlairChallenge c : all) {
             Moment m = c.getMomentId() == null ? null : ms.get(c.getMomentId());
-            if ((c.getMomentId() != null && m == null) || !visibleTo(viewer, c, m)) {
+            if (c.getSeries() != null || (c.getMomentId() != null && m == null) || !visibleTo(viewer, c, m)) {
                 continue;
             }
             Window w = window(c, m, now);
@@ -684,38 +665,9 @@ public class FlairChallengeService {
         return out;
     }
 
-    /** Cartas no formato do motor: tags do retrato da geração ou, em cartas antigas, da peça; datas da peça viva. */
+    /** Cartas no formato do motor ({@link CbcCardMapper}): tags do retrato ou da peça; datas da peça viva. */
     Map<UUID, CbcRules.Card> models(Collection<FlairCardInstance> list) {
-        Set<UUID> pieceIds = list.stream().filter(c -> "PIECE".equals(c.getOriginType())).map(FlairCardInstance::getOriginId).collect(Collectors.toSet());
-        Map<UUID, WardrobeItem> byId = pieces.findAllById(pieceIds).stream().collect(Collectors.toMap(WardrobeItem::getId, Function.identity()));
-        Map<UUID, CbcRules.Card> out = new LinkedHashMap<>();
-        for (FlairCardInstance c : list) {
-            WardrobeItem w = "PIECE".equals(c.getOriginType()) ? byId.get(c.getOriginId()) : null;
-            Map<String, Object> tags = c.getTagsJson() != null ? Json.map(c.getTagsJson()) : FlairCollectionService.tagsOf(w);
-            Map<String, Double> hype = new HashMap<>();
-            if (c.getHypeJson() != null) {
-                Json.map(c.getHypeJson()).forEach((k, v) -> {
-                    if (v instanceof Number n) {
-                        hype.put(k, n.doubleValue());
-                    }
-                });
-            }
-            Instant added = null;
-            LocalDate lastWorn = null;
-            if (w != null) {
-                added = w.getCreatedAt();
-                if (w.getPurchaseDate() != null) {
-                    // comprada antes de entrar no app: vale a data da compra (C2 olha a compra, não o cadastro)
-                    Instant bought = w.getPurchaseDate().atStartOfDay(ZoneOffset.UTC).toInstant();
-                    added = added == null || bought.isBefore(added) ? bought : added;
-                }
-                lastWorn = w.getLastWornDate();
-            }
-            out.put(c.getId(), new CbcRules.Card(c.getId(), c.getPosition(), c.getTier(), c.getOvr(), c.getBrandName(), c.getOriginType(),
-                    Set.copyOf(strings(tags.get("styles"))), Set.copyOf(strings(tags.get("colors"))), Set.copyOf(strings(tags.get("occasions"))),
-                    Set.copyOf(strings(tags.get("materials"))), hype, added, lastWorn, c.getCategory(), c.getSubcategory()));
-        }
-        return out;
+        return CbcCardMapper.models(list, pieces, FlairCollectionService::tagsOf);
     }
 
     List<Map<String, Object>> snapshot(Build b) {

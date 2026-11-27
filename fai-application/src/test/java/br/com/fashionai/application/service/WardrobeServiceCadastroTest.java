@@ -1,46 +1,30 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.assets.AssetCatalogService;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.events.DomainEvents;
-import br.com.fashionai.application.ports.JobQueuePort;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.testkit.Kit;
-import br.com.fashionai.application.testkit.MemoryRepository;
-import br.com.fashionai.application.testkit.World;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.Brand;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.ModerationQueueItem;
-import br.com.fashionai.domain.model.Photo;
-import br.com.fashionai.domain.model.PipelineJob;
-import br.com.fashionai.domain.model.SchemeItem;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.ApprovalStatus;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.ImageOrigin;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.PhotoProcessingStatus;
-import br.com.fashionai.domain.model.enums.PipelineJobStatus;
-import br.com.fashionai.domain.model.enums.Visibility;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.BrandRepository;
-import br.com.fashionai.domain.repository.ModerationQueueRepository;
-import br.com.fashionai.domain.repository.PipelineJobRepository;
-import br.com.fashionai.domain.repository.ProcessingJobLogRepository;
-import br.com.fashionai.domain.repository.QualityScoreRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationEventPublisher;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
+
+import br.com.fashionai.application.assets.AssetCatalogService;
+import br.com.fashionai.application.catalog.CatalogPick;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.imaging.PhotoRejectedException;
+import br.com.fashionai.application.ports.JobQueuePort;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.testkit.*;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.application.wardrobe.PieceForm;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -75,14 +59,14 @@ class WardrobeServiceCadastroTest {
         ana = Kit.as(world.me);
     }
 
-    static WardrobeService.PieceForm form(UUID draftId, boolean useDefault, String name, BigDecimal price, List<String> seals, String market,
+    static PieceForm form(UUID draftId, boolean useDefault, String name, BigDecimal price, List<String> seals, String market,
                                           UUID brandId, String brandName, String logo, String source, Visibility vis, UUID session) {
-        return new WardrobeService.PieceForm(draftId, useDefault, name, "upper_piece", "t_shirt", "UNISSEX", brandId, brandName, "white", "COTTON",
+        return new PieceForm(draftId, useDefault, name, "upper_piece", "t_shirt", "UNISSEX", brandId, brandName, "white", "COTTON",
                 "m", market, List.of("casual"), List.of("basic"), seals, price, vis, List.of("verão"), "nota", null, null, "Loja", "SKU1", "lavar",
-                true, null, logo, source, "ref", Map.of(), session, null, null, null);
+                true, null, logo, source, "ref", Map.of(), session, null, null, null, null, false, null, null, null, false);
     }
 
-    static WardrobeService.PieceForm simple(String brandName) {
+    static PieceForm simple(String brandName) {
         return form(null, true, "Camiseta", BigDecimal.TEN, null, null, null, brandName, null, null, null, null);
     }
 
@@ -124,7 +108,7 @@ class WardrobeServiceCadastroTest {
     @Test
     void cadastroPeloCatalogoUsaAFotoOficial() {
         UUID product = UUID.randomUUID();
-        var pick = new WardrobeService.CatalogPick(product, null, "/catalogo/p.jpg", "/catalogo/p-thumb.jpg", Map.of("crop", 1));
+        var pick = new CatalogPick(product, null, "/catalogo/p.jpg", "/catalogo/p-thumb.jpg", Map.of("crop", 1));
         Views.PieceView v = service.createFromCatalog(ana, simple(null), pick);
         WardrobeItem w = service.owned(ana, v.id());
         assertThat(w.getCatalogProductId()).isEqualTo(product);
@@ -135,13 +119,13 @@ class WardrobeServiceCadastroTest {
         assertThat(w.getBrandName()).isNull();
 
         // produto sem foto: imagem padrão
-        Views.PieceView semFoto = service.createFromCatalog(ana, simple(null), new WardrobeService.CatalogPick(product, null, " "));
+        Views.PieceView semFoto = service.createFromCatalog(ana, simple(null), new CatalogPick(product, null, " "));
         WardrobeItem w2 = service.owned(ana, semFoto.id());
         assertThat(w2.isDefaultImage()).isTrue();
         assertThat(w2.getImageOrigin()).isEqualTo(ImageOrigin.DEFAULT);
         assertThat(w2.getImageUrl()).isEqualTo("/assets_pecas/padrao.png");
         // foto sem miniatura: a própria foto
-        Views.PieceView semThumb = service.createFromCatalog(ana, simple(null), new WardrobeService.CatalogPick(product, null, "/c.jpg"));
+        Views.PieceView semThumb = service.createFromCatalog(ana, simple(null), new CatalogPick(product, null, "/c.jpg"));
         assertThat(service.owned(ana, semThumb.id()).getThumbnailUrl()).isEqualTo("/c.jpg");
     }
 
@@ -151,7 +135,7 @@ class WardrobeServiceCadastroTest {
         j.setResultJson(resultJson);
         j = kit.dep(PipelineJobRepository.class).save(j);
         PipelineJob saved = j;
-        when(kit.dep(PipelineJobRepository.class).findByIdForUpdate(saved.getId())).thenReturn(Optional.of(saved));
+        when(kit.dep(PipelineJobRepository.class).findDraftForUpdate(saved.getId(), world.me.getId())).thenReturn(Optional.of(saved));
         return saved;
     }
 
@@ -179,6 +163,7 @@ class WardrobeServiceCadastroTest {
         verify(media).register(any(), any(), eq(w.getId()), any(), eq("/o.jpg"), eq("/t.png"), any(), eq(10), eq(12), any(), any(), any());
         verify(events).publishEvent(any(DomainEvents.PieceCapturedFromSession.class));
         assertThat(d.getTargetType()).isEqualTo("PIECE");
+        assertThat(w.getDraftId()).as("a peça guarda o rascunho de origem (único no banco)").isEqualTo(d.getId());
 
         // segundo envio do mesmo rascunho devolve a mesma peça
         Views.PieceView again = service.create(ana, form(d.getId(), false, "Camiseta", BigDecimal.TEN, null, null, null, null, null, null, null, null));
@@ -209,9 +194,9 @@ class WardrobeServiceCadastroTest {
         PipelineJob d = draft("""
                 {"moderation":{"status":"APPROVED"},"backgroundRemoved":false,"processedUrl":"/p.png","originalUrl":"/o.jpg",
                  "studio":{"url":"/s.jpg","forced":true}}""");
-        var f = new WardrobeService.PieceForm(d.getId(), false, "Camiseta", "upper_piece", "t_shirt", "UNISSEX", null, null, "white", "COTTON",
+        var f = new PieceForm(d.getId(), false, "Camiseta", "upper_piece", "t_shirt", "UNISSEX", null, null, "white", "COTTON",
                 "m", null, List.of("casual"), List.of("basic"), null, BigDecimal.TEN, null, null, null, null, null, null, null, null,
-                null, false, null, null, null, null);
+                null, false, null, null, null, null, null, null, null, null, null, false, null, null, null, false);
         WardrobeItem w = service.owned(ana, service.create(ana, f).id());
         assertThat(w.getImageUrl()).isEqualTo("/o.jpg");
         assertThat(w.getStudioImageUrl()).isNull();
@@ -230,8 +215,10 @@ class WardrobeServiceCadastroTest {
         PipelineJob bloqueado = draft("{\"moderation\":{\"status\":\"REJECTED_POLICY\"}}");
         assertThatThrownBy(() -> service.create(ana, form(bloqueado.getId(), false, "C", BigDecimal.ONE, null, null, null, null, null, null, null, null)))
                 .isInstanceOf(ApiException.class).satisfies(e -> assertThat(((ApiException) e).code()).isEqualTo("CONTEUDO_BLOQUEADO"));
-        PipelineJob alheio = draft("{}");
+        // rascunho de outra pessoa: a busca por (id, dono) não devolve linha, e o id existente é negado (403), nunca usado
+        PipelineJob alheio = new PipelineJob();
         alheio.setUser(world.rival);
+        kit.dep(PipelineJobRepository.class).save(alheio);
         assertThatThrownBy(() -> service.create(ana, form(alheio.getId(), false, "C", BigDecimal.ONE, null, null, null, null, null, null, null, null)))
                 .isInstanceOf(ApiException.class).satisfies(e -> assertThat(((ApiException) e).status()).isEqualTo(403));
     }

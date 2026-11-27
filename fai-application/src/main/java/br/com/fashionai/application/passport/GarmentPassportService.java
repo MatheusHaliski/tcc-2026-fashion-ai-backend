@@ -1,6 +1,7 @@
 package br.com.fashionai.application.passport;
 
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.assets.AssetCatalogService;
 import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -16,12 +17,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.*;
@@ -33,7 +28,7 @@ import java.util.*;
 public class GarmentPassportService {
     private static final Set<String> SHARE_FIELDS = Set.of("NAME", "ORIGIN", "COMPOSITION", "CARE", "HISTORY");
     private static final Set<String> EVENT_KINDS = Set.of("PURCHASE", "CARE", "REPAIR", "ALTERATION", "CORRECTION");
-    private static final Set<String> ORIGINS = Set.of("UNKNOWN", "COMPRADA", "GARIMPADA", "HERDADA", "PRESENTE", "FEITA_A_MAO", "TROCADA");
+    private static final Set<String> ORIGINS = Set.of("UNKNOWN", "COMPRADA", "GARIMPADA", "HERDADA", "PRESENTE", "FEITA_A_MAO", "TROCADA", "SOB_ENCOMENDA");
     private final GarmentPassportRepository passports;
     private final PassportHoldingRepository holdings;
     private final PassportEventRepository events;
@@ -46,21 +41,22 @@ public class GarmentPassportService {
     private final ApplicationEventPublisher lifecycle;
     private final boolean enabled;
     private final Clock clock;
+    private final AssetCatalogService assets;
 
     @org.springframework.beans.factory.annotation.Autowired
     public GarmentPassportService(GarmentPassportRepository passports, PassportHoldingRepository holdings,
             PassportEventRepository events, PassportShareRepository shares, PassportEvidenceRepository evidence,
             PassportTransferRepository transfers, WardrobeItemRepository pieces, UserRepository users, Guard guard, ApplicationEventPublisher lifecycle,
-            @Value("${fashionai.passport.enabled:true}") boolean enabled) {
-        this(passports, holdings, events, shares, evidence, transfers, pieces, users, guard, lifecycle, enabled, Clock.systemUTC());
+            AssetCatalogService assets, @Value("${fashionai.passport.enabled:true}") boolean enabled) {
+        this(passports, holdings, events, shares, evidence, transfers, pieces, users, guard, lifecycle, assets, enabled, Clock.systemUTC());
     }
     GarmentPassportService(GarmentPassportRepository passports, PassportHoldingRepository holdings,
             PassportEventRepository events, PassportShareRepository shares, PassportEvidenceRepository evidence,
             PassportTransferRepository transfers, WardrobeItemRepository pieces, UserRepository users, Guard guard, ApplicationEventPublisher lifecycle,
-            boolean enabled, Clock clock) {
+            AssetCatalogService assets, boolean enabled, Clock clock) {
         this.passports=passports; this.holdings=holdings; this.events=events; this.shares=shares;
         this.evidence=evidence; this.transfers=transfers; this.pieces=pieces; this.users=users; this.guard=guard; this.lifecycle=lifecycle;
-        this.enabled=enabled; this.clock=clock;
+        this.enabled=enabled; this.clock=clock; this.assets=assets;
     }
     private Instant now() { return clock.instant(); }
     private void feature() { if (!enabled) throw new ApiException(404,"PASSPORT_DISABLED","Passaporte indisponível neste ambiente."); }
@@ -167,7 +163,7 @@ public class GarmentPassportService {
     public EventView addEvent(CurrentUser user, UUID id, EventCommand command, String commandKey) {
         writable(user); GarmentPassport p=locked(user,id); key(commandKey);
         var old=events.findByPassportIdAndAuthorIdAndCommandKey(id,user.id(),commandKey);
-        if(old.isPresent()) return eventView(old.get(),user.id());
+        if(old.isPresent()) return PassportViews.event(old.get(),user.id());
         version(p,command.version());
         if(command.kind()==null||!EVENT_KINDS.contains(command.kind())||command.occurredOn()==null||command.occurredOn().isAfter(LocalDate.now(clock)))
             throw ApiException.badRequest("PASSPORT_INVALID_EVENT","Informe tipo e data válidos.");
@@ -178,26 +174,15 @@ public class GarmentPassportService {
         } else if("CORRECTION".equals(command.kind())) throw ApiException.badRequest("PASSPORT_CORRECTION_TARGET","Escolha o evento a corrigir.");
         PassportEvent e=new PassportEvent(); e.setPassportId(id); e.setAuthorId(user.id()); e.setKind(command.kind());
         e.setOccurredOn(command.occurredOn()); e.setNotes(text(command.notes(),2000)); e.setCorrectsEventId(command.correctsEventId()); e.setCommandKey(commandKey);
-        events.saveAndFlush(e); touch(p); return eventView(e,user.id());
+        events.saveAndFlush(e); touch(p); return PassportViews.event(e,user.id());
     }
-    private EventView eventView(PassportEvent e, UUID viewerId) {
-        // Previous owners' private narrative never follows the physical piece.
-        return new EventView(e.getId(),e.getKind(),e.getOccurredOn(),e.getAuthorId().equals(viewerId)?e.getNotes():null,
-                "OWNER_DECLARED",e.getCorrectsEventId());
-    }
-    private ShareView shareView(PassportShare s) { return new ShareView(s.getId(),Set.of(s.getFields().split(",")),s.getExpiresAt(),s.getRevokedAt()!=null,s.getVersion()); }
-    private TransferView transferView(PassportTransfer t) {
-        String state="PENDING".equals(t.getStatus())&&!t.getExpiresAt().isAfter(now())?"EXPIRED":t.getStatus();
-        return new TransferView(t.getId(),t.getPassportId(),state,t.getExpiresAt(),t.getVersion(),t.getRecipientPieceId());
-    }
-    private EvidenceView evidenceView(PassportEvidence e) { return new EvidenceView(e.getId(),e.getKind(),e.getExpiresAt().isAfter(now())?"PRESENTED_UNVERIFIED":"EXPIRED",e.getExpiresAt(),e.getVersion()); }
     private PrivateView view(CurrentUser user, GarmentPassport p) {
         WardrobeItem item=pieces.findById(p.getPieceId()).orElseThrow(()->ApiException.notFound("Peça"));
         return new PrivateView(p.getId(),p.getPieceId(),p.getVersion(),item.getName(),p.getOrigin(),p.getComposition(),p.getCare(),"OWNER_DECLARED",
-                events.findByPassportIdOrderByCreatedAtAsc(p.getId()).stream().map(e->eventView(e,user.id())).toList(),
-                evidence.findByPassportIdAndControllerId(p.getId(),user.id()).stream().filter(e->e.getDeletedAt()==null).map(this::evidenceView).toList(),
-                shares.findByPassportId(p.getId()).stream().filter(s->s.getOwnerId().equals(user.id())).map(this::shareView).toList(),
-                transfers.findByPassportIdOrderByCreatedAtDesc(p.getId()).stream().map(this::transferView).toList());
+                events.findByPassportIdOrderByCreatedAtAsc(p.getId()).stream().map(e->PassportViews.event(e,user.id())).toList(),
+                evidence.findByPassportIdAndControllerId(p.getId(),user.id()).stream().filter(e->e.getDeletedAt()==null).map(e->PassportViews.evidence(e,now())).toList(),
+                shares.findByPassportId(p.getId()).stream().filter(s->s.getOwnerId().equals(user.id())).map(PassportViews::share).toList(),
+                transfers.findByPassportIdOrderByCreatedAtDesc(p.getId()).stream().map(t->PassportViews.transfer(t,now())).toList());
     }
     public ShareCreated share(CurrentUser user, UUID id, ShareCommand command) {
         writable(user); GarmentPassport p=locked(user,id); version(p,command.version());
@@ -205,7 +190,7 @@ public class GarmentPassportService {
             throw ApiException.badRequest("PASSPORT_INVALID_SCOPE","Escolha campos públicos permitidos.");
         String token=token(); PassportShare share=new PassportShare(); share.setPassportId(id); share.setOwnerId(user.id());
         share.setTokenHash(hash(token)); share.setFields(String.join(",",new TreeSet<>(command.fields()))); share.setExpiresAt(expires(command.expiresInHours(),720));
-        shares.saveAndFlush(share); touch(p); return new ShareCreated(shareView(share),token,"/passport/"+token);
+        shares.saveAndFlush(share); touch(p); return new ShareCreated(PassportViews.share(share),token,"/passport/"+token);
     }
     public void revoke(CurrentUser user, UUID id, UUID shareId) {
         writable(user); GarmentPassport p=locked(user,id);
@@ -250,7 +235,7 @@ public class GarmentPassportService {
         if(scope.contains("COMPOSITION")) out.put("composition",p.getComposition());
         if(scope.contains("CARE")) out.put("care",p.getCare());
         if(scope.contains("HISTORY")) out.put("events",events.findByPassportIdOrderByCreatedAtAsc(p.getId()).stream()
-                .map(e->Map.of("kind",e.getKind(),"occurredOn",e.getOccurredOn(),"provenance","OWNER_DECLARED")).toList());
+                .map(e->Map.of("kind",e.getKind(),"occurredOn",e.getOccurredOn(),"provenance",PassportViews.provenance(e.getKind()))).toList());
         return out;
     }
     public Map<String,Object> resale(CurrentUser user, UUID id) {
@@ -269,7 +254,7 @@ public class GarmentPassportService {
         writable(user); GarmentPassport p=locked(user,id); key(commandKey);
         var prior=transfers.findByPassportIdAndFromOwnerIdAndCommandKey(id,user.id(),commandKey);
         // Tokens are never persisted in plaintext and therefore are revealed only once.
-        if(prior.isPresent()) return new TransferCreated(transferView(prior.get()),null);
+        if(prior.isPresent()) return new TransferCreated(PassportViews.transfer(prior.get(),now()),null);
         version(p,command.version());
         String username=text(command.recipientUsername(),60);
         if(username==null) throw ApiException.badRequest("PASSPORT_RECIPIENT_REQUIRED","Informe o usuário destinatário.");
@@ -284,10 +269,10 @@ public class GarmentPassportService {
         PassportTransfer t=new PassportTransfer(); t.setPassportId(id); t.setFromOwnerId(user.id()); t.setRecipientId(recipient.getId());
         t.setSourcePieceId(p.getPieceId()); t.setStatus("PENDING"); t.setCommandKey(commandKey); t.setExpiresAt(expires(command.expiresInHours(),168));
         String token=token(); t.setTokenHash(hash(token)); transfers.saveAndFlush(t);
-        p.setPendingTransferId(t.getId()); touch(p); return new TransferCreated(transferView(t),token);
+        p.setPendingTransferId(t.getId()); touch(p); return new TransferCreated(PassportViews.transfer(t,now()),token);
     }
     public List<TransferView> incoming(CurrentUser user) {
-        authenticated(user); return transfers.findByRecipientIdAndStatusOrderByCreatedAtDesc(user.id(),"PENDING").stream().map(this::transferView).toList();
+        authenticated(user); return transfers.findByRecipientIdAndStatusOrderByCreatedAtDesc(user.id(),"PENDING").stream().map(t->PassportViews.transfer(t,now())).toList();
     }
     public TransferView cancelTransfer(CurrentUser user, UUID id, UUID transferId) {
         writable(user); GarmentPassport p=locked(user,id);
@@ -299,7 +284,7 @@ public class GarmentPassportService {
             if(t.getId().equals(p.getPendingTransferId())) p.setPendingTransferId(null);
             touch(p);
         }
-        return transferView(t);
+        return PassportViews.transfer(t,now());
     }
     public TransferView accept(CurrentUser user, UUID transferId, AcceptCommand command, String commandKey) {
         writable(user); key(commandKey);
@@ -309,7 +294,7 @@ public class GarmentPassportService {
         if(!user.id().equals(t.getRecipientId())) throw ApiException.forbidden("Somente o destinatário pode aceitar.");
         tokenMatches(command.token(),t.getTokenHash());
         // A retry returns the same recipient item, even if that item has subsequently moved again.
-        if("ACCEPTED".equals(t.getStatus())) return transferView(t);
+        if("ACCEPTED".equals(t.getStatus())) return PassportViews.transfer(t,now());
         if(t.getVersion()!=command.version()) throw ApiException.conflict("TRANSFER_VERSION_CONFLICT","A transferência mudou.");
         if(!"PENDING".equals(t.getStatus())||!t.getExpiresAt().isAfter(now()))
             throw ApiException.conflict("TRANSFER_UNAVAILABLE","Transferência cancelada ou expirada.");
@@ -325,20 +310,9 @@ public class GarmentPassportService {
         PassportHolding old=holdings.findByActivePassportId(p.getId()).orElseThrow(()->ApiException.conflict("PASSPORT_HOLDING_MISSING","Posse inconsistente."));
         old.setEndedAt(now()); old.setActivePassportId(null); holdings.saveAndFlush(old);
         // Keep the old item and all looks/photos with their historical author. No personal fields or seals follow.
-        original.markAvailable(false); original.setAvailabilityStatus(AvailabilityStatus.ARCHIVED); original.setVisibility(Visibility.PRIVATE);
+        br.com.fashionai.domain.model.PieceAvailability.mark(original, false); original.setAvailabilityStatus(AvailabilityStatus.ARCHIVED); original.setVisibility(Visibility.PRIVATE);
         original.setForSale(false); original.setForDonation(false); pieces.save(original);
-        WardrobeItem next=new WardrobeItem(); next.setUser(recipient); next.setName(original.getName()); next.setCategory(original.getCategory());
-        next.setSubcategory(original.getSubcategory()); next.setColor(original.getColor()); next.setMaterial(original.getMaterial());
-        next.setBrandName(original.getBrandName()); next.setSizeLabel(original.getSizeLabel()); next.setVisibility(Visibility.PRIVATE);
-        next.setCatalogProductId(original.getCatalogProductId()); next.setCatalogVariantId(original.getCatalogVariantId());
-        next.setCondition(original.getCondition()); next.setCareInstructions(p.getCare()==null?null:p.getCare().substring(0,Math.min(p.getCare().length(),512))); next.setPieceOrigin("TROCADA");
-        next.setRemixedFromPieceId(original.getId()); next.setModerationStatus(ModerationStatus.PENDING);
-        if(original.getImageOrigin()==ImageOrigin.CATALOG) {
-            next.setImageUrl(original.getImageUrl()); next.setImageOrigin(ImageOrigin.CATALOG);
-        } else {
-            next.setImageUrl("/_derived/pecas_default/01_parte_superior_01_camiseta_referencia_preview.webp");
-            next.setImageOrigin(ImageOrigin.DEFAULT); next.setDefaultImage(true);
-        }
+        WardrobeItem next = ReceivedPassportPiece.create(original, recipient, p.getCare(), assets);
         pieces.saveAndFlush(next);
         PassportHolding current=new PassportHolding(); current.setPassportId(p.getId()); current.setActivePassportId(p.getId());
         current.setOwnerId(recipient.getId()); current.setPieceId(next.getId()); current.setStartedAt(now()); holdings.save(current);
@@ -349,7 +323,7 @@ public class GarmentPassportService {
         e.setOccurredOn(LocalDate.now(clock)); e.setCommandKey("transfer_"+t.getId()); events.save(e);
         lifecycle.publishEvent(new DomainEvents.PieceDeleted(sender.getId(),original.getId()));
         lifecycle.publishEvent(new DomainEvents.PieceCreated(recipient.getId(),next.getId(),false));
-        return transferView(t);
+        return PassportViews.transfer(t,now());
     }
 
     public EvidenceView uploadEvidence(CurrentUser user, UUID id, String kind, byte[] bytes, String commandKey) {
@@ -358,37 +332,19 @@ public class GarmentPassportService {
         var existing=evidence.findByPassportIdAndControllerIdAndCommandKey(id,user.id(),commandKey);
         if(existing.isPresent()) {
             if(existing.get().getDeletedAt()!=null) throw ApiException.conflict("EVIDENCE_DELETED","Comprovante removido. Use uma nova chave para reenviar.");
-            return evidenceView(existing.get());
+            return PassportViews.evidence(existing.get(),now());
         }
         // Decode signatures and dimensions before allocation, re-encode pixels, discard metadata and filenames.
         byte[] png=safeImage(bytes);
         PassportEvidence document=new PassportEvidence(); document.setPassportId(id); document.setControllerId(user.id()); document.setKind(kind);
         document.setContentBase64(Base64.getEncoder().encodeToString(png)); document.setContentHash(hash(Base64.getEncoder().encodeToString(png)));
         document.setCommandKey(commandKey); document.setExpiresAt(now().plus(Duration.ofDays(365)));
-        evidence.saveAndFlush(document); touch(p); return evidenceView(document);
+        evidence.saveAndFlush(document); touch(p); return PassportViews.evidence(document,now());
     }
-    static byte[] safeImage(byte[] bytes) {
-        if(bytes==null||bytes.length<8||bytes.length>2*1024*1024) throw ApiException.badRequest("PASSPORT_IMAGE_SIZE","Envie uma imagem PNG ou JPEG de até 2 MB.");
-        boolean png=bytes[0]==(byte)137&&bytes[1]==80&&bytes[2]==78&&bytes[3]==71&&bytes[4]==13&&bytes[5]==10&&bytes[6]==26&&bytes[7]==10;
-        boolean jpeg=bytes[0]==(byte)255&&bytes[1]==(byte)216&&bytes[2]==(byte)255;
-        if(!png&&!jpeg) throw ApiException.badRequest("PASSPORT_IMAGE_TYPE","Somente fotos PNG e JPEG são aceitas.");
-        try(ImageInputStream in=ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
-            Iterator<ImageReader> readers=ImageIO.getImageReaders(in);
-            if(!readers.hasNext()) throw new IllegalArgumentException();
-            ImageReader reader=readers.next();
-            try {
-                reader.setInput(in,true,true); int width=reader.getWidth(0),height=reader.getHeight(0);
-                if(width<1||height<1||width>6000||height>6000||(long)width*height>12_000_000) throw new IllegalArgumentException();
-                BufferedImage image=reader.read(0);
-                ByteArrayOutputStream output=new ByteArrayOutputStream(); ImageIO.write(image,"png",output);
-                if(output.size()>8*1024*1024) throw new IllegalArgumentException();
-                return output.toByteArray();
-            } finally { reader.dispose(); }
-        } catch(Exception ex) { throw ApiException.badRequest("PASSPORT_INVALID_IMAGE","Imagem inválida ou dimensões muito grandes."); }
-    }
+    static byte[] safeImage(byte[] bytes) { return br.com.fashionai.application.common.SafeImage.png(bytes,"PASSPORT"); }
     public List<EvidenceView> myEvidence(CurrentUser user, UUID id) {
         authenticated(user);
-        return evidence.findByPassportIdAndControllerId(id,user.id()).stream().filter(e->e.getDeletedAt()==null).map(this::evidenceView).toList();
+        return evidence.findByPassportIdAndControllerId(id,user.id()).stream().filter(e->e.getDeletedAt()==null).map(e->PassportViews.evidence(e,now())).toList();
     }
     public byte[] downloadEvidence(CurrentUser user, UUID evidenceId) {
         authenticated(user); PassportEvidence e=evidence.findById(evidenceId).orElseThrow(()->ApiException.notFound("Comprovante"));

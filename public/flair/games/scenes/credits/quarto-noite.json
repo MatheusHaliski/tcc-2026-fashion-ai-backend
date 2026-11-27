@@ -1,0 +1,55 @@
+{
+  "title": "Hotel Le Germain Toronto : TBEX 2013",
+  "creator": "davitydave",
+  "license": "CC BY 2.0",
+  "source": "https://www.flickr.com/photos/79781814@N00/9406825198",
+  "provider": "flickr",
+  "file": "/flair/games/scenes/quarto-noite.webp",
+  "objects": [
+    {
+      "name": "cama de casal com almofadas vermelhas",
+      "x": 48,
+      "y": 65
+    },
+    {
+      "name": "luminária de parede acesa (esquerda)",
+      "x": 29,
+      "y": 31
+    },
+    {
+      "name": "luminária de parede acesa (direita)",
+      "x": 73,
+      "y": 31
+    },
+    {
+      "name": "quadro de flores vermelhas",
+      "x": 51,
+      "y": 19
+    },
+    {
+      "name": "criado-mudo com telefone",
+      "x": 22,
+      "y": 58
+    },
+    {
+      "name": "vaso branco",
+      "x": 14,
+      "y": 53
+    },
+    {
+      "name": "persiana da janela (direita)",
+      "x": 89,
+      "y": 35
+    },
+    {
+      "name": "persiana da janela (esquerda)",
+      "x": 4,
+      "y": 35
+    },
+    {
+      "name": "sofá cinza com almofadas",
+      "x": 82,
+      "y": 88
+    }
+  ]
+}

@@ -1,30 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.hype.HypeQueryService;
-import br.com.fashionai.application.insights.InsightService;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.domain.model.HypeDimensions;
-import br.com.fashionai.domain.model.HypeScoreCurrent;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.WardrobeItem;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.AvailabilityStatus;
-import br.com.fashionai.domain.model.enums.HypeEntityType;
-import br.com.fashionai.domain.model.enums.HypeStatus;
-import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.repository.DailyLookRepository;
-import br.com.fashionai.domain.repository.SchemeItemRepository;
-import br.com.fashionai.domain.repository.SchemeRepository;
-import br.com.fashionai.domain.repository.StyleDnaRepository;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.WardrobeItemRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.context.i18n.LocaleContextHolder;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -35,6 +10,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.i18n.LocaleContextHolder;
+
+import br.com.fashionai.application.acervo.AcervoLugares;
+import br.com.fashionai.application.ai.AiEngine;
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.insights.InsightService;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.wardrobe.PieceUsageDiary;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -136,7 +126,7 @@ class CopilotAnswerTest {
         }
         when(hype.currentOf(eq(HypeEntityType.PIECE), anyCollection())).thenReturn(rows);
         CopilotService copilot = new CopilotService(wardrobe, pieces, mock(SchemeRepository.class), mock(SchemeItemRepository.class), mock(DailyLookRepository.class),
-                mock(StyleDnaRepository.class), mock(UserPreferencesRepository.class), mock(RoomService.class), mock(MirrorService.class), mock(InventoryScoreService.class),
+                mock(StyleDnaRepository.class), mock(UserPreferencesRepository.class), mock(AcervoLugares.class), mock(PieceUsageDiary.class), mock(MirrorService.class), mock(InventoryScoreService.class),
                 mock(ChallengeService.class), mock(AutopilotService.class), mock(DailyLookService.class), weather, mock(AiEngine.class), mock(Audit.class),
                 mock(SchemeService.class), mock(BackgroundStudioService.class), hype, mock(InsightService.class));
 
@@ -150,5 +140,35 @@ class CopilotAnswerTest {
             assertThat(scores.get("compatibility")).isNull();      // sem DNA: sem base ("—"), nunca 0
             assertThat(scores.get("novelty")).isEqualTo(100);       // pares nunca combinados em looks salvos
         });
+    }
+
+    // ================================================================== "Onde está…?" pelo ACERVO (o Meu Quarto saiu)
+    @Test
+    void ondeEstaRespondeComOLugarNoAcervoESemDestaqueNoQuarto() {
+        UUID uid = UUID.randomUUID();
+        CurrentUser me = new CurrentUser(uid, "ana", "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
+        User u = new User();
+        u.assignId(uid);
+        WardrobeItem tenis = piece(u, "Tênis preto", "shoes_piece", "casual_sneakers", 3);
+        WardrobeItem outro = piece(u, "Tênis de corrida", "shoes_piece", "casual_sneakers", 1);
+        WardrobeItemRepository pieces = mock(WardrobeItemRepository.class);
+        when(pieces.findByUserIdOrderByCreatedAtDesc(uid)).thenReturn(List.of(tenis, outro));
+        AcervoLugares lugares = mock(AcervoLugares.class);
+        UUID gaveta = UUID.randomUUID();
+        when(lugares.deUsuario(uid)).thenReturn(new HashMap<>(Map.of(tenis.getId(),
+                new AcervoLugares.Lugar(gaveta, UUID.randomUUID(), "Closet / Sapateira / Prateleira 1", "PRATELEIRA", true))));
+        CopilotService copilot = new CopilotService(mock(WardrobeService.class), pieces, mock(SchemeRepository.class), mock(SchemeItemRepository.class),
+                mock(DailyLookRepository.class), mock(StyleDnaRepository.class), mock(UserPreferencesRepository.class), lugares, mock(PieceUsageDiary.class),
+                mock(MirrorService.class), mock(InventoryScoreService.class), mock(ChallengeService.class), mock(AutopilotService.class),
+                mock(DailyLookService.class), mock(WeatherService.class), mock(AiEngine.class), mock(Audit.class), mock(SchemeService.class),
+                mock(BackgroundStudioService.class), mock(HypeQueryService.class), mock(InsightService.class));
+
+        Map<String, Object> out = copilot.whereIs(me, "onde está meu tênis preto?", "QUARTO");
+
+        assertThat(String.valueOf(out.get("text"))).contains("Closet / Sapateira / Prateleira 1");
+        assertThat(out).doesNotContainKey("roomHighlight");
+        List<Map<String, Object>> chips = (List<Map<String, Object>>) out.get("chips");
+        assertThat(chips.get(0)).containsEntry("addressLabel", "Closet / Sapateira / Prateleira 1").containsEntry("address", gaveta.toString());
+        assertThat(chips.get(1).get("address")).isNull();
     }
 }
