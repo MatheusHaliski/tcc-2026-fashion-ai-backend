@@ -46,7 +46,7 @@ export function useControleConsole({ ativo, onAcao }: OpcoesDoConsole): void {
       }
       const a = acaoDoConsole(e.code, e.key);
       // Esc vale até num campo; Enter num botão em foco fica com o clique do botão
-      if (!a || (a !== "FECHAR" && ignorarTecla(e))) return;
+      if (!a || (a !== "PAUSA" && ignorarTecla(e))) return;
       e.preventDefault();
       if (e.repeat) return;
       if (SEGURADAS.has(a)) seguradas.add(a);

@@ -7,15 +7,16 @@
  * | --- | --- | --- |
  * | mover | só as setas (A é mirar) | analógico esquerdo |
  * | correr | Shift segurado | L3 (botão 10) |
- * | INTERAGIR | E ou Enter | ✕ (botão 0) |
- * | MIRAR (segurar) | A | L2 (botão 6) |
- * | RODA de recursos e armas (segurar; soltar confirma) | X | □ (botão 2) |
- * | PEGAR o item em foco na roda | P | △ (botão 3) |
- * | TELA_CHEIA | F | — |
- * | FECHAR painel, roda ou ajuda | Esc | ○ (botão 1) |
+ * | INTERAGIR (abrir porta, gaveta, armário; coletar) | E ou Enter | ✕ (botão 0) |
+ * | MIRAR (segurar: retícula e câmera por cima do ombro) | A | L2 (botão 6) |
+ * | DISPARAR (mirando: a arma equipada; sem mirar: golpe corpo a corpo) | F | R2 (botão 7) |
+ * | RODA de recursos e armas (segurar; soltar confirma) | X | L1 (botão 4) |
+ * | PEGAR (equipar) o item em foco na roda | P | △ (botão 3) |
+ * | RECARREGAR | R | □ (botão 2) |
+ * | TELA_CHEIA | T | — |
+ * | PAUSA (fecha o que estiver aberto antes) | Esc | ○ (botão 1) ou Options (botão 9) |
  * | AJUDA (cartão de controles) | ? | Create (botão 8) |
- * | PAINEL_ESQUERDO (caso, mapa, pistas) | C | — |
- * | PAINEL_DIREITO (ações, inventário) | I | Options (botão 9) |
+ * | PAINEL_ESQUERDO e PAINEL_DIREITO | C e I | — |
  * Puro.
  */
 import { limitar, type Vetor } from "@/lib/flair/entrada/acoes";
@@ -30,7 +31,7 @@ export function perfilDoJogo(codigo: NucleoCodigo): PerfilDeControles {
   return PERFIL_POR_JOGO[codigo] ?? "legado";
 }
 
-export const ACOES_CONSOLE = ["INTERAGIR", "MIRAR", "RODA", "PEGAR", "TELA_CHEIA", "FECHAR", "AJUDA", "PAINEL_ESQUERDO", "PAINEL_DIREITO"] as const;
+export const ACOES_CONSOLE = ["INTERAGIR", "MIRAR", "DISPARAR", "RODA", "PEGAR", "RECARREGAR", "TELA_CHEIA", "PAUSA", "AJUDA", "PAINEL_ESQUERDO", "PAINEL_DIREITO"] as const;
 export type AcaoConsole = (typeof ACOES_CONSOLE)[number];
 
 /** As ações que valem enquanto a tecla está segurada (o hook avisa também quando ela sobe). */
@@ -41,16 +42,18 @@ const TECLAS: Record<string, AcaoConsole> = {
   Enter: "INTERAGIR",
   NumpadEnter: "INTERAGIR",
   KeyA: "MIRAR",
+  KeyF: "DISPARAR",
   KeyX: "RODA",
   KeyP: "PEGAR",
-  KeyF: "TELA_CHEIA",
-  Escape: "FECHAR",
+  KeyR: "RECARREGAR",
+  KeyT: "TELA_CHEIA",
+  Escape: "PAUSA",
   KeyC: "PAINEL_ESQUERDO",
   KeyI: "PAINEL_DIREITO",
 };
 
 /** Os botões do controle no layout padrão (https://w3c.github.io/gamepad/#remapping). */
-export const BOTOES_CONSOLE: Record<number, AcaoConsole> = { 0: "INTERAGIR", 1: "FECHAR", 2: "RODA", 3: "PEGAR", 6: "MIRAR", 8: "AJUDA", 9: "PAINEL_DIREITO" };
+export const BOTOES_CONSOLE: Record<number, AcaoConsole> = { 0: "INTERAGIR", 1: "PAUSA", 2: "RECARREGAR", 3: "PEGAR", 4: "RODA", 6: "MIRAR", 7: "DISPARAR", 8: "AJUDA", 9: "PAUSA" };
 export const BOTAO_CORRER = 10;
 
 const SETAS: Record<string, Vetor> = {
@@ -93,10 +96,12 @@ export const AJUDA_DO_CONSOLE: readonly { teclas: string[]; acao: string }[] = [
   { teclas: ["Shift"], acao: "CORRER" },
   { teclas: ["E"], acao: "INTERAGIR" },
   { teclas: ["A"], acao: "MIRAR" },
+  { teclas: ["F"], acao: "DISPARAR" },
   { teclas: ["X"], acao: "RODA" },
   { teclas: ["P"], acao: "PEGAR" },
-  { teclas: ["F"], acao: "TELA_CHEIA" },
-  { teclas: ["Esc"], acao: "FECHAR" },
+  { teclas: ["R"], acao: "RECARREGAR" },
+  { teclas: ["T"], acao: "TELA_CHEIA" },
+  { teclas: ["Esc"], acao: "PAUSA" },
   { teclas: ["C", "I"], acao: "PAINEIS" },
   { teclas: ["?"], acao: "AJUDA" },
 ];
