@@ -13002,5 +13002,13 @@
   "flair3d.uso.lance.VOO": "Flight",
   "flair3d.uso.lance.RAIO": "Bolt",
   "flair3d.uso.lance.CAMPO_DE_FORCA": "Force field",
-  "flair3d.uso.lance.METAMORFOSE": "Metamorphosis"
+  "flair3d.uso.lance.METAMORFOSE": "Metamorphosis",
+  "flair3d.uso.cena.CLUBE_CORACAO.CERTA": "Goal! The crowd chants for the new shirt.",
+  "flair3d.uso.cena.CLUBE_CORACAO.ERRADA": "The keeper saved it. The crowd holds its breath.",
+  "flair3d.uso.cena.FAVORITE_SINGER.CERTA": "The costume nails the turn: the audience lights up.",
+  "flair3d.uso.cena.FAVORITE_SINGER.ERRADA": "The costume missed the song: the audience hesitates.",
+  "flair3d.uso.cena.PILOTO_FAVORITO.CERTA": "Right tyres: the crew cheers in the pit and the car grips the road.",
+  "flair3d.uso.cena.PILOTO_FAVORITO.ERRADA": "Wrong tyres: the car slides out of the pit and the crew scrambles.",
+  "flair3d.uso.cena.SUPER_HEROI.CERTA": "The suit holds off the attack: the residents cheer from the rooftop.",
+  "flair3d.uso.cena.SUPER_HEROI.ERRADA": "The attack grazes past: the residents take cover."
 }

@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { assinarFx, emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { definirExecucaoPendente } from "@/lib/flair/nucleos/movimento/execucao-pendente";
 import { ehOusado, notaDoToque, pedidoDe, type BotaoDaExecucao, type NotaDoToque, type Toque } from "@/lib/flair/nucleos/movimento/execucao";
+import { pausar } from "@/lib/flair/nucleos/movimento/relogio-da-fase";
 import { embaloDepoisDaChave, janelasDaMarca, type ChaveDoPedido, type UsoDaCarta } from "@/lib/flair/nucleos/movimento/lances-de-uso";
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -50,12 +51,12 @@ export function useExecucaoDoDesfile(codigo: NucleoCodigo, resultado: NucleoResu
   const [notas, setNotas] = useState<NotaDoToque[]>([]);
   const [ousadias, setOusadias] = useState(0);
   const [prazo, setPrazo] = useState<Prazo | null>(null);
-  const estado = useRef({ alcancadas: 0, toques: [] as Toque[], notas: [] as NotaDoToque[], enviado: false, deixa: null as Deixa | null, ousadias: 0, prazo: null as Prazo | null, embalo: 0 });
+  const estado = useRef({ alcancadas: 0, toques: [] as Toque[], notas: [] as NotaDoToque[], enviado: false, deixa: null as Deixa | null, ousadias: 0, prazo: null as Prazo | null, embalo: 0, pausa: 0 });
   const ref = useRef({ pedido, onExecucao, armar });
   ref.current = { pedido, onExecucao, armar };
 
   useEffect(() => {
-    estado.current = { alcancadas: estado.current.alcancadas, toques: [], notas: [], enviado: false, deixa: null, ousadias: 0, prazo: null, embalo: 0 };
+    estado.current = { alcancadas: estado.current.alcancadas, toques: [], notas: [], enviado: false, deixa: null, ousadias: 0, prazo: null, embalo: 0, pausa: 0 };
     setDeixa(null);
     setNotas([]);
     setOusadias(0);
@@ -104,6 +105,8 @@ export function useExecucaoDoDesfile(codigo: NucleoCodigo, resultado: NucleoResu
     };
     const cancelar = assinarFx((ev) => {
       if (ev.nucleo !== codigo) return;
+      // a cutscene do lance para o relógio da fase: o prazo volta a correr de onde parou
+      if (ev.tipo === "cinema") e.pausa = pausar(e, !!ev.cutscene);
       if (ev.tipo === "desfile") {
         e.alcancadas = ev.alcancadas;
         abrir();
@@ -120,6 +123,7 @@ export function useExecucaoDoDesfile(codigo: NucleoCodigo, resultado: NucleoResu
     // a janela fecha sozinha; sem andar, a próxima deixa vem depois de um respiro
     const relogio = window.setInterval(() => {
       const p = ref.current.pedido;
+      if (e.pausa) return;
       if (p && e.prazo && !e.enviado && performance.now() - e.prazo.desde > e.prazo.ms) {
         // o prazo da fase acabou: as marcas que faltam contam como erro, e a execução vai ao servidor como está
         while (e.notas.length < p.botoes.length && !e.enviado) fechar("ERROU", null);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { notaDoToque, pedidoDe, pontosDaNota, type PedidoDaExecucao } from "@/lib/flair/nucleos/movimento/execucao";
 import { cartaDisponivel, embaloDepoisDaChave, janelasDaMarca, type UsoDaCarta } from "@/lib/flair/nucleos/movimento/lances-de-uso";
+import { pausar } from "@/lib/flair/nucleos/movimento/relogio-da-fase";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 
 const res = (valor: unknown) => ({ status: "EM_ACAO", eventos: [{ codigo: "EXECUCAO_PEDIDA", valor }], pontos: 0, estrelas: 0, resultado: "EM_ACAO", regras: [], cartas: [] }) as unknown as NucleoResultado;
@@ -63,5 +64,13 @@ describe("lances da fase de uso (rodada zonas)", () => {
     expect(cartaDisponivel(l, new Map([["a", 0], ["b", 1], ["c", 2]]), "d", TURBO, 3)).toBe(false);
     expect(cartaDisponivel(l, usos, "m", META, 2)).toBe(false);
     expect(cartaDisponivel(l, usos, "m", META, 3)).toBe(true);
+  });
+
+  it("a cutscene do lance para o prazo e a deixa; ao voltar, os dois andam o tempo parado", () => {
+    const e = { pausa: 0, prazo: { desde: 1000, ms: 25000 }, deixa: { desde: 1500 } };
+    e.pausa = pausar(e, true, 2000);
+    expect(pausar(e, true, 2500)).toBe(2000);
+    e.pausa = pausar(e, false, 5000);
+    expect(e).toEqual({ pausa: 0, prazo: { desde: 4000, ms: 25000 }, deixa: { desde: 4500 } });
   });
 });

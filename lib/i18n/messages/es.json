@@ -13002,5 +13002,13 @@
   "flair3d.uso.lance.VOO": "Vuelo",
   "flair3d.uso.lance.RAIO": "Rayo",
   "flair3d.uso.lance.CAMPO_DE_FORCA": "Campo de fuerza",
-  "flair3d.uso.lance.METAMORFOSE": "Metamorfosis"
+  "flair3d.uso.lance.METAMORFOSE": "Metamorfosis",
+  "flair3d.uso.cena.CLUBE_CORACAO.CERTA": "¡Gol! La hinchada canta por la camiseta nueva.",
+  "flair3d.uso.cena.CLUBE_CORACAO.ERRADA": "El portero la atajó. La hinchada contiene el grito.",
+  "flair3d.uso.cena.FAVORITE_SINGER.CERTA": "El vestuario acompaña el giro: el público enciende las luces.",
+  "flair3d.uso.cena.FAVORITE_SINGER.ERRADA": "El vestuario no siguió la música: el público duda.",
+  "flair3d.uso.cena.PILOTO_FAVORITO.CERTA": "Neumático correcto: el equipo celebra en el box y el auto sale pegado al piso.",
+  "flair3d.uso.cena.PILOTO_FAVORITO.ERRADA": "Neumático equivocado: el auto patina a la salida del box y el equipo corre.",
+  "flair3d.uso.cena.SUPER_HEROI.CERTA": "El traje resiste el ataque: los vecinos aplauden desde la terraza.",
+  "flair3d.uso.cena.SUPER_HEROI.ERRADA": "El ataque pasa rozando: los vecinos se protegen."
 }
