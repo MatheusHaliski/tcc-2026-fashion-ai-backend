@@ -39,3 +39,14 @@ it("mantém o estado salvo se o servidor recusar a alteração", async () => {
   await waitFor(() => expect((toggle as HTMLButtonElement).disabled).toBe(false));
   expect(toggle.getAttribute("aria-checked")).toBe("true");
 });
+
+it("mostra o tipo pelo código no idioma da tela (Unisex do cadastro vira Unissex)", async () => {
+  const unisex = { id: "t-uni", codigo: "UNISEX", nome: "Unisex" };
+  loggedAs(undefined, { "GET /api/tipos-look": [feminino, unisex], "GET /api/me/preferences/tipo-look": { tipoLook: unisex } });
+  renderApp(<LookTypePreference />);
+  const select = await screen.findByLabelText("Tipo aplicado");
+  expect(select.textContent).toContain("Unissex");
+  fireEvent.click(select);
+  expect(screen.getByRole("option", { name: "Unissex" })).toBeTruthy();
+  expect(screen.queryByRole("option", { name: "Unisex" })).toBeNull();
+});

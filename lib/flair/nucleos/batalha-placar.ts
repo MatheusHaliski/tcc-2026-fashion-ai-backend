@@ -13,6 +13,8 @@ export interface ContaDaBatalha {
   regra: number;
   look: number;
   recurso: number;
+  /** o júri da Aura e o trunfo chamado na rodada (8g); o look da casa não tem */
+  aura?: number;
 }
 
 export interface PecaDaCasa {

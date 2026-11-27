@@ -15,6 +15,7 @@ import { EsporteResumo, resultadoSemLances } from "@/components/flair/esporte/es
 import { NucleoActionSlot } from "@/components/flair/nucleos/nucleo-action-slot";
 import { MODELO_CASA, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { NucleoApresentacao } from "@/components/flair/nucleos/nucleo-apresentacao";
+import { NucleoAura } from "@/components/flair/nucleos/nucleo-aura";
 import { NucleoCardZoom } from "@/components/flair/nucleos/nucleo-card-zoom";
 import { NucleoHelp } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoDeckBand } from "@/components/flair/nucleos/nucleo-deck-band";
@@ -168,7 +169,7 @@ export function NucleoGame(props: Props) {
           resultado={resultado} tentativa={props.tentativa}
           previa={props.previa ?? null}
           variante={variante} semente={props.partida?.semente}
-          zonas={estado.sel.zonas} maquiagem={estado.sel.maquiagem}
+          zonas={estado.sel.zonas} emblema={estado.sel.resposta} maquiagem={estado.sel.maquiagem}
           prefs={fx.prefs}
           onPref={fx.alternar}
           entrada={entrada} recursos={recursos} usoDeRecursos={usoDeRecursos} cinema={cinema} onFimDesfile={acao.pular} entreLances={acao.aberta}
@@ -182,6 +183,7 @@ export function NucleoGame(props: Props) {
       )}
       <div className="n3d-lower">
         {preparando && <NucleoApresentacao definicao={definicao} partida={props.partida} tentativa={props.tentativa} apresentacao={apresentacao} cartas={cartas} efeitos={efeitos.itens} />}
+        {preparando && <NucleoAura codigo={codigo} vestidas={estado.sel.cartas} cartas={cartas} aura={efeitos.aura} previa={props.previa} partida={props.partida?.id} />}
         <NucleoSlotRuler
           vagas={vagasDaRegua(tabs)}
           vestidas={vestidas}

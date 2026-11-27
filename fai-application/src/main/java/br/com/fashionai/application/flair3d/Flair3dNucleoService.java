@@ -146,7 +146,7 @@ public class Flair3dNucleoService {
 
     /** O contexto dos selos: o da partida (rodada e sorteio dela, só do dono) ou o da rodada pedida, ainda sem sorteio. */
     private Contexto contextoDosEfeitos(CurrentUser user, Flair3dNucleo n, Map<UUID, CbcRules.Card> minhas, PedidoEfeitos pedido) {
-        Contexto base = new Contexto(minhas, cartas.paises(), null);
+        Contexto base = new Contexto(minhas, cartas.paises(), null).comAuras(cartas.auras(user.id(), minhas.keySet()));
         if (pedido == null) {
             return base;
         }
@@ -183,7 +183,10 @@ public class Flair3dNucleoService {
         Map<UUID, CbcRules.Card> minhas = cartas.daPessoa(user.id(), usadas);
         List<UUID> deck = Flair3dDeck.ids(m.getDeckJson());
         Flair3dEntregas.conferir(n.definicao().naRodada(a.rodada()), e, minhas, deck, a.cartas());
-        return cartas.contexto(minhas, m.getSemente()).comAndamento(a).comDeck(deck.isEmpty() ? minhas : cartas.daPessoa(user.id(), deck));
+        List<UUID> comAura = new ArrayList<>(usadas);
+        comAura.addAll(deck);
+        return cartas.contexto(minhas, m.getSemente()).comAndamento(a).comDeck(deck.isEmpty() ? minhas : cartas.daPessoa(user.id(), deck))
+                .comAuras(cartas.auras(user.id(), comAura));
     }
 
     /** A nota do jogo com o que o look e os recursos somam (regra peça-recurso, Flair3dRecursoBonus). */

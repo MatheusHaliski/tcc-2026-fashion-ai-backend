@@ -1,0 +1,234 @@
+/* ── FLAIR 3D · palco de jogo no perfil console (components/flair/nucleos/console): a cena ocupa a tela toda abaixo
+   do cabeçalho (tela cheia de verdade com T ou o botão; modo imersivo onde a Fullscreen API não existe), os botões de
+   ícone dos cantos, a roda radial de recursos e armas, o cartão de ajuda dos controles e o aviso curto. Reutilizável
+   pelos outros jogos (cada um põe a própria classe ao lado de .cst-palco). */
+.cst-palco {
+  position: fixed;
+  inset: var(--header-h) 0 0;
+  z-index: 45;
+  overflow: hidden;
+  background: #0e0f14;
+  color: #f4f2ee;
+  user-select: none;
+}
+
+.cst-palco:fullscreen,
+.cst-palco.is-imersivo {
+  inset: 0;
+  z-index: 65;
+}
+
+.cst-cena,
+.cst-cena canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cst-palco.is-lenta .cst-cena {
+  filter: saturate(0.45) brightness(0.7);
+}
+
+.cst-palco.is-parada .cst-cena {
+  filter: saturate(0.2) brightness(0.5);
+}
+
+.cst-icone-btn {
+  display: inline-grid;
+  place-items: center;
+  width: var(--touch);
+  height: var(--touch);
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 45%);
+  color: #fff;
+}
+
+.cst-icone-btn:hover,
+.cst-icone-btn:focus-visible {
+  background: rgb(0 0 0 / 70%);
+}
+
+/* roda radial: ícones grandes em volta, só o nome do item em foco no meio */
+.cst-roda-fundo {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle, rgb(0 0 0 / 55%) 0, rgb(0 0 0 / 25%) 60%, transparent 100%);
+}
+
+.cst-roda {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: calc(var(--cst-roda-raio) * 2 + 96px);
+  height: calc(var(--cst-roda-raio) * 2 + 96px);
+  border-radius: 50%;
+  background: rgb(14 15 20 / 72%);
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 12%) inset;
+  animation: cst-roda-abre 0.14s ease-out;
+}
+
+.cst-roda.is-calma {
+  animation: none;
+}
+
+@keyframes cst-roda-abre {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+.cst-roda-item {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border: 2px solid rgb(255 255 255 / 18%);
+  border-radius: 50%;
+  background: rgb(30 33 42 / 92%);
+  color: #f4f2ee;
+}
+
+.cst-roda-item.is-foco {
+  border-color: #f2c230;
+  background: rgb(242 194 48 / 22%);
+  box-shadow: 0 0 18px rgb(242 194 48 / 45%);
+}
+
+.cst-roda-item.is-equipado::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7be3a0;
+}
+
+.cst-roda-item.is-vazio {
+  opacity: 0.4;
+}
+
+.cst-roda-usos {
+  position: absolute;
+  bottom: -20px;
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cst-roda-nome {
+  max-width: 150px;
+  margin: 0;
+  font-size: var(--text-h3);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* cartão de ajuda dos controles */
+.cst-ajuda {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 8;
+  width: min(92vw, 380px);
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgb(14 15 20 / 94%);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 50%);
+  transform: translate(-50%, -50%);
+}
+
+.cst-ajuda header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cst-ajuda h2 {
+  margin: 0;
+  font-size: var(--text-h3);
+}
+
+.cst-ajuda dl {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+.cst-ajuda dl > div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.cst-ajuda dt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cst-ajuda dd {
+  margin: 0;
+  font-size: var(--text-body);
+}
+
+.cst-palco kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: 6px;
+  background: rgb(255 255 255 / 12%);
+  color: #fff;
+  font: 700 var(--text-caption) / 1 var(--font-data, monospace);
+}
+
+/* aviso curto (toast): uma linha no alto, some sozinho */
+.cst-aviso {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  z-index: 5;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 70%);
+  color: #fff;
+  font-size: var(--text-body);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: cst-aviso 0.2s ease-out;
+}
+
+.cst-aviso.is-alerta {
+  background: rgb(150 30 36 / 85%);
+}
+
+@keyframes cst-aviso {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cst-aviso,
+  .cst-roda {
+    animation: none;
+  }
+}

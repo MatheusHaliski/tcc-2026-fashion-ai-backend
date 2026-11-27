@@ -2,9 +2,11 @@ package br.com.fashionai.application.flair3d;
 
 import br.com.fashionai.application.flair.CbcCardMapper;
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair3d.aura.Flair3dAuraDaCarta;
 import br.com.fashionai.application.service.FlairCollectionService;
 import br.com.fashionai.domain.model.Brand;
 import br.com.fashionai.domain.model.FlairCardInstance;
+import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.FlairCardInstanceRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
@@ -54,6 +56,29 @@ public class Flair3dCartas {
             throw Flair3dErros.cartaAlheia(alheias);
         }
         return CbcCardMapper.models(achadas, pieces, FlairCollectionService::tagsOf);
+    }
+
+    /**
+     * A família de Aura de cada carta pedida da pessoa (Flair3dAuraDaCarta: a arte do card da peça); carta sem Aura,
+     * de outra pessoa ou de origem LOOK fica de fora. Só leitura: o jogo nunca escreve Aura nem Hype.
+     */
+    public Map<UUID, String> auras(UUID userId, Collection<UUID> ids) {
+        Set<UUID> pedidas = new LinkedHashSet<>();
+        ids.stream().filter(Objects::nonNull).forEach(pedidas::add);
+        if (pedidas.isEmpty()) {
+            return Map.of();
+        }
+        List<FlairCardInstance> minhas = cards.findAllById(pedidas).stream().filter(c -> userId.equals(c.getOwnerId())).toList();
+        Map<UUID, WardrobeItem> pecas = CbcCardMapper.pieces(minhas, pieces);
+        Map<UUID, String> out = new HashMap<>();
+        for (FlairCardInstance c : minhas) {
+            WardrobeItem w = "PIECE".equals(c.getOriginType()) ? pecas.get(c.getOriginId()) : null;
+            String familia = w == null ? null : Flair3dAuraDaCarta.familia(w.getBackgroundConfigJson());
+            if (familia != null) {
+                out.put(c.getId(), familia);
+            }
+        }
+        return out;
     }
 
     /** País (ISO 2) de uma marca pelo nome, com memória por requisição. */

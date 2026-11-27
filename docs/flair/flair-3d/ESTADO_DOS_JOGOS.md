@@ -400,6 +400,86 @@ gênero: plateia e júri que reagem pela faixa (Passarela, Batalha, Singer), o H
 por partida (destaque na foto, voto da plateia no empate), a Aura Metamorfose da carta Especial como poder com tempo
 de recarga, e cartas privadas sem Hype explicadas na tela. Sempre lendo o Hype, nunca escrevendo (Circuito Aura).
 
+## Rodada 8g (27/11/2026): o fim da Batalha e a Aura que muda a partida
+
+Duas coisas: o bug do resultado final da Batalha de Looks e o critério Aura (o de nota mais baixa, média 2,8), que
+passa a mudar a partida em cinco jogos de cartas. Princípio do Circuito Aura mantido: os jogos **leem** a faixa de Hype
+e a família de Aura das cartas e nunca escrevem Hype (nada é gasto, gravado ou publicado no Hype real). Os quatro
+jogos de zonas ficam com outra rodada. Visto na tela com a bancada (`BANCADA_DE_TELA.md`).
+
+### Item 1 (feito): "30 pontos, nenhuma estrela, Vitória" com a tabela 127 × 79
+
+**Causa.** Na Batalha de 3 rodadas, a nota final era a média das rodadas (127 / 3 = 42) mais a execução do desfile
+final; "seguir sem executar" conta as três marcas como erro (−12) e dava 30. O desfecho, porém, vinha da soma das
+rodadas sem a execução (127 > 79): "Vitória" com 0 estrela. Reproduzido em `BatalhaLooksFechoTest` (falhava antes da
+correção) e no componente (`batalha-fecho.test.tsx`).
+
+**Regra nova** (`BatalhaLooksFecho`, chamado pelo gancho `comExecucao` da Strategy, que a execução usa para o jogo
+decidir o desfecho): a execução entra na **soma** da pessoa, que é o que se compara com a casa; no empate, o voto da
+plateia; a nota continua média + execução, mas segue o desfecho: **vitória vale ao menos 60 (1 estrela), derrota no
+máximo 59**. O evento `SOMA_DA_BATALHA` passa a trazer `{voce, adversario, rodadas, execucao}`. Na tela, a tabela ganha
+a linha "Desfile final (execução)", a soma é a do servidor e o painel de LED mostra a mesma soma.
+
+**Visto na tela** (bancada, seguindo sem executar): "60 pts ★", tabela 114 − 12 = 102 × 54, LED igual à tabela.
+
+### Item 2 (feito): a Aura muda a partida em 5 jogos
+
+Regras em `flair3d/aura/Flair3dAuraRegras` (servidor, que julga) e as mesmas em `lib/flair/nucleos/aura-na-partida.ts`
+(a tela avisa antes da entrega). Valem em **Passarela, Dress the Star, Personagem de Filme, Boutique 3D e Batalha de
+Looks** (os de Aura mais baixa entre os de cartas; Fashion Sports já usava o Hype e Dress Fighter tem a carta Especial
+dentro da luta).
+
+| Mecânica | Regra (limitada) | Onde entra |
+| --- | --- | --- |
+| Plateia/júri pela faixa de Hype | média inteira das faixas das peças que pontuam (sinal baixo 0 … viral 5) → 0, 0, 1, 2, 4, 6 pontos; nunca tira ponto | nos 4 jogos de um look, na nota que fecha o look (regra `PLATEIA_DO_HYPE`); na Batalha, na nota de **cada rodada**, dentro da comparação com a casa (parcela "da Aura") |
+| Splash | a plateia lê uma faixa acima | idem |
+| Trunfo do Hype (uso único) | `POST /api/flair/3d/partidas/{id}/hype`: uma carta do deck com Hype Relevante ou mais, uma vez por partida (422 `HYPE_JA_CHAMADO`, `HYPE_SEM_FORCA`, `CARTA_FORA_DO_DECK`; pedido repetido devolve o mesmo); +2 a +5 pela faixa | destaque na foto final (`TRUNFO_DO_HYPE`); na Batalha, soma na rodada em que foi chamado e ganha o voto da plateia no empate |
+| Electro | +150 ms por peça na janela de cada marca da execução (até +300) | execução |
+| Comum | o primeiro erro da execução não drena o recurso-vida (os pontos caem igual) | execução |
+| Metamorfose (só carta Especial) | poder com recarga: na execução, a marca errada vira "bom" e recarrega por 2 marcas; na Batalha, a carta vale na regra de qualquer desafio (a proibida segue proibida) e recarrega por 1 rodada, que coincide com o cansaço da peça | execução; rodada da Batalha |
+
+A família de Aura sai da arte do card da peça (`background_config_json`: `auraMetamorphose` ligada ou
+`compositionPreset.family`), lida por `Flair3dCartas.auras` e levada no `Contexto`; chega à tela pelos selos
+(`efeitos[].aura`). O trunfo fica no andamento da partida (`Andamento.hype`), sem migração. Decisão de padrão em
+`docs/refactoring/gof/R90-flair3d-nucleos.md` (Decorator `Flair3dAuraNaPartida`; a Batalha lê a Aura na rodada).
+
+**Tela.** Na preparação, o painel "Aura na partida": quem reage (a plateia do desfile, os fãs da estrela, a equipe do
+set, as clientes, o júri), a faixa e os pontos (os da prévia do servidor; antes dela, a mesma regra pelos selos), o
+que cada família vestida faz e os botões "Chamar o Hype de … (+n)" só com as cartas que podem ser trunfo; carta
+privada ou sem Hype público é explicada. No resultado, "Aura na partida" diz o que a plateia, o trunfo, o Electro, o
+Comum e a Metamorfose renderam.
+
+**Testes.** JUnit: `Flair3dAuraRegrasTest`, `Flair3dAuraNaPartidaTest`, `Flair3dAuraTrunfoTest` (serviço),
+`BatalhaLooksAuraTest`, `BatalhaLooksFechoTest`; caracterizações ajustadas (`Flair3dPartidaRodadasTest`,
+`Flair3dNucleoServiceTest`). Vitest: `aura-na-partida.test.ts`, `nucleo-aura.test.tsx`, `batalha-fecho.test.tsx`,
+`batalha-placar.test.ts`.
+
+**Visto na tela:** a Batalha inteira com o trunfo chamado na 3ª rodada (+5 na rodada, "Comum: o primeiro erro não
+drenou o recurso" no resultado) e a Passarela com o painel e o trunfo. Capturas em `scratchpad/shots/jogos/8g/`.
+**Não visto:** Dress the Star, Personagem de Filme e Boutique na tela (mesmo componente e mesmo Decorator, cobertos
+pelos testes); celular; a Metamorfose disparando na tela (a carta Especial da bancada é ACE e o look da captura errou
+nenhuma marca com ela).
+
+### Nota projetada depois da rodada 8g
+
+Projeção de quem implementou, a conferir por auditor independente. Entre parênteses, a da rodada 8f. Os outros dez
+jogos não mudam.
+
+| Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Aura | Final (sem Aura) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| BATALHA_LOOKS | 5,3 (5,0) | 5,4 (5,0) | 6,6 (6,3) | 5,2 | 4,8 | 6,5 | 5,5 | **6** (3) | **5,6** (5,5) |
+| PASSARELA | 5,5 (5,3) | 5,2 (4,8) | 6 | 5,5 | 5,5 | 6,5 | 6 | **5,5** (3) | **5,7** (5,7) |
+| DRESS_THE_STAR | 5,3 (5,1) | 5,0 (4,6) | 6,8 | 5,5 | 5,2 | 6,5 | 6 | **5,5** (3) | **5,8** (5,7) |
+| PERSONAGEM_FILME | 5,6 (5,5) | 4,8 (4,4) | 6 | 5,5 | 5 | 6 | 5,5 | **5** (2,5) | **5,5** (5,4) |
+| BOUTIQUE_3D | 4,2 (4) | 4,9 (4,5) | 5,5 | 6 | 4,5 | 6 | 5 | **5** (2,5) | **5,2** (5,1) |
+
+Aura média dos 15: 2,8 → 3,7. Média final (sem Aura): 5,2 → 5,3. Nenhum jogo chega a 8 em nenhum critério.
+
+**O que ainda separa a Aura de 8 nestes cinco:** a plateia reage só em número e texto (falta a plateia 3D reagir à
+faixa: luz, aplauso, flashes por faixa); a Metamorfose não tem efeito visual próprio no palco; o trunfo não tem
+cutscene; a faixa de Hype é a do retrato da carta (fixa na partida). Nos outros dez jogos a Aura segue só na faixa do
+resultado (jogos de zonas: outra rodada).
+
 ## Resumo
 
 | Nº | Jogo | Estado ao escrever este documento | Mais incompleto primeiro (ordem de trabalho) |

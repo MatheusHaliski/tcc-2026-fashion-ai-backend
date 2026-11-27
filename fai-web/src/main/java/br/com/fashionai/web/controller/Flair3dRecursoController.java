@@ -1,5 +1,6 @@
 package br.com.fashionai.web.controller;
 
+import br.com.fashionai.application.flair3d.aura.Flair3dAuraTrunfo;
 import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoUso;
 import br.com.fashionai.application.security.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,15 +16,17 @@ import java.util.UUID;
 
 /**
  * FLAIR 3D — a peça usada como recurso numa partida (regra peça-recurso): vida, energia, foco e moedas da partida, e o
- * uso de uma peça do deck. Logado; só o dono da partida.
+ * uso de uma peça do deck; e o trunfo do Hype, chamado uma vez por partida (só lê o Hype). Logado; só o dono da partida.
  */
 @RestController
 @Tag(name = "FLAIR 3D — recursos")
 public class Flair3dRecursoController {
     private final Flair3dRecursoUso uso;
+    private final Flair3dAuraTrunfo trunfo;
 
-    public Flair3dRecursoController(Flair3dRecursoUso uso) {
+    public Flair3dRecursoController(Flair3dRecursoUso uso, Flair3dAuraTrunfo trunfo) {
         this.uso = uso;
+        this.trunfo = trunfo;
     }
 
     @GetMapping("/api/flair/3d/partidas/{id}/recursos")
@@ -37,5 +40,12 @@ public class Flair3dRecursoController {
             + "pedido repetido devolve a mesma resposta)")
     public Map<String, Object> usar(CurrentUser user, @PathVariable UUID id, @RequestBody(required = false) Flair3dRecursoUso.PedidoDeUso body) {
         return uso.usar(user, id, body);
+    }
+
+    @PostMapping("/api/flair/3d/partidas/{id}/hype")
+    @Operation(summary = "Chama o Hype de uma carta do deck como trunfo, uma vez por partida, sem mudar o Hype real (403; 409; "
+            + "fora do deck, Hype abaixo de Relevante ou trunfo já chamado, 422; pedido repetido devolve a mesma resposta)")
+    public Map<String, Object> hype(CurrentUser user, @PathVariable UUID id, @RequestBody(required = false) Flair3dAuraTrunfo.PedidoDeTrunfo body) {
+        return trunfo.chamar(user, id, body);
     }
 }
