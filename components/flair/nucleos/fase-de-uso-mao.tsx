@@ -96,13 +96,13 @@ export function MaoDeUso({ cartas, lances, armada, usos, marca, disponivel, arma
             data-uniforme={doUniforme || undefined}
             disabled={!livre}
             aria-pressed={armada === c.id}
-            title={tx.t(`flair3d.uso.efeito.${c.uso.efeito}`)}
+            title={`${c.nome} · ${tx.t(`flair3d.uso.efeito.${c.uso.efeito}`)} · ${recarga ? tx.t("flair3d.uso.mao.recarga") : tx.t("flair3d.uso.mao.torcida", { faixa: tx.t(`hype.level.${c.uso.faixa}`) })}`}
+            aria-label={`${i + 1}: ${tx.t(`flair3d.uso.lance.${c.uso.lance}`)} (${c.nome})`}
             onClick={() => armar(c.id)}
           >
             <kbd>{i + 1}</kbd>
             <b>{tx.t(`flair3d.uso.lance.${c.uso.lance}`)}</b>
-            <small>{c.nome}</small>
-            <small>{recarga ? tx.t("flair3d.uso.mao.recarga") : tx.t("flair3d.uso.mao.torcida", { faixa: tx.t(`hype.level.${c.uso.faixa}`) })}</small>
+            {recarga && <small>{tx.t("flair3d.uso.mao.recarga")}</small>}
           </button>
         );
       })}

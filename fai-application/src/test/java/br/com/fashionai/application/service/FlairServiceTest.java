@@ -163,6 +163,18 @@ class FlairServiceTest {
     }
 
     @Test
+    void treinoContraAEquipeDaCasaNaoMexeNaLiga() {
+        String code = String.valueOf(map(flair.createTeam(ana, "Time Solo", null).get("mine")).get("code"));
+        Map<String, Object> practice = flair.teamBattle(ana, "casa");
+        assertThat(practice.get("practice")).isEqualTo(true);
+        assertThat(map(practice.get("teamB")).get("code")).isEqualTo("CASA");
+        assertThat((List<?>) practice.get("duels")).isNotEmpty();
+        assertThat(map(map(flair.league(ana).get("mine"))).get("points")).isEqualTo(0);
+        assertThat(kit.atelierGrants()).noneMatch(g -> g.getCategory() == Category.collectiveWork);
+        assertThat(code).isNotBlank();
+    }
+
+    @Test
     void equipeCheiaNaoAceitaMaisNinguem() {
         String code = String.valueOf(map(flair.createTeam(ana, "Lotado", null).get("mine")).get("code"));
         for (String n : List.of("bia", "caio", "duda", "enzo")) {

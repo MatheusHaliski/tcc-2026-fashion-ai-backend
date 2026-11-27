@@ -2,6 +2,9 @@ package br.com.fashionai.application.flair3d.nucleos;
 
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Andamento.UsoDeRecurso;
+import br.com.fashionai.application.flair3d.Contexto;
+import br.com.fashionai.application.flair3d.aura.Flair3dAuraEvento;
+import br.com.fashionai.application.flair3d.aura.Flair3dAuraRegras;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoBonus;
 import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoCalculo;
@@ -30,6 +33,11 @@ import java.util.stream.Collectors;
  *       nesta rodada, não conta na regra nem no look. A casa não usa recurso.</li>
  * </ul>
  *
+ * Rodada 8g, a Aura ({@link Flair3dAuraRegras}): o júri reage à faixa de Hype das peças que contam (0 a 6, Splash
+ * lê uma faixa acima), o trunfo do Hype chamado para esta rodada soma o destaque (2 a 5), e a carta Especial com Aura
+ * Metamorfose vale na regra de qualquer desafio (a proibida continua proibida). Como a peça que desfilou chega cansada à
+ * rodada seguinte, o poder recarrega por {@value Flair3dAuraRegras#RECARGA_RODADAS} rodada. A casa não tem Aura.
+ *
  * A nota da rodada para em 100. Puro.
  */
 final class BatalhaLooksPlacar {
@@ -40,9 +48,13 @@ final class BatalhaLooksPlacar {
     }
 
     /** As três parcelas da nota de um lado na rodada. */
-    record Nota(int regra, int look, int recurso) {
+    record Nota(int regra, int look, int recurso, int aura) {
+        Nota(int regra, int look, int recurso) {
+            this(regra, look, recurso, 0);
+        }
+
         int total() {
-            return Math.min(100, regra + look + recurso);
+            return Math.min(100, regra + look + recurso + aura);
         }
 
         Map<String, Object> paraTela() {
@@ -50,12 +62,16 @@ final class BatalhaLooksPlacar {
             m.put("regra", regra);
             m.put("look", look);
             m.put("recurso", recurso);
+            m.put("aura", aura);
             return m;
         }
     }
 
     /** A rodada da pessoa: a nota, as regras (as do desafio e as duas da regra peça-recurso) e as vagas cansadas. */
-    record DaPessoa(Nota nota, List<RegraResultado> regras, List<String> cansadas) {
+    record DaPessoa(Nota nota, List<RegraResultado> regras, List<String> cansadas, Flair3dAuraEvento aura) {
+        DaPessoa(Nota nota, List<RegraResultado> regras, List<String> cansadas) {
+            this(nota, regras, cansadas, null);
+        }
     }
 
     /** As cartas gastas como recurso nesta rodada (a rodada 1 é a etapa 0 do uso). */
@@ -67,13 +83,18 @@ final class BatalhaLooksPlacar {
         return daPessoa(desafio, look, look, usos, rodada);
     }
 
+    static DaPessoa daPessoa(BatalhaLooksRodadas.Desafio desafio, Map<String, CbcRules.Card> look, Map<String, CbcRules.Card> descansadas,
+            List<UsoDeRecurso> usos, int rodada) {
+        return daPessoa(desafio, look, descansadas, usos, rodada, null);
+    }
+
     /**
      * A rodada da pessoa quando parte do look já chega cansada por ter desfilado na rodada anterior
      * ({@code descansadas}, de {@link BatalhaLooksRodadas#descansadas}). Não contam a peça que desfilou na rodada anterior
      * nem a gasta como recurso nesta; a peça proibida conta no look inteiro.
      */
     static DaPessoa daPessoa(BatalhaLooksRodadas.Desafio desafio, Map<String, CbcRules.Card> look, Map<String, CbcRules.Card> descansadas,
-            List<UsoDeRecurso> usos, int rodada) {
+            List<UsoDeRecurso> usos, int rodada, Contexto contexto) {
         Set<UUID> gastas = gastas(usos, rodada);
         Map<String, CbcRules.Card> valendo = new LinkedHashMap<>();
         List<String> cansadas = new ArrayList<>();
@@ -84,13 +105,17 @@ final class BatalhaLooksPlacar {
                 valendo.put(vaga, carta);
             }
         });
-        List<RegraResultado> regras = new ArrayList<>(BatalhaLooksRodadas.regras(desafio, valendo, look));
+        List<RegraResultado> regras = new ArrayList<>(BatalhaLooksRodadas.regras(BatalhaLooksAura.comMetamorfose(desafio, contexto), valendo, look));
         int foco = Flair3dRecursoNoMotor.naEtapa(usos, FOCO, rodada - 1);
+        Flair3dAuraEvento aura = contexto == null ? null : Flair3dAuraEvento.de(valendo.values(), contexto);
         Nota nota = new Nota((int) Math.round(BatalhaLooksRodadas.pontos(regras)), peloLook(valendo),
-                (int) Math.round(Flair3dRecursoPerfil.TETO_DO_RECURSO * Math.min(1, foco / (double) FOCO_CHEIO)));
+                (int) Math.round(Flair3dRecursoPerfil.TETO_DO_RECURSO * Math.min(1, foco / (double) FOCO_CHEIO)), BatalhaLooksAura.daRodada(aura, rodada));
         regras.add(RegraResultado.de(Flair3dRecursoBonus.REGRA_LOOK, nota.look() > 0, nota.look()));
         regras.add(RegraResultado.de(Flair3dRecursoBonus.REGRA_RECURSO, nota.recurso() > 0, nota.recurso()));
-        return new DaPessoa(nota, regras, cansadas);
+        if (aura != null) {
+            regras.add(RegraResultado.de(BatalhaLooksAura.REGRA, nota.aura() > 0, nota.aura()));
+        }
+        return new DaPessoa(nota, regras, cansadas, aura);
     }
 
     /** O look da casa pela mesma conta, sem recurso. */

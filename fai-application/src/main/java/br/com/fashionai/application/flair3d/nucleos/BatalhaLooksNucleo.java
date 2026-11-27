@@ -77,14 +77,14 @@ public class BatalhaLooksNucleo implements Flair3dNucleo {
     /** Treino de um desafio só contra o adversário da casa, com a nota dele tirada da semente. */
     private static Resultado treinar(Map<String, CbcRules.Card> vestidas, Contexto contexto) {
         BatalhaLooksRodadas.Desafio desafio = BatalhaLooksRodadas.treino(contexto);
-        BatalhaLooksPlacar.DaPessoa voce = BatalhaLooksPlacar.daPessoa(desafio, vestidas, contexto.andamento().usos(), 1);
+        BatalhaLooksPlacar.DaPessoa voce = BatalhaLooksPlacar.daPessoa(desafio, vestidas, vestidas, contexto.andamento().usos(), 1, contexto);
         double pontos = voce.nota().total();
         Map<String, Object> adversario = BatalhaLooksRodadas.adversarioNaTela(contexto, 1, desafio);
         int nota = (int) adversario.get("nota");
         Map<String, Object> conta = Map.of("voce", voce.nota().paraTela(), "adversario", adversario.get("conta"), "cansadas", voce.cansadas());
         return Resultado.of(pontos, pontos > nota ? "VITORIA" : "DERROTA", voce.regras(),
                 List.of(new Evento("DESAFIO", desafio.codigo()), new Evento("ADVERSARIO", nota), new Evento("LOOK_DO_ADVERSARIO", adversario),
-                        new Evento("CONTA_DA_BATALHA", conta)))
+                        new Evento("CONTA_DA_BATALHA", conta), voce.aura().evento()))
                 .comCartas(new Flair3dRateio(vestidas).cada(POR_PECA, desafio.naRegra()).lista());
     }
 

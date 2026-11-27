@@ -52,10 +52,6 @@ function comum(pathname) {
   if (pathname === '/api/hype/summaries' || pathname === '/api/pieces/seals') return { items: {} };
   if (pathname === '/api/notifications/unread-count') return { count: 0 };
   if (pathname === '/api/me/issuer-review') return { status: 'APROVADO' };
-  if (pathname === '/api/tipos-look') return [{ id: 'tl-fem', codigo: 'FEMININO', nome: 'Feminino' }];
-  if (pathname === '/api/me/preferences/tipo-look') return { tipoLook: null };
-  const lugar = pathname.match(/^\/api\/me\/acervo\/pecas\/([^/]+)\/lugar$/);
-  if (lugar) return { pieceId: lugar[1], guardada: false, compartimentoId: null, caminho: null };
   if (pathname === '/api/me/signature-piece') return { signaturePiece: null, version: 0, updatedAt: null };
   return undefined;
 }

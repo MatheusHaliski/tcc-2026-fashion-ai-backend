@@ -198,6 +198,7 @@ class Flair3dNucleoServiceTest {
         return ((List<Map<String, Object>>) efeitos).stream().map(m -> {
             Map<String, Object> copia = new java.util.LinkedHashMap<>(m);
             copia.remove("perfil");
+            copia.remove("aura");
             return copia;
         }).toList();
     }

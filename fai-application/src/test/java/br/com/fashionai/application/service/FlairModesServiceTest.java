@@ -1,5 +1,13 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.domain.model.enums.NotificationType;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.flair.FlairLooks;
 import br.com.fashionai.application.security.CurrentUser;
@@ -55,6 +63,16 @@ class FlairModesServiceTest {
         assertThat(r).containsKeys("matchId", "outcome", "coins", "faiPoints");
         assertThat(r.get("mode")).isEqualTo(mode);
         assertThat(r.get("outcome")).isIn("WIN", "LOSS", "DRAW");
+    }
+
+    @Test
+    void rivalEscolhidoNaRedeRecebeARevancheEBloqueioSomeDaPartida() {
+        modes.battle(ana, looks.get(0), "@bia", null);
+        verify(kit.dep(NotificationService.class)).notify(eq(world.rival.getId()), eq(world.me.getId()), eq(NotificationType.CHALLENGE_INVITE),
+                eq("FLAIR_INVITE"), any(), anyString(), anyString(),
+                argThat(p -> ("/flair/partidas?mode=BATTLE&rival=" + world.me.getUsername()).equals(p.get("href"))));
+        when(kit.dep(Guard.class).blocked(world.me.getId(), world.rival.getId())).thenReturn(true);
+        assertThatThrownBy(() -> modes.battle(ana, looks.get(0), "bia", null)).isInstanceOf(ApiException.class);
     }
 
     @Test
@@ -321,6 +339,10 @@ class FlairModesServiceTest {
         Map<String, Object> r = modes.wardrobeWars(ana, "bia");
         assertFinished(r, "WARDROBE");
         assertThat(r).containsKeys("me", "opponent", "note");
+        // solo: A Casa empresta o guarda-roupa público de alguém da comunidade (nunca o da própria pessoa)
+        Map<String, Object> solo = modes.wardrobeWars(ana, "CASA");
+        assertFinished(solo, "WARDROBE");
+        assertThat(String.valueOf(map(solo.get("opponent")).get("label"))).contains("A Casa").doesNotContain("@" + world.me.getUsername());
     }
 
     @Test

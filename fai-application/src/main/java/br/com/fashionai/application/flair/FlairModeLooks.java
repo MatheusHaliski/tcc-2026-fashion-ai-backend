@@ -165,6 +165,10 @@ public final class FlairModeLooks {
         if (u.getId().equals(user.id())) {
             throw ApiException.badRequest("OPONENTE_INVALIDO", Msg.t("common.escolha_outra_pessoa_ou_a"));
         }
+        if (guard.blocked(user.id(), u.getId())) {
+            // bloqueio em qualquer direção: a pessoa some da partida como se não existisse (não revela o bloqueio)
+            throw ApiException.notFound("Oponente");
+        }
         return u;
     }
 

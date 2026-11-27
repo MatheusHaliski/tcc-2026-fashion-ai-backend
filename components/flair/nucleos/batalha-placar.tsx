@@ -22,7 +22,8 @@ export function BatalhaPlacar({ resultado, anterior }: Props) {
   // no fim, a soma é a do servidor: as rodadas mais a execução do desfile final (é ela que decide quem venceu)
   const soma = fecho ?? somaDaBatalha(rodadas);
   if (!soma) return null;
-  const conta = (c: ContaDaBatalha | undefined, total: number) => (c ? tx.t("flair3d.ui.batalha.conta", { regra: c.regra, look: c.look, recurso: c.recurso, total }) : String(total));
+  // com a Aura (rodada 8g), a conta leva o júri e o trunfo; servidor antigo não manda a parcela
+  const conta = (c: ContaDaBatalha | undefined, total: number) => (c ? tx.t(c.aura ? "flair3d.ui.batalha.contaAura" : "flair3d.ui.batalha.conta", { regra: c.regra, look: c.look, recurso: c.recurso, aura: c.aura ?? 0, total }) : String(total));
   return (
     <section className="n3d-batalha" aria-label={tx.t("flair3d.ui.batalha.titulo")} data-testid="batalha-placar">
       <table className="n3d-batalha-tabela">
