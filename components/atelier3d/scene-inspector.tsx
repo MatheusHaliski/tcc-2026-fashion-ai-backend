@@ -1,4 +1,5 @@
 "use client";
+import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Field, Input } from "@/components/ui";
 import {
@@ -11,6 +12,8 @@ import {
 } from "@/lib/atelier3d/document";
 import { SceneCommandPanel } from "./scene-command-panel";
 import { MaterialFields, VectorField } from "./scene-fields";
+import { GarmentPanel } from "./garment-panel";
+import { assetIsPhotoRelief, isEngineGarment } from "@/lib/atelier3d/garment-parts";
 import styles from "./editor.module.css";
 
 interface SceneInspectorProps {
@@ -22,6 +25,8 @@ interface SceneInspectorProps {
   vertex: number;
   onVertexChange: (index: number) => void;
   onChange: (document: SceneDocument) => void;
+  /** Editor da peça (Acervo): mostra o painel da peça do motor; o Atelier usa o Ateliê da peça (garment/*). */
+  pieceTools?: boolean;
 }
 
 /** Edits the selected object; history, access and persistence stay in the editor. */
@@ -34,6 +39,7 @@ export function SceneInspector({
   vertex,
   onVertexChange: setVertex,
   onChange: change,
+  pieceTools = false,
 }: SceneInspectorProps) {
   const { t } = useI18n();
   const primitive = loaded
@@ -53,10 +59,15 @@ export function SceneInspector({
     primitive && loaded
       ? (doc.materials[primitive[0]] ?? loaded.baseline.materials[primitive[0]])
       : undefined;
+  // peça do motor: a edição da peça vem primeiro; relevo da foto: nada é editável
+  const engine = pieceTools && isEngineGarment(loaded), relief = assetIsPhotoRelief(loaded);
   return (
     <aside className={`${styles.panel} ${styles.inspector}`}>
-      <fieldset disabled={!canEdit} className={styles.stack}>
+      <fieldset disabled={!canEdit || relief} className={styles.stack}>
         <h2 className="type-h3">{t("atelier3d.inspector")}</h2>
+        {relief && <p role="status" data-testid="photo-relief-notice">{t("atelier3d.photoRelief")}</p>}
+        {engine && <GarmentPanel asset={loaded} document={doc} editable={canEdit} onChange={change} />}
+        <Technical collapsed={engine} label={t("editor3d.part.technical")}>
         <SceneCommandPanel key={`${selected}:${primitive?.[0] ?? ""}`} asset={loaded} document={doc}
           selected={selected} primitive={primitive?.[0]} editable={canEdit}
           deformationBlocked={!!(inspection?.skinned || inspection?.morphs || inspection?.animated)} onChange={change} />
@@ -198,7 +209,14 @@ export function SceneInspector({
             </>
           )
         )}
+        </Technical>
       </fieldset>
     </aside>
   );
+}
+
+/** Controles técnicos (posição, material bruto, vértices): recolhidos na peça do motor, abertos nos demais GLB. */
+function Technical({ collapsed, label, children }: { collapsed: boolean; label: string; children: ReactNode }) {
+  if (!collapsed) return <>{children}</>;
+  return <details data-testid="technical-fields"><summary className="label">{label}</summary>{children}</details>;
 }

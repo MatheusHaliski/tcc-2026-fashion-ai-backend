@@ -2,6 +2,8 @@ package br.com.fashionai.application.atelier3d;
 
 import br.com.fashionai.application.atelierproject.AtelierProjectService;
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.application.piece3d.PieceModelKind;
 import br.com.fashionai.application.security.*;
 import br.com.fashionai.domain.model.atelier3d.*;
 import br.com.fashionai.domain.model.atelierproject.DesignProject;
@@ -70,7 +72,10 @@ public class Atelier3dService {
     }
     private InviteView invite(DesignGuestInvite g){return new InviteView(g.getId(),g.getLabel(),g.getRole(),g.getExpiresAt(),g.getRevokedAt()!=null,g.isAllowExport());}
     private Asset upload(UUID project,String filename,byte[] bytes){
-        var inspection=GlbInspector.inspect(bytes,json);String digest=hashBytes(bytes);
+        var inspection=GlbInspector.inspect(bytes,json);
+        // o relevo da foto (bloco com a imagem) não é uma peça 3D: o editor não o aceita
+        if(PieceModelKind.of(bytes)==PieceModelKind.RELEVO_FOTO)throw ApiException.badRequest("ATELIER_PHOTO_RELIEF",Msg.t("atelier3d.bloqueio_relevo_foto"));
+        String digest=hashBytes(bytes);
         var existing=assets.findFirstByProjectIdAndSha256(project,digest);if(existing.isPresent())return asset(existing.get());
         if(assets.countByProjectId(project)>=20)throw bad("Limite de 20 arquivos originais por projeto nesta versão.");
         String safe=(filename==null?"garment.glb":filename).replaceAll("[^\\p{L}\\p{N}._ -]","_");

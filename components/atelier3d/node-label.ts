@@ -21,3 +21,15 @@ export function nodeLabel(name: string | undefined, fallback: string, t: (key: s
   const key = PARTS[name.trim().toLowerCase().replace(/[\s-]+/g, "_")];
   return key ? t(key) : name;
 }
+
+/**
+ * Parte da peça do motor (material nomeado pelo papel) → texto na língua de quem edita. Papéis repetidos levam o
+ * número a partir de 1 ("Estampa 1"); material sem papel conhecido mantém o nome que veio no arquivo.
+ */
+export function partLabel(
+  part: { role: string | null; index: number | null; materialName: string; key: string },
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
+  if (!part.role) return part.materialName || part.key;
+  return t(`atelier3d.role.${part.role}`, { n: (part.index ?? 0) + 1 });
+}
