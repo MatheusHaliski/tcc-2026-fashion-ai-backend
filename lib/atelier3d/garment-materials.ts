@@ -53,11 +53,14 @@ export function apparentColor(asset: LoadedAsset, doc: SceneDocument, key: strin
 
 /** Aplica cor do tecido (tint) e partes ocultas; `replaced` são estampas trocadas por decalque, sempre ocultas. */
 export function applyPartEdits(asset: LoadedAsset, doc: SceneDocument, replaced: Set<string>) {
+  const nodes = new Set<THREE.Object3D>(asset.nodes.values());
   for (const [key, state] of prepare(asset)) {
     const mesh = asset.primitives.get(key);
     if (!mesh) continue;
     const edit = doc.materials[key], material = mesh.material as THREE.MeshStandardMaterial;
-    mesh.visible = !edit?.hidden && !replaced.has(key);
+    // primitiva que é o próprio objeto já recebeu a visibilidade do documento (NodeEdit.visible) em applyDocument
+    if (edit?.hidden || replaced.has(key)) mesh.visible = false;
+    else if (!nodes.has(mesh)) mesh.visible = true;
     const tint = state.original && edit?.tint ? edit.tint : null;
     if (tint === state.tint) continue;
     const previous = material.map;

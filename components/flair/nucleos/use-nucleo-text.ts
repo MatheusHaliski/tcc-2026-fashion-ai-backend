@@ -110,6 +110,7 @@ export function useNucleoText() {
         // o que o lance mudou (força do time, placar, um lance a menos do adversário); servidor antigo não manda: fica vazio
         vars.ganhoTexto = vars.efeito ? ou(`flair3d.ui.lanceEfeito.${vars.efeito}`, "", vars) : "";
         if (vars.atributo) vars.atributo = ou(`flair3d.ui.hud.attr.${vars.atributo}`, vars.atributo);
+        if (vars.recurso) vars.recursoNome = ou(`flair3d.ui.recurso.${vars.recurso}`, vars.recurso);
         // a luta lance a lance: os golpes e o combo pelo nome; o nocaute diz quem caiu
         if (e.codigo === "LANCE_DA_LUTA") Object.assign(vars, golpesDoLance(v as Record<string, unknown>, ou, t));
         if (e.codigo === "NOCAUTE") return t(`flair3d.ui.luta.nocaute.${String(v) === "VOCE" ? "VOCE" : "OPONENTE"}`);

@@ -166,8 +166,6 @@ describe("momentos", () => {
     expect(screen.queryByTestId("nucleo-resource-window")).toBeNull();
     expect(screen.queryByRole("button", { name: "Entregar o look" })).toBeNull();
     expect(Array.from(screen.getByTestId("nucleo-slot-ruler").querySelectorAll("button")).every((b) => b.disabled)).toBe(true);
-    fireEvent.keyDown(window, { key: "Enter" });
-    fireEvent.keyDown(window, { key: " " });
     expect(onEntregar).not.toHaveBeenCalled();
     expect((screen.getByRole("button", { name: "Girar à esquerda" }) as HTMLButtonElement).disabled).toBe(false);
     const painel = screen.getByTestId("nucleo-action");
@@ -176,7 +174,10 @@ describe("momentos", () => {
     expect(screen.getByTestId("nucleo-action-fx").className).toContain("fx-led");
     expect(eventos.filter((e) => e.tipo === "acao-passo")).toHaveLength(1);
     expect(screen.getByTestId("nucleo-score").textContent).not.toContain("80");
-    fireEvent.click(within(painel).getByRole("button", { name: "Ver o resultado" }));
+    // no controle: o foco passa pelos botões da ação e ✕ (E) aperta o que está em foco
+    within(painel).getByRole("button", { name: "Ver o resultado" }).focus();
+    fireEvent.keyDown(window, { key: "e" });
+    expect(onEntregar).not.toHaveBeenCalled();
     expect(onFimAcao).toHaveBeenCalledTimes(1);
     expect(eventos.at(-1)).toEqual({ tipo: "acao-fim", nucleo: "PASSARELA", resultado: "APROVADO", estrelas: 2 });
   });
@@ -265,7 +266,7 @@ describe("acionamentos", () => {
     // a carta do lance anterior não entra no seguinte
     expect(within(acionamento).queryByRole("button", { name: /Camisa verde/ })).toBeNull();
     fireEvent.click(especial);
-    expect(onAcionar).toHaveBeenCalledWith({ tipo: "LANCE", cardId: "c3" });
+    expect(onAcionar).toHaveBeenCalledWith({ tipo: "LANCE", cardId: "c3", alvo: "DISTANCIA:PERTO" });
     expect(eventos.some((e) => e.tipo === "acionamento" && e.acionamento === "LANCE" && e.cardId === "c3")).toBe(true);
     expect(within(acionamento).getByRole("button", { name: "Guarda sem carta" })).toBeTruthy();
   }, 10000);

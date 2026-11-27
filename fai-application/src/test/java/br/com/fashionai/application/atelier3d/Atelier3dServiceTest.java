@@ -20,6 +20,13 @@ class Atelier3dServiceTest {
  @Test void assetFromAnotherProjectCannotBeReadEvenWithAValidInvitation(){var asset=new DesignAsset();asset.setProjectId(UUID.randomUUID());when(assets.findById(assetId)).thenReturn(Optional.of(asset));assertThatThrownBy(()->service.guestContent(invite,token,assetId)).isInstanceOf(ApiException.class);}
  @Test void staleRevisionCannotOverwriteAnotherEditorsWork(){guest.setRole(DesignGuestInvite.Role.EDITOR);var prior=new DesignSceneVersion();prior.setSequenceNumber(2);when(versions.findFirstByProjectIdOrderBySequenceNumberDesc(project)).thenReturn(Optional.of(prior));var cmd=new Atelier3dService.Save(1,assetId,"request",new Atelier3dService.Document(Map.of(),Map.of(),Map.of()),List.of(),null,null);assertThatThrownBy(()->service.guestSave(invite,token,cmd)).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.status()).isEqualTo(409));verify(versions,never()).saveAndFlush(any());}
  @Test void geometryEditsCannotCorruptRiggedAssets(){var i=new GlbInspector.Inspection(1,1,1,3,true,false,false,Map.of("n0.p0",3),List.of());var doc=new Atelier3dService.Document(Map.of(),Map.of(),Map.of("n0.p0",Map.of("0",List.of(1d,2d,3d))));assertThatThrownBy(()->Atelier3dService.validate(doc,i)).isInstanceOf(ApiException.class);}
+ @Test void garmentEditsAreAcceptedOnlyWithKnownSections(){
+  var i=new GlbInspector.Inspection(1,1,1,3,false,false,false,Map.of("n0.p0",3),List.of());
+  var garment=Map.<String,Object>of("fabrics",Map.of("n0.p0",Map.of("preset","denim")),"decals",List.of());
+  assertThatCode(()->Atelier3dService.validate(new Atelier3dService.Document(Map.of(),Map.of(),Map.of(),garment),i)).doesNotThrowAnyException();
+  assertThatThrownBy(()->Atelier3dService.validate(new Atelier3dService.Document(Map.of(),Map.of(),Map.of(),Map.of("script","x")),i)).isInstanceOf(ApiException.class);
+  assertThatCode(()->Atelier3dService.validate(new Atelier3dService.Document(Map.of(),Map.of(),Map.of()),i)).doesNotThrowAnyException();
+ }
  @Test void editorUploadKeepsUnicodeFilenameAndDeduplicatesOriginal(){
   guest.setRole(DesignGuestInvite.Role.EDITOR);
   when(assets.saveAndFlush(any())).thenAnswer(call->{DesignAsset a=call.getArgument(0);a.assignId(assetId);return a;});
@@ -40,17 +47,14 @@ class Atelier3dServiceTest {
   var saved=org.mockito.ArgumentCaptor.forClass(DesignSceneVersion.class);verify(versions).saveAndFlush(saved.capture());when(versions.findByProjectIdAndRequestId(project,"same-request")).thenReturn(Optional.of(saved.getValue()));
   assertThat(service.guestSave(invite,token,cmd).id()).isEqualTo(first.id());verify(versions,times(1)).saveAndFlush(any());
  }
- @Test void photoReliefIsRefusedOnUploadAndGarmentEditsAreValidated(){
+ @Test void photoReliefIsRefusedOnUploadButAnOrdinaryGarmentIsAccepted(){
   guest.setRole(DesignGuestInvite.Role.EDITOR);
   var relief=GlbInspectorTest.glb(",\"materials\":[{\"name\":\"foto-da-peca\"}]");
   assertThatThrownBy(()->service.guestUpload(invite,token,"relevo.glb",relief))
    .isInstanceOfSatisfying(ApiException.class,e->assertThat(e.code()).isEqualTo("ATELIER_PHOTO_RELIEF"));
   verify(assets,never()).saveAndFlush(any());
-  var i=new GlbInspector.Inspection(1,1,1,3,false,false,false,Map.of("n0.p0",3),List.of());
-  var tinted=new Atelier3dService.MaterialEdit("#ffffff",0.5,0d,List.of(1d,1d),0d,"#aa0000",true);
-  var logo=new br.com.fashionai.application.piece3d.CustomizationDecal("n0",null,"data:image/png;base64,AAAA",List.of(0d,0d,0d),List.of(0d,0d,1d),0.1,1d,0d,null,true);
-  Atelier3dService.validate(new Atelier3dService.Document(Map.of(),Map.of("n0.p0",tinted),Map.of(),Map.of("d1",logo)),i);
-  var badTint=new Atelier3dService.MaterialEdit("#ffffff",0.5,0d,List.of(1d,1d),0d,"red",null);
-  assertThatThrownBy(()->Atelier3dService.validate(new Atelier3dService.Document(Map.of(),Map.of("n0.p0",badTint),Map.of()),i)).isInstanceOf(ApiException.class);
+  when(assets.saveAndFlush(any())).thenAnswer(call->{DesignAsset a=call.getArgument(0);a.assignId(assetId);return a;});
+  var garment=GlbInspectorTest.glb(",\"materials\":[{\"name\":\"corpo\"},{\"name\":\"linha\"}]");
+  assertThat(service.guestUpload(invite,token,"camiseta.glb",garment).id()).isEqualTo(assetId);
  }
 }

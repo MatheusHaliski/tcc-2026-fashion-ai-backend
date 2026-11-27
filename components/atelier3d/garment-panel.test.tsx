@@ -8,6 +8,8 @@ import { listParts } from "@/lib/atelier3d/garment-parts";
 import { setDecalImageLoader } from "@/lib/atelier3d/decal-meshes";
 import { listDecals } from "@/lib/atelier3d/decals";
 import { SceneInspector } from "./scene-inspector";
+import { GarmentStudioPanel } from "./garment/garment-studio";
+import { useGarmentStudio } from "./garment/use-garment-studio";
 
 vi.mock("@/lib/atelier3d/decal-image", () => ({
   readDecalImage: vi.fn(async () => ({ dataUrl: "data:image/png;base64,iVBORw0KGgo=", aspect: 0.5 })),
@@ -21,7 +23,7 @@ beforeAll(async () => {
 
 async function open(document: SceneDocument = EMPTY_DOCUMENT, editable = true) {
   const loaded = await loadGlb(bytes), onChange = vi.fn();
-  renderApp(<SceneInspector loaded={loaded} document={document} selected="n0" editable={editable} vertex={0} onVertexChange={vi.fn()} onChange={onChange} />);
+  renderApp(<SceneInspector loaded={loaded} document={document} selected="n0" editable={editable} vertex={0} onVertexChange={vi.fn()} onChange={onChange} pieceTools />);
   const key = (role: string) => listParts(loaded).find((part) => part.materialName === role)!.key;
   const last = () => onChange.mock.calls.at(-1)![0] as SceneDocument;
   return { loaded, onChange, key, last };
@@ -87,9 +89,28 @@ describe("painel da peça com GLB próprio", () => {
     expect(screen.getByLabelText("Cor: Costura (linha)").matches(":disabled")).toBe(true);
     cleanup();
     const relief = await loadGlb(await photoReliefGlb());
-    renderApp(<SceneInspector loaded={relief} document={EMPTY_DOCUMENT} selected="n0" editable vertex={0} onVertexChange={vi.fn()} onChange={vi.fn()} />);
+    renderApp(<SceneInspector loaded={relief} document={EMPTY_DOCUMENT} selected="n0" editable vertex={0} onVertexChange={vi.fn()} onChange={vi.fn()} pieceTools />);
     expect(screen.queryByTestId("garment-panel")).toBeNull();
     expect(screen.getByTestId("photo-relief-notice").textContent).toMatch(/relevo gerado de uma foto/);
     expect(screen.getByLabelText("Posição — unidades do arquivo X").matches(":disabled")).toBe(true);
+  });
+
+  it("no Atelier (sem pieceTools) o inspetor continua o do main: sem painel da peça, controles técnicos abertos", async () => {
+    const loaded = await loadGlb(bytes);
+    renderApp(<SceneInspector loaded={loaded} document={EMPTY_DOCUMENT} selected="n0" editable vertex={0} onVertexChange={vi.fn()} onChange={vi.fn()} />);
+    expect(screen.queryByTestId("garment-panel")).toBeNull();
+    expect(screen.queryByTestId("technical-fields")).toBeNull();
+    expect(screen.getByLabelText("Posição — unidades do arquivo X").matches(":disabled")).toBe(false);
+  });
+
+  it("Ateliê da peça (Atelier) fica só para ver no relevo da foto", async () => {
+    const relief = await loadGlb(await photoReliefGlb());
+    function Harness() {
+      const studio = useGarmentStudio(relief, EMPTY_DOCUMENT, "n0", vi.fn());
+      return <GarmentStudioPanel studio={studio} asset={relief} doc={EMPTY_DOCUMENT} editable />;
+    }
+    renderApp(<Harness />);
+    expect(screen.getByTestId("garment-studio-relief").textContent).toMatch(/relevo gerado de uma foto/);
+    expect(screen.getByRole("button", { name: "Jeans" }).matches(":disabled")).toBe(true);
   });
 });

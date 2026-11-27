@@ -10,12 +10,14 @@ import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Definicao.Rodada;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
+import br.com.fashionai.application.flair3d.Flair3dExecucao;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
+import br.com.fashionai.application.flair3d.recurso.Flair3dDesgaste;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -28,7 +30,9 @@ import java.util.function.Predicate;
  * Núcleo 1 — vestir o tema com as cartas do deck: +10 por peça no tema, +20 se todas as vagas preenchidas estão no tema;
  * 70 vira 100. O objetivo mais simples é o tema "Brasil" (marcas brasileiras). Na rodada "tema surpresa" o tema sai da
  * semente (noite, monocromático ou clássico) e só aparece depois que a pessoa entra na partida; as outras rodadas são treinos de tema fixo. Em toda rodada
- * a pessoa desfila contra 3 desfiles da casa, com notas tiradas da semente, e o resultado traz a colocação.
+ * a pessoa desfila contra 3 desfiles da casa, com notas tiradas da semente, e o resultado traz a colocação. Cada peça
+ * fora do tema tira {@value #POR_PECA_FORA} da confiança da modelo (o FOCO, Flair3dDesgaste), que a execução no percurso
+ * segue gastando nas poses erradas; zerada, o desfile acaba REPROVADO.
  */
 public class PassarelaNucleo implements Flair3dNucleo {
     public static final double POR_PECA = 10;
@@ -42,6 +46,8 @@ public class PassarelaNucleo implements Flair3dNucleo {
      */
     public static final List<String> SURPRESAS = TEMAS.subList(1, TEMAS.size());
     public static final int DESFILES_DA_CASA = 3;
+    /** O que cada peça fora do tema tira da confiança da modelo. */
+    public static final int POR_PECA_FORA = 10;
     /** Notas brutas (de 0 a 70) que um desfile da casa pode tirar. */
     static final List<Integer> NOTAS_DA_CASA = List.of(20, 30, 40, 50, 60);
 
@@ -109,6 +115,12 @@ public class PassarelaNucleo implements Flair3dNucleo {
         Flair3dRateio rateio = new Flair3dRateio(vestidas).cada(POR_PECA * fator, noTema).dividirEntre(todas ? TODAS * fator : 0, noTema);
         List<Evento> eventos = new ArrayList<>(contexto.rodada() == null ? List.of() : sala(contexto, (int) Math.round(pontos)));
         eventos.add(conta(bruto));
+        Flair3dDesgaste confianca = Flair3dDesgaste.de(Flair3dDesgaste.vidaDo(codigo()), contexto.andamento().usos())
+                .com("PECA_FORA_DO_TEMA", (int) (vestidas.size() - certas), POR_PECA_FORA);
+        eventos.add(confianca.evento());
+        if (confianca.esgotou()) {
+            return Resultado.of(Math.min(pontos, Flair3dExecucao.NOTA_DE_QUEM_ESGOTOU), "REPROVADO", regras, eventos).comCartas(rateio.lista());
+        }
         return Resultado.of(pontos, pontos >= 60 ? "APROVADO" : "REPROVADO", regras, eventos).comCartas(rateio.lista());
     }
 

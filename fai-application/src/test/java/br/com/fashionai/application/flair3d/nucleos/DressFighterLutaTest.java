@@ -36,9 +36,15 @@ class DressFighterLutaTest {
     final CbcRules.Card azul = card("ACE", "color:blue", "ovr:55");
     final CbcRules.Card branca = card("SUP", "color:white", "ovr:55");
     final CbcRules.Card[] deck = {vermelha, preta, verde, amarela, azul, branca};
-    /** o que responde a cada golpe anunciado: esquiva o forte, guarda o rápido, jabs na guarda e na esquiva */
-    final Map<String, List<CbcRules.Card>> resposta = Map.of(FORTE, List.of(verde, azul), RAPIDO, List.of(preta, branca),
-            GUARDA, List.of(amarela, vermelha), ESQUIVA, List.of(amarela, azul));
+    /**
+     * o que responde a cada leitura: esquiva o forte; recua do rápido e devolve um rápido (longe ele não pega); jabs na
+     * guarda e na esquiva; na leitura parcial (look mais lento), recua e esquiva o ataque, jab na defesa
+     */
+    final Map<String, List<CbcRules.Card>> resposta = Map.of(FORTE, List.of(verde, preta), RAPIDO, List.of(amarela, azul),
+            GUARDA, List.of(amarela, vermelha), ESQUIVA, List.of(amarela, azul),
+            DressFighterDistancia.ATAQUE, List.of(verde, preta), DressFighterDistancia.DEFESA, List.of(amarela, azul));
+    /** as leituras em que quem joga bem recua antes de jogar a carta */
+    static final java.util.Set<String> RECUA = java.util.Set.of(RAPIDO, DressFighterDistancia.ATAQUE);
 
     Resultado lutar(String arena, long semente, List<Acionamento> acionamentos) {
         return new DressFighterNucleo().pontuar(vestir(vermelha, preta, verde, amarela),
@@ -52,13 +58,19 @@ class DressFighterLutaTest {
 
     /** Joga a luta inteira lendo o golpe anunciado e respondendo com a carta certa (sem repetir a carta). */
     Resultado jogarBem(String arena, long semente) {
+        return jogarBem(arena, semente, true);
+    }
+
+    /** {@code recua}: quem joga bem recua do rápido; sem recuar, a mesma resposta fica sempre perto. */
+    Resultado jogarBem(String arena, long semente, boolean recua) {
         List<Acionamento> feitos = new ArrayList<>();
         Resultado r = lutar(arena, semente, feitos);
         CbcRules.Card anterior = null;
         while (!r.fecha()) {
             String proximo = (String) luta(r).get("proximo");
             CbcRules.Card c = resposta.get(proximo).get(0) == anterior ? resposta.get(proximo).get(1) : resposta.get(proximo).get(0);
-            feitos.add(new Acionamento(c.id(), null));
+            String distancia = recua && RECUA.contains(proximo) ? DressFighterDistancia.ALVO_LONGE : DressFighterDistancia.ALVO_PERTO;
+            feitos.add(new Acionamento(c.id(), null, distancia));
             anterior = c;
             r = lutar(arena, semente, feitos);
         }
@@ -131,6 +143,40 @@ class DressFighterLutaTest {
             assertThat(jogandoBem).as(String.valueOf(arena)).isGreaterThanOrEqualTo(10);
             assertThat(soSeguindo).as(String.valueOf(arena)).isZero();
         }
+    }
+
+    @Test
+    void aDistanciaImportaQuemRecuaDoRapidoVenceMaisQueQuemFicaSemprePerto() {
+        int recuando = 0;
+        int sempreperto = 0;
+        for (String arena : new String[]{null, DressFighterNucleo.ARENA_VELOZ, DressFighterNucleo.ARENA_BLINDADA}) {
+            for (long s = 1; s <= 20; s++) {
+                recuando += "VITORIA".equals(jogarBem(arena, s, true).resultado()) ? 1 : 0;
+                sempreperto += "VITORIA".equals(jogarBem(arena, s, false).resultado()) ? 1 : 0;
+            }
+        }
+        assertThat(recuando).as("recuando %d x sempre perto %d", recuando, sempreperto).isGreaterThan(sempreperto);
+    }
+
+    @Test
+    void oForteDeLongeNaoChegaORecuoEscapaDoRapidoEALeituraDoLookLentoEParcial() {
+        assertThat(DressFighterDistancia.alcanca(FORTE, true)).isFalse();
+        assertThat(DressFighterDistancia.alcanca(RAPIDO, true)).isTrue();
+        assertThat(DressFighterDistancia.alcanca(FORTE, false)).isTrue();
+        assertThat(DressFighterDistancia.pega(RAPIDO, true)).isFalse();
+        assertThat(DressFighterDistancia.pega(FORTE, true)).isTrue();
+        Lutador lenta = new Lutador(30, 40, 40);
+        Lutador veloz = new Lutador(60, 35, 45);
+        assertThat(DressFighterDistancia.leitura(FORTE, lenta, veloz)).isEqualTo(DressFighterDistancia.ATAQUE);
+        assertThat(DressFighterDistancia.leitura(GUARDA, lenta, veloz)).isEqualTo(DressFighterDistancia.DEFESA);
+        assertThat(DressFighterDistancia.leitura(GUARDA, veloz, lenta)).isEqualTo(GUARDA);
+        // outro alvo que não as duas faixas é recusado
+        Acionamento estranho = new Acionamento(vermelha.id(), null, "DISTANCIA:NO_TETO");
+        assertThat(catchThrowableOfType(ApiException.class, () -> lutar(null, 7L, List.of(estranho))).status()).isEqualTo(422);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> lance = (Map<String, Object>) lutar(null, 7L, List.of(new Acionamento(vermelha.id(), null, DressFighterDistancia.ALVO_LONGE)))
+                .eventos().get(0).valor();
+        assertThat(lance).containsEntry("distancia", "LONGE").containsEntry("dano", 0);
     }
 
     @Test

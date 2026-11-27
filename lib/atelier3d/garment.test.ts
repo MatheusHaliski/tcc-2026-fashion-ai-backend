@@ -2,7 +2,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { engineGarmentGlb, photoReliefGlb } from "@/test-utils/garment-fixture";
-import { applyDocument, EMPTY_DOCUMENT, exportGlb, inspectGlb, loadGlb, type LoadedAsset } from "./document";
+import { triangle } from "@/test-utils/glb-fixture";
+import { applyDocument, EMPTY_DOCUMENT, exportGlb, inspectGlb, loadGlb, updateNode, type LoadedAsset } from "./document";
 import { assetIsPhotoRelief, isEngineGarment, listParts, partRole } from "./garment-parts";
 import { changeHemLength, garmentSize, setGarmentSize, setPartColor, setPartHidden } from "./garment-commands";
 import { decalOffset, defaultPlacement, listDecals, moveDecal, nextDecalKey, removeDecal, upsertDecal } from "./decals";
@@ -79,6 +80,14 @@ describe("comandos da peça", () => {
     const barra = listParts(reopened).find((part) => part.role === "faixa_barra")!;
     expect("#" + (reopened.primitives.get(barra.key)!.material as THREE.MeshStandardMaterial).color.getHexString()).toBe("#123456");
     expect(() => setGarmentSize(asset, doc, "n0", [3, 1, 1])).toThrow("ATELIER_COMMAND_VALUE");
+  });
+
+  it("ocultar parte não desfaz o 'visível' do objeto (objeto de uma parte só é a própria malha)", async () => {
+    const asset = await loadGlb(triangle());
+    applyDocument(asset, updateNode(EMPTY_DOCUMENT, "n0", { visible: false }, asset.baseline));
+    expect(asset.nodes.get("n0")!.visible).toBe(false);
+    applyDocument(asset, EMPTY_DOCUMENT);
+    expect(asset.nodes.get("n0")!.visible).toBe(true);
   });
 
   it("alonga a barra: o corpo desce embaixo, a manga não se mexe", async () => {

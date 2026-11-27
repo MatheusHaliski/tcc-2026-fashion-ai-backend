@@ -331,7 +331,6 @@ function Spectrum({ pieces }: { pieces: AnatomyPiece[] }) {
           <b className="spectrum-pct">≈ {g.share} %</b>
         </div>))}
       <p className="spectrum-note">{t("schemeAnatomies.harmonia", { harmony })}</p>
-      <How summary={t("anatomy.spectrum.how")}>{t("anatomy.spectrum.howText")}</How>
     </div>
   );
 }

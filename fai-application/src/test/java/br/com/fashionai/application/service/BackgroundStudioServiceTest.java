@@ -206,6 +206,47 @@ class BackgroundStudioServiceTest {
         assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("auraMetamorphose", "PRISMA", "auraMetamorphosePreset", "ASICS_WHITE"))).isInstanceOf(ApiException.class);
     }
 
+    /** Exercício 19 — modalidade visual da Aura comum ({@code aura.format}) na arte da peça. */
+    @Test
+    void modalidadeVisualDaAuraDaPecaEValidadaEPersistidaComORestoDaArte() {
+        WardrobeItem item = world.piecesOf(world.me).get(0);
+        Map<String, Object> border = cfg("mode", "COLOR", "color", "#123456");
+        for (String format : BackgroundStudioService.AURA_FORMATS) {
+            Map<String, Object> saved = map(studio.savePiece(ana, item.getId(), cfg("aura", cfg("variantId", "a1-v1", "format", format),
+                    "materialId", "m1", "border", border, "photoFraming", "WHOLE")).get("background"));
+            assertThat(map(saved.get("aura"))).containsEntry("variantId", "a1-v1").containsEntry("format", format);
+            // editar só o formato não apaga a borda, o material nem o enquadramento que vieram na configuração
+            assertThat(saved).containsEntry("border", border).containsEntry("materialId", "m1").containsEntry("photoFraming", "WHOLE");
+            // a leitura da peça (GET) sai do mesmo JSON gravado
+            assertThat(map(br.com.fashionai.application.view.Views.piece(item, null, null).background().get("aura"))).containsEntry("format", format);
+        }
+        String before = item.getBackgroundConfigJson();
+        for (Object invalid : new Object[]{cfg("variantId", "a1-v1", "format", "VIDEO"), cfg("variantId", "a1-v1", "format", 7),
+                cfg("variantId", "a1-v1", "format", List.of("MOSAICO")), "MOSAICO", List.of("a1-v1"), cfg("variantId", 12),
+                cfg("variantId", " "), cfg("format", "MOSAICO"), cfg("variantId", "nope", "format", "MOSAICO")}) {
+            assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("aura", invalid, "border", border)))
+                    .as("aura = %s", invalid).isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.status()).isEqualTo(400));
+        }
+        assertThat(item.getBackgroundConfigJson()).isEqualTo(before);
+        // configuração antiga: Aura sem formato e arte sem Aura continuam válidas
+        assertThat(map(map(studio.savePiece(ana, item.getId(), cfg("aura", cfg("variantId", "a1-v1"))).get("background")).get("aura"))).doesNotContainKey("format");
+        assertThat(map(studio.savePiece(ana, item.getId(), cfg("color", "#ffffff")).get("background"))).doesNotContainKey("aura");
+        // preset retirado do catálogo: o que já estava gravado na peça pode ser regravado com outro formato
+        item.setBackgroundConfigJson("{\"aura\":{\"variantId\":\"nope\",\"format\":\"IMAGEM_UNICA\"},\"rev\":4}");
+        assertThat(map(map(studio.savePiece(ana, item.getId(), cfg("aura", cfg("variantId", "nope", "format", "MOSAICO"), "baseRev", 4)).get("background")).get("aura")))
+                .containsEntry("format", "MOSAICO");
+        // peça alheia: o formato não é gravado
+        WardrobeItem alheia = world.piecesOf(world.rival).get(0);
+        org.mockito.Mockito.doThrow(ApiException.forbidden("só o dono")).when(kit.dep(br.com.fashionai.application.security.Guard.class))
+                .requireOwner(any(), org.mockito.ArgumentMatchers.eq(world.rival.getId()), anyString());
+        assertThatThrownBy(() -> studio.savePiece(ana, alheia.getId(), cfg("aura", cfg("variantId", "a1-v1", "format", "MOSAICO"))))
+                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.status()).isIn(403, 404));
+        assertThat(alheia.getBackgroundConfigJson()).isNull();
+        // no look, tipo errado também é 400 (antes o cast derrubava em 500)
+        assertThatThrownBy(() -> studio.applyToScheme(look, cfg("aura", cfg("variantId", "a1", "format", 7), "materialId", "m1"), false))
+                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("FORMATO_INVALIDO"));
+    }
+
     @Test
     void enquadramentoTotalFrameFicaNaArteDaPecaESoAceitaTecidoOuPecaInteira() {
         WardrobeItem item = world.piecesOf(world.me).get(0);

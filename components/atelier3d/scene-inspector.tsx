@@ -25,6 +25,8 @@ interface SceneInspectorProps {
   vertex: number;
   onVertexChange: (index: number) => void;
   onChange: (document: SceneDocument) => void;
+  /** Editor da peça (Acervo): mostra o painel da peça do motor; o Atelier usa o Ateliê da peça (garment/*). */
+  pieceTools?: boolean;
 }
 
 /** Edits the selected object; history, access and persistence stay in the editor. */
@@ -37,6 +39,7 @@ export function SceneInspector({
   vertex,
   onVertexChange: setVertex,
   onChange: change,
+  pieceTools = false,
 }: SceneInspectorProps) {
   const { t } = useI18n();
   const primitive = loaded
@@ -57,7 +60,7 @@ export function SceneInspector({
       ? (doc.materials[primitive[0]] ?? loaded.baseline.materials[primitive[0]])
       : undefined;
   // peça do motor: a edição da peça vem primeiro; relevo da foto: nada é editável
-  const engine = isEngineGarment(loaded), relief = assetIsPhotoRelief(loaded);
+  const engine = pieceTools && isEngineGarment(loaded), relief = assetIsPhotoRelief(loaded);
   return (
     <aside className={`${styles.panel} ${styles.inspector}`}>
       <fieldset disabled={!canEdit || relief} className={styles.stack}>

@@ -3,7 +3,6 @@ package br.com.fashionai.application.atelier3d;
 import br.com.fashionai.application.atelierproject.AtelierProjectService;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.piece3d.CustomizationDecal;
 import br.com.fashionai.application.piece3d.PieceModelKind;
 import br.com.fashionai.application.security.*;
 import br.com.fashionai.domain.model.atelier3d.*;
@@ -19,17 +18,10 @@ import java.util.*;
 @Service @Transactional
 public class Atelier3dService {
     public record NodeEdit(List<Double> position,List<Double> rotation,List<Double> scale,boolean visible) {}
-    /** {@code tint}: cor do tecido recolorindo a textura; {@code hidden}: parte da peça oculta (costura, zíper…). */
-    public record MaterialEdit(String color,Double roughness,Double metalness,List<Double> repeat,Double rotation,String tint,Boolean hidden) {
-        public MaterialEdit(String color,Double roughness,Double metalness,List<Double> repeat,Double rotation) {
-            this(color,roughness,metalness,repeat,rotation,null,null);
-        }
-    }
-    /** {@code decals}: logos e estampas projetados no tecido (ausente em versões antigas). */
-    public record Document(Map<String,NodeEdit> nodes,Map<String,MaterialEdit> materials,Map<String,Map<String,List<Double>>> vertices,Map<String,CustomizationDecal> decals) {
-        public Document(Map<String,NodeEdit> nodes,Map<String,MaterialEdit> materials,Map<String,Map<String,List<Double>>> vertices) {
-            this(nodes,materials,vertices,null);
-        }
+    public record MaterialEdit(String color,Double roughness,Double metalness,List<Double> repeat,Double rotation) {}
+    /** {@code garment}: tecido, pintura, estampas, costuras e aviamentos do editor (JSON livre, limitado pelo teto de 2 MB do documento). */
+    public record Document(Map<String,NodeEdit> nodes,Map<String,MaterialEdit> materials,Map<String,Map<String,List<Double>>> vertices,Map<String,Object> garment) {
+        public Document(Map<String,NodeEdit> nodes,Map<String,MaterialEdit> materials,Map<String,Map<String,List<Double>>> vertices){this(nodes,materials,vertices,null);}
     }
     public record Save(long expectedSequence,UUID assetId,String requestId,Document document,List<UUID> productIds,UUID confirmedTipoLookId,String genderEvidenceHash) {}
     public record Asset(UUID id,String filename,int bytes,String sha256,GlbInspector.Inspection inspection) {}
@@ -39,6 +31,7 @@ public class Atelier3dService {
     public record InviteCommand(String label,DesignGuestInvite.Role role,int hours,boolean allowExport) {}
     public record InviteView(UUID id,String label,DesignGuestInvite.Role role,Instant expiresAt,boolean revoked,boolean allowExport) {}
     public record CreatedInvite(InviteView invite,String token) {}
+    private static final Set<String> GARMENT_SECTIONS=Set.of("fabrics","layers","patterns","decals","images","stitches","accessories");
     private final AtelierProjectService access;
     private final DesignAssetRepository assets;private final DesignSceneVersionRepository versions;
     private final DesignGuestInviteRepository guests;private final CatalogGenderDecision genders;
@@ -118,8 +111,7 @@ public class Atelier3dService {
             var m=e.getValue();if(!asset.primitives().containsKey(e.getKey())||m==null||m.color()==null||!m.color().matches("#[0-9a-fA-F]{6}"))throw bad("Material inválido.");
             scalar(m.roughness(),0,1);scalar(m.metalness(),0,1);vector(m.repeat(),2,100);if(m.repeat().stream().anyMatch(x->x<=0))throw bad("Repetição inválida.");scalar(m.rotation(),-100,100);
         }
-        for(var m:doc.materials().values())if(m.tint()!=null&&!m.tint().matches("#[0-9a-fA-F]{6}"))throw bad("Cor do tecido inválida.");
-        try{CustomizationDecal.validated(doc.decals());}catch(ApiException e){throw bad(e.getMessage());}
+        if(doc.garment()!=null&&(doc.garment().size()>7||!GARMENT_SECTIONS.containsAll(doc.garment().keySet())))throw bad("Edições de roupa inválidas.");
         if(!doc.vertices().isEmpty()&&(asset.skinned()||asset.morphs()||asset.animated()))throw bad("Edição de vértices exige uma malha estática sem rig, morphs ou animações.");
         int count=0;for(var e:doc.vertices().entrySet()){
             Integer limit=asset.primitives().get(e.getKey());if(limit==null||e.getValue()==null)throw bad("Malha inválida.");

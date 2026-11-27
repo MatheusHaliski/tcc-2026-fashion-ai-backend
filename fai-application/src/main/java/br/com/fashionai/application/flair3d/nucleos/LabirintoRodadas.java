@@ -9,6 +9,7 @@ import br.com.fashionai.application.flair3d.Flair3dPercurso.Avaliacao;
 import br.com.fashionai.application.flair3d.Flair3dPercurso.Look;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
+import br.com.fashionai.application.flair3d.recurso.Flair3dDesgaste;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,15 +21,17 @@ import java.util.function.Predicate;
 /**
  * Rodadas do LABIRINTO além do Espelho 1 (docs/flair/flair-3d/OBJETIVOS_POR_JOGO.md, jogo 10): a Escada de Espelhos (5
  * espelhos, cada um soma uma regra às anteriores), as Três Portas (3 salas, a pessoa escolhe a porta fácil, média ou
- * difícil) e o Corredor de Holofotes (um look para 5 condições). Depois de 3 apresentações sem passar, o espelho ou a
- * porta cedem sem pontos, para a partida sempre chegar ao fim.
+ * difícil) e o Corredor de Holofotes (um look para 5 condições). Na escada e nas portas, cada apresentação que não passa
+ * gasta Reflexo (a ENERGIA do jogo, {@link Flair3dDesgaste#POR_FALHA}); zerado, a partida fecha em derrota. O espelho e a
+ * porta não cedem mais por pena: só passa quem acerta (reauditoria de 25/11/2026).
  */
 final class LabirintoRodadas {
     static final String ESCADA = "ESCADA_DE_ESPELHOS";
     static final String PORTAS = "TRES_PORTAS";
     static final String HOLOFOTES = "CORREDOR_DE_HOLOFOTES";
-    /** Apresentações sem passar depois das quais o espelho (ou a porta fácil) cede. */
-    static final int CEDE_NA = 4;
+    /** O motivo do gasto de Reflexo: a apresentação que não abriu o espelho ou a porta. */
+    static final String APRESENTACAO_ERRADA = "APRESENTACAO_ERRADA";
+    static final Flair3dDesgaste.Falha FALHA = new Flair3dDesgaste.Falha(Flair3dDesgaste.vidaDo("LABIRINTO"), Flair3dDesgaste.POR_FALHA, APRESENTACAO_ERRADA);
     static final List<String> PORTAS_OPCOES = List.of("PORTA_FACIL", "PORTA_MEDIA", "PORTA_DIFICIL");
 
     /** Uma condição sobre o look inteiro. */
@@ -97,13 +100,14 @@ final class LabirintoRodadas {
             List<Condicao> pedidas = ESCADA_REGRAS.subList(0, look.etapa());
             List<RegraResultado> regras = conferir(pedidas, look.pecas(), 100.0 / pedidas.size());
             boolean abre = regras.stream().allMatch(RegraResultado::ok);
-            boolean cede = !abre && look.tentativa() >= CEDE_NA;
             List<Evento> eventos = new ArrayList<>(List.of(new Evento("TENTATIVA", look.tentativa())));
-            if (cede) {
-                eventos.add(new Evento("ESPELHO_CEDEU", look.etapa()));
-            }
             double pontos = abre ? (look.tentativa() == 1 ? 100 : 0) : regras.stream().mapToDouble(RegraResultado::pontos).sum();
-            return new Avaliacao(abre || cede, cede ? 0 : pontos, regras, eventos);
+            return new Avaliacao(abre, pontos, regras, eventos);
+        }
+
+        @Override
+        public Flair3dDesgaste.Falha falha() {
+            return FALHA;
         }
     };
 
@@ -125,14 +129,18 @@ final class LabirintoRodadas {
             int porta = Math.max(0, PORTAS_OPCOES.indexOf(look.resposta())) + 1;
             int noTema = Flair3dPecas.quantas(look.pecas().values(), c -> Flair3dPecas.temOcasiao(c, sala.ocasioes()));
             boolean abre = noTema >= porta;
-            boolean cede = !abre && look.tentativa() >= CEDE_NA;
             List<Evento> eventos = new ArrayList<>(List.of(new Evento("PECAS_NO_TEMA", noTema), new Evento("PORTA", Map.of("estrelas", abre ? porta : 0))));
             if (!abre) {
-                eventos.add(new Evento(cede ? "PORTA_CEDEU" : "FALTAM_NO_TEMA", cede ? look.etapa() : porta - noTema));
+                eventos.add(new Evento("FALTAM_NO_TEMA", porta - noTema));
             }
             // 6 estrelas nas 3 salas valem 100: cada estrela soma 50 à média das salas
             double pontos = abre ? porta * 50.0 : 0;
-            return new Avaliacao(abre || cede, pontos, List.of(RegraResultado.de(PORTAS_OPCOES.get(porta - 1), abre, porta)), eventos);
+            return new Avaliacao(abre, pontos, List.of(RegraResultado.de(PORTAS_OPCOES.get(porta - 1), abre, porta)), eventos);
+        }
+
+        @Override
+        public Flair3dDesgaste.Falha falha() {
+            return FALHA;
         }
     };
 }

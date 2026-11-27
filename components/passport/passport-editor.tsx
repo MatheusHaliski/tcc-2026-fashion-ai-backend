@@ -9,11 +9,10 @@ import { useApi } from '@/lib/hooks/use-api';
 import { useI18n } from '@/lib/i18n/i18n';
 import { Button, Field, FileButton, Input, Select, Skeleton, Textarea } from '@/components/ui';
 import { PassportTransfers } from './passport-transfers';
-import { ManufacturingRecordView } from '@/components/garment-delivery/manufacturing-record';
 import styles from './passport.module.css';
 
 const origins: PassportOrigin[] = ['UNKNOWN', 'COMPRADA', 'GARIMPADA', 'HERDADA', 'PRESENTE', 'FEITA_A_MAO', 'TROCADA', 'SOB_ENCOMENDA'];
-const fields: PassportField[] = ['NAME', 'ORIGIN', 'COMPOSITION', 'CARE', 'HISTORY', 'MANUFACTURING'];
+const fields: PassportField[] = ['NAME', 'ORIGIN', 'COMPOSITION', 'CARE', 'HISTORY'];
 const eventKinds: PassportEventKind[] = ['PURCHASE', 'CARE', 'REPAIR', 'ALTERATION', 'CORRECTION'];
 type EvidenceAction = (run: () => Promise<void>, refresh?: boolean) => Promise<void>;
 
@@ -74,7 +73,6 @@ function PassportForm({ data, reload }: { data: GarmentPassport; reload: () => v
   }
   return <>
     {error && <p className={styles.error} role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
-    {data.manufacturing && <ManufacturingRecordView record={data.manufacturing} owner />}
     <section className={styles.panel}><h2>{t('passport.declarations')}</h2><p className={styles.note}>{t('passport.declarationsHint')}</p>
       <form className={styles.form} onSubmit={event => { event.preventDefault(); void action(async () => { await passportApi.update(data.id, { version: data.version, origin, composition, care }); setNotice(t('passport.saved')); }); }}>
         <Field id="passport-origin" label={t('passport.origin')}><Select id="passport-origin" value={origin} onChange={event => setOrigin(event.target.value as PassportOrigin)}>{origins.map(value => <option key={value} value={value}>{t(`passport.origin.${value}`)}</option>)}</Select></Field>

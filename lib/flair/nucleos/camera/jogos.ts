@@ -53,6 +53,12 @@ const PLATEIA: Camera = { id: "PLATEIA", rig: "ORBITAL", dist: 5.2, altura: 1, a
 /** O ângulo de herói: bem de baixo, com o teto ou o céu atrás, ainda com os pés no quadro. */
 const CONTRA_PLONGEE: Camera = { id: "CONTRA_PLONGEE", rig: "ORBITAL", dist: 3.6, altura: 0.4, angulo: 20, mira: 1.2, fov: 42 };
 
+/**
+ * A fase de uso dos jogos de zonas (o campo, o palco, a pista, o terraço): do alto e de frente, parada na direção, para
+ * o piso com as marcas aparecer inteiro atrás da personagem e "para cima" na tela ser sempre o fundo do lugar.
+ */
+const PERCURSO: Camera = { id: "PERCURSO", rig: "ORBITAL", dist: 5.4, altura: 3.0, angulo: 0, mira: 1.0, fov: 50 };
+
 const jogo = (acao: string, resultado: string, ...cameras: Camera[]): CamerasDoJogo => ({ cameras: [TRES_QUARTOS, ...cameras], momento: { PREPARO: "TRES_QUARTOS", ACAO: acao, RESULTADO: resultado } });
 
 const duelo = (acao: string, resultado: string, ...cameras: Camera[]): CamerasDoJogo => ({ ...jogo(acao, resultado), cameras: [TRES_QUARTOS_DO_PAR, ...cameras] });
@@ -66,12 +72,12 @@ export const CAMERAS: Record<NucleoCodigo, CamerasDoJogo> = {
   FASHION_DETECTIVE: jogo("EXPLORACAO", "CLOSE_ROUPA", EXPLORACAO, ISOMETRICA, aerea(8), CLOSE_ROUPA),
   // loja e rua têm móveis atrás da avatar (provador, vitrines): o resultado fica no travelling da frente, não no giro
   BOUTIQUE_3D: jogo("TRAVELLING", "TRAVELLING", travelling(4.4, -50, 20, 1.4), lateral(4.4), ORBITAL_360, aerea(6), CLOSE_ROUPA),
-  CLUBE_CORACAO: jogo("ORBITAL_360", "GRUA", ORBITAL_360, grua(5.4, 1.6, 4), lateral(4.6), CLOSE_ROUPA),
-  FAVORITE_SINGER: jogo("GRUA", "PLATEIA", grua(5.4, 1.2, 4, 30), PLATEIA, ORBITAL_360, lateral(4.8, 1.4), CLOSE_ROUPA),
+  CLUBE_CORACAO: jogo("PERCURSO", "GRUA", PERCURSO, ORBITAL_360, grua(5.4, 1.6, 4), lateral(4.6), CLOSE_ROUPA),
+  FAVORITE_SINGER: jogo("PERCURSO", "PLATEIA", PERCURSO, grua(5.4, 1.2, 4, 30), PLATEIA, ORBITAL_360, lateral(4.8, 1.4), CLOSE_ROUPA),
   LABIRINTO: jogo("EXPLORACAO", "ORBITAL_360", EXPLORACAO, aerea(9), ISOMETRICA, ORBITAL_360, CLOSE_ROUPA),
-  PILOTO_FAVORITO: jogo("ORBITAL_360", "GRUA", ORBITAL_360, lateral(4.8, 0.9), grua(5.2, 1.3, 3.4), aerea(7), CLOSE_ROUPA),
+  PILOTO_FAVORITO: jogo("PERCURSO", "GRUA", PERCURSO, ORBITAL_360, lateral(4.8, 0.9), grua(5.2, 1.3, 3.4), aerea(7), CLOSE_ROUPA),
   AROUND_THE_WORLD: jogo("EXPLORACAO", "TRAVELLING", EXPLORACAO, travelling(4.8, -40, 40, 1.5), aerea(8), ORBITAL_360, CLOSE_ROUPA),
-  SUPER_HEROI: jogo("CONTRA_PLONGEE", "GRUA", CONTRA_PLONGEE, grua(5, 1, 4.2, -30), ORBITAL_360, lateral(4.6), CLOSE_ROUPA),
+  SUPER_HEROI: jogo("PERCURSO", "GRUA", PERCURSO, CONTRA_PLONGEE, grua(5, 1, 4.2, -30), ORBITAL_360, lateral(4.6), CLOSE_ROUPA),
   FASHION_SPORTS: jogo("ORBITAL_360", "GRUA", ORBITAL_360, grua(), lateral(4.6), CLOSE_ROUPA),
   BATALHA_LOOKS: duelo("LATERAL", "ORBITAL_360", lateral(5.6, 1.3, DUELO), PLATEIA, ORBITAL_360, grua(5.2, 1.4, 3.6, 20), CLOSE_ROUPA),
 };

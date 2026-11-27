@@ -47,6 +47,11 @@ public class AcervoPecasController {
         return pecas.medidas(user, id, body);
     }
 
+    @GetMapping("/api/me/acervo/pecas/{id}/lugar")
+    public Map<String, Object> lugar(CurrentUser user, @PathVariable UUID id) {
+        return consulta.lugar(user, id);
+    }
+
     @GetMapping("/api/me/acervo/pecas/{id}/looks")
     public List<Map<String, Object>> looks(CurrentUser user, @PathVariable UUID id) {
         return consulta.looks(user, id);

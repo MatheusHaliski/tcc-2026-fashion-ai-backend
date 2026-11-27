@@ -30,6 +30,8 @@ final class DetetiveEstado {
     String ultimaCobertura;
     boolean escondido;
     int vida = VIDA;
+    /** o que o look da gala muda no corpo da detetive (DetetiveDoLook) */
+    DetetiveDoLook doLook = DetetiveDoLook.NEUTRO;
     int tempo;
     int passo;
     int penalidades;
@@ -68,6 +70,11 @@ final class DetetiveEstado {
         return (int) pistas.values().stream().filter(Boolean::booleanValue).count();
     }
 
+    /** A acusação abre com as pistas bastantes achadas (inteiras ou pela metade) ou com o tempo esgotado. */
+    boolean podeAcusar() {
+        return pistas.size() >= FashionDetectiveAcusacao.PISTAS_PARA_ACUSAR || tempo >= LIMITE_DE_TEMPO;
+    }
+
     /** O retrato para a tela: tudo o que a pessoa pode ver, mais a sala em que está. */
     Map<String, Object> retrato(List<UUID> mao, int baralho) {
         DetetiveSala s = salaAtual();
@@ -88,10 +95,14 @@ final class DetetiveEstado {
         r.put("avisos", List.copyOf(avisos));
         r.put("dica", erros.getOrDefault(sala, 0) > 0);
         r.put("tentativas", tentativas);
+        r.put("podeAcusar", podeAcusar());
+        r.put("pistasParaAcusar", FashionDetectiveAcusacao.PISTAS_PARA_ACUSAR);
         r.put("final", fim == null ? null : fim.name());
         r.put("mao", mao.stream().map(UUID::toString).toList());
         r.put("baralho", baralho);
-        r.put("alcance", DetetiveVigias.ALCANCE);
+        r.put("alcance", doLook.alcance());
+        r.put("vidaMaxima", doLook.vidaMaxima());
+        r.put("doLook", doLook.paraTela());
         r.put("meiaAbertura", DetetiveVigias.MEIA_ABERTURA);
         r.put("passoMaximo", DetetiveSala.PASSO);
         r.put("layout", layout(s));

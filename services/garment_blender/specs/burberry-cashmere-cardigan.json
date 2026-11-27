@@ -1,0 +1,23 @@
+{
+ "produto": "Cashmere Cardigan",
+ "marca": "Burberry",
+ "url_oficial": "https://row.burberry.com/cashmere-cardigan-p81325681",
+ "subcategoria": "cardigan",
+ "sexo": "FEMININO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "malha_la",
+  "cor": "#c8a77c",
+  "gramatura": 320
+ },
+ "gola": "v",
+ "fechamento": "botoes",
+ "botoes": 5,
+ "cor_botao": "#3b2a1e",
+ "ribana": true,
+ "medidas_marca": {
+  "decote_frente": 20
+ },
+ "observacao": "decote V e vista de 5 botões, barra e punho em ribana. Cor não conferida (camelo escolhido).",
+ "tamanho": "M"
+}

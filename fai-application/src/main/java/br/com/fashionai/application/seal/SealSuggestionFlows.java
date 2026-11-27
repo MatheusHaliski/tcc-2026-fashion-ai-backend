@@ -200,6 +200,7 @@ public final class SealSuggestionFlows {
             m.put("tier", c.tier());
             m.put("eraLabel", c.eraLabel());
             m.put("sealId", c.sealId());
+            m.put("pieceIds", c.linkedPieceIds());                                // as peças que contaram para a regra
             m.put("hype", SealHypeLookups.hypeView(c, hype));                   // RF53: {score, level} da entidade avaliada, ou null
             suggestions.add(m);
         }

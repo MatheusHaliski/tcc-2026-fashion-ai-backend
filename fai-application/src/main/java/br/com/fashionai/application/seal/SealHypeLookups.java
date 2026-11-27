@@ -19,6 +19,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.service.SealService.Candidate;
 import br.com.fashionai.domain.model.*;
 import br.com.fashionai.domain.model.enums.*;
@@ -47,9 +48,14 @@ public final class SealHypeLookups {
     }
 
     public static boolean freshHype(HypeScoreCurrent row, HypeQueryService query) {
-        return query != null && row != null && row.getStatus() == HypeStatus.AVAILABLE && row.getScore() != null
-                && query.config().algorithmVersion().equals(row.getAlgorithmVersion()) && row.getCalculatedAt() != null
-                && row.getCalculatedAt().isAfter(Instant.now().minus(Duration.ofHours(query.config().staleAfterHours())));
+        return query != null && freshHype(row, query.config());
+    }
+
+    /** A mesma checagem para quem tem só a configuração (cupom por Hype): nota disponível, versão atual e dentro do prazo. */
+    public static boolean freshHype(HypeScoreCurrent row, HypeScoreConfig config) {
+        return config != null && row != null && row.getStatus() == HypeStatus.AVAILABLE && row.getScore() != null
+                && config.algorithmVersion().equals(row.getAlgorithmVersion()) && row.getCalculatedAt() != null
+                && row.getCalculatedAt().isAfter(Instant.now().minus(Duration.ofHours(config.staleAfterHours())));
     }
 
     void requireHypeMatch(SealBond bond, Seal seal) {

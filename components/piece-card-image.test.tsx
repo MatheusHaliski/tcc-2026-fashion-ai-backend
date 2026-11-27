@@ -21,12 +21,12 @@ it("a imagem padrão da prévia acompanha Tecido e volta à peça inteira", asyn
   const { PieceCard } = await import("./piece-card");
   loggedAs(ME);
   const piece = { ...PIECE, id: "preview-default-fabric", defaultImage: true, studioFeedUrl: null, studioThumbUrl: null, studioImageUrl: null, imageUrl: "/assets/reference-shirt.webp", thumbnailUrl: null };
-  const result = renderApp(<PieceCard piece={piece} href="#" framing="FABRIC" />);
+  const result = renderApp(<PieceCard piece={piece} mode="preview" photoFraming="FABRIC" />);
   const fabric = result.container.querySelector(".pc-media img")!;
   expect(fabric.getAttribute("src")).toContain("/api/catalog/default-asset?");
   expect(fabric.getAttribute("src")).toContain("framing=FABRIC");
   // The whole frame never inherits the fabric zoom.
-  result.rerender(<PieceCard piece={piece} href="#" framing="WHOLE" />);
+  result.rerender(<PieceCard piece={piece} mode="preview" photoFraming="WHOLE" />);
   expect(result.container.querySelector(".pc-media img")?.getAttribute("src")).toContain("framing=WHOLE");
   result.unmount();
 });
@@ -36,14 +36,14 @@ it("prévia com o recorte da foto escolhida (blob:) mostra a peça inteira, não
   const { PieceCard } = await import("./piece-card");
   loggedAs(ME);
   const base = { ...PIECE, id: "preview", defaultImage: false, studioFeedUrl: null, studioThumbUrl: null, studioImageUrl: null };
-  const crop = renderApp(<PieceCard piece={{ ...base, imageUrl: "blob:recorte-da-foto", thumbnailUrl: "blob:recorte-da-foto" }} href="#" framing="FABRIC" />);
+  const crop = renderApp(<PieceCard piece={{ ...base, imageUrl: "blob:recorte-da-foto", thumbnailUrl: "blob:recorte-da-foto" }} mode="preview" photoFraming="FABRIC" />);
   const img = crop.container.querySelector(".pc-media img")!;
   expect(img.getAttribute("src")).toBe("blob:recorte-da-foto");
   expect(img.className).toContain("is-contain");
   expect(img.className).not.toContain("is-cover");
   crop.unmount();
   // foto oficial do catálogo (não é blob:): a prévia em Tecido continua preenchendo o quadro
-  const official = renderApp(<PieceCard piece={{ ...base, imageUrl: "/media/oficial.jpg", thumbnailUrl: "/media/oficial.jpg" }} href="#" framing="FABRIC" />);
+  const official = renderApp(<PieceCard piece={{ ...base, imageUrl: "/media/oficial.jpg", thumbnailUrl: "/media/oficial.jpg" }} mode="preview" photoFraming="FABRIC" />);
   expect(official.container.querySelector(".pc-media img")!.className).toContain("is-cover");
   official.unmount();
 });

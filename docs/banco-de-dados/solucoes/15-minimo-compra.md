@@ -1,5 +1,26 @@
 # Exercício 15 — Valor mínimo de compra do cupom
 
+> **Implementado em 26/11/2026.** Migração `V120__minimo_compra_cupom_exercicio_15.sql` (idempotente) e SQL simples para o
+> Railway em [`sql/railway/15-minimo-compra.sql`](sql/railway/15-minimo-compra.sql), com os mesmos nomes.
+> - **Schema:** `promotions.min_purchase` e `min_purchase_currency`; `flair_combinations.min_purchase_currency` (o
+>   `min_purchase` já existia); `min_purchase_snapshot` e `min_purchase_currency_snapshot` em `promotion_redemptions` e
+>   `flair_redemptions`; CHECKs `ck_flair_min_purchase`, `ck_promotion_min_purchase`, `ck_pr_min_snapshot`,
+>   `ck_fr_min_snapshot` (nulo ou ≥ 0). Um mínimo negativo antigo faz o CHECK falhar (3819): a migração para e o valor é
+>   revisado, não é trocado por zero.
+> - **Validação (`CouponMinimumRules`):** de 0 a 99.999.999,99 com até 2 casas; três casas voltam 400
+>   `MINIMO_COMPRA_INVALIDO`, sem arredondar. Com valor, a moeda é obrigatória e precisa ser BRL, USD ou EUR (400
+>   `MOEDA_MINIMO_INVALIDA`). Vazio é "sem mínimo" e é diferente de zero. A oferta antiga, gravada sem moeda, continua sem
+>   moeda enquanto o valor não mudar.
+> - **Emissão e leitura (`CouponTermsSnapshotWriter`):** o cupom copia o mínimo e a moeda da oferta na mesma transação da
+>   emissão. A carteira e `GET /api/flair/vouchers` leem o que está no cupom, não a regra atual. `minPurchaseSnapshotStatus`
+>   diz `REGISTRADO`, `SEM_MINIMO` ou `NAO_REGISTRADO` (cupom sem registro de uma oferta que hoje tem mínimo).
+> - **Limite conhecido:** sem valor gravado, o cupom emitido de uma oferta sem mínimo e o cupom antigo ficam iguais no
+>   banco (os dois nulos). Se a oferta ganhar um mínimo depois, os dois passam a aparecer como "condição não registrada".
+> - **Não feito:** a compra mínima não é conferida no caixa nem num checkout: o app só declara e mostra a condição. A lista
+>   "Todas as promoções" e os avisos de direito de cupom escrevem o mínimo só quando ele está em reais.
+> - Telas: `components/coupons/coupon-minimum.tsx` (valor e moeda nas duas ofertas; linha do mínimo no cupom).
+>   Testes: `CouponMinimumTest`, `coupon-minimum.test.tsx`, `brand-flair-tab.test.tsx`, `brand-coupons-tab.test.tsx`.
+
 **Situação na revisão `9f5512a77`:** Parcial: FlairCombination.minPurchase existe, mas precisa validação forte e snapshot; promoções possuem outro modelo.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

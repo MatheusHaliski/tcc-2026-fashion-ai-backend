@@ -12,7 +12,7 @@ import { Cena2D, QuadroParado } from "@/components/flair/nucleos/scene/scene-2d"
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import type { MomentoDaCamera } from "@/lib/flair/nucleos/camera/jogos";
-import type { NucleoConfig, NucleoResultado, ZonaEscolha } from "@/lib/flair/nucleos/types";
+import type { MaquiagemEscolha, NucleoConfig, NucleoResultado, ZonaEscolha } from "@/lib/flair/nucleos/types";
 
 const NucleoScene3D = dynamic(() => import("@/components/flair/nucleos/nucleo-scene-3d"), { ssr: false, loading: () => null });
 
@@ -33,6 +33,8 @@ interface Props {
   protagonista: Protagonista;
   /** resultado da entrega (opcional): a cena toca a sequência automática do jogo e a reação do avatar */
   resultado?: NucleoResultado | null;
+  /** a última entrega que não fechou a partida (a rodada anterior da Batalha de Looks) */
+  anterior?: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
   variante?: string | null;
   /** semente da partida (os corpos das pessoas de cena) */
@@ -40,6 +42,13 @@ interface Props {
   /** zonas da rodada (modos do Ateliê) e o que a pessoa já pintou: a peça aparece no manequim */
   zonasDaPeca?: string[];
   zonas?: Record<string, ZonaEscolha>;
+  /** a maquiagem escolhida (Road to Glory): aparece no rosto do avatar */
+  maquiagem?: Record<string, MaquiagemEscolha>;
+  /** o jogo anda livre na preparação, na velocidade da agilidade do look */
+  andarLivre?: boolean;
+  agilidade?: number;
+  /** o desfile jogável está na ação (marcas e pose final) */
+  desfileAtivo?: boolean;
   /** a câmera escolhida no seletor do HUD e o momento da partida (scene/game-camera.tsx) */
   camera?: string | null;
   momento?: MomentoDaCamera;

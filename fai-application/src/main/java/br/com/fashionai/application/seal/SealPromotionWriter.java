@@ -10,6 +10,10 @@ import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.*;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.service.CouponChannelResolver;
+import br.com.fashionai.application.service.CouponHypeRules;
+import br.com.fashionai.application.service.CouponMinimumRules;
+import br.com.fashionai.application.service.CouponTermsSnapshotWriter;
 import br.com.fashionai.application.service.FlairService;
 import br.com.fashionai.application.service.SealService.PromotionForm;
 import br.com.fashionai.domain.model.*;
@@ -30,6 +34,7 @@ public final class SealPromotionWriter {
     private final Audit audit;
     private final SealIssuers issuers;
     private final SealPromotionReads reads;
+    private CouponChannelResolver channels;
 
     public SealPromotionWriter(PromotionRepository promotions, PromotionRedemptionRepository redemptions, SealRepository seals, SealBondRepository bonds, UserRepository users, Guard guard, Audit audit, SealIssuers issuers, SealPromotionReads reads) {
         this.promotions = promotions;
@@ -41,6 +46,11 @@ public final class SealPromotionWriter {
         this.audit = audit;
         this.issuers = issuers;
         this.reads = reads;
+    }
+
+    /** Exercício 14 — canais de utilização do cupom (injetados depois da construção pelo SealService). */
+    public void useChannels(CouponChannelResolver channels) {
+        this.channels = channels;
     }
 
     public Map<String, Object> createPromotion(CurrentUser user, PromotionForm f) {
@@ -122,6 +132,11 @@ public final class SealPromotionWriter {
         }
         p.setVisibility(f.visibility() == null ? Visibility.PUBLIC : f.visibility());
         p.setStoreUrl(PromotionRules.storeUrl(f.storeUrl()));
+        p.setCanalCupom(CouponChannelResolver.resolve(channels, f.canalCupomId(), p.getCanalCupom()));
+        CouponMinimumRules.Minimum minimum = CouponMinimumRules.resolve(f.minPurchase(), f.minPurchaseCurrency(), p.getMinPurchase(), p.getMinPurchaseCurrency());
+        p.setMinPurchase(minimum.amount());
+        p.setMinPurchaseCurrency(minimum.currency());
+        p.setMinHypeLevel(CouponHypeRules.resolve(f.minHypeLevel()));   // Circuito Aura: vazio = oferta sem exigência de Hype
     }
 
     /**
@@ -159,6 +174,16 @@ public final class SealPromotionWriter {
             throw ApiException.conflict("SELO_INVALIDO", revoked ? Msg.t("seal.seu_selo_deste_perfil_foi")
                     : Msg.t("seal.e_preciso_ter_um_selo"));
         }
+        HypeLevel hypeAtIssue = null;
+        if (p.getMinHypeLevel() != null) {
+            // Circuito Aura: o card que carrega o selo precisa ter Hype público e atualizado na faixa da oferta
+            SealBond hyped = reads.qualifyingBond(p, myBonds);
+            if (hyped == null) {
+                throw CouponHypeRules.insufficient(p.getMinHypeLevel(), reads.hypeGate().ofBond(bond));
+            }
+            bond = hyped;
+            hypeAtIssue = reads.hypeGate().ofBond(hyped);
+        }
         long mine = redemptions.countByPromotionIdAndUserId(p.getId(), user.id());
         if (mine >= p.getPerUserLimit()) {
             throw ApiException.conflict("LIMITE_POR_USUARIO", Msg.t("seal.voce_ja_resgatou_esta_promocao"));
@@ -180,6 +205,8 @@ public final class SealPromotionWriter {
         r.setPartnerBrandUserId(p.getPartnerBrandUserId());
         r.setRedeemedAt(now);
         r.setExpiresAt(p.getExpiresAt());
+        CouponTermsSnapshotWriter.issue(r, p);   // exercícios 14 e 15: o cupom guarda o canal e o mínimo que a oferta tem agora
+        r.setHypeLevelSnapshot(hypeAtIssue == null ? null : hypeAtIssue.name());   // a faixa da emissão fica no cupom: queda depois não o revoga
         redemptions.save(r);
         p.setRedeemedCount(p.getRedeemedCount() + 1);
         if (p.getTotalQuota() != null && p.getRedeemedCount() >= p.getTotalQuota()) {

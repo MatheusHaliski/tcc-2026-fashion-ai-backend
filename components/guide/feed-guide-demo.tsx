@@ -11,7 +11,7 @@ export function FeedGuideDemo() {
   useEffect(() => { primeHype("PIECE", DEMO_HYPE); }, []);
   return (
     <div className="gd-feed">
-      <div className="gd-card-frame"><PieceCard piece={demoPiece()} flip={false} /></div>
+      <div className="gd-card-frame"><PieceCard piece={demoPiece()} allowFlip={false} /></div>
       <ul className="gd-callouts">
         <li><span className="gd-dot">1</span>{t("guide.demo.feed.open")}</li>
         <li><span className="gd-dot">2</span>{t("guide.demo.feed.piece")}</li>

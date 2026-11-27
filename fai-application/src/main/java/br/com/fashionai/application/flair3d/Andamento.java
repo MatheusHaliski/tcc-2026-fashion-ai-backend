@@ -12,9 +12,12 @@ import java.util.UUID;
  * acionamentos feitos depois da entrega, na ordem. O núcleo recalcula a partida inteira a partir da semente, da entrega e
  * deste andamento, então o resultado de cada etapa é sempre o mesmo. {@code rodada} é a rodada escolhida ao abrir a partida
  * (nula nas partidas antigas: vale o objetivo mais simples do jogo). {@code rascunho} é o look que a pessoa estava montando
- * antes de entregar ({@link Flair3dRascunho}); a entrega seguinte o descarta.
+ * antes de entregar ({@link Flair3dRascunho}); a entrega seguinte o descarta. {@code usos} são as peças usadas como
+ * recurso na partida inteira ({@link br.com.fashionai.application.flair3d.recurso.Flair3dRecursoUso}): passam de uma
+ * entrega para a outra, e a partida antiga, sem o campo, lê como nenhum uso.
  */
-public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores, String rodada, Entrega rascunho) {
+public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores, String rodada, Entrega rascunho,
+                        List<UsoDeRecurso> usos) {
     /** Primeira entrega, sem acionamento. */
     public static final Andamento INICIO = new Andamento(1, List.of());
 
@@ -33,9 +36,25 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
         }
     }
 
+    /**
+     * Uma peça usada como recurso: a carta, o recurso e a quantidade que o servidor deu, o pedido (idempotência) e quando
+     * — o lance (quantos acionamentos já havia) e a etapa (quantas entregas anteriores): o motor do jogo aplica o uso
+     * dali em diante, sem mudar o que já aconteceu.
+     */
+    public record UsoDeRecurso(UUID carta, String recurso, int quantidade, String pedido, int lance, int etapa) {
+        public UsoDeRecurso(UUID carta, String recurso, int quantidade, String pedido) {
+            this(carta, recurso, quantidade, pedido, 0, 0);
+        }
+    }
+
     public Andamento {
         acionamentos = acionamentos == null ? List.of() : List.copyOf(acionamentos);
         anteriores = anteriores == null ? List.of() : List.copyOf(anteriores);
+        usos = usos == null ? List.of() : List.copyOf(usos);
+    }
+
+    public Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores, String rodada, Entrega rascunho) {
+        this(tentativas, acionamentos, anteriores, rodada, rascunho, List.of());
     }
 
     public Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores, String rodada) {
@@ -57,12 +76,12 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
 
     /** O mesmo andamento, na rodada dada. */
     public Andamento comRodada(String nova) {
-        return new Andamento(tentativas, acionamentos, anteriores, nova, rascunho);
+        return new Andamento(tentativas, acionamentos, anteriores, nova, rascunho, usos);
     }
 
     /** O mesmo andamento, com o look em montagem guardado (nulo apaga). */
     public Andamento comRascunho(Entrega novo) {
-        return new Andamento(tentativas, acionamentos, anteriores, rodada, novo);
+        return new Andamento(tentativas, acionamentos, anteriores, rodada, novo, usos);
     }
 
     /** O andamento gravado na partida; partida nova ainda não tem tentativa. */
@@ -77,7 +96,14 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
     }
 
     public Andamento proximaTentativa() {
-        return new Andamento(tentativas + 1, List.of(), anteriores, rodada);
+        return new Andamento(tentativas + 1, List.of(), anteriores, rodada, null, usos);
+    }
+
+    /** O mesmo andamento com mais uma peça usada como recurso. */
+    public Andamento comUso(UsoDeRecurso uso) {
+        List<UsoDeRecurso> out = new ArrayList<>(usos);
+        out.add(uso);
+        return new Andamento(tentativas, acionamentos, anteriores, rodada, rascunho, out);
     }
 
     /** A próxima entrega, guardando a que veio antes (nula na primeira) como etapa já jogada. */
@@ -87,13 +113,13 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
         }
         List<Etapa> out = new ArrayList<>(anteriores);
         out.add(new Etapa(anterior.cartas(), acionamentos, anterior.resposta()));
-        return new Andamento(tentativas + 1, List.of(), out, rodada);
+        return new Andamento(tentativas + 1, List.of(), out, rodada, null, usos);
     }
 
     public Andamento com(Acionamento novo) {
         List<Acionamento> out = new ArrayList<>(acionamentos);
         out.add(novo);
-        return new Andamento(tentativas, out, anteriores, rodada);
+        return new Andamento(tentativas, out, anteriores, rodada, null, usos);
     }
 
     /** Todas as cartas usadas nos acionamentos e nas etapas anteriores. */

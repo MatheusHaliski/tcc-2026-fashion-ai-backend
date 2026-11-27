@@ -98,7 +98,7 @@ public class BackgroundStudioService {
     }
 
     /** RF11 §7.6 — formato do Preset Aura + material. */
-    public static final List<String> AURA_FORMATS = List.of("IMAGEM_UNICA", "MOSAICO");
+    public static final List<String> AURA_FORMATS = StudioArtworkRules.AURA_FORMATS;
 
     /** As quatro direções visuais do RF11 (Recommendation) — cada uma re-renderiza os wearstyles no seu estilo. */
     public static final Map<String, Map<String, Object>> DIRECTIONS = new LinkedHashMap<>();
@@ -135,7 +135,7 @@ public class BackgroundStudioService {
     private AuraPermissionsService auraPermissions;
     @org.springframework.beans.factory.annotation.Autowired
     public void setAuraPermissions(AuraPermissionsService permissions) { this.auraPermissions = permissions; }
-    void requireAuraAccess(CurrentUser user, Object config) {
+    public void requireAuraAccess(CurrentUser user, Object config) {
         if (auraPermissions == null) return; // legacy unit constructors; managed runtime always injects the guard
         if (!(config instanceof Map<?,?> outer)) return;
         if (outer.get("scheme") instanceof Map<?,?> nested) requireAuraAccess(user,nested);
@@ -617,7 +617,7 @@ public class BackgroundStudioService {
         requireAuraAccess(user, cfg);
         WardrobeItem w = pieces.findById(pieceId).orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
         guard.requireOwner(user, w.getUser().getId(), "piece:" + pieceId);
-        Object saved = withRevision(w.getBackgroundConfigJson(), cfg);
+        Object saved = StudioArtworkRules.pieceBackground(w.getBackgroundConfigJson(), cfg, id -> assets.auraVariant(id).isPresent());
         w.setBackgroundConfigJson(saved == null ? null : Json.write(saved));
         return Map.of("pieceId", pieceId, "background", saved == null ? Map.of() : saved);
     }

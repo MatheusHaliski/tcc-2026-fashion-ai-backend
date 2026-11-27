@@ -1,0 +1,19 @@
+{
+ "produto": "Jaqueta ASICS Road Packable - Masculino - Preto",
+ "marca": "ASICS",
+ "url_oficial": "https://www.asics.com.br/2011d084-001/p",
+ "subcategoria": "jacket",
+ "sexo": "MASCULINO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#16161a",
+  "gramatura": 120
+ },
+ "gola": "alta",
+ "fechamento": "ziper_inteiro",
+ "cor_ziper": "#2b2b2b",
+ "ribana": false,
+ "observacao": "jaqueta de corrida com gola alta e zíper inteiro. Cor: a do nome (preto).",
+ "tamanho": "M"
+}

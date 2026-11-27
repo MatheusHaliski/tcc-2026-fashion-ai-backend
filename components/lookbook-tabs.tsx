@@ -29,6 +29,7 @@ import { SavedLooks } from "@/components/looks/saved-looks";
 import { FlairCollectionTab } from "@/components/flair/flair-collection";
 import { MyArts } from "@/components/my-arts";
 import { MomentsTimelineSection } from "@/components/moments/moment-timeline";
+import { LooksTab } from "@/components/lookbook-looks-tab";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
 /**
@@ -136,34 +137,6 @@ function DnaLooksTab() {
   const list = data ?? [];
   if (list.length === 0) return <EmptyState title={t("dna.nenhum_dna_de_estilo_ainda")} hint={t("dna.monte_o_primeiro_com_2")} action={<Link href="/dna" className="btn btn-primary">{t("lookbook.criar_look_dna")}</Link>} />;
   return <div className="grid-looks">{list.map((d) => <DnaCard key={d.id ?? d.title} dna={d} href={d.id ? `/dna-schemes/${d.id}` : undefined} />)}</div>;
-}
-
-/** Ordenação da aba Looks (P3-02): é ordenação, não aba nem filtro. Valores aceitos por GET /api/profiles/{id}?sort=. */
-type LookSort = "recent" | "hype_desc" | "growth";
-
-/**
- * Looks: a vitrine — os looks publicados, os mesmos para o dono e para quem visita. Filtros, rascunhos e arquivados
- * (a gestão) ficam em /looks; o dono tem o atalho discreto "Gerenciar meus looks". Ordenar por Hype (P3-02): o dono
- * ordena pelo próprio Hype pessoal; quem visita, só pelo Hype público — look sem Hype fica no fim (nunca vale 0).
- */
-function LooksTab({ ownerId, self }: { ownerId: string; self: boolean }) {
-  const { t } = useI18n(); const { user } = useAuth(); const [sort, setSort] = useState<LookSort>("recent");
-  // "Recentes" é a rota de sempre; as outras ordens mandam ?sort= (o backend respeita a privacidade do Hype)
-  const { data, loading, error, reload } = useApi<{ schemes: SchemeView[] }>((signal) => api.get(`/api/profiles/${ownerId}${qs({ sort: sort === "recent" ? undefined : sort })}`, { signal, anonymous: !user }), [ownerId, !!user, sort]);
-  const list = data?.schemes ?? [];
-  return (
-    <>
-      <div className="lookbook-sort">
-        <Dropdown label={t("hypeLookbook.ordenar")} prefix={t("hypeLookbook.ordenar_prefixo")} value={sort} onChange={setSort}
-          options={[{ id: "recent", label: t("hypeLookbook.ordem.recent") }, { id: "hype_desc", label: t("hypeLookbook.ordem.hype_desc") }, { id: "growth", label: t("hypeLookbook.ordem.growth") }]} />
-        {sort !== "recent" && <span className="type-caption text-muted">{self ? t("hypeLookbook.ordem_pessoal") : t("hypeLookbook.ordem_publica")}</span>}
-        {self && <p className="lookbook-manage"><Link href="/looks" className="lookbook-manage-link">{t("lookbook.manageLooks")} →</Link></p>}
-      </div>
-      {error ? <ErrorState error={error} onRetry={reload} /> : loading ? <SkeletonGrid />
-        : list.length === 0 ? <EmptyState title={t("lookbook.noPublishedLooks")} action={self ? <Link href="/schemes/new" className="btn btn-primary">{t("scheme.create")}</Link> : undefined} />
-        : <div className="grid-looks social-card-grid">{list.map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>}
-    </>
-  );
 }
 
 /** Uma publicação do perfil (GET /api/users/{id}/publications): look publicado ou peça visível. */

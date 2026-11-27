@@ -493,7 +493,7 @@ function useIsClient() { return useSyncExternalStore(noSubscribe, () => true, ()
  * Diálogos e painéis vão para o fim do <body> (portal): dentro de um card, a contenção do card (container query,
  * contain, transform, backdrop-filter) virava o "viewport" do position:fixed e o diálogo ficava preso e cortado no card.
  */
-function Overlay({ children }: { children: ReactNode }) {
+export function Overlay({ children }: { children: ReactNode }) {
   return createPortal(children, document.body);
 }
 
@@ -512,7 +512,7 @@ export function Dialog({ open, onClose, title, children, footer, size, role = "d
           <h2 id={titleId} className="type-h2">{title}</h2>
           <button type="button" className="btn btn-ghost btn-icon" aria-label={t("common.fechar")} onClick={onClose}><UiIcon name="close" /></button>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="relative isolate z-0 p-4">{children}</div>
         {footer && <div className="dialog-foot">{footer}</div>}
       </div>
     </div>

@@ -1,4 +1,4 @@
-/** Inspeção do contêiner GLB antes de qualquer carregamento; o servidor repete a mesma inspeção. */
+/** Pure GLB container inspection, run before GLTFLoader can resolve any resource. */
 export const MAX_GLB_BYTES = 8 * 1024 * 1024;
 const EXTENSIONS = new Set([
   "KHR_materials_unlit",

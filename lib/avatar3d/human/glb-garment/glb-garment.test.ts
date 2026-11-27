@@ -95,7 +95,9 @@ describe("glb-garment: peça estática vestida no avatar", () => {
     expect(fitted.scale).not.toBeCloseTo(1, 2);
     expect(real.scale).toBe(1);
     const width = (p: Float32Array) => { let lo = Infinity, hi = -Infinity; for (let i = 0; i < p.length; i += 3) { lo = Math.min(lo, p[i]); hi = Math.max(hi, p[i]); } return hi - lo; };
-    expect(width(real.pos)).toBeCloseTo(width(src.position), 1);   // a envergadura fica a da peça (o giro da manga só a reduz)
+    // a envergadura não cresce (sem reescala); só encolhe o quanto a manga é puxada até o braço (até 5 cm de cada lado)
+    expect(width(real.pos)).toBeLessThanOrEqual(width(src.position) + 1e-3);
+    expect(width(real.pos)).toBeGreaterThan(width(src.position) - 0.12);
     // a profundidade também é a da peça: a camisa rasa de teste não é esticada por faixa (o tronco não estufa)
     const depth = (p: Float32Array) => { let lo = Infinity, hi = -Infinity; for (let i = 2; i < p.length; i += 3) { lo = Math.min(lo, p[i]); hi = Math.max(hi, p[i]); } return hi - lo; };
     const grown = (al: { pos: Float32Array; scale: number }) => depth(al.pos) / (al.scale * depth(src.position));
@@ -220,12 +222,25 @@ describe("glb-garment: peça estática vestida no avatar", () => {
   it("pele atravessando: debaixo da placa que ficou atrás da pele do peito entra o forro, e conta como furo", () => {
     const a = avatar(); const f = a.frame(); const chest = f.joint("Neck").y - 0.2;
     const skin = f.near(0.05, chest, 0.2, [1]);
-    const plate = (z: number) => source([new THREE.PlaneGeometry(0.2, 0.2, 8, 8).translate(0, chest, z)]);
-    const cover = (z: number) => { const s = plate(z); return coverOf(s.position, s.index, new Int8Array(s.position.length / 3), f); };
+    // a peça tem frente e costas: a placa da frente em z e a das costas atrás do corpo
+    const back = f.pos[skin * 3 + 2] - 0.3;
+    const plate = (z: number, front = true) => source([
+      ...(front ? [new THREE.PlaneGeometry(0.2, 0.2, 8, 8).translate(0, chest, z)] : []),
+      new THREE.PlaneGeometry(0.2, 0.2, 8, 8).translate(0, chest, back)]);
+    const cover = (z: number, front = true) => { const s = plate(z, front); return coverOf(s.position, s.index, new Int8Array(s.position.length / 3), f); };
     const outside = cover(f.pos[skin * 3 + 2] + 0.02), inside = cover(f.pos[skin * 3 + 2] - 0.05), away = cover(f.pos[skin * 3 + 2] + 0.3);
     expect(outside.covered[skin]).toBe(1); expect(outside.pierced).toBeLessThan(0.05);
     expect(inside.covered[skin]).toBe(1); expect(inside.pierced).toBeGreaterThan(0.5);
     expect(away.covered[skin]).toBe(0);                             // pano longe (30 cm à frente): a pele continua pele
+  });
+
+  it("abertura da peça (decote V, cava, frente aberta): pela fresta só se vê o pano das costas, e a pele fica à mostra", () => {
+    const a = avatar(); const f = a.frame(); const chest = f.joint("Neck").y - 0.2;
+    const skin = f.near(0.05, chest, 0.2, [1]);
+    const s = source([new THREE.PlaneGeometry(0.2, 0.2, 8, 8).translate(0, chest, f.pos[skin * 3 + 2] - 0.12)]);   // só uma camada, atrás
+    const opening = coverOf(s.position, s.index, new Int8Array(s.position.length / 3), f);
+    expect(opening.covered[skin]).toBe(0);                          // não vira forro (era o remendo cinza no V do blazer)
+    expect(opening.pierced).toBeLessThan(0.05);                     // nem conta como furo
   });
 
   it("ilha: a pele descoberta cercada pela peça vira forro; a que chega à cabeça, à mão ou ao pé continua pele", () => {

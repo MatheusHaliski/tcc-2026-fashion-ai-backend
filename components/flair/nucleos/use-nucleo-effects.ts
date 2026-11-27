@@ -9,20 +9,24 @@ import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useApi } from "@/lib/hooks/use-api";
 import { efeitosDasCartas, type OndeDosEfeitos } from "@/lib/flair/nucleos/api";
 import type { EfeitoItem, NucleoCodigo } from "@/lib/flair/nucleos/types";
+import type { PerfilDaPeca } from "@/lib/flair/recursos/types";
 
 export function useNucleoEffects(codigo: NucleoCodigo, cartas: FlairCollectionCard[], ligado = true, onde: OndeDosEfeitos = {}) {
   const ids = useMemo(() => cartas.map((c) => c.id), [cartas]);
   const chave = ids.join(",");
-  const { rodada = null, partida = null } = onde;
-  const efeitos = useApi((signal) => efeitosDasCartas(codigo, ids, signal, { rodada, partida }), [codigo, chave, rodada, partida], { enabled: ligado && ids.length > 0 });
+  const { rodada = null, partida = null, vez = null } = onde;
+  const efeitos = useApi((signal) => efeitosDasCartas(codigo, ids, signal, { rodada, partida }), [codigo, chave, rodada, partida, vez], { enabled: ligado && ids.length > 0 });
   const carregado = !!efeitos.data;
   const porCarta = useMemo(() => {
     const lista = efeitos.data?.efeitos ?? [];
     return new Map<string, EfeitoItem[]>(lista.map((e) => [e.cardId, e.itens]));
   }, [efeitos.data]);
+  const perfis = useMemo(() => new Map((efeitos.data?.efeitos ?? []).filter((e) => e.perfil).map((e) => [e.cardId, e.perfil!])), [efeitos.data]);
+  /** o perfil peça-recurso da carta (atributos, recurso do uso, ações destravadas), quando o servidor mandou */
+  const perfil = useCallback((cardId: string): PerfilDaPeca | undefined => perfis.get(cardId), [perfis]);
   const itens = useCallback(
     (cardId: string): EfeitoItem[] | undefined => (carregado ? porCarta.get(cardId) ?? [] : undefined),
     [carregado, porCarta],
   );
-  return { porCarta, carregado, itens };
+  return { porCarta, carregado, itens, perfil };
 }

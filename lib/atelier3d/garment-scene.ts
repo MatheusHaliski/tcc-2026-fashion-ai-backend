@@ -3,8 +3,11 @@ import type { LoadedAsset, SceneDocument } from "./document";
 import { applyDecals, decalsReady } from "./decal-meshes";
 import { applyPartEdits } from "./garment-materials";
 
-/** Parte de peça do documento aplicada à cena: cor do tecido, partes ocultas e decalques (logos/estampas). */
-export function applyGarment(asset: LoadedAsset, doc: SceneDocument) {
+/**
+ * Edições da peça do motor (editor da peça) aplicadas à cena: cor do tecido, partes ocultas e decalques (logos e
+ * estampas). Roda depois de `applyGarment` (Ateliê da peça, seção `garment`), no fim de `applyDocument`.
+ */
+export function applyPieceEdits(asset: LoadedAsset, doc: SceneDocument) {
   applyPartEdits(asset, doc, applyDecals(asset, doc));
 }
 

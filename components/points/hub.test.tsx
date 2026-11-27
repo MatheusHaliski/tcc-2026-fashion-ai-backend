@@ -37,7 +37,7 @@ describe("modelo", () => {
 });
 
 describe("PointsHub", () => {
-  it("lista os quatro lugares em grupos, escolher troca o painel sem navegar; a Loja é a loja física (a do quarto saiu)", async () => {
+  it("lista os quatro lugares em grupos, escolher troca o painel sem navegar; a Loja é a Loja FAI Points (sem loja física nem do quarto)", async () => {
     const { calls } = loggedAs(ME, ROUTES);
     renderApp(<PointsHub />);
     const store = await screen.findByRole("tab", { name: /Loja/ });
@@ -45,7 +45,8 @@ describe("PointsHub", () => {
     await waitFor(() => expect(screen.getByRole("status").textContent).toBe("1240 pontos · nível Prata"));
     fireEvent.click(store);
     expect(store.getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("tabpanel").textContent).toContain("loja física");
+    expect(screen.getByRole("tabpanel").textContent).toContain("presets de Aura");
+    expect(screen.getByRole("tabpanel").textContent).not.toMatch(/loja física|entrega/i);
     expect(screen.getByRole("tabpanel").textContent).not.toMatch(/quarto/i);
     expect(push).not.toHaveBeenCalled();
     expect(localStorage.getItem(`fai.points.hub.selected:${ME.user.id}`)).toBe("store");

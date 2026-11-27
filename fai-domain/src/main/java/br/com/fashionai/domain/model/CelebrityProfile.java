@@ -9,6 +9,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -56,6 +57,11 @@ public class CelebrityProfile extends VersionedAuditableEntity implements Review
 
     @Column(name = "areas_json", columnDefinition = "json")
     private String areasJson;
+
+    /** Área artística principal escolhida na tabela de opções (exercício 10); nulo = não informada. A lista acima continua. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "area_artistica_principal_id")
+    private AreaArtistica areaArtisticaPrincipal;
 
     @Column(name = "verifiable_followers_json", columnDefinition = "json")
     private String verifiableFollowersJson;

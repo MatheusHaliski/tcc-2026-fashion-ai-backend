@@ -61,11 +61,13 @@ def measure_top(mesh: Mesh, m: TopMeasures, angle: float = 0.0) -> dict[str, flo
     # caída, o plano no fim da transição ainda corta a cava, que é vertical no flanco do tronco)
     armpit = (m.cava - m.caimento_ombro) * cm / max(np.sin(a), 1e-6) + 0.025 if angle > 20 else 0.0
     cap = max(min(CAP, 0.6 * m.manga * cm), armpit)
+    has_sleeve = "manga_d" in mesh.parts   # regata, colete: sem manga, só o tronco
+    sleeve = (lambda point: round(section_perimeter(mesh, d, point, "manga_d") / cm, 1)) if has_sleeve else (lambda point: 0.0)  # noqa: E731
     return {
         "torax": round(section_perimeter(mesh, (0, 1, 0), (0, (m.comprimento - m.cava - 2.5) * cm, 0), "tronco") / cm, 1),
         "barra": round(section_perimeter(mesh, (0, 1, 0), (0, (m.ribana_barra + 3) * cm, 0), "tronco") / cm, 1),
-        "biceps": round(section_perimeter(mesh, d, anchor + d * cap, "manga_d") / cm, 1),
-        "punho": round(section_perimeter(mesh, d, anchor + d * (reach - m.ribana_punho * cm / 2), "manga_d") / cm, 1),
+        "biceps": sleeve(anchor + d * cap),
+        "punho": sleeve(anchor + d * (reach - m.ribana_punho * cm / 2)),
         "manga": round(reach / cm, 1),
         "altura_total": round((v[:, 1].max() - v[:, 1].min()) / cm, 1),
     }

@@ -2,14 +2,15 @@
 /**
  * A cena 3D do Fashion Detective (carregada só no navegador): a sala (sala-3d.tsx), os vigias e o elenco como gente
  * (components/flair/nucleos/gente, o mesmo corpo humano do avatar), o cone de visão de cada vigia no piso (amarelo; vermelho
- * quando a pessoa está nele), o avatar da pessoa com o look da gala, que anda de ponto a ponto, e a câmera de exploração
+ * quando a pessoa está nele), o avatar da pessoa com o look da gala, que anda livre entre os pontos (detetive-jogador.tsx), e a câmera de exploração
  * por trás do ombro (ou a diagonal de cima, ou a aérea, pelo seletor). Com "reduzir movimento", tudo salta para o lugar.
  */
 import { useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Look3dPiece } from "@/components/three/common";
-import { NucleoAvatar, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
+import type { Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
+import { DetetiveJogador } from "@/components/flair/detetive/detetive-jogador";
 import { Elenco3D } from "@/components/flair/nucleos/gente/elenco-3d";
 import { Sala3D } from "@/components/flair/detetive/sala-3d";
 import { agora as relogioDaCena } from "@/components/flair/nucleos/scene/stage-context";
@@ -23,7 +24,8 @@ import { aproximar, poseDoRig, type Pose } from "@/lib/flair/nucleos/camera/rigs
 import type { AtorDeCena } from "@/lib/flair/nucleos/gente/ator";
 import type { PessoaDoElenco } from "@/lib/flair/nucleos/gente/elenco";
 
-const PARADO = { giro: 0, zoom: 0, poses: 0, desfilando: false };
+/** A que distância o elenco parado vira o rosto para a detetive, em metros. */
+const OLHA_QUEM_CHEGA = 2.2;
 const LIMITES = { x: [-4.7, 4.7] as [number, number], z: [-3.6, 9] as [number, number], teto: 7 };
 
 export interface DetetiveCena3DProps {
@@ -38,6 +40,8 @@ export interface DetetiveCena3DProps {
   rotulo: string;
   /** a cutscene na tela: a câmera dela vale sobre a de exploração enquanto a legenda está aberta */
   cutscene?: string | null;
+  /** o analógico leva a detetive pelos corredores até os vizinhos (detetive-jogador.tsx) */
+  andar?: boolean;
 }
 
 /** Cone de visão no piso: um leque de raio = alcance, aberto 2 × meia abertura, virado para onde o vigia olha. */
@@ -48,27 +52,6 @@ function Cone({ r, x, z, olhar, visto }: { r: Retrato; x: number; z: number; olh
     <mesh geometry={geo} position={[x, 0.03, z]} rotation={[-Math.PI / 2, 0, ((olhar - 180) * Math.PI) / 180]} name="cone">
       <meshBasicMaterial color={visto ? "#FF4D52" : "#FFD447"} transparent opacity={0.42} depthWrite={false} side={THREE.DoubleSide} />
     </mesh>
-  );
-}
-
-/** O avatar da pessoa: desliza até o ponto do servidor, virado para onde anda. */
-function Jogador({ r, pecas, protagonista, reduzido, alvo }: { r: Retrato; pecas: Look3dPiece[]; protagonista: Protagonista; reduzido: boolean; alvo: React.MutableRefObject<{ x: number; z: number; giro: number }> }) {
-  const g = useRef<THREE.Group>(null);
-  const p = r.layout.pontos.find((x) => x.id === r.ponto) ?? { x: 0, z: 0 };
-  useFrame((_, dt) => {
-    if (!g.current) return;
-    const dx = p.x - g.current.position.x;
-    const dz = p.z - g.current.position.z;
-    const k = reduzido ? 1 : Math.min(1, dt * 3.5);
-    if (Math.hypot(dx, dz) > 0.05) g.current.rotation.y = Math.atan2(dx, dz);
-    g.current.position.x += dx * k;
-    g.current.position.z += dz * k;
-    alvo.current = { x: g.current.position.x, z: g.current.position.z, giro: (g.current.rotation.y * 180) / Math.PI };
-  });
-  return (
-    <group ref={g} position={[p.x, 0, p.z]} rotation={[0, Math.PI, 0]} name="detetive">
-      <NucleoAvatar estado={PARADO} pecas={pecas} reduzido={reduzido} protagonista={protagonista} />
-    </group>
   );
 }
 
@@ -118,7 +101,7 @@ function Alerta({ v }: { v: VigiaDaSala }) {
   );
 }
 
-function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, semente, cutscene }: Omit<DetetiveCena3DProps, "rotulo">) {
+function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, semente, cutscene, andar = false }: Omit<DetetiveCena3DProps, "rotulo">) {
   /** onde o avatar está e para onde olha: começa virado para o fundo da sala (a câmera fica atrás, do lado da porta) */
   const alvo = useRef({ x: 0, z: 0, giro: 180 });
   // o elenco da sala, já com a reação à acusação (o final ou o álibi que o servidor mandou)
@@ -148,7 +131,10 @@ function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, sement
       return { id: v.id, x: agora.x, z: agora.z, giro: (v.olhar * Math.PI) / 180, anim: movimentoDoVigia(v, andando), velocidade: andando ? (persegue ? 3.2 : 1.2) : 0, naJogada: v.temBolso || !!v.modo && v.modo !== "RONDA" };
     });
     for (const p of elenco) {
-      out.push({ id: `${r.sala}-${p.papel}`, x: p.x, z: p.z, giro: (p.giro * Math.PI) / 180, anim: p.anim, velocidade: 0, gesto: p.gesto, gestoDesde: reacaoDesde.current.t, naJogada: p.anim !== "idle" || !!p.gesto });
+      // quem está parado vira o rosto para a detetive quando ela chega perto (andando livre)
+      const perto = !p.gesto && p.anim === "idle" && Math.hypot(alvo.current.x - p.x, alvo.current.z - p.z) < OLHA_QUEM_CHEGA;
+      const giro = perto ? Math.atan2(alvo.current.x - p.x, alvo.current.z - p.z) : (p.giro * Math.PI) / 180;
+      out.push({ id: `${r.sala}-${p.papel}`, x: p.x, z: p.z, giro, anim: p.anim, velocidade: 0, gesto: p.gesto, gestoDesde: reacaoDesde.current.t, naJogada: p.anim !== "idle" || !!p.gesto });
     }
     return out;
   };
@@ -162,7 +148,7 @@ function Cena({ r, vizinhos, onIr, pecas, protagonista, reduzido, camera, sement
       ))}
       {r.layout.vigias.map((v) => <Alerta key={`alerta-${v.id}`} v={v} />)}
       <Elenco3D pessoas={pessoas} atores={atores} prontos={prontos} reduzido={reduzido} />
-      <Jogador r={r} pecas={pecas} protagonista={protagonista} reduzido={reduzido} alvo={alvo} />
+      <DetetiveJogador r={r} pecas={pecas} protagonista={protagonista} reduzido={reduzido} alvo={alvo} vizinhos={vizinhos} onIr={onIr} livre={andar && !cutscene && !r.final} />
       <Camera escolha={camera} alvo={alvo} reduzido={reduzido} cutscene={cutscene} />
     </>
   );

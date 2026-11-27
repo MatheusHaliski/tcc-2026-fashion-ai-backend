@@ -1,5 +1,8 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.scheme.SchemeCardAssembler;
+import br.com.fashionai.application.scheme.SchemeEditDiff;
+import br.com.fashionai.application.scheme.SchemeListing;
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.imaging.SchemeCardRenderer;
@@ -183,8 +186,8 @@ class SchemeServiceTest {
         Map<String, Object> current = Map.of("title", "A", "occasion", List.of("casual"), "season", "SUMMER");
         String json = "{\"changes\":[{\"field\":\"title\",\"proposed\":\"Noite\",\"reason\":\"r\"},{\"field\":\"occasion\",\"proposed\":[\"party\"]},"
                 + "{\"field\":\"season\",\"proposed\":\"MONSOON\"},{\"field\":\"inexistente\",\"proposed\":1}]}";
-        assertThat(schemes.parseDiff(json, current)).hasSize(2);
-        assertThat(schemes.parseDiff("nada", current)).isNull();
+        assertThat(SchemeEditDiff.parse(json, current)).hasSize(2);
+        assertThat(SchemeEditDiff.parse("nada", current)).isNull();
         Map<String, Object> accepted = Map.of("title", "Noite elegante", "description", "Para jantar", "occasion", List.of("party"), "style", List.of("classic"),
                 "season", "WINTER", "mood", "ELEGANT", "visibility", "FOLLOWERS");
         assertThat(schemes.applyDiff(ana, id, accepted)).containsKey("scheme");
@@ -237,23 +240,23 @@ class SchemeServiceTest {
     void meusLooksFiltradosPorEstadoOrigemEHype() {
         UUID archived = world.lookIds(world.me).get(5);
         schemes.archive(ana, archived);
-        assertThat(schemes.mine(ana, null, null, 0, 20).items()).hasSize(5);
-        assertThat(schemes.mine(ana, null, "arquivados", 0, 20).items()).hasSize(1);
-        assertThat(schemes.mine(ana, "casual", "publicados", "manual", 0, 2).items()).hasSize(2);
+        assertThat(schemes.mine(ana, null, null, null, null, null, 0, 20).items()).hasSize(5);
+        assertThat(schemes.mine(ana, null, "arquivados", null, null, null, 0, 20).items()).hasSize(1);
+        assertThat(schemes.mine(ana, "casual", "publicados", "manual", null, null, 0, 2).items()).hasSize(2);
         assertThat(schemes.mine(ana, null, null, "todos", "hype", "HOT", 0, 20).items()).hasSize(5);   // sem faixas configuradas, o filtro de Hype não corta
         assertThat(schemes.mine(ana, null, "favoritos", null, "hype_asc", null, 0, 20).items()).isEmpty();
         for (String st : List.of("disponivel", "indisponivel", "rascunhos", "outro")) {
             schemes.mine(ana, null, st, null, "growth", null, 0, 20);
         }
-        assertThat(SchemeService.lookSort("maior_hype")).isEqualTo("hype_desc");
-        assertThat(SchemeService.lookSort("menor_hype")).isEqualTo("hype_asc");
-        assertThat(SchemeService.lookSort(null)).isEqualTo("recent");
-        assertThat(SchemeService.hypeMinimum("viral", new int[]{20, 40, 60, 80, 90})).isNotNull();
-        assertThat(SchemeService.hypeMinimum(null, null)).isNull();
+        assertThat(SchemeListing.lookSort("maior_hype")).isEqualTo("hype_desc");
+        assertThat(SchemeListing.lookSort("menor_hype")).isEqualTo("hype_asc");
+        assertThat(SchemeListing.lookSort(null)).isEqualTo("recent");
+        assertThat(SchemeListing.hypeMinimum("viral", new int[]{20, 40, 60, 80, 90})).isNotNull();
+        assertThat(SchemeListing.hypeMinimum(null, null)).isNull();
         assertThat(SchemeService.moreRestrictive(Visibility.PUBLIC, Visibility.FOLLOWERS)).isEqualTo(Visibility.FOLLOWERS);
         assertThat(SchemeService.moreRestrictive(null, Visibility.PUBLIC)).isEqualTo(Visibility.PUBLIC);
-        assertThat(SchemeService.cardHypeLabel(null, null, true)).isNull();
-        assertThat(SchemeService.placeholder(mine.get(0)).getWidth()).isEqualTo(420);
+        assertThat(SchemeCardAssembler.hypeLabel(null, null, true)).isNull();
+        assertThat(SchemeCardAssembler.placeholder(mine.get(0)).getWidth()).isEqualTo(420);
         assertThat(schemes.suggestSealsAfterSave(ana, archived)).isNotNull();
     }
 

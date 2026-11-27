@@ -1,10 +1,14 @@
 package br.com.fashionai.application.flair3d.nucleos;
 
+import br.com.fashionai.application.flair3d.Andamento;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao;
 import br.com.fashionai.application.flair3d.Entrega;
+import br.com.fashionai.application.flair3d.Flair3dExecucao;
+import br.com.fashionai.application.flair3d.Flair3dFixtures;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
 import br.com.fashionai.application.flair3d.Flair3dNucleos;
+import br.com.fashionai.application.flair3d.Flair3dTinta;
 import br.com.fashionai.application.flair3d.Flair3dZonas;
 import br.com.fashionai.application.flair3d.Resultado;
 import org.junit.jupiter.api.Test;
@@ -56,6 +60,8 @@ class AtelieZonasPartidasTest {
 
     private static Map<String, Entrega> jogandoBem() {
         Map<String, Entrega> m = new LinkedHashMap<>();
+        m.put("CLUBE_CORACAO/CLUBE_ATLANTICO", zonas(null, "FRENTE=" + AZUL, "COSTAS=" + AZUL, "MANGAS=" + BRANCO, "GOLA=" + BRANCO));
+        m.put("CLUBE_CORACAO/CLUBE_AURORA", zonas(null, "FRENTE=" + VERMELHO, "COSTAS=" + VERMELHO, "MANGAS=" + PRETO, "GOLA=" + PRETO));
         m.put("CLUBE_CORACAO/UNIFORME_ESPORTS", zonas(null, "FRENTE=" + ROXO, "COSTAS=" + ROXO, "MANGAS=" + PRETO, "GOLA=" + AMARELO));
         m.put("FAVORITE_SINGER/ERA_NEON", zonas(null, "FRENTE=" + ROSA, "COSTAS=" + ROSA, "MANGAS=" + ROXO, "GOLA=" + ROSA + "/METALICO"));
         m.put("FAVORITE_SINGER/ERA_ACUSTICA", zonas(null, "FRENTE=" + BRANCO, "COSTAS=" + BRANCO, "MANGAS=" + BRANCO, "GOLA=" + DOURADO));
@@ -69,8 +75,15 @@ class AtelieZonasPartidasTest {
         return m;
     }
 
+    /**
+     * O núcleo de cada jogo de zonas sem a execução no percurso: aqui se audita a nota da pintura. Na partida, o núcleo
+     * registrado ({@link Flair3dNucleos}) é o {@link Flair3dExecucao} sobre este, que pede os botões depois do look.
+     */
+    static final Map<String, Flair3dNucleo> PINTURA = Map.of("CLUBE_CORACAO", new ClubeCoracaoNucleo(), "FAVORITE_SINGER",
+            new FavoriteSingerNucleo(), "PILOTO_FAVORITO", new PilotoFavoritoNucleo(), "SUPER_HEROI", new SuperHeroiNucleo());
+
     static Flair3dNucleo jogo(String chave) {
-        return Flair3dNucleos.porCodigo(chave.split("/")[0]).orElseThrow();
+        return PINTURA.get(chave.split("/")[0]);
     }
 
     static Resultado jogar(String chave, Entrega entrega) {
@@ -105,10 +118,25 @@ class AtelieZonasPartidasTest {
             Resultado r = jogar(chave, entrega);
             assertThat(r.pontos()).as(chave).isEqualTo(100);
             assertThat(r.estrelas()).as(chave).isEqualTo(3);
-            assertThat(r.resultado()).as(chave).isEqualTo("APROVADO");
+            assertThat(r.resultado()).as(chave).isIn("APROVADO", "CONCLUIDO");
             assertThat(r.eventos()).as(chave).isEmpty();
             // a conta fecha: a nota é a soma das regras, sem desconto escondido
             assertThat(r.regras().stream().mapToDouble(Resultado.RegraResultado::pontos).sum()).as(chave).isEqualTo(100.0);
+        });
+    }
+
+    @Test
+    void naPartidaAPinturaComNotaPedeAExecucaoEQuemExecutaBemFicaComANotaDaPintura() {
+        JOGANDO_BEM.forEach((chave, entrega) -> {
+            Flair3dNucleo registrado = Flair3dNucleos.porCodigo(chave.split("/")[0]).orElseThrow();
+            Contexto naRodada = new Contexto(Map.of(), null, null).naRodada(chave.split("/")[1]);
+            Resultado pedido = registrado.pontuar(entrega, naRodada);
+            assertThat(pedido.status()).as(chave).isEqualTo(Resultado.EM_ACAO);
+            Andamento comToques = naRodada.andamento().com(Flair3dFixtures.perfeita(pedido));
+            Resultado fim = registrado.pontuar(entrega, naRodada.comAndamento(comToques));
+            assertThat(fim.fecha()).as(chave).isTrue();
+            assertThat(fim.pontos()).as(chave).isEqualTo(100);
+            assertThat(fim.regras()).as(chave).extracting(Resultado.RegraResultado::codigo).endsWith("EXECUCAO");
         });
     }
 
@@ -130,15 +158,36 @@ class AtelieZonasPartidasTest {
     }
 
     @Test
-    void osClubesArtisticosConcluemSemNotaComAsCoresDaTela() {
-        Entrega atlantico = zonas(null, "FRENTE=" + AZUL, "COSTAS=" + AZUL, "MANGAS=" + BRANCO, "GOLA=" + BRANCO);
-        Entrega aurora = zonas(null, "FRENTE=" + VERMELHO, "COSTAS=" + VERMELHO, "MANGAS=" + PRETO, "GOLA=" + PRETO);
-        for (Resultado r : List.of(jogar("CLUBE_CORACAO/CLUBE_ATLANTICO", atlantico), jogar("CLUBE_CORACAO/CLUBE_AURORA", aurora))) {
-            assertThat(r.resultado()).isEqualTo("CONCLUIDO");
-            assertThat(r.pontos()).isZero();
-            assertThat(r.estrelas()).isZero();
-        }
-        assertThat(jogar("CLUBE_CORACAO/CLUBE_AURORA", atlantico).resultado()).isEqualTo("INCOMPLETO");
+    void osClubesConcluemComAsCoresDaTelaEAsCoresErradasFicamPelaMetade() {
+        Entrega atlantico = JOGANDO_BEM.get("CLUBE_CORACAO/CLUBE_ATLANTICO");
+        Resultado errado = jogar("CLUBE_CORACAO/CLUBE_AURORA", atlantico);
+        assertThat(errado.resultado()).isEqualTo("INCOMPLETO");
+        assertThat(errado.pontos()).isEqualTo(50);
+    }
+
+    @Test
+    void aTintaTemOrcamentoEASobraViraFolegoDaExecucao() {
+        Flair3dNucleo armadura = Flair3dNucleos.porCodigo("SUPER_HEROI").orElseThrow();
+        Contexto naRodada = new Contexto(Map.of(), null, null).naRodada("ARMADURA");
+        // peito metálico (3 latas) e três zonas foscas (3): 6 das 8 latas; sobram 2, que viram 10 de vida na execução
+        Resultado pedido = armadura.pontuar(JOGANDO_BEM.get("SUPER_HEROI/ARMADURA"), naRodada);
+        assertThat(pedido.eventos()).contains(new Resultado.Evento("TINTA", Map.of("orcamento", 8, "gasto", 6, "sobra", 2)));
+        assertThat(pedido.eventos()).filteredOn(e -> e.codigo().equals("EXECUCAO_PEDIDA")).extracting(Resultado.Evento::valor)
+                .first().asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP).containsEntry("recurso", "VIDA").containsEntry("reserva", 70);
+        // tudo metálico passa do orçamento (12 latas de 8): a peça não sai do ateliê
+        Entrega cara = zonas("EMBLEMA_RAIO", "PEITO=" + AZUL + "/METALICO", "CAPA=" + VERMELHO + "/METALICO", "BRACOS=" + AZUL + "/METALICO", "PERNAS=" + AZUL + "/METALICO");
+        Resultado semTinta = armadura.pontuar(cara, naRodada);
+        assertThat(semTinta.resultado()).isEqualTo(Flair3dTinta.SEM_TINTA);
+        assertThat(semTinta.fecha()).isTrue();
+        assertThat(semTinta.pontos()).isLessThanOrEqualTo(Flair3dExecucao.NOTA_DE_QUEM_ESGOTOU);
+        // a prévia mostra o orçamento enquanto a pessoa pinta
+        assertThat(armadura.previa(cara, naRodada).eventos()).contains(new Resultado.Evento("TINTA", Map.of("orcamento", 8, "gasto", 12, "sobra", 0)));
+        // e o fôlego que a pintura deixa para a fase de uso (a roda de recursos): 60 de vida + 40 das latas − 30 gastos
+        assertThat(armadura.previa(JOGANDO_BEM.get("SUPER_HEROI/ARMADURA"), naRodada).eventos()).filteredOn(e -> e.codigo().equals("DESGASTE"))
+                .extracting(Resultado.Evento::valor).first().asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP)
+                .containsEntry("recurso", "VIDA").containsEntry("reserva", 100).containsEntry("restante", 70);
+        assertThat(armadura.previa(cara, naRodada).eventos()).filteredOn(e -> e.codigo().equals("DESGASTE"))
+                .extracting(Resultado.Evento::valor).first().asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP).containsEntry("restante", 0);
     }
 
     @Test

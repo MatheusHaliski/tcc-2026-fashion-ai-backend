@@ -146,3 +146,35 @@ it("sem versão salva, a conferência que chega antes da cena não é apagada: o
   expect(client.save.mock.calls[0][0].genderEvidenceHash).toBe("h0");
   await waitFor(() => expect(screen.getAllByRole("status")[0].textContent).toContain("Versão 1"));
 });
+it("caracterização: barra da vista e histórico de versões mantêm controles e estados", async () => {
+  loggedAs(ME);
+  const evidence: GenderEvidence = { sources: [], status: "INCOMPLETE", suggestion: null, hash: "h0", options: [] };
+  const current = { id: "v1", sequence: 1, assetId: "a1", author: "ana", createdAt: "2026-11-15T00:00:00Z",
+    document: { nodes: {}, materials: {}, vertices: {} }, gender: evidence, confirmedTipoLookId: null };
+  client.get.mockReset().mockResolvedValue({
+    title: "Camiseta teste", edit: true, export: true, manageGuests: false,
+    asset: { id: "a1", filename: "t.glb", bytes: 500, sha256: "a".repeat(64),
+      inspection: { nodes: 1, meshes: 1, materials: 1, vertices: 3, skinned: false, morphs: false, animated: false, primitives: { "n0.p0": 3 }, extensions: [] } },
+    current, history: [current],
+  } as unknown as SceneResponse);
+  client.bytes.mockResolvedValue(triangle());
+  client.evidence.mockReset().mockResolvedValue(evidence);
+  renderApp(<Atelier3dEditor projectId="project" />);
+  const rotate = await screen.findByRole("button", { name: "Rotacionar (R)" });
+  expect(screen.getByRole("button", { name: "Mover (G)" }).getAttribute("aria-pressed")).toBe("true");
+  fireEvent.click(rotate);
+  expect(rotate.getAttribute("aria-pressed")).toBe("true");
+  fireEvent.click(screen.getByRole("button", { name: /Vista da câmera/ }));
+  expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Perspectiva", "Frente", "Costas", "Lado esquerdo", "Lado direito", "Vista superior"]);
+  fireEvent.click(screen.getByRole("option", { name: "Frente" }));
+  expect(screen.getByRole("button", { name: /Vista da câmera/ }).textContent).toContain("Frente");
+  expect(screen.getByRole("button", { name: "Enquadrar (F)" })).toBeTruthy();
+  const snap = screen.getByRole("checkbox", { name: "Alinhar à grade" }) as HTMLInputElement;
+  fireEvent.click(snap);
+  expect(snap.checked).toBe(true);
+  expect((screen.getByRole("button", { name: "Desfazer", exact: true }) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByRole("heading", { name: "Histórico 3D" })).toBeTruthy();
+  const restore = screen.getByRole("button", { name: "Restaurar como rascunho" }) as HTMLButtonElement;
+  expect(restore.disabled).toBe(false);
+  expect(screen.getByText(/· ana/)).toBeTruthy();
+});

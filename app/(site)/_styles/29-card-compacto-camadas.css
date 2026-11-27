@@ -69,6 +69,16 @@
 .scheme-card-social .c-photo.is-look img { padding: 6px; }
 .scheme-card-social .scheme-container > :is(.runway, .bento) { flex: none; height: var(--fc-photo-h); aspect-ratio: auto; }
 .scheme-card-social .scheme-container::before { top: 12px; left: 12px; font-size: 12px; padding: 2px 6px; }
+/* layouts da seção A também no card do feed: Foto hero + lista lateral (foto à esquerda, peças à direita) e Grade de
+   peças (mosaico 3×N no lugar da foto), na altura da janela da foto */
+.scheme-card-social .hero-lateral-row, .scheme-card-social .grid-pieces.is-mosaic { flex: none; height: var(--fc-photo-h); border: 0; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--fc-window-line); }
+.scheme-card-social .hero-lateral-row .c-photo.is-look { height: 100%; border-radius: 0; box-shadow: none; }
+.scheme-card-social .hero-lateral-list { background: var(--fc-window-bg); overflow-y: auto; scrollbar-width: none; }
+.scheme-card-social .piece2-sm { flex: 0 0 auto; padding: 4px 6px; }
+.scheme-card-social .piece2-sm .p-thumb { width: 28px; height: 28px; }
+.scheme-card-social .piece2-sm .min-w-0 > b { -webkit-line-clamp: 1; }
+.scheme-card-social .grid-pieces.is-mosaic { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); }
+.scheme-card-social .grid-pieces.is-mosaic .cell img { flex: 1 1 auto; min-height: 0; aspect-ratio: auto; }
 
 /* ---------- as duas janelas de dados ---------- */
 :is(.piece-card.is-social .pc-window.is-identity, .fai-card.scheme-card-social .c-titleblock) {
@@ -157,9 +167,6 @@
 .fai-card[data-card-mode="feed"]:is(.piece-card.is-social, .scheme-card-social) .pc-info dd { font-size: 12px; line-height: 1.3; }
 :is(.piece-card.is-social, .scheme-card-social) .pc-panels .fashion-hype-cell { min-height: 0; padding: 3px 4px; }
 :is(.piece-card.is-social, .scheme-card-social) .pc-panels .fashion-hype-cell dd { font-size: 15px; }
-
-/* no ampliado a janela de identidade não existe como caixa: os itens seguem no layout de detalhe */
-.piece-card-expanded .pc-window.is-identity { display: contents; }
 
 /* ---------- grades: uma coluna por card, mesmo tamanho em todo lugar ---------- */
 .feed-compact-grid,

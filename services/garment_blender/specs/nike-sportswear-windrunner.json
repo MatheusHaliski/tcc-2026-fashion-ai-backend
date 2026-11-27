@@ -1,0 +1,17 @@
+{
+ "produto": "Sportswear Windrunner Jacket",
+ "marca": "Nike",
+ "subcategoria": "windbreaker",
+ "sexo": "MASCULINO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "sarja",
+  "cor": "#141416",
+  "gramatura": 110
+ },
+ "gola": "capuz",
+ "fechamento": "ziper_inteiro",
+ "ribana": false,
+ "observacao": "corta-vento com capuz e zíper. Cor: Black (catálogo); a faixa em chevron do ombro não é modelada.",
+ "tamanho": "M"
+}

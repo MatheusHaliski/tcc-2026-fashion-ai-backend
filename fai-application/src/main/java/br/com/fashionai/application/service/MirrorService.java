@@ -39,6 +39,8 @@ import br.com.fashionai.domain.model.*;
 import br.com.fashionai.domain.model.enums.*;
 import br.com.fashionai.domain.repository.*;
 
+import static br.com.fashionai.application.service.MirrorPieceViews.pieceView;
+
 /**
  * RF33 — Smart Mirror e "Vista-me". O espelho é mais uma interface para iniciar o Criar Look (RF5), não uma
  * cópia dele: montagem manual por slots (§2.1), completude determinística sem IA, Vista-me com interpretação,
@@ -64,7 +66,9 @@ public class MirrorService {
         }
     }
 
-    public record Interpretation(List<String> occasion, String mood, List<UUID> anchors, List<String> constraints, String season) {
+    /** {@code nivelTermico}: o código validado do nível térmico pedido (LEVE, MODERADO, INTENSO), ou nulo; não sai da estação. */
+    public record Interpretation(List<String> occasion, String mood, List<UUID> anchors, List<String> constraints, String season,
+                                 String nivelTermico) {
     }
 
     private final MirrorStateRepository mirrors;
@@ -79,6 +83,12 @@ public class MirrorService {
     private final StyleDnaRepository dnas;
     private final ObjectProvider<PieceRestrictionProvider> restrictions;
     private final AiEngine ai;
+    /** Critério térmico do Vista-me (tabela niveis_termicos). Opcional nos testes que montam o serviço sem Spring. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private SchemeThermalWriter thermal;
+    /** Produtos do catálogo de marcas vestidos só para provar (MirrorCatalogPieces); opcional nos testes sem Spring. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private MirrorCatalogPieces catalogPieces;
     private final Audit audit;
     private final ApplicationEventPublisher events;
     /** P3-07 — a mesma régua de looks do Copilot e do Autopiloto (só lê o Hype gravado; nada recalcula nem vira sinal). */
@@ -108,9 +118,13 @@ public class MirrorService {
 
     // ================================================================== slots
     public static String slotOf(WardrobeItem w) {
-        String cat = w.getCategory() == null ? "" : w.getCategory();
-        return switch (cat) {
-            case "upper_piece" -> w.getSubcategory() != null && OUTERWEAR.contains(w.getSubcategory()) ? "outer_layer" : "upper";
+        return slotOf(w.getCategory(), w.getSubcategory());
+    }
+
+    /** Lugar no corpo pela categoria e subcategoria gravadas: o mesmo para a peça da pessoa e o produto do catálogo. */
+    public static String slotOf(String category, String subcategory) {
+        return switch (category == null ? "" : category) {
+            case "upper_piece" -> subcategory != null && OUTERWEAR.contains(subcategory) ? "outer_layer" : "upper";
             case "lower_piece" -> "lower";
             case "full_body_piece" -> "dress";
             case "shoes_piece" -> "shoes";
@@ -129,7 +143,7 @@ public class MirrorService {
         };
     }
 
-    MirrorState stateEntity(UUID userId) {
+    public MirrorState stateEntity(UUID userId) {
         return mirrors.findByUserId(userId).orElseGet(() -> {
             MirrorState s = new MirrorState();
             s.setUserId(userId);
@@ -140,7 +154,7 @@ public class MirrorService {
     }
 
     /** slots_json: upper/lower/dress/shoes/outer_layer → id; accessory → [ids]; origin, prompt, interpretation. */
-    Map<String, Object> slots(MirrorState s) {
+    public Map<String, Object> slots(MirrorState s) {
         return Json.map(s.getSlotsJson());
     }
 
@@ -274,37 +288,6 @@ public class MirrorService {
         return Map.of("letter", letter, "rule", thirds, "toggle", true);
     }
 
-    Map<String, Object> pieceView(WardrobeItem w, Map<UUID, AcervoLugares.Lugar> where) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", w.getId());
-        m.put("name", w.getName());
-        m.put("category", w.getCategory());
-        m.put("subcategory", w.getSubcategory());
-        m.put("color", w.getColor());
-        m.put("colorHex", Taxonomy.hex(w.getColor()));
-        m.put("imageUrl", w.getImageUrl());
-        m.put("thumbnailUrl", w.getThumbnailUrl());
-        m.put("studioImageUrl", w.getStudioImageUrl());
-        // modelagem e dimensões da taxonomia: o espelho veste com o mesmo caimento do provador (classe, comprimentos)
-        m.put("variation", w.getVariationCode());
-        Map<String, List<String>> attrs = new LinkedHashMap<>();
-        if (w.getAttributes() != null) {
-            w.getAttributes().forEach(a -> attrs.computeIfAbsent(a.getDimensionCode(), k -> new ArrayList<>()).add(a.getValueCode()));
-        }
-        m.put("attributes", attrs);
-        m.put("available", available(w));
-        m.put("slot", slotOf(w));
-        AcervoLugares.Lugar loc = where.get(w.getId());
-        m.put("address", loc == null ? null : loc.compartimentoId().toString());
-        m.put("addressLabel", loc == null ? null : loc.caminho());
-        m.put("moduleId", loc == null ? null : loc.movelId().toString());
-        // estado dos assets da peça (RF16 e foto): o espelho mostra "Modelo 3D", "Foto em processamento" etc. de verdade
-        m.put("model3dUrl", w.getModel3dUrl());
-        m.put("model3dStatus", w.getModel3dStatus() == null ? null : w.getModel3dStatus().name());
-        m.put("photoProcessingStatus", w.getPhotoProcessingStatus() == null ? null : w.getPhotoProcessingStatus().name());
-        return m;
-    }
-
     @Transactional
     public Map<String, Object> state(CurrentUser user) {
         MirrorState s = stateEntity(user.id());
@@ -322,7 +305,7 @@ public class MirrorService {
         return render(user, state, slots(state), Map.of());
     }
 
-    Map<String, Object> render(CurrentUser user, MirrorState s, Map<String, Object> slots, Map<String, Object> extra) {
+    public Map<String, Object> render(CurrentUser user, MirrorState s, Map<String, Object> slots, Map<String, Object> extra) {
         List<UUID> wantRack = rack(slots);
         List<UUID> toLoad = new ArrayList<>(allIds(slots));
         wantRack.stream().filter(id -> !toLoad.contains(id)).forEach(toLoad::add);
@@ -346,7 +329,8 @@ public class MirrorService {
             putRack(slots, rackIds);
             dirty = true;
         }
-        if (dirty) {
+        MirrorCatalogPieces.Worn catalog = catalogPieces == null ? MirrorCatalogPieces.Worn.NONE : catalogPieces.worn(slots);
+        if (dirty || catalog.changed()) {
             s.setSlotsJson(Json.write(slots));
             mirrors.save(s);
         }
@@ -355,9 +339,9 @@ public class MirrorService {
         Map<String, Object> slotViews = new LinkedHashMap<>();
         for (String slot : List.of("outer_layer", "upper", "dress", "lower", "shoes")) {
             UUID id = single(slots, slot);
-            slotViews.put(slot, id == null ? null : pieceView(loaded.get(id), where));
+            slotViews.put(slot, id == null ? catalog.view(slot) : pieceView(loaded.get(id), where));
         }
-        slotViews.put("accessory", acc.stream().map(id -> pieceView(loaded.get(id), where)).toList());
+        slotViews.put("accessory", catalog.withAccessories(acc.stream().map(id -> pieceView(loaded.get(id), where)).toList()));
         out.put("slots", slotViews);
         Set<UUID> worn = new HashSet<>(allIds(slots));
         out.put("rack", rackIds.stream().map(id -> {
@@ -396,11 +380,6 @@ public class MirrorService {
         actions.add("VISTA_ME");
         out.put("actions", actions);
         out.put("silhouette", complete ? silhouette(look) : null);
-        out.put("postIt", !complete && !look.isEmpty() ? Msg.t("mirror.faltou_o_look_continua_pendurado", missing(slots).stream().map(m -> switch (String.valueOf(m.get("slot"))) {
-            case "shoes" -> "o sapato";
-            case "upper" -> Msg.t("mirror.a_peca_de_cima");
-            default -> Msg.t("mirror.a_peca_de_baixo");
-        }).collect(Collectors.joining(" e "))) : null);
         String colorSeason = dnas.findByUserId(user.id()).map(d -> d.getColorSeason()).orElse(null);
         out.put("light", Map.of("kelvin", colorSeason == null ? 4000 : switch (colorSeason.toUpperCase(Locale.ROOT)) {
             case "PRIMAVERA", "SPRING" -> 3400;
@@ -483,6 +462,7 @@ public class MirrorService {
                 }
             }
         }
+        MirrorCatalogSlots.yieldToWardrobe(slots);   // o produto do catálogo que dividia o lugar sai do corpo
         addToRack(slots, pieceId);   // vestida também fica na lista do espelho (para trocar e voltar a ela)
         if ("vista_me".equals(slots.get("origin"))) {
             slots.put("origin", "smart_mirror");
@@ -713,68 +693,10 @@ public class MirrorService {
     }
 
     // ================================================================== Vista-me (CA08–CA15)
-    static final Map<String, List<String>> KEYWORDS = Map.ofEntries(
-            Map.entry("faculdade", List.of("university")), Map.entry("aula", List.of("university", "school")), Map.entry("escola", List.of("school")),
-            Map.entry("trabalho", List.of("work")), Map.entry("trabajo", List.of("work")), Map.entry("escritório", List.of("work", "business")), Map.entry("reunião", List.of("business")),
-            Map.entry("apresentação", List.of("business", "formal")), Map.entry("entrevista", List.of("business", "formal")),
-            Map.entry("festa", List.of("party")), Map.entry("balada", List.of("night_out")), Map.entry("jantar", List.of("date", "social")),
-            Map.entry("encontro", List.of("date")), Map.entry("casamento", List.of("wedding")), Map.entry("formatura", List.of("ceremony", "formal")),
-            Map.entry("praia", List.of("beach")), Map.entry("piscina", List.of("beach")), Map.entry("viagem", List.of("travel")),
-            Map.entry("academia", List.of("gym")), Map.entry("treino", List.of("gym", "sport")), Map.entry("corrida", List.of("sport")),
-            Map.entry("esporte", List.of("sport")), Map.entry("casa", List.of("home")), Map.entry("show", List.of("festival")),
-            Map.entry("festival", List.of("festival")), Map.entry("passeio", List.of("casual", "outdoor")), Map.entry("parque", List.of("outdoor")),
-            // inglês e espanhol (RF23)
-            Map.entry("university", List.of("university")), Map.entry("college", List.of("university")), Map.entry("class", List.of("university", "school")), Map.entry("school", List.of("school")),
-            Map.entry("work", List.of("work")), Map.entry("office", List.of("work", "business")), Map.entry("meeting", List.of("business")), Map.entry("presentation", List.of("business", "formal")),
-            Map.entry("interview", List.of("business", "formal")), Map.entry("party", List.of("party")), Map.entry("club", List.of("night_out")), Map.entry("dinner", List.of("date", "social")),
-            Map.entry("date", List.of("date")), Map.entry("wedding", List.of("wedding")), Map.entry("graduation", List.of("ceremony", "formal")), Map.entry("beach", List.of("beach")),
-            Map.entry("pool", List.of("beach")), Map.entry("trip", List.of("travel")), Map.entry("travel", List.of("travel")), Map.entry("gym", List.of("gym")), Map.entry("workout", List.of("gym", "sport")),
-            Map.entry("running", List.of("sport")), Map.entry("sport", List.of("sport")), Map.entry("home", List.of("home")), Map.entry("concert", List.of("festival")), Map.entry("walk", List.of("casual", "outdoor")), Map.entry("park", List.of("outdoor")),
-            Map.entry("universidad", List.of("university")), Map.entry("clase", List.of("university", "school")), Map.entry("escuela", List.of("school")), Map.entry("oficina", List.of("work", "business")),
-            Map.entry("reunión", List.of("business")), Map.entry("reunion", List.of("business")), Map.entry("presentación", List.of("business", "formal")), Map.entry("presentacion", List.of("business", "formal")),
-            Map.entry("fiesta", List.of("party")), Map.entry("discoteca", List.of("night_out")), Map.entry("cena", List.of("date", "social")),
-            Map.entry("cita", List.of("date")), Map.entry("boda", List.of("wedding")), Map.entry("graduación", List.of("ceremony", "formal")), Map.entry("graduacion", List.of("ceremony", "formal")),
-            Map.entry("playa", List.of("beach")), Map.entry("viaje", List.of("travel")), Map.entry("gimnasio", List.of("gym")), Map.entry("entrenamiento", List.of("gym", "sport")),
-            Map.entry("carrera", List.of("sport")), Map.entry("deporte", List.of("sport")), Map.entry("concierto", List.of("festival")), Map.entry("paseo", List.of("casual", "outdoor")));
-
-    /** palavra inteira (inglês): "hot" não casa com "photo", "cold" não casa com "scolding" */
-    static boolean hasWord(String text, String word) {
-        return java.util.regex.Pattern.compile("\\b" + java.util.regex.Pattern.quote(word) + "\\b").matcher(text).find();
-    }
-
-    static Interpretation localInterpretation(String prompt, List<UUID> anchors) {
-        String p = prompt == null ? "" : prompt.toLowerCase(Locale.ROOT);
-        LinkedHashSet<String> occ = new LinkedHashSet<>();
-        KEYWORDS.forEach((k, v) -> {
-            if (p.contains(k)) {
-                occ.addAll(v);
-            }
-        });
-        // humor e clima também em inglês e espanhol (as células do Vista-me mandam o rótulo no idioma da pessoa)
-        String mood = p.contains("confort") || p.contains("comfort") || p.contains("cómod") || p.contains("comod") || p.contains("relax") ? "COMFORTABLE"
-                : p.contains("eleg") || p.contains("chique") ? "ELEGANT"
-                : p.contains("sofistic") ? "SOPHISTICATED" : p.contains("energ") || p.contains("anim") ? "ENERGETIC" : null;
-        List<String> constraints = new ArrayList<>();
-        if (p.contains("frio") || p.contains("frío") || p.contains("chuva") || hasWord(p, "cold") || hasWord(p, "rainy") || p.contains("lluvia")) {
-            constraints.add("cold");
-        }
-        if (p.contains("calor") || p.contains("quente") || p.contains("sol") || hasWord(p, "hot") || hasWord(p, "warm") || p.contains("caluroso")) {
-            constraints.add("hot");
-        }
-        if (p.contains("diferente") || p.contains("ousad")) {
-            constraints.add("different_from_usual");
-        }
-        if (p.contains("preto") || p.contains("monocrom")) {
-            constraints.add("monochrome");
-        }
-        if (occ.isEmpty()) {
-            occ.add("casual");
-        }
-        String season = constraints.contains("cold") ? "WINTER" : constraints.contains("hot") ? "SUMMER" : null;
-        return new Interpretation(new ArrayList<>(occ).subList(0, Math.min(3, occ.size())), mood, anchors, constraints, season);
-    }
-
     Interpretation interpret(CurrentUser user, String prompt, List<UUID> anchors, List<WardrobeItem> eligible, AiOutcome<?>[] holder) {
+        if (MirrorPromptRules.recognized(prompt)) {
+            return MirrorPromptRules.localInterpretation(prompt, anchors);      // células do Vista-me: sem a 1ª chamada à IA
+        }
         Map<String, UUID> refs = new LinkedHashMap<>();
         List<Map<String, Object>> names = new ArrayList<>();
         int i = 1;
@@ -784,7 +706,7 @@ public class MirrorService {
             names.add(Map.of("ref", ref, "name", String.valueOf(w.getName()), "subcategory", String.valueOf(w.getSubcategory()),
                     "color", String.valueOf(w.getColor())));
         }
-        Interpretation local = localInterpretation(prompt, anchors);
+        Interpretation local = MirrorPromptRules.localInterpretation(prompt, anchors);
         AiOutcome<Interpretation> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.COPILOT,
                 Msg.t("mirror.interprete_o_pedido_de_look", Taxonomy.OCCASIONS),
                 "Pedido: " + prompt + "\nPeças do acervo (refs): " + Json.write(names) + "\nÂncoras já escolhidas: " + anchors,
@@ -810,7 +732,8 @@ public class MirrorService {
                     if (season != null && !Set.of("SPRING", "SUMMER", "AUTUMN", "WINTER").contains(season)) {
                         season = null;
                     }
-                    return new Interpretation(occ.isEmpty() ? local.occasion() : occ, mood == null ? local.mood() : mood, new ArrayList<>(anc), cons, season);
+                    return new Interpretation(occ.isEmpty() ? local.occasion() : occ, mood == null ? local.mood() : mood, new ArrayList<>(anc),
+                            cons.isEmpty() ? local.constraints() : cons, season == null ? local.season() : season, null);
                 }, () -> local, null));
         holder[0] = outcome;
         return outcome.value() == null ? local : outcome.value();
@@ -822,7 +745,7 @@ public class MirrorService {
         Map<String, WardrobeItem> byRef = new LinkedHashMap<>();
         List<Map<String, Object>> catalog = new ArrayList<>();
         int i = 1;
-        for (WardrobeItem w : eligible) {
+        for (WardrobeItem w : MirrorLookComposer.shortlist(it, eligible, 8)) {        // as melhores por parte, não o acervo todo
             String ref = "p" + i++;
             byRef.put(ref, w);
             Map<String, Object> m = new LinkedHashMap<>();
@@ -834,16 +757,22 @@ public class MirrorService {
             m.put("style", Json.csv(w.getStyleTags()));
             m.put("occasion", Json.csv(w.getOccasionTags()));
             m.put("anchor", it.anchors().contains(w.getId()));
+            if (it.nivelTermico() != null) {
+                m.put("intensidadeTermica", MirrorThermalFit.codigo(w.getIntensidadeTermica()));
+            }
             catalog.add(m);
         }
         Set<UUID> eligibleIds = byRef.values().stream().map(WardrobeItem::getId).collect(Collectors.toSet());
         java.util.function.Supplier<List<WardrobeItem>> local = () -> localCompose(it, eligible, shown);
         AiOutcome<List<WardrobeItem>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.SCHEME_COMPOSER,
                 "Você é o Vista-me do Smart Mirror do Fashion AI. Monte UM look completo usando SOMENTE as peças do acervo (refs). "
-                        + "Obrigatório: (upper + lower) ou dress, e shoes; até 1 outer_layer e até 2 accessory. Toda peça marcada anchor=true DEVE "
-                        + "entrar. Nunca invente peças. Responda SOMENTE com JSON {\"refs\":[...],\"title\":string,\"rationale\":\"até 2 frases\"}.",
-                Msg.t("mirror.pedido_interpretado_acervo_elegivel", Json.write(Map.of("occasion", it.occasion(), "mood", String.valueOf(it.mood()), "constraints", it.constraints(),
-                        "season", String.valueOf(it.season()))), Json.write(catalog), (mirrorContext.isEmpty() ? "" : "\nJá no espelho (prefira manter): " + mirrorContext.stream().map(WardrobeItem::getName).toList()), (shown.isEmpty() ? "" : "\nNÃO repita estas combinações (ids ordenados): " + shown)),
+                        + "Obrigatório: (upper + lower) ou dress, e shoes; até 1 outer_layer e até 2 accessory. Frio (cold/WINTER): inclua 1 outer_layer; "
+                        + "calor (hot/SUMMER): nenhum outer_layer. Respeite a ocasião: academia/esporte só peças esportivas, praia e casa sem peças "
+                        + "formais, trabalho sem chinelo, moletom ou regata. Toda peça marcada anchor=true DEVE "
+                        + "entrar. Nunca invente peças. Com nivelTermico no pedido (LEVE, MODERADO, INTENSO), prefira peças cuja intensidadeTermica "
+                        + "declarada combine (LEVE, MODERADA, ALTA): é o que a pessoa declarou da peça, não clima nem certificado do tecido. "
+                        + "Responda SOMENTE com JSON {\"refs\":[...],\"title\":string,\"rationale\":\"até 2 frases\"}.",
+                Msg.t("mirror.pedido_interpretado_acervo_elegivel", Json.write(interpretationView(it)), Json.write(catalog), (mirrorContext.isEmpty() ? "" : "\nJá no espelho (prefira manter): " + mirrorContext.stream().map(WardrobeItem::getName).toList()), (shown.isEmpty() ? "" : "\nNÃO repita estas combinações (ids ordenados): " + shown)),
                 List.of(), 700, List.of("acervo elegível (metadados, sem fotos)", "pedido interpretado", Msg.t("mirror.combinacoes_ja_mostradas_na_sessao")),
                 text -> {
                     Map<String, Object> m = AiResponseJson.extractJson(text);
@@ -876,61 +805,17 @@ public class MirrorService {
         return look == null || look.isEmpty() ? Optional.empty() : Optional.of(look);
     }
 
+    /** Regras locais por ocasião, humor, clima e nível térmico (MirrorLookComposer); vazio quando tudo já foi mostrado. */
     static List<WardrobeItem> localCompose(Interpretation it, List<WardrobeItem> eligible, Set<String> shown) {
-        Set<UUID> anchors = new HashSet<>(it.anchors());
-        List<LocalSchemeComposer.Composition> comps = LocalSchemeComposer.compose(eligible, it.occasion(), List.of(), it.season(),
-                String.join(" ", it.constraints()), 24);
-        Map<UUID, WardrobeItem> byId = eligible.stream().collect(Collectors.toMap(WardrobeItem::getId, w -> w));
-        for (LocalSchemeComposer.Composition c : comps) {
-            List<UUID> ids = c.items().stream().map(LocalSchemeComposer.Pick::wardrobeItemId).toList();
-            if (ids.containsAll(anchors) && !shown.contains(key(ids))) {
-                return ids.stream().map(byId::get).filter(Objects::nonNull).toList();
-            }
-        }
-        // monta na mão: âncoras + melhor candidata por slot faltante (similaridade com as âncoras + ocasião)
-        List<WardrobeItem> look = new ArrayList<>(anchors.stream().map(byId::get).filter(Objects::nonNull).toList());
-        Set<String> filled = look.stream().map(MirrorService::slotOf).collect(Collectors.toSet());
-        List<String> need = new ArrayList<>();
-        if (!filled.contains("dress")) {
-            if (!filled.contains("upper")) {
-                need.add("upper");
-            }
-            if (!filled.contains("lower")) {
-                need.add("lower");
-            }
-        }
-        if (!filled.contains("shoes")) {
-            need.add("shoes");
-        }
-        for (String slot : need) {
-            List<WardrobeItem> cands = eligible.stream().filter(w -> slotOf(w).equals(slot)).filter(w -> !look.contains(w)).toList();
-            if (slot.equals("upper") && cands.isEmpty()) {
-                cands = eligible.stream().filter(w -> slotOf(w).equals("dress")).toList();
-            }
-            List<Map<String, Object>> ranked = localAlternatives(cands, look);
-            for (Map<String, Object> r : ranked) {
-                WardrobeItem w = byId.get((UUID) r.get("pieceId"));
-                if (w != null && !shown.contains(key(concat(look, w)))) {
-                    look.add(w);
-                    break;
-                }
-            }
-            if (look.stream().noneMatch(w -> slotOf(w).equals(slot)) && !ranked.isEmpty()) {
-                look.add(byId.get((UUID) ranked.get(0).get("pieceId")));
-            }
-        }
-        return look.size() >= 2 ? look : List.of();
-    }
-
-    private static List<UUID> concat(List<WardrobeItem> look, WardrobeItem w) {
-        List<UUID> ids = look.stream().map(WardrobeItem::getId).collect(Collectors.toCollection(ArrayList::new));
-        ids.add(w.getId());
-        return ids;
+        return MirrorLookComposer.compose(it, eligible, shown);
     }
 
     @Transactional
-    public Map<String, Object> vistaMe(CurrentUser user, String rawPrompt, List<UUID> anchorIds, UUID focusPieceId, boolean keepMirror) {
+    public Map<String, Object> vistaMe(CurrentUser user, String rawPrompt, List<UUID> anchorIds, UUID focusPieceId, boolean keepMirror,
+                                       UUID nivelTermicoId) {
         String prompt = InputSanitizer.clean(rawPrompt == null ? "" : rawPrompt, 300);
+        // critério térmico opcional: validado (existe e ativo) antes de qualquer IA; não sai da estação nem do "frio" do texto
+        String nivelTermico = thermal == null ? null : thermal.activeCode(nivelTermicoId);
         MirrorState s = stateEntity(user.id());
         Map<String, Object> slots = slots(s);
         List<WardrobeItem> eligible = eligible(user.id());
@@ -950,9 +835,11 @@ public class MirrorService {
         }
         List<WardrobeItem> mirrorContext = keepMirror ? load(user.id(), allIds(slots)).values().stream().filter(w -> eligibleIds.contains(w.getId())).toList() : List.of();
         AiOutcome<?>[] holder = new AiOutcome<?>[1];
-        Interpretation it = interpret(user, prompt, new ArrayList<>(anchors), eligible, holder);
+        Interpretation lido = interpret(user, prompt, new ArrayList<>(anchors), eligible, holder);
+        Interpretation it = new Interpretation(lido.occasion(), lido.mood(), lido.anchors(), lido.constraints(), lido.season(), nivelTermico);
         AiOutcome<?> interpretOutcome = holder[0];
-        Set<String> shown = new LinkedHashSet<>(Json.strings(s.getShownCombinationsJson()));
+        // "já mostradas" vale para o mesmo pedido (Outra sugestão); um pedido novo começa do zero
+        Set<String> shown = prompt.equals(s.getLastPrompt()) ? new LinkedHashSet<>(Json.strings(s.getShownCombinationsJson())) : new LinkedHashSet<>();
         Optional<List<WardrobeItem>> composed = compose(user, it, eligible, shown, mirrorContext, holder);
         AiOutcome<?> composeOutcome = holder[0];
         if (composed.isEmpty()) {
@@ -975,8 +862,12 @@ public class MirrorService {
         newSlots.put("accessory", acc);
         newSlots.put("origin", "vista_me");
         newSlots.put("prompt", prompt);
-        newSlots.put("interpretation", Map.of("occasion", it.occasion(), "mood", String.valueOf(it.mood()), "anchors", it.anchors().stream().map(UUID::toString).toList(),
-                "constraints", it.constraints(), "season", String.valueOf(it.season())));
+        Map<String, Object> interpretation = interpretationView(it);
+        interpretation.put("anchors", it.anchors().stream().map(UUID::toString).toList());
+        if (nivelTermicoId != null) {
+            interpretation.put("nivelTermicoId", nivelTermicoId.toString());
+        }
+        newSlots.put("interpretation", interpretation);
         newSlots.put("updatedAt", Instant.now().toString());
         // a lista do espelho continua: o look sugerido entra nela, as peças que a pessoa trouxe ficam
         putRack(newSlots, rack(slots(s)));
@@ -1010,9 +901,25 @@ public class MirrorService {
         extra.put("explanation", composeOutcome == null ? null : composeOutcome.explanation());
         extra.put("quota", composeOutcome == null ? null : composeOutcome.quota());
         extra.put("message", composeOutcome == null ? null : composeOutcome.userMessage());
+        if (nivelTermico != null) {
+            extra.put("thermal", MirrorThermalFit.of(nivelTermico, look).paraTela());
+        }
         extra.put("actions", List.of("USAR_ESTE_LOOK", "TROCAR_UMA_PECA", "REMIXAR", "SALVAR", "OUTRA_SUGESTAO", "CRIAR_LOOK_COM_ESTAS_PECAS"));
         restriction(user.id()).ifPresent(r -> extra.put("challengeNotice", Msg.t("mirror.respeitando_o_desafio_so_as", r.challengeName())));
         return render(user, s, newSlots, extra);
+    }
+
+    /** O pedido interpretado como a IA e a tela o leem; o nível térmico só aparece quando foi pedido. */
+    static Map<String, Object> interpretationView(Interpretation it) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("occasion", it.occasion());
+        m.put("mood", String.valueOf(it.mood()));
+        m.put("constraints", it.constraints());
+        m.put("season", String.valueOf(it.season()));
+        if (it.nivelTermico() != null) {
+            m.put("nivelTermico", it.nivelTermico());
+        }
+        return m;
     }
 
     /** RF33.CA13 — outra sugestão para o mesmo pedido, sem repetir as já mostradas na sessão. */
@@ -1021,10 +928,14 @@ public class MirrorService {
         MirrorState s = stateEntity(user.id());
         Map<String, Object> slots = slots(s);
         List<UUID> anchors = new ArrayList<>();
-        if (slots.get("interpretation") instanceof Map<?, ?> m && m.get("anchors") instanceof List<?> l) {
-            l.forEach(o -> anchors.add(UUID.fromString(String.valueOf(o))));
+        UUID nivel = null;
+        if (slots.get("interpretation") instanceof Map<?, ?> m) {
+            if (m.get("anchors") instanceof List<?> l) {
+                l.forEach(o -> anchors.add(UUID.fromString(String.valueOf(o))));
+            }
+            nivel = m.get("nivelTermicoId") == null ? null : UUID.fromString(String.valueOf(m.get("nivelTermicoId")));
         }
-        return vistaMe(user, s.getLastPrompt() == null ? "" : s.getLastPrompt(), anchors, null, false);
+        return vistaMe(user, s.getLastPrompt() == null ? "" : s.getLastPrompt(), anchors, null, false, nivel);
     }
 
     /** RF33.CA12 — "Trocar uma peça": até 3 alternativas para o slot, mantendo as demais. */

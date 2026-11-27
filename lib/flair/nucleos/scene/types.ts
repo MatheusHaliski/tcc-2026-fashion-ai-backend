@@ -89,6 +89,8 @@ export interface Zona {
 export interface ZonaAvatar extends Zona {
   marca: "tablado" | "tapete" | "marca" | "passarela";
   altura: number;
+  /** andar livre só dentro da zona, mesmo no piso (o círculo da luta de rua: não se sai para o meio do público) */
+  cercada?: boolean;
 }
 
 export interface Movel {

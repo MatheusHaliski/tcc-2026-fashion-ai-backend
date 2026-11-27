@@ -4,8 +4,9 @@ import {
   type GLTF,
 } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
-import { inspectGlb } from "./glb-inspect";
-import { applyGarment, withoutHiddenParts } from "./garment-scene";
+import type { GarmentState } from "./garment/state";
+import { applyGarment } from "./garment/apply";
+import { applyPieceEdits, withoutHiddenParts } from "./garment-scene";
 import type { DecalEdit } from "./decals";
 export type Vec3 = [number, number, number];
 export interface NodeEdit {
@@ -28,7 +29,9 @@ export interface SceneDocument {
   nodes: Record<string, NodeEdit>;
   materials: Record<string, MaterialEdit>;
   vertices: Record<string, Record<string, Vec3>>;
-  /** Logos e estampas projetados no tecido; ausente em documentos anteriores. */
+  /** Tecido, pintura, estampas, costuras e aviamentos (lib/atelier3d/garment). */
+  garment?: GarmentState;
+  /** Logos e estampas projetados no tecido da peça (editor da peça); ausente em documentos anteriores. */
   decals?: Record<string, DecalEdit>;
 }
 export interface Inspection {
@@ -60,7 +63,8 @@ export const EMPTY_DOCUMENT: SceneDocument = {
   materials: {},
   vertices: {},
 };
-export { inspectGlb, MAX_GLB_BYTES } from "./glb-inspect";
+export { MAX_GLB_BYTES, inspectGlb } from "./glb-inspect";
+import { inspectGlb } from "./glb-inspect";
 export async function loadGlb(buffer: ArrayBuffer): Promise<LoadedAsset> {
   inspectGlb(buffer);
   const manager = new THREE.LoadingManager();
@@ -225,8 +229,9 @@ export function applyDocument(asset: LoadedAsset, doc: SceneDocument) {
       mesh.geometry.computeBoundingSphere();
     }
   }
-  asset.gltf.scene.updateMatrixWorld(true);
   applyGarment(asset, doc);
+  asset.gltf.scene.updateMatrixWorld(true);
+  applyPieceEdits(asset, doc);
 }
 export async function exportGlb(
   asset: LoadedAsset,
@@ -271,38 +276,7 @@ export function disposeAsset(asset: LoadedAsset) {
   });
   textures.forEach((t) => t.dispose());
 }
-export function updateNode(
-  document: SceneDocument,
-  key: string,
-  value: Partial<NodeEdit>,
-  baseline: SceneDocument,
-): SceneDocument {
-  return {
-    ...document,
-    nodes: {
-      ...document.nodes,
-      [key]: { ...baseline.nodes[key], ...document.nodes[key], ...value },
-    },
-  };
-}
-export function updateMaterial(
-  document: SceneDocument,
-  key: string,
-  value: Partial<MaterialEdit>,
-  baseline: SceneDocument,
-): SceneDocument {
-  return {
-    ...document,
-    materials: {
-      ...document.materials,
-      [key]: {
-        ...baseline.materials[key],
-        ...document.materials[key],
-        ...value,
-      },
-    },
-  };
-}
+export { updateNode, updateMaterial } from "./document-edits";
 export function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob),
     a = document.createElement("a");

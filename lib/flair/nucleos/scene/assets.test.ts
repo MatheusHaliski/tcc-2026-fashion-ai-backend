@@ -106,7 +106,8 @@ describe("objetos GLB no repositório (public/flair/3d/assets)", () => {
       if (String(a.source).startsWith("scripts/blender3d")) {
         // gerado pelo motor Blender do projeto (scripts/blender3d): autoria própria; diz qual móvel procedural substitui
         expect(a.license).toBe("Própria");
-        expect(String(a.movel ?? "").length).toBeGreaterThan(0);
+        // (o corpo das pessoas de cena, categoria "gente", não substitui móvel: components/flair/nucleos/gente)
+        if (a.category !== "gente") expect(String(a.movel ?? "").length).toBeGreaterThan(0);
         // o arquivo publicado é o da receita atual: mudou o motor ou uma receita, rode `python -m scripts.blender3d.build`
         expect(a.hash, `${String(a.slug)}: gere os objetos de novo (python -m scripts.blender3d.build)`).toBe(resumoDoMotor());
         if (a.leve) {

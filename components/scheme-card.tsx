@@ -1,5 +1,8 @@
 "use client";
 import { CardFashionMeta } from "@/components/card-fashion-meta";
+import { CardPieceIcons, SeasonGlyph } from "@/components/card-meta-icons";
+import { isSeason } from "@/lib/cards/card-icons";
+import { infoGridOf } from "@/lib/cards/info-grid";
 import { CardBorder } from "@/components/card-border";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
@@ -67,6 +70,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const { src: cover, srcSet: coverSet } = lookCover(scheme);
   const link = href ?? `/schemes/${scheme.id}`;
   const pieces = items.map((it) => ({ id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: lookItemImage(it, 320), brand: it.piece?.brandName, price: lookPiecePrice(it.piece?.price), size: it.piece?.size, color: it.piece?.color, slot: it.slot }));
+  const pieceIcons = items.map((it) => ({ name: it.piece?.name ?? (it.name as string) ?? it.slot, category: it.piece?.category, subcategory: it.piece?.subcategory, colorHex: it.piece?.colorHex, color: it.piece?.color }));
   const total = lookTotal(scheme.totalPrice, pieces.map((p) => p.price));
   // Posição do selo segue a anatomia escolhida na etapa 4 (SEAL_PLACEMENT); o espaço fica reservado mesmo sem selo.
   const placement = sealPlacement(anatomy === "LISTA_VERTICAL" && l !== "lista" ? (l === "grade" ? "GRADE_PECAS" : "HERO_LISTA") : anatomy);
@@ -79,9 +83,13 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const hasArt = !!art && art.kind !== "none";
   const boxColor = containerColorOf(scheme.cardSkin, scheme.containerColor ?? studio.container?.color);
   const manualBox = !!(scheme.containerColor ?? studio.container?.color);
-  const boxTone = hasArt && manualBox ? surfaceToneStyle(boxColor) : undefined;
   // tinta dos textos: a escolhida no Studio vale sempre; sem escolha, só o container manual sobre arte muda a tinta (contraste)
   const manualInk = studio.container?.ink ?? null;
+  // cor do container escolhida: vale com ou sem arte (antes só com arte; nos layouts com arte própria, como o LEGO, nunca
+  // valia). Nesses layouts ela pinta as placas de informação (data-plates; 05-palco-anatomias.css), não a arte do layout.
+  const boxInk = manualBox ? containerInkOf(boxColor, manualInk) : null;
+  const boxTone = (!manualBox ? undefined : ownArt ? { "--plate-bg": boxColor, "--plate-ink": boxInk } : { ...surfaceToneStyle(boxColor), "--card-bg": boxColor, "--card-ink": boxInk }) as React.CSSProperties | undefined;
+  const plates = ownArt && manualBox ? "manual" : undefined;
   const inkVars = manualInk ? { "--card-ink": containerInkOf(boxColor, manualInk) } : hasArt && manualBox ? { "--card-ink": containerInkOf(boxColor) } : {};
   // arte em moldura (Aura Electro): a faixa do passe-partout dobra para o feixe de LED ficar espesso e legível
   const stageVars = hasArt || manualInk ? ({ ...(hasArt ? { "--container-bg": boxColor } : {}), ...(art?.frame ? FRAME_BAND_VARS : {}), ...inkVars } as React.CSSProperties) : undefined;
@@ -121,8 +129,11 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
         {pieceSeals(p.id).length > 0 && <SealSlot inline px={22} seals={pieceSeals(p.id)} />}
       </div>
     ));
-  const fashionMeta = <CardFashionMeta brands={items.flatMap(it=>it.piece?.brandName?[{name:it.piece.brandName,logoUrl:it.piece.brandLogoUrl}]:[])} colors={items.flatMap(it=>it.piece?.color?[{name:it.piece.color,hex:it.piece.colorHex}]:[])} styles={scheme.style} occasions={scheme.occasion}/>;
-  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} live={live} selectedSeals={selectedLookSeals(scheme.background)} infoBefore={social ? <>{titleBlock}{fashionMeta}</> : expanded ? fashionMeta : undefined} infoContent={expanded ? <div className="scheme-info-pieces">{pieceList}</div> : undefined} replaceInfoRows={expanded} infoRows={social?[[t("common.pecas"),pieces.map((piece) => piece.name).join(" · ") || String(items.length)],...(scheme.season?[[t("common.season"),label(scheme.season.toLowerCase())] as [string,ReactNode]]:[])]:[]}/>;
+  const metaSource = { brands: items.flatMap(it=>it.piece?.brandName?[{name:it.piece.brandName,logoUrl:it.piece.brandLogoUrl}]:[]), colors: items.flatMap(it=>it.piece?.color?[{name:it.piece.color,hex:it.piece.colorHex}]:[]), styles: scheme.style, occasions: scheme.occasion };
+  const fashionMeta = <CardFashionMeta {...metaSource}/>;
+  const hypePanel=<PieceCardPanels piece={{name:scheme.title,style:scheme.style,occasion:scheme.occasion}} type="SCHEME" summary={hype.summary} loading={hype.loading} error={hype.error} initial={auraEnabled?"hype":"info"} auraMode={auraMode} summaryFacts={social} live={live} selectedSeals={selectedLookSeals(scheme.background)} infoBefore={social ? titleBlock : expanded ? fashionMeta : undefined} infoContent={expanded ? <div className="scheme-info-pieces">{pieceList}</div> : undefined} replaceInfoRows={expanded} grid={social ? infoGridOf({ ...scheme.background, ...studio }, "look") : undefined} metaSource={metaSource}
+    gridCells={{ pieces: pieceIcons.length ? <CardPieceIcons pieces={pieceIcons}/> : null, season: isSeason(scheme.season) ? <span className="card-season"><SeasonGlyph season={scheme.season}/>{label(scheme.season.toLowerCase())}</span> : null }}/>;
+  const gridCells = pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtPriceShort(p.price) : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>);
   const card = (
     <article data-card-mode={expanded?"expanded":social?"feed":"compact"} className={`fai-card scheme-card ${social?"scheme-card-social":""} ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
@@ -131,7 +142,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       <div className="scheme-stage"><AuraMetamorphose mode={studio.auraMetamorphose} presetId={studio.auraMetamorphosePreset} preview={!expanded} live={live}/>{auraEnabled&&<AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview} showScore={false}/>}
         {hasArt && art && <CardArtLayer art={art} />}
         {compact ? (
-          <div className="scheme-container is-compact" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone}>
+          <div className="scheme-container is-compact" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} data-plates={plates} style={boxTone}>
             <div className="c-compact">
               {photo("c-thumb")}
               <div className="c-ctext">
@@ -143,21 +154,19 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
             <CompactSignature scheme={scheme} pieces={detailPieces} />{hypePanel}
           </div>
         ) : (
-          <div className="scheme-container" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI_ASSISTED" ? t("schemeCard.madeWithAi") : undefined}>
+          <div className="scheme-container" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} data-plates={plates} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI_ASSISTED" ? t("schemeCard.madeWithAi") : undefined}>
             {!social && (placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={lookSeals} />}
             {ownArt ? (
               <AnatomyBody scheme={scheme} pieces={detailPieces} />
-            ) : l === "lateral" && !expanded && !social ? (
+            ) : l === "lateral" && !expanded ? (
               <div className="hero-lateral-row">
                 {photo()}
-                {pieceLayout ? <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 4)} side sealsOf={pieceSeals} /> : <div className="hero-lateral-list">{pieces.slice(0, 4).map((p, i) => <div key={i} className="piece2-sm"><span className="p-thumb">{p.img && <img src={p.img} alt="" loading="lazy" />}</span><span className="min-w-0"><b>{p.name}</b><span>{p.brand ?? label(p.slot.toLowerCase())}</span></span>{pieceSeals(p.id).length > 0 && <SealSlot inline px={20} seals={pieceSeals(p.id)} />}</div>)}</div>}
+                {pieceLayout && !social ? <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 4)} side sealsOf={pieceSeals} /> : <div className="hero-lateral-list">{pieces.slice(0, 4).map((p, i) => <div key={i} className="piece2-sm"><span className="p-thumb">{p.img && <img src={p.img} alt="" loading="lazy" />}</span><span className="min-w-0"><b>{p.name}</b><span>{p.brand ?? label(p.slot.toLowerCase())}</span></span>{pieceSeals(p.id).length > 0 && <SealSlot inline px={20} seals={pieceSeals(p.id)} />}</div>)}</div>}
               </div>
-            ) : photo()}
+            ) : l === "grade" && social && !pieceLayout ? <div className="grid-pieces is-mosaic">{gridCells}</div> : photo()}
             {!social && titleBlock}{hypePanel}
             {!social && !ownArt && !expanded && l === "grade" && pieceLayout && <PieceLayout anatomy={pieceAnatomy} pieces={detailPieces.slice(0, 6)} sealsOf={pieceSeals} />}
-            {!social && !ownArt && !expanded && l === "grade" && !pieceLayout && <div className="grid-pieces">
-              {pieces.slice(0, 6).map((p, i) => <div key={i} className="cell relative">{p.img ? <img src={p.img} alt={p.name} loading="lazy" /> : null}<span className="cell-cap"><b>{p.name}</b><em>{[p.brand, p.price != null ? fmtPriceShort(p.price) : null].filter(Boolean).join(" · ") || "—"}</em></span>{pieceSeals(p.id).length > 0 && <span className="absolute right-1 top-1"><SealSlot inline px={20} seals={pieceSeals(p.id)} /></span>}</div>)}
-            </div>}
+            {!social && !ownArt && !expanded && l === "grade" && !pieceLayout && <div className="grid-pieces">{gridCells}</div>}
             {!expanded && !social && !ownArt && l === "lista" && pieceList}
             {!social && placement.zone === "STUDS" && <SealStuds seals={lookSeals} />}
             {!social && (chips.length > 0 || placement.zone === "META_BLOCK") && <div className="c-chips">{chips.map((c) => <span key={c} className="c-chip">{c}</span>)}{placement.zone === "META_BLOCK" && <SealSlot inline px={28} seals={lookSeals} />}</div>}

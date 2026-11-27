@@ -89,7 +89,7 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
       onTool={setTool} onView={setView} onFit={() => setFit((n) => n + 1)} onUndo={() => travel('undo')} onRedo={() => travel('redo')} onRestore={() => (dirty ? setConfirmRestore(true) : restore())} onSave={() => void save()} />
     <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
       <div className="h-[480px] overflow-hidden rounded-lg border border-line-soft"><Viewport asset={loaded} document={doc} selected={selected} tool={tool} view={view} fit={fit} wireframe={false} snap={false} editable={editable} onSelect={setSelected} onTransform={(value) => change(updateNode(doc, selected, value, loaded.baseline))} /></div>
-      {blocked ? null : selected ? <SceneInspector loaded={loaded} document={doc} selected={selected} editable={editable} vertex={vertex} onVertexChange={setVertex} onChange={change} /> : <p className="type-body-sm text-muted">{t('editor3d.pickNode')}</p>}
+      {blocked ? null : selected ? <SceneInspector loaded={loaded} document={doc} selected={selected} editable={editable} vertex={vertex} onVertexChange={setVertex} onChange={change} pieceTools /> : <p className="type-body-sm text-muted">{t('editor3d.pickNode')}</p>}
     </div>
     <p className="type-caption text-muted">{t('editor3d.scaleNote')}</p>
     {info.savedAt && <p className="type-caption text-muted">{t('editor3d.savedAt', { date: fmtDateTime(info.savedAt) })}</p>}

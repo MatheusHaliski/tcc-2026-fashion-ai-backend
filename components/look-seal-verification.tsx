@@ -7,8 +7,8 @@ import { FaiIcon } from "@/components/fai-icon";
 import { SealSuggestionHype } from "@/components/hype/hype-seals";
 import type { HypeLevel } from "@/lib/hype/types";
 
-/** `hype`: HypeScore atual do look avaliado (RF53) — o backend já ordena as sugestões por Hype. */
-export interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence?: number; justification?: string; eraLabel?: string | null; hype?: { score: number | null; level: HypeLevel | null } | null }
+/** `hype`: HypeScore atual do look avaliado (RF53) — o backend já ordena as sugestões por Hype. `pieceIds`: as peças distintas que contaram para a regra do selo (ex. 12). */
+export interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence?: number; justification?: string; pieceIds?: string[]; eraLabel?: string | null; hype?: { score: number | null; level: HypeLevel | null } | null }
 export interface SealSearch { loading: boolean; list: SealOption[]; message?: string | null; unregisteredMessage?: string | null; failed?: boolean }
 
 /**
@@ -26,8 +26,8 @@ export function SealSuggestions({ search, picked, onToggle, consent, onConsent, 
             const on = picked.includes(s.targetOwnerId);
             return (
               <button key={s.targetOwnerId} type="button" role="checkbox" aria-checked={on} onClick={() => onToggle(s.targetOwnerId)} className={`list-row is-action flex items-center gap-3 text-left ${on ? "is-active" : ""}`}>
-                <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-line-soft bg-surface">{s.logoUrl ? <img src={mediaUrl(s.logoUrl)} alt="" className="h-full w-full object-contain" /> : <FaiIcon id={s.kind === "CELEBRITY" ? "ACT-27" : "ACT-26"} size={20} decorative />}</span>
-                <span className="min-w-0 flex-1"><span className="block type-body"><b>{s.name}</b> <span className="text-faint">· {s.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}{s.eraLabel ? ` · ${s.eraLabel}` : ""}</span></span>{s.justification && <span className="block type-caption text-muted">{s.justification}</span>}<SealSuggestionHype hype={s.hype} /></span>
+                <span className="grid h-[45px] w-[45px] shrink-0 place-items-center overflow-hidden rounded-[4px] border border-line-soft bg-surface">{s.logoUrl ? <img src={mediaUrl(s.logoUrl)} alt="" className="h-full w-full object-contain" /> : <FaiIcon id={s.kind === "CELEBRITY" ? "ACT-27" : "ACT-26"} size={20} decorative />}</span>
+                <span className="min-w-0 flex-1"><span className="block type-body"><b>{s.name}</b> <span className="text-faint">· {s.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}{s.eraLabel ? ` · ${s.eraLabel}` : ""}</span></span>{s.justification && <span className="block type-caption text-muted">{s.justification}</span>}{!!s.pieceIds?.length && <span className="block type-caption text-muted" data-seal-counted={s.pieceIds.length}>{t("lookSeals.counted", { count: s.pieceIds.length })}</span>}<SealSuggestionHype hype={s.hype} /></span>
                 {s.confidence != null && <span className="type-data text-muted">{fmtNumber(Math.round(s.confidence * 100))}%</span>}
                 <span aria-hidden className={`grid h-5 w-5 place-items-center rounded border ${on ? "border-ink bg-ink text-surface" : "border-line"}`}>{on ? "✓" : ""}</span>
               </button>

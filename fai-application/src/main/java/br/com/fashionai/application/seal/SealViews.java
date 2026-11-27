@@ -29,8 +29,11 @@ public final class SealViews {
     private final UserRepository users;
     private final BrandProfileRepository brandProfiles;
     private final SealHypeAverages averages;
+    private final SealPolicyBrandResolver brandReferences;
 
-    public SealViews(SealRepository seals, UserRepository users, BrandProfileRepository brandProfiles, SealHypeAverages averages) {
+    public SealViews(SealRepository seals, UserRepository users, BrandProfileRepository brandProfiles, SealHypeAverages averages,
+                     java.util.function.Supplier<br.com.fashionai.domain.repository.BrandRepository> brands) {
+        this.brandReferences = new SealPolicyBrandResolver(brands, brandProfiles);
         this.seals = seals;
         this.users = users;
         this.brandProfiles = brandProfiles;
@@ -77,6 +80,24 @@ public final class SealViews {
                 && (s.getUsageLimit() == null || s.getUsageCount() < s.getUsageLimit());
     }
 
+    /**
+     * Estado do selo para quem lê (exercício 11), calculado no servidor a cada leitura e nunca gravado: INACTIVE,
+     * SCHEDULED (o início ainda não chegou), ENDED (o fim já passou), SOLD_OUT (teto de emissão atingido) ou OPEN.
+     * Segue a mesma ordem e os mesmos limites de {@link #available} e {@link #unavailableReason}.
+     */
+    public static String availabilityState(Seal s, Instant now) {
+        if (s.getStatus() != SealStatus.ACTIVE) {
+            return "INACTIVE";
+        }
+        if (s.getAvailableFrom() != null && s.getAvailableFrom().isAfter(now)) {
+            return "SCHEDULED";
+        }
+        if (s.getAvailableUntil() != null && !s.getAvailableUntil().isAfter(now)) {
+            return "ENDED";
+        }
+        return s.getUsageLimit() != null && s.getUsageCount() >= s.getUsageLimit() ? "SOLD_OUT" : "OPEN";
+    }
+
     public static String unavailableReason(Seal s, Instant now) {
         if (s.getStatus() != SealStatus.ACTIVE) {
             return Msg.t("seal.o_selo_esta_inativo");
@@ -91,6 +112,11 @@ public final class SealViews {
             return Msg.t("seal.a_campanha_atingiu_o_limite");
         }
         return null;
+    }
+
+    /** Exercício 13: o mesmo conferidor de marca por ID da leitura é usado na gravação do selo. */
+    SealPolicyBrandResolver brandReferences() {
+        return brandReferences;
     }
 
     public Map<String, Object> sealView(Seal s) {
@@ -108,7 +134,7 @@ public final class SealViews {
         Map<String, Object> cfg = Json.map(s.getBackgroundConfigJson());
         Object design = cfg.remove("design");
         m.put("design", design instanceof Map<?, ?> dm ? dm : SealDesigns.defaultDesign(s.isPremium(), s.getTier()));
-        m.put("policy", cfg.remove("policy"));
+        m.put("policy", brandReferences.refresh(cfg.remove("policy")));   // exercício 13: nome atual e marca que sumiu
         m.put("background", cfg);
         m.put("status", s.getStatus());
         m.put("availableFrom", s.getAvailableFrom());
@@ -116,8 +142,10 @@ public final class SealViews {
         m.put("usageLimit", s.getUsageLimit());
         m.put("usageCount", s.getUsageCount());
         m.put("grantValidityDays", s.getGrantValidityDays() != null ? s.getGrantValidityDays() : (int) SealService.DEFAULT_SEAL_VALIDITY.toDays());
-        m.put("available", available(s, Instant.now()));
-        m.put("unavailableReason", unavailableReason(s, Instant.now()));
+        Instant now = Instant.now();
+        m.put("available", available(s, now));
+        m.put("availabilityState", availabilityState(s, now));
+        m.put("unavailableReason", unavailableReason(s, now));
         return m;
     }
 

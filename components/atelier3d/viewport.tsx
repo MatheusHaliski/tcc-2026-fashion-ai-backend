@@ -39,6 +39,8 @@ interface Props {
   editable: boolean;
   onSelect: (key: string) => void;
   onTransform: (value: NodeEdit) => void;
+  /** Camadas extras dentro do canvas (ferramentas de roupa: pincel, luz de prévia). */
+  children?: ReactNode;
 }
 class CanvasBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
@@ -190,6 +192,7 @@ export default function AtelierViewport(props: Props) {
           <OrthographicCamera makeDefault position={[0, 0, 3]} />
         )}
         <Scene {...props} />
+        {props.children}
       </Canvas>
     </CanvasBoundary>
   );
