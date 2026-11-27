@@ -4,6 +4,7 @@ import { applyDocument, type LoadedAsset, type SceneDocument } from "@/lib/ateli
 import { onImagesReady } from "@/lib/atelier3d/garment/images";
 import { GarmentEnvironment } from "./garment-environment";
 import { GarmentPointer } from "./garment-pointer";
+import { GarmentMannequin } from "./garment-mannequin";
 import type { GarmentStudio } from "./use-garment-studio";
 
 interface Props {
@@ -26,6 +27,7 @@ export function GarmentViewportLayer({ studio, asset, doc, editable }: Props) {
     <>
       <GarmentEnvironment studio={studio} />
       <GarmentPointer studio={studio} asset={asset} doc={doc} editable={editable} />
+      {studio.mannequin && <GarmentMannequin asset={asset} />}
     </>
   );
 }
