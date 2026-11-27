@@ -31,7 +31,7 @@ interface Props {
   raio?: number;
 }
 
-export function RodaRadial({ itens, foco, onFoco, onEscolher, rotulo, reduzido, raio = 132 }: Props) {
+export function RodaRadial({ itens, foco, onFoco, onEscolher, rotulo, reduzido, raio = typeof window !== "undefined" && window.innerWidth < 480 ? 104 : 132 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const focoRef = useRef(foco);
   focoRef.current = foco;

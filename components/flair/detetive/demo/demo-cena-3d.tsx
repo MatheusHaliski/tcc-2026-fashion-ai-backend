@@ -65,9 +65,11 @@ function Simulador({ sim, onQuadro, onEventos, mirando }: Pick<Props, "sim" | "o
 }
 
 function Camera({ sim, mirando, reduzido }: Pick<Props, "sim" | "mirando" | "reduzido">) {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
   useFrame((_, delta) => {
     const s = sim.current;
+    // em pé (celular), a câmera sobe e se afasta para a sala caber na largura
+    const longe = size.width < size.height ? 1.55 : 1;
     const j = s.estado.jogador;
     if (mirando) {
       // atrás do ombro direito, olhando para onde ela mira
@@ -76,7 +78,7 @@ function Camera({ sim, mirando, reduzido }: Pick<Props, "sim" | "mirando" | "red
       POS.set(j.x - sx * 3.1 - cz * 0.7, 2.35, j.z - cz * 3.1 + sx * 0.7);
       ALVO.set(j.x + sx * 6, 1.2, j.z + cz * 6);
     } else {
-      POS.set(j.x, 5.2, Math.min(j.z + 5.6, 9.5));
+      POS.set(j.x * (longe > 1 ? 0.6 : 1), 5.2 * longe, Math.min(j.z + 5.6 * longe, 9.5 * longe));
       ALVO.set(j.x, 0.9, j.z - 0.8);
     }
     const k = reduzido ? 1 : Math.min(1, delta * 6);

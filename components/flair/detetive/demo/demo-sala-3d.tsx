@@ -152,7 +152,7 @@ export function DemoSala3D({ sim, reduzido }: { sim: MutableRefObject<Simulacao>
       <Bloco c={{ x0: LIMITES.x0 - 0.2, x1: LIMITES.x0, z0: LIMITES.z0, z1: FRENTE }} altura={ALTURA} cor={SALAO.parede} />
       <Bloco c={{ x0: LIMITES.x1, x1: LIMITES.x1 + 0.2, z0: LIMITES.z0, z1: FRENTE }} altura={ALTURA} cor={SALAO.parede} />
       {/* o guarda-corpo da frente: até aqui se anda (a câmera fica atrás dele) */}
-      <Bloco c={{ x0: LIMITES.x0, x1: LIMITES.x1, z0: LIMITES.z1 + 0.05, z1: LIMITES.z1 + 0.15 }} altura={0.9} cor={SALAO.detalhe} />
+      <Bloco c={{ x0: LIMITES.x0, x1: LIMITES.x1, z0: LIMITES.z1 + 0.05, z1: LIMITES.z1 + 0.15 }} altura={0.3} cor={SALAO.detalhe} />
       {MOVEIS.filter((m) => m.tipo !== "ARARA").map((m) => <Bloco key={m.id} c={m.caixa} altura={ALTURA_DO_MOVEL[m.tipo] ?? 1} cor={COR_DO_MOVEL[m.tipo] ?? "#555"} />)}
       <Arara />
       <Bloco c={{ x0: PORTA.x0, x1: PORTA.x1, z0: PORTA.z0, z1: PORTA.z1 }} altura={0.6} cor={SALAO.detalhe} y={2.4} />
