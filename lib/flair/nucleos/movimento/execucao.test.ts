@@ -29,7 +29,8 @@ describe("execução no percurso", () => {
   it("fase de uso: o servidor manda o lance ousado de cada marca, o custo, a janela curta e o prazo", () => {
     const valor = { ...P, ousados: ["TIRAR", "VESTIR", "DESFILAR"], custo: 12, janelaOusadaMs: 600, prazoMs: 25000 };
     const p = pedidoDe(res("EM_ACAO", [{ codigo: "EXECUCAO_PEDIDA", valor }]));
-    expect(p?.risco).toEqual({ ousados: ["TIRAR", "VESTIR", "DESFILAR"], custo: 12, janelaMs: 600, prazoMs: 25000 });
+    expect(p?.risco).toMatchObject({ ousados: ["TIRAR", "VESTIR", "DESFILAR"], custo: 12, janelaMs: 600, prazoMs: 25000 });
+    expect(p?.risco?.lances?.chave).toBeNull();
     // lista de ousados que não bate com as marcas não vale: a execução fica sem o lance ousado
     expect(pedidoDe(res("EM_ACAO", [{ codigo: "EXECUCAO_PEDIDA", valor: { ...valor, ousados: ["TIRAR"] } }]))?.risco).toBeUndefined();
   });

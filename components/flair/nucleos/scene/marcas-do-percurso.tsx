@@ -16,7 +16,7 @@ import type { AlvoDaMarca } from "@/lib/flair/nucleos/movimento/fase-de-uso";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 import { agora } from "@/components/flair/nucleos/scene/stage-context";
 
-const COR_DA_NOTA: Record<NotaDoToque, string> = { PERFEITO: "#50C878", BOM: "#50C878", OUSADO: "#7A5CFF", ERROU: "#E5484D" };
+const COR_DA_NOTA: Record<NotaDoToque, string> = { PERFEITO: "#50C878", BOM: "#50C878", OUSADO: "#7A5CFF", CHAVE: "#E0B04D", DEFENDIDO: "#4DA3E0", ERROU: "#E5484D" };
 const PROXIMA = "#E0B04D";
 const DEPOIS = "#FFFFFF";
 

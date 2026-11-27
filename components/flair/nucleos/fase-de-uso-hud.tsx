@@ -5,9 +5,10 @@
  * janela curta e o que ele gasta do recurso — e o prazo da fase esvazia numa barra. Só desenha: quem conta o tempo e
  * confere os botões é use-execucao-do-desfile.ts, e a nota é a do servidor.
  */
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { Deixa, Prazo } from "@/components/flair/nucleos/use-execucao-do-desfile";
+import { assinarFx } from "@/lib/flair/nucleos/fx-events";
 import { GLIFO } from "@/lib/flair/nucleos/movimento/execucao";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 
@@ -40,13 +41,17 @@ export function DeixaDeUso({ codigo, deixa, custo }: { codigo: NucleoCodigo; dei
   );
 }
 
-/** A barra do prazo da fase, que esvazia sozinha (animação de CSS com a duração do prazo). */
+/** A barra do prazo da fase, que esvazia sozinha (animação de CSS com a duração do prazo) e para durante a cutscene do lance. */
 export function PrazoDaFase({ prazo, parado }: { prazo: Prazo | null; parado: boolean }) {
   const tx = useNucleoText();
+  const [emCena, setEmCena] = useState(false);
+  useEffect(() => assinarFx((e) => {
+    if (e.tipo === "cinema") setEmCena(!!e.cutscene);
+  }), []);
   if (!prazo) return null;
   const estilo = { "--n3d-prazo": `${prazo.ms}ms` } as CSSProperties;
   return (
-    <span className="n3d-prazo" data-testid="prazo-da-fase" data-parado={parado || undefined} title={tx.t("flair3d.uso.prazo", { s: Math.round(prazo.ms / 1000) })}>
+    <span className="n3d-prazo" data-testid="prazo-da-fase" data-parado={parado || emCena || undefined} title={tx.t("flair3d.uso.prazo", { s: Math.round(prazo.ms / 1000) })}>
       <span style={estilo} />
     </span>
   );

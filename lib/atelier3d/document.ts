@@ -5,7 +5,7 @@ import {
 } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import type { GarmentState } from "./garment/state";
-import { applyGarment } from "./garment/apply";
+import { applyGarment, disposeGarment } from "./garment/apply";
 export type Vec3 = [number, number, number];
 export interface NodeEdit {
   position: Vec3;
@@ -255,6 +255,7 @@ export async function exportGlb(
   return result;
 }
 export function disposeAsset(asset: LoadedAsset) {
+  disposeGarment(asset);
   const textures = new Set<THREE.Texture>();
   asset.gltf.scene.traverse((o) => {
     const m = o as THREE.Mesh;

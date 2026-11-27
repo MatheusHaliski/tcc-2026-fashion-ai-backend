@@ -3,15 +3,18 @@
  * O painel do desfile jogável na tela: quantas marcas faltam, a deixa da execução (o botão pedido com a janela de tempo
  * correndo, components/flair/nucleos/use-execucao-do-desfile.ts), a nota de cada marca, o recurso que o erro drena e,
  * na ponta com a execução feita, o botão da pose final (□). Nos jogos de zonas é a fase de uso: a deixa traz o lance
- * seguro e o ousado e a fase tem prazo (fase-de-uso-hud.tsx). Avisa a tela quando a pose final acabou, para revelar o
+ * seguro e o ousado e a fase tem prazo (fase-de-uso-hud.tsx); na rodada zonas, o momento-chave e a mão de cartas
+ * (fase-de-uso-mao.tsx). Avisa a tela quando a pose final acabou, para revelar o
  * resultado. Lido pelo leitor de tela.
  */
 import { useEffect, useState, type CSSProperties } from "react";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { DeixaDeUso, PrazoDaFase, lancesDoJogo } from "@/components/flair/nucleos/fase-de-uso-hud";
+import { DeixaDaChave, MaoDeUso, textoDaChave } from "@/components/flair/nucleos/fase-de-uso-mao";
 import { useExecucaoDoDesfile } from "@/components/flair/nucleos/use-execucao-do-desfile";
+import { useMaoDeUso } from "@/components/flair/nucleos/use-mao-de-uso";
 import { assinarFx, emitirFx } from "@/lib/flair/nucleos/fx-events";
-import { GLIFO, notaDe, restanteDepois, type Toque } from "@/lib/flair/nucleos/movimento/execucao";
+import { GLIFO, notaDe, pedidoDe, restanteDepois, type Toque } from "@/lib/flair/nucleos/movimento/execucao";
 import { nomeDoRecurso } from "@/lib/flair/recursos/desgaste";
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -27,7 +30,9 @@ interface Props {
 export function DesfileHud({ codigo, onFim, resultado, onExecucao, reduzido = false }: Props) {
   const tx = useNucleoText();
   const [p, setP] = useState({ alcancadas: 0, total: 3, naPonta: false });
-  const { pedido, deixa, notas, ousadias, prazo } = useExecucaoDoDesfile(codigo, resultado, reduzido, onExecucao);
+  const lances = pedidoDe(resultado)?.risco?.lances;
+  const mao = useMaoDeUso(codigo, lances);
+  const { pedido, deixa, notas, ousadias, prazo } = useExecucaoDoDesfile(codigo, resultado, reduzido, onExecucao, mao.paraAMarca);
   const risco = pedido?.risco;
   const gesto = tx.ou(`flair3d.desfile.acao.${codigo}`, tx.t("flair3d.desfile.acao.padrao"));
   useEffect(() => assinarFx((e) => {
@@ -41,7 +46,9 @@ export function DesfileHud({ codigo, onFim, resultado, onExecucao, reduzido = fa
   // a fase de uso em curso ou já conferida pelo servidor (no ateliê, sem ela, vale o painel comum)
   const emUso = !!risco || (!!fase && !!notaDe(resultado));
   const texto = deixa
-    ? deixa.ousado && risco
+    ? deixa.chave
+      ? textoDaChave(tx, deixa)
+      : deixa.ousado && risco
       ? tx.t("flair3d.uso.deixa", { ...lancesDoJogo(tx, codigo), botaoSeguro: GLIFO[deixa.botao], botaoOusado: GLIFO[deixa.ousado], custo: risco.custo })
       : tx.t("flair3d.execucao.deixa", { botao: GLIFO[deixa.botao] })
     : pedido
@@ -50,7 +57,8 @@ export function DesfileHud({ codigo, onFim, resultado, onExecucao, reduzido = fa
   const janela = { "--n3d-janela": `${deixa?.janelaMs ?? 0}ms` } as CSSProperties;
   return (
     <div className="n3d-desfile" data-testid="desfile-hud" data-ponta={p.naPonta || undefined} data-deixa={deixa?.botao} data-uso={emUso ? "" : undefined}>
-      {deixa && risco && <DeixaDeUso codigo={codigo} deixa={deixa} custo={risco.custo} />}
+      {deixa?.chave && <DeixaDaChave deixa={deixa} />}
+      {deixa && risco && !deixa.chave && <DeixaDeUso codigo={codigo} deixa={deixa} custo={risco.custo} />}
       {deixa && !risco && <span key={deixa.marca} className="n3d-deixa" style={janela} aria-hidden>{GLIFO[deixa.botao]}</span>}
       <p role="status">{texto}</p>
       {pedido && (
@@ -62,6 +70,9 @@ export function DesfileHud({ codigo, onFim, resultado, onExecucao, reduzido = fa
           <b>{tx.t("flair3d.execucao.recurso", { recurso: nomeDoRecurso(tx.ou, codigo, pedido.recurso), n: restanteDepois(pedido, notas, ousadias) })}</b>
           <PrazoDaFase prazo={prazo} parado={esperando} />
         </span>
+      )}
+      {lances && !esperando && (
+        <MaoDeUso cartas={mao.cartas} lances={lances} armada={mao.armada} usos={mao.usos} marca={notas.length} disponivel={mao.disponivel} armar={mao.armar} />
       )}
       {!pedido && p.naPonta && (
         <button type="button" className="n3d-desfile-pose" onClick={() => emitirFx({ tipo: "desfile-pose", nucleo: codigo })}>

@@ -4,7 +4,8 @@
  * personagem alcançou; cada marca nova acende o flash e a plateia aplaude; □ na ponta faz a pose final, com flashes, e
  * depois avisa a tela (desfile-fim) para revelar o resultado. Publica o progresso para o painel da tela (desfile) e
  * desenha as marcas no piso (marcas-do-percurso.tsx). Na fase de uso dos jogos de zonas, cada nota da execução vira o
- * gesto do lance (o passe, o chute, o agudo, o golpe) e a reação de quem assiste.
+ * gesto do lance (o passe, o chute, o agudo, o golpe) e a reação de quem assiste, que comemora o momento-chave certo e
+ * a carta de Hype alto (a torcida reage à faixa) e lamenta o erro.
  */
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
@@ -15,7 +16,7 @@ import type { Sala } from "@/lib/flair/nucleos/scene/types";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 import type { Jogador } from "@/components/flair/nucleos/scene/andarilho";
 import { MarcasDoPercurso } from "@/components/flair/nucleos/scene/marcas-do-percurso";
-import { faseDeUsoDe } from "@/lib/flair/nucleos/movimento/fase-de-uso";
+import { faseDeUsoDe, reacaoAoLance } from "@/lib/flair/nucleos/movimento/fase-de-uso";
 import { agora, useCena } from "@/components/flair/nucleos/scene/stage-context";
 
 /** Quanto a pose final fica na tela antes de revelar o resultado. */
@@ -41,8 +42,10 @@ export function DesfileJogavel({ codigo, sala, jogador, ativo }: { codigo: Nucle
     const cancelar = assinarFx((e) => {
       if (e.tipo === "desfile-nota" && e.nucleo === codigo && uso) {
         const r = new Roteiro("lance");
-        r.junto(AVATAR, e.nota === "OUSADO" ? uso.gesto.ousado : e.nota === "ERROU" ? uso.gesto.erro : uso.gesto.seguro);
-        if (uso.publico) r.junto(fig(uso.publico), e.nota === "ERROU" ? "F_LAMENTA" : e.nota === "OUSADO" ? "F_COMEMORA" : "F_APLAUSO");
+        const reacao = reacaoAoLance(e.nota, e.carta?.faixa);
+        r.junto(AVATAR, reacao.gesto === "OUSADO" ? uso.gesto.ousado : reacao.gesto === "ERRO" ? uso.gesto.erro : uso.gesto.seguro);
+        if (uso.publico) r.junto(fig(uso.publico), reacao.publico);
+        if (reacao.flash && temFlash) r.junto(luzId("flash"), "L_FLASH");
         cena.diretor.tocar(r.fim(), agora(), cena.reduzido);
         return;
       }
