@@ -7,7 +7,7 @@
 # 1 milhão de MAU pede licença). Os pesos (tencent/Hunyuan3D-2mv, tencent/Hunyuan3D-2.1, facebook/dinov2-giant) baixam
 # do Hugging Face no primeiro uso, para o volume.
 #
-#   bash /workspace/runner/runpod_setup_hunyuan.sh
+#   bash /workspace/runner/hunyuan_glb_setup_runpod.sh
 set -euo pipefail
 
 MV_COMMIT=f8db63096c8282cb27354314d896feba5ba6ff8a

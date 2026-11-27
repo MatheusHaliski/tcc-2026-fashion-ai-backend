@@ -7,8 +7,10 @@ import styles from "./garment.module.css";
  * Controle deslizante que pré-visualiza enquanto arrasta e só grava uma entrada no histórico ao soltar
  * (ponteiro, teclado ou perda de foco), para o desfazer voltar o ajuste inteiro.
  */
-export function RangeField({ label, value, min, max, step, onPreview, onCommit, disabled, format }: {
+export function RangeField({ label, value, min, max, step, onPreview, onCommit, disabled, format, reset }: {
   label: string; value: number; min: number; max: number; step: number; disabled?: boolean;
+  /** Ajuste relativo: volta ao valor neutro depois de aplicado (cada aplicação soma sobre a forma atual). */
+  reset?: boolean;
   onPreview?: (value: number) => void; onCommit: (value: number) => void; format?: (value: number) => string;
 }) {
   const id = useId();
@@ -21,6 +23,7 @@ export function RangeField({ label, value, min, max, step, onPreview, onCommit, 
     if (!dragging.current) return;
     dragging.current = false;
     onCommit(local);
+    if (reset) setLocal(value);
   };
   return (
     <div className={styles.field}>

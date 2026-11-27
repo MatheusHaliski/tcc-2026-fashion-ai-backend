@@ -105,7 +105,8 @@ public final class Flair3dExecucao implements Flair3dNucleo {
         if (nota.restante() <= 0) {
             return Resultado.of(Math.min(pontos, NOTA_DE_QUEM_ESGOTOU), ESGOTADO, regras, eventos).comCartas(look.cartas());
         }
-        return Resultado.of(pontos, Flair3dJogadaDeCena.rotulo(look.resultado(), pontos), regras, eventos).comCartas(look.cartas());
+        Resultado comNota = Resultado.of(pontos, Flair3dJogadaDeCena.rotulo(look.resultado(), pontos), regras, eventos).comCartas(look.cartas());
+        return jogo.comExecucao(look, comNota, nota.pontos(), contexto);
     }
 
     /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pecasDoAdversario, rodadasDaBatalha, somaDaBatalha } from "@/lib/flair/nucleos/batalha-placar";
+import { fechoDaBatalha, pecasDoAdversario, rodadasDaBatalha, somaDaBatalha } from "@/lib/flair/nucleos/batalha-placar";
 import { faixaDeHype } from "@/lib/flair/nucleos/hype-da-carta";
 import { pessoasDosFigurantes } from "@/lib/flair/nucleos/gente/figurantes";
 import type { NucleoPersonagem, NucleoResultado } from "@/lib/flair/nucleos/types";
@@ -57,5 +57,16 @@ describe("faixa de Hype da carta (só leitura)", () => {
   it("usa os limiares do servidor; sem HYP público, sinal baixo", () => {
     expect([null, 19, 20, 40, 60, 75, 90, 100].map((h) => faixaDeHype({ hype: h == null ? null : { HYP: h } }))).toEqual(["LOW_SIGNAL", "LOW_SIGNAL", "NICHE", "RELEVANT", "HOT", "TRENDING", "VIRAL", "VIRAL"]);
     expect(faixaDeHype(null)).toBe("LOW_SIGNAL");
+  });
+});
+
+describe("fecho da Batalha (rodada 8g)", () => {
+  it("a soma final é a do servidor, com a execução do desfile final; o treino guarda a nota da rodada", () => {
+    const soma = { codigo: "SOMA_DA_BATALHA", valor: { voce: 115, adversario: 79, rodadas: 127, execucao: -12 } };
+    const fim = resultado([rodada(1, 50, 30), rodada(2, 40, 25), rodada(3, 37, 24), soma], 60);
+    expect(fechoDaBatalha(fim)).toEqual({ voce: 115, adversario: 79, rodadas: 127, execucao: -12 });
+    expect(fechoDaBatalha(resultado([{ codigo: "SOMA_DA_BATALHA", valor: { voce: 1, adversario: 2 } }]))).toBeNull();
+    const treino = resultado([{ codigo: "LOOK_DO_ADVERSARIO", valor: { nota: 52, look: LOOK } }, { codigo: "SOMA_DA_BATALHA", valor: { voce: 46, adversario: 52, rodadas: 58, execucao: -12 } }], 59);
+    expect(rodadasDaBatalha(treino)[0].voce).toBe(58);
   });
 });
