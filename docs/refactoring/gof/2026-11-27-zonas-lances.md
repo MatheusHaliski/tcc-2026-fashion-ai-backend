@@ -15,6 +15,10 @@ cartas como ação, a Aura na partida e uma dificuldade que subisse.
 | `Flair3dFaseDeUsoNota` | **NENHUM** (extração) | A nota marca a marca saiu de `Flair3dFaseDeUso`, que ficou com o risco (o pedido) e a dificuldade. `Flair3dExecucao` continua o único Decorator e delega como antes. |
 | `Acionamento.Toque.carta` | **NENHUM** | Campo opcional no toque. `Acionamento.cartas()` passa a listar as cartas dos toques, e o serviço só as carrega se forem da pessoa (as de outra pessoa não chegam ao contexto e não valem nada). |
 
+| `uniforme/desenho.ts` + `scene/uniforme/*` | **NENHUM** (descrição pura + montagem) | O que cada jogo veste a mais (estampa, gola, cinto, dragona, capa, capacete) é dado; a cena monta cada tipo pendurado no osso. Um Builder por tipo seria a mesma função com outro nome. |
+| `use-console-da-fase-de-uso.ts`, `fase-de-uso-console.tsx`, `movimento/volante.ts` | **NENHUM** (adaptação ao perfil console) | Reusa `useControleConsole`, `RodaRadial`, `AjudaDeControles` e `useTelaCheia`; o jogo só traduz ações em botões da deixa. O volante é uma função pura do vetor das setas. |
+| `use-execucao-do-desfile.ts` (relógio da fase) | **NENHUM** (extração para `movimento/relogio-da-fase.ts`) | Pausar o prazo durante a cutscene do lance. |
+
 ## Contrato (aditivo)
 
 - `EXECUCAO_PEDIDA` ganha `janelas[5]`, `janelasOusadas[5]`, `nivel`, `cartasMax`, `recarga`, `uniforme[]` e `chave`

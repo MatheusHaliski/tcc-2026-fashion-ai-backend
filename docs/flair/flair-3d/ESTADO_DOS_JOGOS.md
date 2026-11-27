@@ -479,6 +479,99 @@ faixa: luz, aplauso, flashes por faixa); a Metamorfose não tem efeito visual pr
 cutscene; a faixa de Hype é a do retrato da carta (fixa na partida). Nos outros dez jogos a Aura segue só na faixa do
 resultado (jogos de zonas: outra rodada).
 
+## Rodada zonas (27/11/2026): os quatro jogos de zonas rumo a 8
+
+Clube do Coração, My Favorite Singer, Meu Piloto Favorito e Meu Super-Herói, os de nota mais baixa (4,8 a 5,1). Antes:
+pintar as zonas, sem cartas, sem nada no meio da partida, o avatar com a cor chapada. Decisões de padrão em
+`docs/refactoring/gof/2026-11-27-zonas-lances.md`. Sem migração.
+
+### Item 1 (feito): o lance do gênero, as cartas como ação e a dificuldade (servidor)
+
+- **Momento-chave** (`Flair3dMomentoChave`): um por jogo, sorteado da semente — o **pênalti** do Clube (o goleiro se
+  adianta para um canto: chutar no outro), a **virada da música** do Singer (o refrão explode ou vira balada: revelar
+  a camada ou fechar a capa), o **pit stop** do Piloto (pista seca ou chuva: pneu macio ou de chuva) e a **ameaça** do
+  Herói (ataque do alto ou pelo chão: escudo ou salto). As duas opções vão nos dois botões da marca; a certa a tempo
+  vale 3 e abre 15% a janela das marcas seguintes, a errada é erro e a fecha no mesmo tanto.
+- **Cartas do guarda-roupa como ação** (`Flair3dCartaDeUso`): a cor da carta aciona o lance do jogo — embalo (+2 no
+  acerto: chute, agudo, turbo, raio), fôlego (janela 30% maior: arrancada, coreografia, aderência, voo) ou escudo (o
+  erro não tira ponto nem recurso: carrinho, silhueta, freio, campo de força). A carta da cor de uma zona pintada soma
+  +1 ("da cor do uniforme"). Até 3 cartas por fase, uma vez cada; só cartas da pessoa contam (as de outra pessoa nem
+  chegam ao contexto).
+- **Dificuldade**: a janela fecha 12 pontos percentuais por rodada depois da primeira e 4 por marca; o prazo encurta 3 s
+  por rodada.
+- Contrato aditivo em `EXECUCAO_PEDIDA` e `EXECUCAO` (o GoF acima); `POST .../efeitos` traz o `uso` de cada carta.
+  Testes: `Flair3dFaseDeUsoLancesTest` (8) e `Flair3dFaseDeUsoTest` (6, ajustado ao momento-chave).
+
+### Item 2 (feito): cutscene e reação no meio da partida
+
+O desfecho do momento-chave toca uma cutscene própria (`lib/flair/cinema/lances.ts`, gatilho VIRADA, até 3,6 s,
+pulável): o chute visto de trás do gol e a grua para a arquibancada; o close de baixo na virada do figurino e o
+travelling pela plateia; a câmera baixa do box e a órbita até a equipe; o contra-plongée e a grua sobre a cidade. A
+fala diz o desfecho ("Gol! A torcida canta o nome da camisa nova." / "O goleiro pegou."). O prazo da fase e a janela
+param enquanto ela toca. Quem assiste reage à nota (`reacaoAoLance`): comemora o momento-chave certo e o ousado (com
+flash), lamenta o erro; o terraço ganhou os moradores, que reagem a cada lance.
+
+### Item 3 (feito): o uniforme no avatar
+
+`lib/flair/nucleos/uniforme/desenho.ts` descreve e `components/flair/nucleos/scene/uniforme/` monta, presos aos ossos e
+colados na superfície da roupa pintada (a estampa segue a profundidade do tecido ponto a ponto): o **escudo** do clube
+inventado no peito, o **número** nas costas (da semente) e a **gola** de contraste; a **estrela** e as **dragonas**
+metálicas do figurino; o **número** no peito e nas costas, as listras, o **cinto** e, na pista, o **capacete** com faixa
+e viseira espelhada do piloto; o **emblema** escolhido (estrela, raio, asa) sobre o losango, o cinto e a **capa** que
+balança, do herói. O acabamento da zona vira material (fosco, brilhante, metálico, espelhado). O macacão, a jaqueta da
+banda e o tênis dos sonhos passaram a vestir o avatar (antes só a rodada base vestia).
+
+Cenário pelo motor Blender (`scripts/blender3d/receitas/uso.py`, `.glb` versionados, todos os objetos regenerados pelo
+resumo novo do motor): caixa d'água e antena no terraço, caixas de retorno no palco, bandeiras do clube no campo.
+
+### Item 4 (feito): a Aura muda a partida (só leitura)
+
+A faixa de Hype da carta jogada é a torcida: HOT abre a janela da marca 15%, TRENDING 20%, VIRAL 25%; a maior faixa
+entre as cartas jogadas volta no resultado (`torcida`) e a plateia comemora a carta de Hype alto mesmo no lance seguro.
+A carta Especial é a **Metamorfose**: fôlego, escudo e embalo juntos, e volta depois de 2 marcas de recarga. Nada
+escreve Hype (teste `aTorcidaEmpurraPelaFaixaDeHypeDaCartaSemEscreverOHype`).
+
+### Comandos: perfil console
+
+Os quatro jogos entram no perfil console (`PERFIL_POR_JOGO`) na fase de uso: setas andam (no Piloto, volante: ↑ acelera,
+↓ ré, ← → viram, `lib/flair/nucleos/movimento/volante.ts`), E faz o lance seguro (ou a primeira opção do momento-chave),
+F o ousado (ou a segunda), X segurado abre a roda de cartas e solto arma a carta em foco, P arma, T tela cheia, ?
+controles. Na cena, no máximo seis palavras ("goleiro à direita · E esquerda · F direita"); o texto longo fica para o
+leitor de tela. Sem andar ("reduzir movimento"), a primeira deixa espera 5 s para armar a carta.
+
+**Visto na tela** (bancada de tela, `BANCADA_DE_TELA.md`; WebGL por software): as quatro partidas inteiras — pintar,
+entregar, roda de cartas, lances, momento-chave, cutscene, resultado — em `scratchpad/shots/jogos/zonas/`; a deixa do
+momento-chave no laboratório (`/lab/jogo?fase=uso&chave=1&semAndar=1`). **Não visto:** controle físico e toque; o
+volante andando (as partidas da bancada foram sem andar); a cutscene do lance em vídeo (só o quadro).
+
+### Nota projetada depois da rodada zonas
+
+Projeção de quem implementou, a conferir por auditor independente. Entre parênteses, a anterior.
+
+| Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Aura | Final (sem Aura) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CLUBE_CORACAO | 6,0 (4,6) | 6,3 (5,0) | 6,3 (5,6) | 5,2 (4,5) | 5,8 (4,5) | 6,8 (6,2) | 6,0 (5) | **5,5** (3) | **6,1** (5,1) |
+| FAVORITE_SINGER | 5,8 (4,6) | 6,0 (4,7) | 6,3 (5,8) | 5,0 (4,5) | 5,5 (4,3) | 6,5 (5,3) | 5,8 (5) | **5,5** (3) | **5,8** (4,9) |
+| PILOTO_FAVORITO | 6,0 (4,6) | 6,0 (4,7) | 6,0 (5,4) | 5,2 (4,8) | 5,8 (3,5) | 6,8 (5,3) | 5,8 (5) | **5,5** (3) | **5,9** (4,8) |
+| SUPER_HEROI | 5,8 (4,6) | 6,0 (4,7) | 6,0 (5,4) | 5,2 (4,5) | 6,0 (3,6) | 6,5 (5,3) | 5,8 (5) | **5,5** (3) | **5,9** (4,8) |
+
+Média final dos 15 (sem Aura): 5,3 → 5,6. Nenhum critério chega a 8.
+
+### O que ainda separa estes quatro de 8
+
+- **Jogabilidade (5,8 a 6,0):** a decisão existe, mas não há adversário que reaja nem física: o goleiro não pula de
+  verdade, o drone não ataca, o carro não derrapa; a condição do momento-chave é dita em texto, não vista na cena (o
+  goleiro adiantado, a chuva caindo); o caminho entre as marcas não muda a nota.
+- **Roupas (5,5 a 6,0):** as peças continuam o molde de camiseta, jaqueta e calça com cor chapada por baixo das
+  estampas; falta a malha própria (camisa de clube com recortes, macacão com zíper, capa de tecido simulado, capacete
+  modelado no motor) e padrão no tecido (listras, degradê).
+- **Gráficos (5,0 a 5,2):** os lugares ganharam objetos do motor, mas a torcida e a plateia seguem leves; sem chuva,
+  fumaça ou telão animado.
+- **Cutscenes (5,8 a 6,0):** uma por partida no meio; falta a do erro do goleiro/pit stop com outra câmera e a
+  abertura de cada lugar de uso.
+- **Aura (5,5):** a faixa muda a janela e a reação, mas a plateia 3D não acende por faixa e a Metamorfose não tem
+  efeito visual próprio.
+
 ## Resumo
 
 | Nº | Jogo | Estado ao escrever este documento | Mais incompleto primeiro (ordem de trabalho) |
@@ -715,6 +808,8 @@ Cena: `scene/salas/boutique-3d.ts` (arara, balcão, espelho, cliente).
 de conversa. Depois de criar, salva no FAI Atelier e pode publicar numa galeria. Desafios do Grupo Ateliê 3D (49 a
 58), entre eles o Uniforme de E-sports (51).
 
+**Rodada zonas (27/11):** pênalti como momento-chave, cartas como lances (chute, drible, carrinho...), escudo, número e gola no avatar, bandeiras do clube no campo; ver "Rodada zonas" acima.
+
 **No código hoje.** `ClubeCoracaoNucleo`: um clube (Clube Atlântico, azul e branco), 4 zonas; desde 25/11, 50 pelas
 zonas pintadas e 50 pelas cores do clube, com orçamento de tinta (`Flair3dTinta`).
 As zonas pintadas não aparecem no manequim da cena. Sem Copilot.
@@ -739,6 +834,8 @@ As zonas pintadas não aparecem no manequim da cena. Sem Copilot.
 
 **Desenho.** Escolher artista e era; o jogo mostra o perfil da era; a pessoa cria uma peça única; a nota mede quanto a
 peça combina com a era. Vitrine "Eras" no perfil. Desafio do grupo: Jaqueta da Banda (50).
+
+**Rodada zonas (27/11):** a virada da música como momento-chave, cartas como lances (agudo, holofote, fumaça...), estrela e dragonas metálicas, caixas de retorno no palco; ver "Rodada zonas" acima.
 
 **No código hoje.** `FavoriteSingerNucleo`: uma era ("Era Neon"), 4 regras de 25.
 
@@ -792,6 +889,8 @@ avisava disso. Cena: `scene/salas/labirinto.ts`.
 **Desenho.** Customizar o macacão e o capacete de um piloto no editor 3D, com Copilot de vocabulário de corrida.
 Bases novas: capacete e macacão por zonas. Desafio do grupo: Tênis dos Sonhos (49).
 
+**Rodada zonas (27/11):** pit stop com escolha de pneu, volante nas setas, cartas como lances (turbo, vácuo, freio...), capacete com viseira, número e cinto no macacão; ver "Rodada zonas" acima.
+
 **No código hoje.** `PilotoFavoritoNucleo`: capacete da "Equipe Aurora", 4 regras de 25.
 
 **[proposta adotada]**
@@ -844,6 +943,8 @@ Cena: `scene/salas/around-the-world.ts` (calçadão, vitrine, mapa).
 
 **Desenho.** Editar peças de arquétipo (traje, armadura, capa, máscara) com um Copilot que traduz o nome do herói em
 traços genéricos. Sem licença: nenhum uniforme, emblema ou nome protegido.
+
+**Rodada zonas (27/11):** a ameaça como momento-chave, cartas como poderes (raio, voo, campo de força...), emblema escolhido, cinto e capa no avatar, caixa d'água, antena e moradores no terraço; ver "Rodada zonas" acima.
 
 **No código hoje.** `SuperHeroiNucleo`: arquétipo "armadura", 4 regras de 25; o emblema protegido tira pontos.
 
