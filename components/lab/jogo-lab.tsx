@@ -6,7 +6,7 @@
  * `?zonas=FRENTE:C8283A:BRILHANTE,MANGAS:F5F4F0` veste a peça pintada (com o uniforme: escudo, número, capa, capacete;
  * `?emblema=EMBLEMA_RAIO` no herói) e `?fase=uso` abre a fase de uso (o campo, o palco, a pista,
  * o terraço) com um pedido de execução de exemplo: Espaço ✕, K ○, F □, I △; os toques aparecem em `data-toques`
- * (`?prazo=ms` e `?janela=ms` trocam o prazo da fase e a janela da deixa, para a máquina lenta de prova).
+ * (`?semAndar=1` abre as deixas sem andar; `?chave=1` põe o momento-chave do jogo na primeira marca; `?prazo=ms` e `?janela=ms` trocam o prazo da fase e a janela da deixa, para a máquina lenta de prova).
  */
 import { useEffect, useRef, useState } from "react";
 import NucleoScene3D from "@/components/flair/nucleos/nucleo-scene-3d";
@@ -35,15 +35,22 @@ const PEDIDO = {
   reserva: 50,
   dreno: 15,
 };
-const emUso = (prazoMs: number, janelaMs: number) => ({ status: "EM_ACAO", pontos: 0, estrelas: 0, resultado: "EM_ACAO", regras: [], cartas: [], eventos: [{ codigo: "EXECUCAO_PEDIDA", valor: { ...PEDIDO, prazoMs, janelaMs, janelaOusadaMs: janelaMs * 0.6 } }] }) as unknown as NucleoResultado;
+/** O momento-chave de exemplo de cada jogo de zonas, na primeira marca (`?chave=1`; o do servidor sai da semente). */
+const CHAVES: Partial<Record<NucleoCodigo, object>> = {
+  CLUBE_CORACAO: { marca: 0, momento: "PENALTI", condicao: "GOLEIRO_DIREITA", opcoes: ["ESQUERDA", "DIREITA"], certa: "VESTIR" },
+  FAVORITE_SINGER: { marca: 0, momento: "VIRADA", condicao: "REFRAO_EXPLODE", opcoes: ["REVELAR", "FECHAR"], certa: "VESTIR" },
+  PILOTO_FAVORITO: { marca: 0, momento: "PIT_STOP", condicao: "PISTA_MOLHADA", opcoes: ["MACIO", "CHUVA"], certa: "TROCAR_ABA" },
+  SUPER_HEROI: { marca: 0, momento: "AMEACA", condicao: "ATAQUE_AEREO", opcoes: ["ESCUDO", "SALTO"], certa: "VESTIR" },
+};
+const emUso = (prazoMs: number, janelaMs: number, chave?: object) => ({ status: "EM_ACAO", pontos: 0, estrelas: 0, resultado: "EM_ACAO", regras: [], cartas: [], eventos: [{ codigo: "EXECUCAO_PEDIDA", valor: { ...PEDIDO, prazoMs, janelaMs, janelaOusadaMs: janelaMs * 0.6, chave } }] }) as unknown as NucleoResultado;
 
 export default function JogoLab() {
-  const [jogo, setJogo] = useState<{ codigo: NucleoCodigo; agilidade: number; zonas: Record<string, ZonaEscolha>; uso: boolean; pedido: NucleoResultado; variante: string | null; emblema: string | null } | null>(null);
+  const [jogo, setJogo] = useState<{ codigo: NucleoCodigo; agilidade: number; zonas: Record<string, ZonaEscolha>; uso: boolean; pedido: NucleoResultado; variante: string | null; emblema: string | null; semAndar: boolean } | null>(null);
   const [toques, setToques] = useState<Toque[] | null>(null);
   useEffect(() => {
     const q = new URLSearchParams(location.search);
     const zonas = Object.fromEntries((q.get("zonas") ?? "").split(",").filter(Boolean).map((z) => [z.split(":")[0], { cor: `#${z.split(":")[1]}`, acabamento: z.split(":")[2] }]));
-    setJogo({ codigo: (q.get("jogo") ?? "DRESS_FIGHTER") as NucleoCodigo, agilidade: Number(q.get("agilidade") ?? 50), zonas, uso: q.get("fase") === "uso", pedido: emUso(Number(q.get("prazo") ?? PEDIDO.prazoMs), Number(q.get("janela") ?? PEDIDO.janelaMs)), variante: q.get("variante"), emblema: q.get("emblema") });
+    setJogo({ codigo: (q.get("jogo") ?? "DRESS_FIGHTER") as NucleoCodigo, agilidade: Number(q.get("agilidade") ?? 50), zonas, uso: q.get("fase") === "uso", pedido: emUso(Number(q.get("prazo") ?? PEDIDO.prazoMs), Number(q.get("janela") ?? PEDIDO.janelaMs), q.get("chave") ? CHAVES[(q.get("jogo") ?? "") as NucleoCodigo] : undefined), variante: q.get("variante"), emblema: q.get("emblema"), semAndar: q.get("semAndar") === "1" });
   }, []);
   useEixoDeAndar(!!jogo);
   // a posição da personagem, publicada em window.__jogoLab para os scripts de prova
@@ -70,7 +77,7 @@ export default function JogoLab() {
       <div data-jogo-lab data-toques={toques ? JSON.stringify(toques) : undefined} className="n3d-stage" style={{ width: 1100, height: 680, background: "#15161a", position: "relative" }}>
         <NucleoScene3D config={config} avatar={AVATAR} pecas={pecasDasZonas(jogo.codigo, jogo.zonas)} reduzido={false} desfile={false} rotulo={jogo.codigo} protagonista={MODELO_CASA}
           zonas={jogo.zonas} emblema={jogo.emblema} semente={7} momento={uso ? "ACAO" : "PREPARO"} variante={uso ? SALA_DE_USO : jogo.variante} desfileAtivo={uso} andarLivre agilidade={jogo.agilidade} jogadorDeFora={jogador} />
-        {uso && <DesfileHud codigo={jogo.codigo} onFim={() => undefined} resultado={toques ? null : jogo.pedido} onExecucao={setToques} />}
+        {uso && <DesfileHud codigo={jogo.codigo} onFim={() => undefined} resultado={toques ? null : jogo.pedido} onExecucao={setToques} reduzido={jogo.semAndar} />}
       </div>
     </main>
   );

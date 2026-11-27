@@ -2,7 +2,8 @@
 /**
  * A execução no percurso na tela (lib/flair/nucleos/movimento/execucao.ts): com o pedido do servidor, cada marca que a
  * personagem alcança abre uma deixa — o botão pedido, com a janela de tempo correndo —; o botão certo a tempo vale,
- * o resto é erro e drena o recurso. Com "reduzir movimento" (sem andar), as deixas vêm uma depois da outra. Quando
+ * o resto é erro e drena o recurso. Com "reduzir movimento" (sem andar), as deixas vêm uma depois da outra, depois de um
+ * preparo de alguns segundos (para armar a carta). Quando
  * todas as marcas tiveram nota, os toques vão ao servidor, que dá a nota de verdade. Na fase de uso dos jogos de zonas
  * a deixa traz também o lance ousado e a fase tem prazo, contado da primeira deixa: o que faltar quando ele acaba conta
  * como erro. Na rodada zonas a janela é a da marca (fecha com a rodada e com a marca), o momento-chave abre ou fecha a
@@ -18,6 +19,8 @@ import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
 
 /** Intervalo entre as deixas sem andar ("reduzir movimento"). */
 export const DEIXA_SEM_ANDAR_MS = 900;
+/** Sem andar, a primeira deixa espera este tanto (a pessoa arma a carta e se prepara antes de a fase correr). */
+export const PREPARO_SEM_ANDAR_MS = 5000;
 
 export interface Deixa {
   marca: number;
@@ -51,12 +54,12 @@ export function useExecucaoDoDesfile(codigo: NucleoCodigo, resultado: NucleoResu
   const [notas, setNotas] = useState<NotaDoToque[]>([]);
   const [ousadias, setOusadias] = useState(0);
   const [prazo, setPrazo] = useState<Prazo | null>(null);
-  const estado = useRef({ alcancadas: 0, toques: [] as Toque[], notas: [] as NotaDoToque[], enviado: false, deixa: null as Deixa | null, ousadias: 0, prazo: null as Prazo | null, embalo: 0, pausa: 0 });
+  const estado = useRef({ alcancadas: 0, toques: [] as Toque[], notas: [] as NotaDoToque[], enviado: false, deixa: null as Deixa | null, ousadias: 0, prazo: null as Prazo | null, embalo: 0, pausa: 0, desde: 0 });
   const ref = useRef({ pedido, onExecucao, armar });
   ref.current = { pedido, onExecucao, armar };
 
   useEffect(() => {
-    estado.current = { alcancadas: estado.current.alcancadas, toques: [], notas: [], enviado: false, deixa: null, ousadias: 0, prazo: null, embalo: 0, pausa: 0 };
+    estado.current = { alcancadas: estado.current.alcancadas, toques: [], notas: [], enviado: false, deixa: null, ousadias: 0, prazo: null, embalo: 0, pausa: 0, desde: performance.now() };
     setDeixa(null);
     setNotas([]);
     setOusadias(0);
@@ -92,6 +95,7 @@ export function useExecucaoDoDesfile(codigo: NucleoCodigo, resultado: NucleoResu
       const p = ref.current.pedido;
       const proxima = e.notas.length;
       if (!p || e.deixa || e.enviado || proxima >= p.botoes.length || (!reduzido && e.alcancadas <= proxima)) return;
+      if (reduzido && proxima === 0 && performance.now() - e.desde < PREPARO_SEM_ANDAR_MS) return;
       const carta = ref.current.armar?.(proxima) ?? undefined;
       const j = janelasDaMarca(p.risco?.lances, proxima, { seguro: p.janelaMs, ousado: p.risco?.janelaMs ?? p.janelaMs }, e.embalo, carta?.uso ?? null);
       const chave = p.risco?.lances?.chave?.marca === proxima ? p.risco.lances.chave : undefined;
