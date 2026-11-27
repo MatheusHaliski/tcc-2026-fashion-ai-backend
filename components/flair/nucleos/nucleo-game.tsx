@@ -131,8 +131,6 @@ export function NucleoGame(props: Props) {
     if (acionamento?.tipo === "ESPELHO") emitirFx({ tipo: "acionamento", nucleo: codigo, acionamento: "ESPELHO" });
     onEntregar(estado.sel, efetiva);
   };
-  const { disparar, gamepad } = useNucleoComandos({ codigo, acoes: definicao.acoes, momento, tabs, pausado: estado.objetivo, ativo: !entregando && !zoom.ampliada, acaoPropria: codigo === "FASHION_SPORTS", cena: { tocando: !!cinema.cutscene, pular: cinema.pular }, entreLances: acao.aberta,
-    dispatch, entregar, limparAviso: () => setAviso(null) });
 
   const naoCabe = (x: ItemDaFileira) => {
     dispatch({ type: "foco", aba: x.aba, item: x.item });
@@ -147,6 +145,9 @@ export function NucleoGame(props: Props) {
     pecas, protagonista, semente: props.partida?.semente, ocupado: !!props.acionando, erro: props.erroAcionar ?? null, acionar,
     extra: <><NucleoRodaRecursos recursos={usoDeRecursos} reduzido={reduzido} efeitos={fx.prefs.efeitos} />{doEsporte && <CinemaOverlay cinema={cinema} />}</> });
   const partida = modo.esporte;
+  // no palco com controles próprios (o Detective no perfil console), o teclado e o controle da tela ficam de fora
+  const { disparar, gamepad } = useNucleoComandos({ codigo, acoes: definicao.acoes, momento, tabs, pausado: estado.objetivo, ativo: !entregando && !zoom.ampliada && !modo.telaPropria, acaoPropria: codigo === "FASHION_SPORTS", cena: { tocando: !!cinema.cutscene, pular: cinema.pular }, entreLances: acao.aberta,
+    dispatch, entregar, limparAviso: () => setAviso(null) });
 
   const pontuadas = useResultCards({ momento, resultado, vestidas, cards: cartas, efeitos: efeitos.porCarta });
 
@@ -180,7 +181,7 @@ export function NucleoGame(props: Props) {
           onComando={(c) => disparar(c)}
         />
       )}
-      <div className="n3d-lower">
+      <div className="n3d-lower" hidden={modo.telaPropria}>
         {preparando && <NucleoApresentacao definicao={definicao} partida={props.partida} tentativa={props.tentativa} apresentacao={apresentacao} cartas={cartas} efeitos={efeitos.itens} />}
         <NucleoSlotRuler
           vagas={vagasDaRegua(tabs)}
