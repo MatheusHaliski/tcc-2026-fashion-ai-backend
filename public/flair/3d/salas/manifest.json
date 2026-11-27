@@ -188,22 +188,30 @@
     "author": "FashionAI",
     "source": "scripts/blender3d_high/salas",
     "license": "Própria",
-    "hash": "1cc6f44de5c2a4c3",
+    "hash": "e804d5b5bdbfaa03",
     "environment": "/flair/3d/salas/detetive-seguranca-ambiente.webp",
     "levels": {
       "alto": {
         "url": "/flair/3d/salas/detetive-seguranca.glb",
-        "triangles": 28318,
-        "calls": 31,
-        "instanced": 230,
-        "bytes": 639832
+        "triangles": 50362,
+        "calls": 45,
+        "instanced": 311,
+        "bytes": 817492,
+        "withImports": {
+          "triangles": 68337,
+          "calls": 46
+        }
       },
       "medio": {
         "url": "/flair/3d/salas/detetive-seguranca-medio.glb",
-        "triangles": 28318,
-        "calls": 31,
-        "instanced": 230,
-        "bytes": 459116
+        "triangles": 44986,
+        "calls": 45,
+        "instanced": 311,
+        "bytes": 596724,
+        "withImports": {
+          "triangles": 55260,
+          "calls": 46
+        }
       }
     },
     "imports": [
@@ -623,6 +631,71 @@
         ],
         "rotation": 0,
         "height": 1.6,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      }
+    ]
+  },
+  {
+    "slug": "detetive-demo",
+    "title": "Demonstração do Detective (high poly)",
+    "family": "detetive",
+    "games": [
+      "FASHION_DETECTIVE_DEMO"
+    ],
+    "author": "FashionAI",
+    "source": "scripts/blender3d_high/salas",
+    "license": "Própria",
+    "hash": "e25a3f2905215be7",
+    "environment": "/flair/3d/salas/detetive-demo-ambiente.webp",
+    "levels": {
+      "alto": {
+        "url": "/flair/3d/salas/detetive-demo.glb",
+        "triangles": 113747,
+        "calls": 42,
+        "instanced": 336,
+        "bytes": 868608,
+        "withImports": {
+          "triangles": 194568,
+          "calls": 44
+        }
+      },
+      "medio": {
+        "url": "/flair/3d/salas/detetive-demo-medio.glb",
+        "triangles": 66529,
+        "calls": 42,
+        "instanced": 336,
+        "bytes": 658532,
+        "withImports": {
+          "triangles": 82358,
+          "calls": 44
+        }
+      }
+    },
+    "imports": [
+      {
+        "model": "monumentalVase",
+        "url": "/heist/models/monumentalVase.glb",
+        "medium": "/flair/3d/salas/importados/monumentalVase-medio.glb",
+        "pos": [
+          -5.4,
+          0,
+          4.4
+        ],
+        "rotation": 0,
+        "height": 1.6,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      },
+      {
+        "model": "vestFloral",
+        "url": "/heist/models/vestFloral.glb",
+        "medium": "/flair/3d/salas/importados/vestFloral-medio.glb",
+        "pos": [
+          5.4,
+          0,
+          4.4
+        ],
+        "rotation": 0,
+        "height": 1.7,
         "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
       }
     ]
