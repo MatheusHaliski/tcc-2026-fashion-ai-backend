@@ -13317,7 +13317,7 @@
   "flair3d.multi.desfecho.DERROTA": "Derrota",
   "flair3d.multi.desfecho.EMPATE": "Empate",
   "flair3d.multi.revanche": "Revanche",
-  "flair3d.multi.historico": "Contra @{outro}: {v} vitórias, {d} derrotas, {e} empates",
+  "flair3d.multi.historico": "Contra @{outro}: vitórias {v} · derrotas {d} · empates {e}",
   "flair3d.multi.faixa.rotulo": "Sala multiplayer",
   "flair3d.multi.faixa.contra": "Partida contra @{outro}",
   "flair3d.multi.faixa.mesmaSemente": "mesma semente",

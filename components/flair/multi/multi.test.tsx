@@ -103,7 +103,7 @@ describe("SalaTela", () => {
     const res = await screen.findByTestId("fm-resultado");
     expect(within(res).getByText("Derrota")).toBeTruthy();
     expect(within(res).getByText("150")).toBeTruthy();
-    expect((await screen.findByTestId("fm-historico")).textContent).toBe("Contra @bia: 2 vitórias, 1 derrotas, 0 empates");
+    expect((await screen.findByTestId("fm-historico")).textContent).toBe("Contra @bia: vitórias 2 · derrotas 1 · empates 0");
     fireEvent.click(screen.getByTestId("fm-revanche"));
     await waitFor(() => expect(router.push).toHaveBeenCalledWith("/flair/3d/sala/s2"));
   });

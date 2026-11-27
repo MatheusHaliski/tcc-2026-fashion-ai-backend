@@ -13317,7 +13317,7 @@
   "flair3d.multi.desfecho.DERROTA": "Defeat",
   "flair3d.multi.desfecho.EMPATE": "Draw",
   "flair3d.multi.revanche": "Rematch",
-  "flair3d.multi.historico": "Against @{outro}: {v} wins, {d} losses, {e} draws",
+  "flair3d.multi.historico": "Against @{outro}: wins {v} · losses {d} · draws {e}",
   "flair3d.multi.faixa.rotulo": "Multiplayer room",
   "flair3d.multi.faixa.contra": "Match against @{outro}",
   "flair3d.multi.faixa.mesmaSemente": "same seed",
