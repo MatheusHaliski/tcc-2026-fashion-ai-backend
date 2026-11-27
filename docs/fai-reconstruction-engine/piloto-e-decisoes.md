@@ -256,3 +256,11 @@ o desenho e o recorte (`services/garment_blender/README.md`, "Peças do catálog
   botões e colarinho, "jeans" na descrição não faz a peça de jeans, a roupa de baixo aparecendo pela frente aberta, o
   cordão do capuz, o cadarço do zíper e o fundo da gola não viram desenho, blocos de cor não viram estampa corrida,
   capuz não conta como alto da peça, logo de manga, infantil pelo endereço.
+- **Lote v8 (26–27/11), o que vai ao banco:** `catalog/model3d/motor-blender-2026-11-27/` (substitui o lote parcial
+  de 25/11, que parou em 230 peças). 8.545 produtos lidos: 7.620 fichas, 904 pulados (414 infantil, 179 praia, 138
+  sem download, 107 parte de baixo, 43 sem foto, 17 vestido, 6 sem peça na foto) e 21 erros. Montadas e publicadas
+  5.991 peças (0 falhas): 5.294 lisas, 1.848 com desenho ou logo, 349 estampas corridas, 129 listradas (contagem das
+  fichas, com repetidas). Cor da malha canelada furta-cor pela massa da cor (49 peças reanalisadas e remontadas antes
+  da importação). **Tempo:** análise ~50 min (rótulos em cache, 2 processos × 2 núcleos), montagem ~50 min, envio ao
+  bucket ~11 min (12 conexões). **Custo:** zero (CPU do contêiner). Seleção para o download:
+  `docs/provador/motor-blender/2026-11-27/selecao.csv`.
