@@ -10,7 +10,7 @@ export const ZONA_MORTA_DA_RODA = 0.35;
 /** Onde o item i de n fica na roda, em px a partir do centro (x para a direita, y para baixo). */
 export function posicaoNaRoda(i: number, n: number, raio: number): { x: number; y: number } {
   const a = (2 * Math.PI * i) / Math.max(1, n);
-  return { x: Math.round(Math.sin(a) * raio * 100) / 100, y: Math.round(-Math.cos(a) * raio * 100) / 100 };
+  return { x: Math.round(Math.sin(a) * raio * 100) / 100 + 0, y: Math.round(-Math.cos(a) * raio * 100) / 100 + 0 };
 }
 
 /**

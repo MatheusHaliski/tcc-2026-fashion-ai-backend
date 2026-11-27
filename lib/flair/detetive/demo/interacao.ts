@@ -55,7 +55,7 @@ export function interagir(e: EstadoDaDemo, eventos: EventoDaDemo[]): void {
     j.municao.reserva += MUNICAO_DO_ARMARIO.alfinetes;
     j.municao.laque += MUNICAO_DO_ARMARIO.laque;
     eventos.push({ tipo: "ABRIU", id: i.id }, { tipo: "PEGOU", item: "MUNICAO" });
-  } else {
+  } else if (i.tipo === "ITEM") {
     i.coletado = true;
     if (i.item === "KIT") j.municao.kits += 1;
     if (i.item === "CARRETEL") j.municao.reserva += ALFINETES_DO_CARRETEL;
