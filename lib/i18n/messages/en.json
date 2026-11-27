@@ -10124,6 +10124,8 @@
   "flair3d.ui.batalha.cansadas": "Tired piece did not count (walked last round or was spent as a resource in this one): {vagas}",
   "flair3d.ui.batalha.veio": "wore {familia}",
   "flair3d.ui.batalha.soma": "Total",
+  "flair3d.ui.batalha.execucao": "Final walk (execution)",
+  "flair3d.ui.batalha.fecho": "The final walk adds or takes points from your total, and the total with it decides the battle. A win is worth at least 1 star; a loss, none.",
   "flair3d.ui.batalha.regra": "Each round's score: 25 per piece within the rule, up to 10 for the look's charisma and agility, and up to 5 for the focus of the piece you spend in the round. The house look goes through the same math, without resources.",
   "flair3d.ui.result.hype": "Hype: {faixa}",
   "flair3d.ui.action.AMPLIAR": "Enlarge the card",

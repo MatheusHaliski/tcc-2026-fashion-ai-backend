@@ -6,7 +6,7 @@
  */
 import { cn } from "@/components/ui";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
-import { rodadasDaBatalha, somaDaBatalha, type ContaDaBatalha } from "@/lib/flair/nucleos/batalha-placar";
+import { fechoDaBatalha, rodadasDaBatalha, somaDaBatalha, type ContaDaBatalha } from "@/lib/flair/nucleos/batalha-placar";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 
 interface Props {
@@ -18,7 +18,9 @@ interface Props {
 export function BatalhaPlacar({ resultado, anterior }: Props) {
   const tx = useNucleoText();
   const rodadas = rodadasDaBatalha(resultado, anterior);
-  const soma = somaDaBatalha(rodadas);
+  const fecho = fechoDaBatalha(resultado);
+  // no fim, a soma é a do servidor: as rodadas mais a execução do desfile final (é ela que decide quem venceu)
+  const soma = fecho ?? somaDaBatalha(rodadas);
   if (!soma) return null;
   const conta = (c: ContaDaBatalha | undefined, total: number) => (c ? tx.t("flair3d.ui.batalha.conta", { regra: c.regra, look: c.look, recurso: c.recurso, total }) : String(total));
   return (
@@ -49,6 +51,13 @@ export function BatalhaPlacar({ resultado, anterior }: Props) {
               </td>
             </tr>
           ))}
+          {fecho && (
+            <tr data-testid="batalha-execucao">
+              <th scope="row">{tx.t("flair3d.ui.batalha.execucao")}</th>
+              <td className="tabular">{fecho.execucao > 0 ? `+${fecho.execucao}` : String(fecho.execucao)}</td>
+              <td className="tabular">—</td>
+            </tr>
+          )}
         </tbody>
         <tfoot>
           <tr>
@@ -59,6 +68,7 @@ export function BatalhaPlacar({ resultado, anterior }: Props) {
         </tfoot>
       </table>
       <p className="n3d-hint">{tx.t("flair3d.ui.batalha.regra")}</p>
+      {fecho && <p className="n3d-hint" data-testid="batalha-fecho">{tx.t("flair3d.ui.batalha.fecho")}</p>}
     </section>
   );
 }

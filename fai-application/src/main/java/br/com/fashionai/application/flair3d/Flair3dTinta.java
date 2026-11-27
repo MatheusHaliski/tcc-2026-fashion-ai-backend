@@ -131,4 +131,9 @@ public final class Flair3dTinta implements Flair3dNucleo {
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
         return jogo.efeitos(carta, contexto);
     }
+
+    @Override
+    public Resultado comExecucao(Resultado look, Resultado comNota, int execucao, Contexto contexto) {
+        return jogo.comExecucao(look, comNota, execucao, contexto);
+    }
 }
