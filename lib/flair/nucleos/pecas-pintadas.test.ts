@@ -16,4 +16,12 @@ describe("a peça pintada vestida", () => {
   it("jogos de cartas não ganham peça pintada", () => {
     expect(pecasDasZonas("PASSARELA", { FRENTE: { cor: "#000" } })).toEqual([]);
   });
+
+  it("o macacão da Equipe Boreal veste o piloto (tronco, pernas) e o tênis dos sonhos vira o calçado; o acabamento muda o tecido", () => {
+    const macacao = pecasDasZonas("PILOTO_FAVORITO", { TRONCO: { cor: "#1E4FBF", acabamento: "METALICO" }, PERNAS: { cor: "#151515" } });
+    expect(macacao.map((p) => [p.slot, p.colorHex, p.material])).toEqual([["upper", "#1E4FBF", "LEATHER"], ["lower", "#151515", "POLYESTER"]]);
+    const tenis = pecasDasZonas("PILOTO_FAVORITO", { CABEDAL: { cor: "#F2C230", acabamento: "BRILHANTE" } });
+    expect(tenis.map((p) => [p.slot, p.material])).toEqual([["shoes", "LEATHER"]]);
+    expect(pecasDasZonas("FAVORITE_SINGER", { CORPO: { cor: "#7A5CFF" } })[0]).toMatchObject({ subcategory: "jacket", colorHex: "#7A5CFF" });
+  });
 });

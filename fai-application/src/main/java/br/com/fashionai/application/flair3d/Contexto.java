@@ -15,11 +15,17 @@ import java.util.function.Function;
  * O que o núcleo recebe além da entrega: as cartas da pessoa no formato do motor (por id), o país de uma marca (código
  * ISO de 2 letras, ou nulo), o sorteio da partida, semeado com a semente dela, o andamento (tentativa, acionamentos e
  * rodada), a própria semente, de onde saem os sorteios por assunto (nula fora de uma partida: a tela do deck), e as
- * cartas do deck da partida (o estoque de onde o jogo tira o look-alvo).
+ * cartas do deck da partida (o estoque de onde o jogo tira o look-alvo) e a família de Aura de cada carta (COMMON,
+ * ELECTRO, SPLASH, HYPE, METAMORPHOSE; a carta sem Aura fica de fora), lida da arte do card e nunca escrita.
  */
 public record Contexto(Map<UUID, CbcRules.Card> cartas, Function<String, String> paisDaMarca, Random sorteio, Andamento andamento,
-                       Long semente, Map<UUID, CbcRules.Card> deck) {
+                       Long semente, Map<UUID, CbcRules.Card> deck, Map<UUID, String> auras) {
     public static final String BRASIL = "BR";
+
+    public Contexto(Map<UUID, CbcRules.Card> cartas, Function<String, String> paisDaMarca, Random sorteio, Andamento andamento,
+                    Long semente, Map<UUID, CbcRules.Card> deck) {
+        this(cartas, paisDaMarca, sorteio, andamento, semente, deck, null);
+    }
 
     public Contexto(Map<UUID, CbcRules.Card> cartas, Function<String, String> paisDaMarca, Random sorteio, Andamento andamento) {
         this(cartas, paisDaMarca, sorteio, andamento, null, null);
@@ -35,10 +41,11 @@ public record Contexto(Map<UUID, CbcRules.Card> cartas, Function<String, String>
         sorteio = sorteio == null ? new Random(0) : sorteio;
         andamento = andamento == null ? Andamento.INICIO : andamento;
         deck = deck == null ? cartas : deck;
+        auras = auras == null ? Map.of() : Map.copyOf(auras);
     }
 
     public Contexto comAndamento(Andamento novo) {
-        return new Contexto(cartas, paisDaMarca, sorteio, novo, semente, deck);
+        return new Contexto(cartas, paisDaMarca, sorteio, novo, semente, deck, auras);
     }
 
     /** O mesmo contexto na rodada dada (o andamento guarda a rodada da partida). */
@@ -47,11 +54,21 @@ public record Contexto(Map<UUID, CbcRules.Card> cartas, Function<String, String>
     }
 
     public Contexto comSemente(long nova) {
-        return new Contexto(cartas, paisDaMarca, new Random(nova), andamento, nova, deck);
+        return new Contexto(cartas, paisDaMarca, new Random(nova), andamento, nova, deck, auras);
     }
 
     public Contexto comDeck(Map<UUID, CbcRules.Card> novo) {
-        return new Contexto(cartas, paisDaMarca, sorteio, andamento, semente, novo);
+        return new Contexto(cartas, paisDaMarca, sorteio, andamento, semente, novo, auras);
+    }
+
+    /** O mesmo contexto com a família de Aura de cada carta (da arte do card). */
+    public Contexto comAuras(Map<UUID, String> novas) {
+        return new Contexto(cartas, paisDaMarca, sorteio, andamento, semente, deck, novas);
+    }
+
+    /** A família de Aura da carta, ou nula quando o card não tem Aura escolhida. */
+    public String aura(CbcRules.Card c) {
+        return c == null ? null : auras.get(c.id());
     }
 
     /** A rodada da partida; nula quando a partida não escolheu (vale o objetivo mais simples do jogo). */

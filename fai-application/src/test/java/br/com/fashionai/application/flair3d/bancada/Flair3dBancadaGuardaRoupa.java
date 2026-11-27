@@ -2,13 +2,17 @@ package br.com.fashionai.application.flair3d.bancada;
 
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.flair3d.Flair3dFixtures;
+import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.domain.model.FlairCardInstance;
+import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.WardrobeItem;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -46,7 +50,24 @@ final class Flair3dBancadaGuardaRoupa {
 
     /** O Hype público (HYP) de algumas cartas, para a faixa de Hype aparecer na tela; as outras ficam sem sinal. */
     private static final Map<String, Integer> HYPE = Map.of("Blazer preto", 78, "Jeans azul", 45, "Bota preta", 63, "Bolsa preta", 92,
-            "Colar branco", 24, "Camisa azul", 38);
+            "Colar branco", 24, "Camisa azul", 38, "Tênis branco", 66, "Salto vermelho", 81);
+
+    /** A família de Aura da arte de algumas cartas (rodada 8g); o Colar branco é a carta Especial com Metamorfose. */
+    private static final Map<String, String> AURA = Map.of("Blazer preto", "SPLASH", "Tênis branco", "ELECTRO", "Mocassim azul", "ELECTRO",
+            "Jeans azul", "COMMON", "Colar branco", "METAMORPHOSE", "Bolsa preta", "HYPE");
+
+    /** A peça fictícia com a arte da Aura da carta, quando ela tem uma (a carta passa a ser de origem PIECE). */
+    static Optional<WardrobeItem> comAura(FlairCardInstance c, User dona) {
+        String familia = AURA.get(c.getName());
+        if (familia == null) {
+            return Optional.empty();
+        }
+        WardrobeItem w = Kit.piece(dona, c.getName(), c.getCategory(), c.getSubcategory(), "black");
+        w.setBackgroundConfigJson("{\"compositionPreset\":{\"id\":\"bancada\",\"family\":\"" + familia + "\"}}");
+        c.setOriginType("PIECE");
+        c.setOriginId(w.getId());
+        return Optional.of(w);
+    }
 
     /** As cartas da pessoa, na ordem da tabela. */
     static List<FlairCardInstance> cartas(UUID dono) {
@@ -57,6 +78,9 @@ final class Flair3dBancadaGuardaRoupa {
             FlairCardInstance c = Flair3dFixtures.instance(dono, p[0], etiquetas);
             c.setName(p[1]);
             c.setOriginId(UUID.nameUUIDFromBytes(("bancada:" + p[1]).getBytes(StandardCharsets.UTF_8)));
+            if (HYPE.containsKey(p[1])) {
+                c.setHypeJson("{\"HYP\":" + HYPE.get(p[1]) + "}");
+            }
             out.add(c);
         }
         return out;

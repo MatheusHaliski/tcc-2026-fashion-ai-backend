@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api/client";
 import type { TipoLook } from "@/lib/api/types";
+import { lookTypeName } from "@/lib/api/look-type";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
 import { ErrorState, Field, Select, Skeleton, Switch, useNotice } from "@/components/ui";
@@ -43,7 +44,7 @@ export function LookTypePreference() {
         disabled={busy || (!current && !first)} onChange={(on) => void save(on ? first : null)} />
       {current && <Field id="default-tipo-look" label={t("settings.autoLookTypeChoose")}>
         <Select id="default-tipo-look" value={current.id} disabled={busy} onChange={(e) => void save(e.target.value)}>
-          {(types.data ?? []).map((type) => <option key={type.id} value={type.id}>{type.nome}</option>)}
+          {(types.data ?? []).map((type) => <option key={type.id} value={type.id}>{lookTypeName(type, t)}</option>)}
         </Select>
       </Field>}
     </div>

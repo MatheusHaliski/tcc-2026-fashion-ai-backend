@@ -49,3 +49,12 @@ estratégia concreta por dados, o record `QuebraCabeca`, registrada em `FlairCbc
 repetiria o mesmo código dez vezes. A avaliação usa o motor dos desafios (`CbcRules.evaluate`, vaga com `accepts`) em
 vez de `CbcLinks`. A forma das peças (quadrantes, encaixes, setores, cacos) é só desenho e mora no front
 (`lib/flair/elencos/recortes.ts`).
+
+**Aura na partida (rodada 8g, 27/11/2026).** Problema concreto: a plateia pela faixa de Hype e o trunfo do Hype valem
+igual em quatro jogos de um look (Passarela, Dress the Star, Personagem de Filme, Boutique). Novo Decorator
+`Flair3dAuraNaPartida` entre a execução e o jogo (`exec(aura(cena(jogo)))`): soma quando o look fecha e só avisa na
+prévia. As regras puras ficam em `aura/Flair3dAuraRegras`; Electro, Comum e Metamorfose entram na execução por
+`Flair3dAuraNaExecucao` (chamado pelo Decorator da execução, sem nova camada). A Batalha de Looks não usa o Decorator:
+a Aura dela precisa entrar na nota de cada rodada, dentro da comparação com a casa (`BatalhaLooksAura`, lido por
+`BatalhaLooksPlacar`). Para o fim da Batalha depender da execução, a Strategy ganhou o gancho `default comExecucao`
+(Template Method: a execução monta a nota, o jogo decide o desfecho), que os Decorators repassam.

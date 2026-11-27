@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.flair.FlairEngine.Card;
 import br.com.fashionai.application.flair.FlairLooks.Clash;
@@ -19,6 +20,8 @@ import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.*;
+
+import org.springframework.data.domain.PageRequest;
 
 import static br.com.fashionai.application.flair.FlairModeViews.overall;
 
@@ -77,17 +80,37 @@ public final class FlairWardrobeWars {
     public Map<String, Object> wardrobeWars(CurrentUser user, String opponent) {
         guard.requireCanCreate(user);
         User me = users.findById(user.id()).orElseThrow();
-        User rival = modeLooks.opponentUser(user, opponent);
+        boolean house = FlairModeLooks.house(opponent);
+        User rival = house ? houseRival(user) : modeLooks.opponentUser(user, opponent);
         FlairLooks.Wardrobe a = wardrobe(me, false), b = wardrobe(rival, true);
         List<Clash> rounds = FlairLooks.wardrobeWars(a, b);
         String w = overall(rounds);
         Map<String, Object> r = new LinkedHashMap<>();
         r.put("me", a);
-        r.put("opponent", Map.of("label", "@" + rival.getUsername(), "wardrobe", b));
+        r.put("opponent", Map.of("label", house ? Msg.t("flairModes.a_casa", "@" + rival.getUsername()) : "@" + rival.getUsername(), "wardrobe", b));
         r.put("rounds", rounds.stream().map(FlairModeViews::clashView).toList());
         r.put("scoreA", rounds.stream().filter(x -> "A".equals(x.winner())).count());
         r.put("scoreB", rounds.stream().filter(x -> "B".equals(x.winner())).count());
         r.put("note", Msg.t("flairModes.do_oponente_contam_so_pecas"));
-        return recorder.finish(user, "WARDROBE", Msg.t("flairModes.guarda_roupa_guarda_roupa_2"), w, r, List.of(), rival, List.of());
+        return recorder.finish(user, "WARDROBE", Msg.t("flairModes.guarda_roupa_guarda_roupa_2"), w, r, List.of(), house ? null : rival, List.of());
+    }
+
+    /**
+     * Jogo solo: A Casa empresta o guarda-roupa público de alguém da comunidade (sorteado por dia e por pessoa, nunca a
+     * própria pessoa nem quem tem bloqueio). Como no confronto direto, do rival contam só peças e looks públicos.
+     */
+    User houseRival(CurrentUser user) {
+        Map<java.util.UUID, User> owners = new LinkedHashMap<>();
+        for (WardrobeItem w : pieces.findAllPublic(PageRequest.of(0, 400))) {
+            User u = w.getUser();
+            if (u != null && !u.getId().equals(user.id()) && !guard.blocked(user.id(), u.getId())) {
+                owners.putIfAbsent(u.getId(), u);
+            }
+        }
+        if (owners.isEmpty()) {
+            throw ApiException.conflict("SEM_RIVAL_DA_CASA", Msg.t("flairModes.sem_guarda_roupa_da_casa"));
+        }
+        List<User> list = List.copyOf(owners.values());
+        return list.get(Math.floorMod(modeLooks.seed("wardrobe", user.id()), list.size()));
     }
 }

@@ -88,7 +88,7 @@ class Flair3dPartidaRodadasTest {
         Resultado previa2 = service.previa(ana, id, vestir(null, sup, inf, cal));
         assertThat(previa2).isEqualTo(previa1);
         // a prévia não revela a sala do tema: no máximo o que o look soma (regra peça-recurso; tema sorteado sem ponto, nada)
-        assertThat(previa1.eventos()).extracting(Resultado.Evento::codigo).isSubsetOf("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO", "PERFIL_DO_LOOK");
+        assertThat(previa1.eventos()).extracting(Resultado.Evento::codigo).isSubsetOf("LOOK_ATRIBUTOS", "RECURSO_DO_JOGO", "PERFIL_DO_LOOK", "AURA_NA_PARTIDA");
         assertThat(Andamento.ler(partida(id).getEstadoJson()).tentativas()).isZero();
         service.entregar(ana, id, vestir(null, sup, inf, cal));
         Resultado r = service.acionar(ana, id, Flair3dFixtures.perfeita(service.acionar(ana, id, Acionamento.NENHUM)));
@@ -142,8 +142,9 @@ class Flair3dPartidaRodadasTest {
         assertThat(service.entregar(ana, id, vestir(null, sup, inf)).status()).isEqualTo("EM_ACAO");
         Resultado fim = service.acionar(ana, id, Flair3dFixtures.perfeita(service.acionar(ana, id, Acionamento.NENHUM)));
         assertThat(fim.status()).isEqualTo("ENTREGUE");
-        // as três regras da etapa, a da execução no percurso e as duas da regra peça-recurso
-        assertThat(fim.regras()).hasSize(6);
+        // as três regras da etapa, a da plateia do Hype (rodada 8g), a da execução no percurso e as duas da regra peça-recurso
+        assertThat(fim.regras()).hasSize(7);
+        assertThat(fim.regras()).extracting(Resultado.RegraResultado::codigo).contains("PLATEIA_DO_HYPE");
         assertThat(fim.regras()).extracting(Resultado.RegraResultado::codigo).endsWith("EXECUCAO", "LOOK_ATRIBUTOS", "RECURSO_DO_JOGO");
         assertThat(partida(id).getPontos()).isEqualTo(fim.pontos());
         assertThat(erro(() -> service.entregar(ana, id, vestir(null, sup))).status()).isEqualTo(409);
