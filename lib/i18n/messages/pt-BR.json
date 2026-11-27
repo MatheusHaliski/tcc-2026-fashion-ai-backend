@@ -10165,6 +10165,8 @@
   "flair3d.ui.batalha.soma": "Soma",
   "flair3d.ui.batalha.execucao": "Desfile final (execução)",
   "flair3d.ui.batalha.fecho": "O desfile final soma ou tira pontos na sua soma, e é a soma com ele que decide a batalha. A vitória vale ao menos 1 estrela; a derrota, nenhuma.",
+  "flair3d.ui.aura.resumo": "Aura: plateia +{pontos}",
+  "flair3d.ui.aura.resumoTrunfo": "Aura +{pontos} · trunfo +{trunfo}",
   "flair3d.ui.aura.titulo": "Aura na partida",
   "flair3d.ui.aura.plateia.padrao": "A plateia",
   "flair3d.ui.aura.plateia.PASSARELA": "A plateia do desfile",

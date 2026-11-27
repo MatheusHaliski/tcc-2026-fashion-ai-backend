@@ -10171,6 +10171,8 @@
   "flair3d.ui.batalha.soma": "Total",
   "flair3d.ui.batalha.execucao": "Final walk (execution)",
   "flair3d.ui.batalha.fecho": "The final walk adds or takes points from your total, and the total with it decides the battle. A win is worth at least 1 star; a loss, none.",
+  "flair3d.ui.aura.resumo": "Aura: crowd +{pontos}",
+  "flair3d.ui.aura.resumoTrunfo": "Aura +{pontos} · trump +{trunfo}",
   "flair3d.ui.aura.titulo": "Aura in the match",
   "flair3d.ui.aura.plateia.padrao": "The crowd",
   "flair3d.ui.aura.plateia.PASSARELA": "The runway crowd",
