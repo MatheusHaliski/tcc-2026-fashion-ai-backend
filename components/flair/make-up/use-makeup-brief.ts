@@ -8,11 +8,13 @@ import { api } from "@/lib/api/client";
 import { useAction, useApi } from "@/lib/hooks/use-api";
 import type { FlairCollection } from "@/components/flair/flair-collection";
 import { buscarBrief, entregarBrief } from "@/lib/flair/make-up/api";
+import { registrarLookDaSala } from "@/lib/flair/multi/api";
 import { mesclarBrief } from "@/lib/flair/make-up/briefs";
 import type { MakeUpResultado } from "@/lib/flair/make-up/types";
 import type { Selecao } from "@/lib/flair/nucleos/selection";
 
-export function useMakeUpBrief(codigo: string) {
+/** `salaId`: a sala multiplayer do brief (?sala=); o look entregue entra nela para comparar com a outra pessoa. */
+export function useMakeUpBrief(codigo: string, salaId: string | null = null) {
   const def = useApi((signal) => buscarBrief(codigo, signal), [codigo]);
   const brief = useMemo(() => mesclarBrief(codigo, def.data), [codigo, def.data]);
   const bank = useApi<FlairCollection>((signal) => api.get("/api/me/flair/cards", { signal }), []);
@@ -20,6 +22,7 @@ export function useMakeUpBrief(codigo: string) {
   const entrega = useAction(async (sel: Selecao) => {
     const r = await entregarBrief(codigo, { cartas: sel.cartas, maquiagem: sel.maquiagem });
     setResultado(r);
+    if (salaId && r.lookId) await registrarLookDaSala(salaId, r.lookId);
     return r;
   });
   const cartas = useMemo(() => bank.data?.cards ?? [], [bank.data]);

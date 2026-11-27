@@ -1,6 +1,6 @@
 "use client";
 /**
- * A detetive na cena 3D. Com o analógico (ou WASD), anda livre pelos corredores entre o ponto em que está e os vizinhos
+ * A detetive na cena 3D. Com as setas (Shift corre), o analógico ou WASD, anda livre pelos corredores entre o ponto em que está e os vizinhos
  * (lib/flair/detetive/andar-livre.ts), no sentido em que a câmera olhava quando o analógico saiu do centro; ao chegar perto de um vizinho, o passo vai ao servidor
  * (IR:<ponto>). Sem o analógico, quando o servidor a põe num ponto novo (clique na planta, no chão ou no botão), ela
  * desliza até lá, virada para onde anda. Com "reduzir movimento", salta. Extraído de detetive-cena-3d.tsx.
@@ -12,7 +12,8 @@ import type { Look3dPiece } from "@/components/three/common";
 import { NucleoAvatar, type Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { NA_MARCA, type Jogador } from "@/components/flair/nucleos/scene/andarilho";
 import { eixoDeAndar } from "@/lib/flair/entrada/eixo-de-andar";
-import { chegouEm, passoDaDetetive } from "@/lib/flair/detetive/andar-livre";
+import { chegouEm, CORRENDO, passoDaDetetive, VELOCIDADE } from "@/lib/flair/detetive/andar-livre";
+import { definirPosicao, estadoDoConsole } from "@/lib/flair/nucleos/controle/estado-do-console";
 import type { Retrato } from "@/lib/flair/detetive/types";
 
 const PARADO = { giro: 0, zoom: 0, poses: 0, desfilando: false };
@@ -51,16 +52,19 @@ export function DetetiveJogador({ r, pecas, protagonista, reduzido, alvo, vizinh
     if (!g.current) return;
     const s = solta.current;
     if (s.ponto !== r.ponto) solta.current = { ponto: r.ponto, andou: false, pedido: null };
-    const { mover, ativo } = eixoDeAndar();
+    // as setas (perfil console) ou o analógico de toque e WASD (eixo de andar)
+    const ctl = estadoDoConsole();
+    const eixo = eixoDeAndar();
+    const mover = Math.hypot(ctl.mover.x, ctl.mover.y) > 1e-3 ? ctl.mover : eixo.mover;
     const pos = g.current.position;
-    const empurra = livre && ativo && Math.hypot(mover.x, mover.y) > 1e-3;
+    const empurra = livre && Math.hypot(mover.x, mover.y) > 1e-3;
     if (!empurra) rumo.current = null;
     if (empurra) {
       if (rumo.current === null) {
         camera.getWorldDirection(DIRECAO);
         rumo.current = Math.atan2(DIRECAO.x, -DIRECAO.z);
       }
-      const novo = passoDaDetetive({ x: pos.x, z: pos.z }, mover, dt, rumo.current, p, pontos);
+      const novo = passoDaDetetive({ x: pos.x, z: pos.z }, mover, dt, rumo.current, p, pontos, ctl.correr ? CORRENDO : VELOCIDADE);
       const dx = novo.x - pos.x;
       const dz = novo.z - pos.z;
       if (Math.hypot(dx, dz) > 1e-4) g.current.rotation.y = Math.atan2(dx, dz);
@@ -86,6 +90,7 @@ export function DetetiveJogador({ r, pecas, protagonista, reduzido, alvo, vizinh
       jogador.current = { pos: NA_MARCA, andando: false };
     }
     alvo.current = { x: pos.x, z: pos.z, giro: (g.current.rotation.y * 180) / Math.PI };
+    definirPosicao(pos.x, pos.z);
   });
   return (
     <group ref={g} position={[p.x, 0, p.z]} rotation={[0, Math.PI, 0]} name="detetive">

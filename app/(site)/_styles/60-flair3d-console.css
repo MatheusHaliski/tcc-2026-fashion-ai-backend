@@ -6,6 +6,8 @@
   position: fixed;
   inset: var(--header-h) 0 0;
   z-index: 45;
+  /* quem o usa pode ter altura própria no quadro (o palco do Detective): fixo, ele segue só o inset */
+  height: auto;
   overflow: hidden;
   background: #0e0f14;
   color: #f4f2ee;

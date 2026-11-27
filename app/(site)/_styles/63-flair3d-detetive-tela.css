@@ -1,0 +1,146 @@
+/* ── FLAIR 3D · Fashion Detective no perfil console (components/flair/detetive/detetive-palco.tsx e detetive-hud.tsx):
+   o HUD mínimo (sala e objetivo numa linha, vida, relógio, recurso equipado, retícula e prompt, que usam as classes
+   da demo em 61-flair3d-detetive-demo.css) e o conteúdo dos painéis (o caso, o arsenal por cor, o painel de ações). */
+.dtv-palco .cst-cena .dtv-planta {
+  height: 100%;
+}
+
+.dtv-hud2 {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.dtv-hud2 button,
+.dtv-hud2 a,
+.dtv-hud2 .n3d-analogico {
+  pointer-events: auto;
+}
+
+.dtv-hud2-topo {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dtv-hud2-titulo {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--text-body);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 85%);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dtv-hud2-titulo b::after {
+  content: "·";
+  margin: 0 6px;
+  font-weight: 400;
+}
+
+.dtv-hud2-escondido {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #2f5e4a;
+}
+
+.dtv-hud2 .dmo-prompt .dtv-cor {
+  margin: 0;
+}
+
+.dtv-caso h3 {
+  margin: 0 0 4px;
+  font-size: var(--text-h3);
+}
+
+.dtv-caso p {
+  margin: 4px 0;
+}
+
+.dtv-caso dl {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.dtv-caso dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dtv-caso dt {
+  opacity: 0.75;
+}
+
+.dtv-caso dd {
+  margin: 0;
+}
+
+.dtv-caso-aviso {
+  padding: 8px 10px;
+  border-left: 3px solid #f2c230;
+  background: rgb(255 255 255 / 6%);
+}
+
+.dtv-caso-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dtv-arsenal {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dtv-arsenal li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dtv-arsenal li.is-vazio {
+  opacity: 0.45;
+}
+
+.dtv-arsenal b {
+  margin-left: auto;
+}
+
+/* a roda de recursos da partida (regra peça-recurso) entra no inventário, sem a posição de canto do palco */
+.dtv-recursos .n3d-recursos {
+  position: static;
+  width: auto;
+  max-width: none;
+  margin: 0;
+}
+
+/* o painel de ações e as folhas do caso sobre o fundo escuro do painel */
+.cst-painel .dtv-painel .btn,
+.cst-painel .dtv-caso .btn {
+  min-height: var(--touch);
+}
+
+.cst-painel .dtv-caderno li {
+  border-color: rgb(255 255 255 / 15%);
+}
+
+.cst-painel .dtv-mapa {
+  width: 100%;
+  height: auto;
+}

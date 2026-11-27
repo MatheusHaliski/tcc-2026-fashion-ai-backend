@@ -54,6 +54,13 @@ public enum NotificationType {
     MOMENT_GROUP_CREATED(NotificationCategory.SOCIAL, true),
     MOMENT_DEADLINE(NotificationCategory.SOCIAL, true),
     MOMENT_COMPLETED(NotificationCategory.ACHIEVEMENT, true),
+    /**
+     * FLAIR 3D multiplayer (V133): convite para uma sala, a vez da pessoa (aceite, lance ou partida da outra pessoa) e o
+     * resultado da sala para os dois lados. Desativáveis por tipo; o link vai em payload.href.
+     */
+    FLAIR3D_CONVITE(NotificationCategory.SOCIAL, true),
+    FLAIR3D_VEZ(NotificationCategory.SOCIAL, true),
+    FLAIR3D_RESULTADO(NotificationCategory.ACHIEVEMENT, true),
     /** Garment Delivery (retirado; projeto futuro em docs/futuro/garment-delivery): mantido só para ler notificações antigas. */
     GARMENT_DELIVERY(NotificationCategory.SYSTEM, true);
 

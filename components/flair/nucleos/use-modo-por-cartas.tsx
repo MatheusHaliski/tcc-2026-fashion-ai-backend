@@ -14,7 +14,7 @@ import { EsportePalco } from "@/components/flair/esporte/esporte-palco";
 import { alvoDaCapita } from "@/lib/flair/esporte/capita-posicao";
 import { alvoComTempo } from "@/lib/flair/esporte/tempo";
 import { LANCE_MS, useEsporte, type EsporteNaTela } from "@/components/flair/esporte/use-esporte";
-import { cartasDoDetetive, DetetivePainel } from "@/components/flair/detetive/detetive-painel";
+import { cartasDoDetetive } from "@/components/flair/detetive/detetive-painel";
 import { DetetivePalco } from "@/components/flair/detetive/detetive-palco";
 import type { Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import type { AcionamentoPedido } from "@/components/flair/nucleos/nucleo-trigger";
@@ -51,6 +51,8 @@ export interface ModoPorCartas {
   esporte: EsporteNaTela;
   /** o Fashion Detective do caso novo (o palco fica a sala mesmo no resultado, para a cutscene final) */
   detetive: boolean;
+  /** o palco é a tela inteira, com controles próprios (perfil console): a faixa de baixo e o teclado da tela saem */
+  telaPropria: boolean;
 }
 
 export function useModoPorCartas(e: Entrada): ModoPorCartas {
@@ -61,6 +63,7 @@ export function useModoPorCartas(e: Entrada): ModoPorCartas {
     return {
       esporte,
       detetive: false,
+      telaPropria: false,
       palco: <EsportePalco modalidade={esporte.modalidade} jogadas={esporte.jogadas} duracao={LANCE_MS} uniforme={esporte.uniforme} fim={e.momento === "RESULTADO"} semente={e.semente}
         capita={!!esporte.situacao && !e.ocupado}>{e.extra}</EsportePalco>,
       acao: <EsportePainel modalidade={esporte.modalidade} jogadas={esporte.jogadas} situacao={esporte.situacao} mao={esporte.mao} ocupado={e.ocupado} erro={e.erro}
@@ -69,12 +72,18 @@ export function useModoPorCartas(e: Entrada): ModoPorCartas {
   }
   if (retrato && !preparando) {
     const onAcao = (alvo: string, cardId?: string) => e.acionar({ tipo: "CARTA", cardId, alvo });
+    // a mão, as ações, o enigma e a acusação ficam no painel da direita do palco (detetive-paineis.tsx)
+    const telaPropria = e.momento === "ACAO";
     return {
       esporte,
       detetive: true,
-      palco: <DetetivePalco r={retrato} pecas={e.pecas} protagonista={e.protagonista} semente={e.semente ?? 1} ocupado={e.ocupado} onAcao={onAcao}>{e.extra}</DetetivePalco>,
-      acao: <DetetivePainel r={retrato} mao={cartasDoDetetive(retrato.mao, e.cartas, e.itens)} ocupado={e.ocupado} erro={e.erro} onAcao={onAcao} />,
+      telaPropria,
+      palco: (
+        <DetetivePalco r={retrato} pecas={e.pecas} protagonista={e.protagonista} semente={e.semente ?? 1} ocupado={e.ocupado} onAcao={onAcao}
+          mao={cartasDoDetetive(retrato.mao, e.cartas, e.itens)} erro={e.erro} telaPropria={telaPropria}>{e.extra}</DetetivePalco>
+      ),
+      acao: null,
     };
   }
-  return { esporte, detetive: false, palco: null, acao: null };
+  return { esporte, detetive: false, telaPropria: false, palco: null, acao: null };
 }

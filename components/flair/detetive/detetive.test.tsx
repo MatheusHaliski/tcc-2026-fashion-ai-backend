@@ -90,17 +90,16 @@ describe("faixa de ações", () => {
 });
 
 describe("palco", () => {
-  it("HUD com Pistas N de 12, caderno com o texto exato, mapa e cutscene com pular", () => {
+  it("cutscene com pular; o caderno com o texto exato e o mapa ficam no painel do caso (C)", () => {
     renderApp(<DetetivePalco r={retrato({ cutscene: "ABERTURA:ENTRADA" })} pecas={[]} protagonista={MODELO_CASA} semente={3} ocupado={false} onAcao={vi.fn()} />);
     const cena = screen.getByTestId("detetive-cutscene");
     expect(cena.textContent).toContain("Palácio Lumen, 21h50.");
     fireEvent.click(within(cena).getByTestId("detetive-pular"));
     expect(screen.queryByTestId("detetive-cutscene")).toBeNull();
-    fireEvent.click(screen.getByTestId("detetive-abre-caderno"));
-    expect(screen.getByTestId("detetive-caderno").textContent).toContain("Pistas 1 de 12");
+    fireEvent.click(screen.getByTestId("painel-esquerda-abrir"));
+    fireEvent.click(screen.getByRole("tab", { name: "Pistas" }));
     expect(screen.getByTestId("detetive-caderno").textContent).toContain("Lista da recepção — 21h05: entregue à imprensa um envelope sem remetente, em papel timbrado da Maison Varela.");
-    fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Mapa" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Mapa" }));
     expect(screen.getByTestId("detetive-mapa")).toBeTruthy();
   });
 });
