@@ -157,16 +157,74 @@ async function shape(h, page) {
   return { fit: 3, sculptStrokes: 4 };
 }
 
-exports.run = async function run({ page, out, state }) {
-  const h = helpers(page, out);
+async function extras(h, page) {
+  await h.tab("Acabamentos");
+  await h.view("Frente");
+  await h.part("Corpo");
+  await page.getByRole("button", { name: /^Borda 1 ·/ }).click();
+  await h.press("Adicionar pesponto");
+  await h.part("Manga esquerda");
+  await page.getByRole("button", { name: /^Borda 1 ·/ }).click();
+  await h.press("Adicionar pesponto");
+  await h.part("Corpo");
+  await h.press("Colocar aviamentos na peça");
+  for (const y of [0.42, 0.5, 0.58]) await h.click([0.5, y]);
+  await h.press("Rebite");
+  await h.click([0.4, 0.64]);
+  await h.click([0.6, 0.64]);
+  await h.press("Parar de colocar");
+  await h.shot("22-pespontos-botoes-rebites");
+  await h.press("Quente");
+  await page.getByLabel("Mostrar manequim de costura (só na prévia)").check();
+  await h.view("Perspectiva");
+  await h.press("Enquadrar (F)");
+  await h.shot("23-luz-quente-manequim");
+  const download = page.waitForEvent("download");
+  await h.press("Capturar miniatura (PNG)");
+  await (await download).saveAs(path.join(h.out, "24-miniatura-capturada.png"));
+  await h.full("25-painel-acabamentos");
+  await page.getByLabel("Mostrar manequim de costura (só na prévia)").uncheck();
+  return { stitches: 2, accessories: 5, thumbnail: true };
+}
+
+async function exported(h, page, state, inspect) {
+  await page.getByRole("button", { name: /Tipo de look final/ }).click();
+  await page.getByRole("option", { name: "Unissex" }).click();
+  await h.press("Salvar");
+  await page.getByText(/Versão \d+/).first().waitFor();
+  await page.waitForFunction(() => !document.body.innerText.includes("Alterações não salvas"));
+  const download = page.waitForEvent("download");
+  await h.press("Exportar arquivo 3D final");
+  const file = path.join(h.out, "camiseta-editada.glb");
+  await (await download).saveAs(file);
+  const bytes = fs.readFileSync(file);
+  const { root } = inspect(bytes);
+  const summary = {
+    bytes: bytes.length, images: (root.images || []).length, extensions: root.extensionsUsed || [],
+    nodes: root.nodes.map((n) => n.name).filter(Boolean),
+    savedGarmentSections: Object.keys(state.saves.at(-1).document.garment || {}),
+  };
+  if (!summary.images || !summary.extensions.includes("KHR_materials_sheen")) throw Error("GLB exportado sem texturas/tecido: " + JSON.stringify(summary));
+  await page.getByLabel("Importar arquivo 3D (GLB, até 8 MB)").setInputFiles({ name: "camiseta-editada.glb", mimeType: "model/gltf-binary", buffer: bytes });
+  await page.getByText("reaberto.glb", { exact: false }).waitFor();
+  await h.view("Frente");
+  await h.press("Enquadrar (F)");
+  await h.shot("26-glb-exportado-reaberto");
+  await h.view("Perspectiva");
+  await h.shot("27-glb-reaberto-perspectiva");
+  return summary;
+}
+
+exports.run = async function run({ page, out, state, inspect }) {
+  const h = { ...helpers(page, out), out };
   await page.getByLabel("Salvar automaticamente").uncheck();
   await h.view("Frente");
   await h.press("Enquadrar (F)");
   await h.shot("00-camiseta-base");
   const results = {};
   const only = (process.env.STEPS || "material,paint,print,shape,extras,export").split(",");
-  const all = { material, paint, print, shape };
-  for (const [name, step] of Object.entries(all)) if (only.includes(name)) results[name] = await step(h, page, state);
+  const all = { material, paint, print, shape, extras, export: exported };
+  for (const [name, step] of Object.entries(all)) if (only.includes(name)) results[name] = await step(h, page, state, inspect);
   fs.writeFileSync(path.join(out, "last-document.json"), JSON.stringify(state.saves.at(-1)?.document ?? null).slice(0, 2000));
   return results;
 };
