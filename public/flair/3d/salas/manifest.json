@@ -413,5 +413,35 @@
         "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
       }
     ]
+  },
+  {
+    "slug": "detetive-atelie",
+    "title": "Ateliê (high poly)",
+    "family": "detetive",
+    "games": [
+      "FASHION_DETECTIVE"
+    ],
+    "author": "FashionAI",
+    "source": "scripts/blender3d_high/salas",
+    "license": "Própria",
+    "hash": "fc0df8e41bad64ee",
+    "environment": "/flair/3d/salas/detetive-atelie-ambiente.webp",
+    "levels": {
+      "alto": {
+        "url": "/flair/3d/salas/detetive-atelie.glb",
+        "triangles": 61916,
+        "calls": 49,
+        "instanced": 170,
+        "bytes": 1100336
+      },
+      "medio": {
+        "url": "/flair/3d/salas/detetive-atelie-medio.glb",
+        "triangles": 44780,
+        "calls": 49,
+        "instanced": 170,
+        "bytes": 731436
+      }
+    },
+    "imports": []
   }
 ]
