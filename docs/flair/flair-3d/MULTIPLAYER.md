@@ -42,8 +42,10 @@ Continua igual: cada jogo abre na escolha de rodada/deck ("Treinar contra a Casa
 
 ## FLAIR 2D e desafios
 
-- Duelo 1×1 (`classic-modes.tsx`): o campo de tag virou a mesma busca; o pedido manda `opponentId`. A API antiga
-  (`opponent` = @usuário ou CASA) continua aceita.
+- Duelo 1×1 (`classic-modes.tsx`): o campo de tag saiu. A main trouxe em paralelo o `FaiNetworkPicker` (busca na rede
+  com seguindo/seguidores/mútuos, manda o @ escolhido) e ele ficou no merge. O servidor aceita também `opponentId`
+  (`FlairDueloOponente`: bloqueio, conta de teste e 13+ conferidos), que é o que `EscolherAdversario` manda; unificar
+  os dois seletores num só é o próximo passo. A API antiga (`opponent` = @usuário ou CASA) continua aceita.
 - Desafios (`challenge-start-dialog.tsx`): os convidados saem da busca (ids), não de texto separado por vírgula; a API
   (`invitees: UUID[]`) não mudou.
 
