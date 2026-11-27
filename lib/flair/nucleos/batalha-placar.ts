@@ -59,7 +59,24 @@ function doTreino(r: NucleoResultado): RodadaDaBatalha | null {
   if (!casa) return null;
   const conta = objeto(r.eventos.find((e) => e.codigo === "CONTA_DA_BATALHA")?.valor);
   const desafio = r.eventos.find((e) => e.codigo === "DESAFIO")?.valor;
-  return daRodada({ rodada: 1, desafio, voce: r.pontos, adversario: casa.nota, conta, cansadas: conta?.cansadas, familia: casa.familia, look: casa.look });
+  // a nota da rodada sem a execução: a do fecho (a nota final segue o desfecho e pode não ser a da rodada)
+  const voce = fechoDaBatalha(r)?.rodadas ?? r.pontos;
+  return daRodada({ rodada: 1, desafio, voce, adversario: casa.nota, conta, cansadas: conta?.cansadas, familia: casa.familia, look: casa.look });
+}
+
+/** O fecho da partida (rodada 8g): a soma da pessoa já com a execução do desfile final, a da casa e as duas parcelas. */
+export interface FechoDaBatalha {
+  voce: number;
+  adversario: number;
+  rodadas: number;
+  execucao: number;
+}
+
+/** O fecho que o servidor mandou no resultado final (SOMA_DA_BATALHA com a execução); nulo antes do fim. */
+export function fechoDaBatalha(r: NucleoResultado | null | undefined): FechoDaBatalha | null {
+  const v = objeto(r?.eventos.find((e) => e.codigo === "SOMA_DA_BATALHA")?.valor);
+  if (!v || v.execucao == null) return null;
+  return { voce: Number(v.voce ?? 0), adversario: Number(v.adversario ?? 0), rodadas: Number(v.rodadas ?? 0), execucao: Number(v.execucao) };
 }
 
 /**

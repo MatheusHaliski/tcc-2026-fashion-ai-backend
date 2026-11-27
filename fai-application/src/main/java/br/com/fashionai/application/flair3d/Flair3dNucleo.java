@@ -47,4 +47,13 @@ public interface Flair3dNucleo {
     default List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
         return List.of();
     }
+
+    /**
+     * O fecho da partida depois da execução no percurso ({@link Flair3dExecucao}): {@code comNota} já traz a nota do
+     * look somada à da execução ({@code execucao}, de -15 a +15) e o rótulo de aprovado/reprovado. O jogo que decide o
+     * desfecho de outro jeito (a Batalha de Looks, pela soma contra o adversário) refaz o desfecho com a execução dentro.
+     */
+    default Resultado comExecucao(Resultado look, Resultado comNota, int execucao, Contexto contexto) {
+        return comNota;
+    }
 }

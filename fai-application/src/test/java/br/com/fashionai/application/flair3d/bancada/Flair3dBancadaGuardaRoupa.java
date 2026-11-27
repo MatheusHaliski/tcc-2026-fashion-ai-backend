@@ -44,6 +44,10 @@ final class Flair3dBancadaGuardaRoupa {
             {"ACE", "Colar branco", "sub:necklace", "color:white", "occasion:wedding", "material:metal", "style:glam", "tier:ESPECIAL", "ovr:90"},
     };
 
+    /** O Hype público (HYP) de algumas cartas, para a faixa de Hype aparecer na tela; as outras ficam sem sinal. */
+    private static final Map<String, Integer> HYPE = Map.of("Blazer preto", 78, "Jeans azul", 45, "Bota preta", 63, "Bolsa preta", 92,
+            "Colar branco", 24, "Camisa azul", 38);
+
     /** As cartas da pessoa, na ordem da tabela. */
     static List<FlairCardInstance> cartas(UUID dono) {
         List<FlairCardInstance> out = new ArrayList<>();
@@ -73,6 +77,7 @@ final class Flair3dBancadaGuardaRoupa {
         m.put("brandName", c.getBrandName());
         m.put("category", c.getCategory());
         m.put("subcategory", c.getSubcategory());
+        m.put("hype", HYPE.containsKey(c.getName()) ? Map.of("HYP", HYPE.get(c.getName())) : null);
         m.put("priceVerified", false);
         m.put("state", "AVAILABLE");
         m.put("tradeable", true);
