@@ -47,7 +47,7 @@ export function tabelaDeBasquete(em: Em, metal: string, tabela: string, aro: str
     caixa(aro, [0.05, 0.42, 0.02], [0.3, 3.12, 0.03]),
     toro(aro, 0.23, 0.02, [0, 3.05, 0.28], [90, 0, 0], 20),
     cilindro(rede, [0.23, 0.15], 0.4, [0, 2.85, 0.28], undefined, 10),
-  ]);
+  ], { metal, tabela, aro, rede });
 }
 
 /** Barreira de atletismo numa raia. */

@@ -10,7 +10,7 @@ import {conservationLabel,washingDetails} from '@/lib/api/piece-references';
 /** Shared factual block for the published expanded card and its unsaved editor preview. */
 export function PieceDetailFacts({piece,excludeFashionMeta=false}:{piece:PieceView;excludeFashionMeta?:boolean}){
  const {t}=useI18n();
- const {washing,additionalCare}=washingDetails(piece);
+ const {tipo,washing,additionalCare}=washingDetails(piece);
  const rows=([
   [t('common.category'),[CATEGORY_LABEL[piece.category],subcategoryLabel(piece.subcategory)].filter(Boolean).join(' · ')],
   [t('common.color'),excludeFashionMeta?null:label(piece.color)], [t('common.size'),sizeLabel(piece.size)],
@@ -22,6 +22,7 @@ export function PieceDetailFacts({piece,excludeFashionMeta=false}:{piece:PieceVi
   [t('pieceReferences.condition.label'),conservationLabel(piece,t)],
   [t('pieceReferences.colecao.label'),piece.colecao?.nome??null],
   [t('pieceReferences.intensidade.label'),piece.intensidadeTermica?.nome??null],
+  [t('pieceReferences.tipoLavagem.label'),tipo],
   [t('pieceReferences.washing'),washing],
   [t('pieceReferences.additionalCare'),additionalCare],
   [t('common.price'),!piece.forSale&&informedPrice(piece.price)!=null?<Price value={piece.price}/>:null],

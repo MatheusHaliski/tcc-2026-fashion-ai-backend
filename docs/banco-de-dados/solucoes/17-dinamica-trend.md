@@ -1,5 +1,18 @@
 # Exercício 17 — Tipo de dinâmica da Trend
 
+> **Conferido e completado em 26/11/2026 (Implementado em 26/11/2026).** A base já existia e foi mantida:
+> `community_trends.kind` (VARCHAR validado contra cinco códigos em `CommunityTrendService.KINDS`), `POST` e `GET` com
+> filtro em `/api/challenges/trends` e `POST /{id}/publish`. **Sem mudança de schema** (a V122 ficou sem uso): `kind`
+> continua sem FK e sem CHECK, como o enunciado descreve.
+> - **Falha corrigida:** `POST /api/challenges/trends` sem o campo `kind` derrubava em erro 500
+>   (`List.of(...).contains(null)` lança exceção). Agora volta 400 `TREND_INVALIDA`, como qualquer código inválido.
+> - **Tela:** a escolha e o filtro oferecem só as dinâmicas que o servidor informa em `kinds`; o card mostra a data de
+>   publicação além do prazo; um código que a tela não conhece aparece como "Dinâmica <código>" em vez de uma chave crua.
+> - **Não feito:** não há edição de rascunho (PUT) nem tela de "meus rascunhos": a tela cria o rascunho e publica em
+>   seguida, e só repete a publicação do mesmo rascunho se ela falhar.
+> - Testes: `CommunityTrendKindTest` (os cinco códigos, 400 para o que não é código, lista só de publicadas na janela,
+>   publicação que paga uma vez, rascunho alheio), `CommunityTrendServiceTest`, `community-trends-kind.test.tsx`.
+
 **Situação na revisão `9f5512a77`:** Base implementada: kind validado contra cinco códigos, com lista filtrável e publicação separada.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

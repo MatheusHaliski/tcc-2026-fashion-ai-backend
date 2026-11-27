@@ -49,7 +49,7 @@ export const SALA_DRESS_FIGHTER: Sala = {
     ceu: ceu("#07060F", "#2A1B4A"),
   },
   zonas: {
-    avatar: { x: [-0.9, 0.9], z: [-2.1, 2.1], marca: "marca", altura: 0 },
+    avatar: { x: [-0.9, 0.9], z: [-2.1, 2.1], marca: "marca", altura: 0, cercada: true },
     personagens: [
       { x: [1, 2.6], z: [-2.1, 1] },
       { x: [-3.6, -2.8], z: [-2, 1] },

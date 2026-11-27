@@ -4,6 +4,7 @@
  */
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 import { SALA_AROUND_THE_WORLD } from "@/lib/flair/nucleos/scene/salas/around-the-world";
+import { LUGARES_DA_VIAGEM } from "@/lib/flair/nucleos/scene/salas/around-the-world-regioes";
 import { SALA_BATALHA_LOOKS } from "@/lib/flair/nucleos/scene/salas/batalha-looks";
 import { SALA_BOUTIQUE_3D } from "@/lib/flair/nucleos/scene/salas/boutique-3d";
 import { SALA_CLUBE_CORACAO } from "@/lib/flair/nucleos/scene/salas/clube-coracao";
@@ -20,6 +21,8 @@ import { SALA_PERSONAGEM_FILME } from "@/lib/flair/nucleos/scene/salas/personage
 import { SALA_PILOTO_FAVORITO } from "@/lib/flair/nucleos/scene/salas/piloto-favorito";
 import { SALA_ROAD_TO_GLORY } from "@/lib/flair/nucleos/scene/salas/road-to-glory";
 import { SALA_SUPER_HEROI } from "@/lib/flair/nucleos/scene/salas/super-heroi";
+import { SALAS_DE_USO } from "@/lib/flair/nucleos/scene/salas/fase-de-uso";
+import { SALA_DE_USO } from "@/lib/flair/nucleos/movimento/fase-de-uso";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
 
 export const SALAS: Record<NucleoCodigo, Sala> = {
@@ -41,15 +44,20 @@ export const SALAS: Record<NucleoCodigo, Sala> = {
 };
 
 /**
- * Salas que mudam dentro do mesmo jogo, pelo código que a partida dá: o salão da vez no FASHION_DETECTIVE e a
- * modalidade no FASHION_SPORTS. Todas dividem as zonas e os objetos com id da sala do registro.
+ * Salas que mudam dentro do mesmo jogo, pelo código que a partida dá: o salão da vez no FASHION_DETECTIVE, a
+ * modalidade no FASHION_SPORTS e o lugar da etapa (a região, o andar, a estação) no AROUND_THE_WORLD. Todas dividem as zonas e os objetos com id da sala do registro.
  */
 export const VARIANTES: Partial<Record<NucleoCodigo, Record<string, Sala>>> = {
   FASHION_DETECTIVE: SALOES_DO_DETETIVE,
   FASHION_SPORTS: QUADRAS,
+  AROUND_THE_WORLD: LUGARES_DA_VIAGEM,
 };
 
-/** A sala do jogo; com variante conhecida, a sala dela. */
+/**
+ * A sala do jogo; com variante conhecida, a sala dela. A fase de uso dos jogos de zonas (variante "USO") tem o lugar
+ * próprio, com outras zonas (o piso inteiro é do avatar): fica fora de VARIANTES, que dividem as zonas da sala do jogo.
+ */
 export function salaDe(codigo: NucleoCodigo, variante?: string | null): Sala {
+  if (variante === SALA_DE_USO && SALAS_DE_USO[codigo]) return SALAS_DE_USO[codigo];
   return (variante && VARIANTES[codigo]?.[variante]) || SALAS[codigo];
 }

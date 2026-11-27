@@ -36,7 +36,8 @@ final class SealPolicyParser {
                 if (o instanceof Map<?, ?> r) {
                     int count = r.get("count") instanceof Number n ? n.intValue() : 1;
                     rules.add(new Rule(upper(r.get("quantifier"), "AT_LEAST"), Math.max(1, count), text(r.get("color")),
-                            text(r.get("brand")), text(r.get("category")), text(r.get("subcategory")), parseEnum(HypeLevel.class, r.get("hypeMin"))));
+                            text(r.get("brand")), text(r.get("category")), text(r.get("subcategory")), parseEnum(HypeLevel.class, r.get("hypeMin")),
+                            SealPolicyBrandReference.parse(r.get("brandReference"))));
                 }
             }
         }

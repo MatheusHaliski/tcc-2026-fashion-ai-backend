@@ -1,0 +1,20 @@
+{
+ "produto": "Powerblend Oversized Sweatpants, C Logo",
+ "marca": "Champion",
+ "url_oficial": "https://www.champion.com/products/champion-powerblend-oversized-sweatpants-c-logo",
+ "subcategoria": "sweatpants",
+ "tamanho": "40",
+ "sexo": "MASCULINO",
+ "tecido": {
+  "tipo": "moletom",
+  "cor": "#9a9a9d",
+  "gramatura": 380
+ },
+ "fechamento": "cordao",
+ "bolsos": [
+  "faca"
+ ],
+ "observacao": "o logo C não é modelado. Cor não conferida (cinza mescla escolhido).",
+ "caimento": "regular",
+ "ribana": false
+}

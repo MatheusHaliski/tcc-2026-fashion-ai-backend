@@ -7,7 +7,8 @@
  * avatar — rastro de agilidade, sombra de furtividade, brilho de carisma. As coordenadas são as do motor (metros):
  * entrada ao sul (z = 5), portaria em z = 0, cordão VIP em z = −3, joia em (0, −5,5), crachá em (4, −2).
  */
-import {Suspense,useMemo,useRef} from 'react';
+import {Suspense,useMemo,useRef,useState} from 'react';
+import {GenteDoSalao} from '@/components/flair/afterparty-gente';
 import {Canvas,useFrame,useThree} from '@react-three/fiber';
 import {ContactShadows} from '@react-three/drei';
 import * as THREE from 'three';
@@ -28,25 +29,25 @@ export const LIGHT={PENUMBRA:{ambient:.22,chandelier:.45,fog:14},SALAO:{ambient:
 /** Lugares dos convidados, do mais perto da entrada para dentro; o deck decide quantos aparecem. */
 export const GUEST_SPOTS:[number,number][]=[[-3.4,4.2],[3.6,3.6],[-4.2,1.6],[4.3,1.2],[-2.6,-1.8],[2.8,-1.4],[-4,-4.2],[4,-4.6],[-1.8,6.2],[2.2,6.4],[-4.6,-6.4],[4.6,-6.2]];
 
-function Person({x,z,color='#111624',guard=false,name}:{x:number;z:number;color?:string;guard?:boolean;name?:string}){
- return <group position={[x,0,z]} name={name}><mesh position={[0,.95,0]} castShadow><capsuleGeometry args={[.23,.7,5,10]}/><meshStandardMaterial color={color} metalness={.15} roughness={.6}/></mesh><mesh position={[0,1.65,0]} castShadow><sphereGeometry args={[.17,12,10]}/><meshStandardMaterial color="#b9977a"/></mesh>{[-.13,.13].map(v=><mesh key={v} position={[v,.28,0]} castShadow><boxGeometry args={[.15,.55,.18]}/><meshStandardMaterial color={color}/></mesh>)}{guard&&<><mesh position={[0,1.67,.16]}><boxGeometry args={[.32,.07,.05]}/><meshStandardMaterial color="#000"/></mesh><mesh position={[.1,1.15,.24]}><boxGeometry args={[.08,.11,.02]}/><meshStandardMaterial color="#d5bd73" emissive="#6b5522"/></mesh></>}</group>;
+function Person({x,z,color='#111624',guard=false,name,hide=false}:{x:number;z:number;color?:string;guard?:boolean;name?:string;hide?:boolean}){
+ return <group position={[x,0,z]} name={name} visible={!hide}><mesh position={[0,.95,0]} castShadow><capsuleGeometry args={[.23,.7,5,10]}/><meshStandardMaterial color={color} metalness={.15} roughness={.6}/></mesh><mesh position={[0,1.65,0]} castShadow><sphereGeometry args={[.17,12,10]}/><meshStandardMaterial color="#b9977a"/></mesh>{[-.13,.13].map(v=><mesh key={v} position={[v,.28,0]} castShadow><boxGeometry args={[.15,.55,.18]}/><meshStandardMaterial color={color}/></mesh>)}{guard&&<><mesh position={[0,1.67,.16]}><boxGeometry args={[.32,.07,.05]}/><meshStandardMaterial color="#000"/></mesh><mesh position={[.1,1.15,.24]}><boxGeometry args={[.08,.11,.02]}/><meshStandardMaterial color="#d5bd73" emissive="#6b5522"/></mesh></>}</group>;
 }
 
 /** Segurança da portaria olhando para a entrada, com a lanterna: cone menor na penumbra, maior com holofotes. */
-function Guard({x,distracted,zoneMul}:{x:number;distracted:boolean;zoneMul:number}){
+function Guard({x,distracted,zoneMul,hide}:{x:number;distracted:boolean;zoneMul:number;hide:boolean}){
  const target=useMemo(()=>new THREE.Object3D(),[]);
- return <group name="heist-guard"><Person x={x} z={-.1} guard color={distracted?C.guardDistracted:C.guard}/>
+ return <group name="heist-guard"><Person x={x} z={-.1} guard hide={hide} color={distracted?C.guardDistracted:C.guard}/>
   <primitive object={target} position={[x*.4,0,2.6]}/>
   {!distracted&&<spotLight position={[x,1.5,0]} target={target} angle={.32*zoneMul} penumbra={.6} intensity={6*zoneMul} distance={6} color="#fff3d6"/>}
  </group>;
 }
 
 /** Convidados da festa (cobertura): balançam devagar; com movimento reduzido ficam parados. */
-function Guests({count,reduced}:{count:number;reduced:boolean}){
+function Guests({count,reduced,hide}:{count:number;reduced:boolean;hide:boolean}){
  const ref=useRef<THREE.Group>(null);
  const palette=['#c06090','#2d55c9','#e7b75f','#1baf7a','#7a4a9a','#d9d2c4'];
  useFrame(({clock})=>{if(reduced||!ref.current)return;ref.current.children.forEach((g,i)=>{g.position.y=Math.sin(clock.elapsedTime*1.6+i)*.02;g.rotation.y=Math.sin(clock.elapsedTime*.4+i*1.7)*.5;});});
- return <group ref={ref} name="heist-guests">{GUEST_SPOTS.slice(0,count).map(([x,z],i)=><group key={i} name="heist-guest"><Person x={x} z={z} color={palette[i%palette.length]}/></group>)}</group>;
+ return <group ref={ref} name="heist-guests">{GUEST_SPOTS.slice(0,count).map(([x,z],i)=><group key={i} name="heist-guest"><Person x={x} z={z} hide={hide} color={palette[i%palette.length]}/></group>)}</group>;
 }
 
 /** Cordão de veludo entre postes dourados; aberto, a corda cai no chão ao lado do último poste. */
@@ -167,7 +168,7 @@ function Searchlights({reduced}:{reduced:boolean}){
 }
 
 export function HeistWorld({session,look,onTarget}:{session:AdventureSession;look:Look3d|null;onTarget:(x:number,z:number)=>void}){
- const {t}=useI18n();const reduced=useReducedMotion();const s=session.state;const now=session.serverTime;const mods=modsOf(s);const L=LIGHT[mods.light];
+ const {t}=useI18n();const reduced=useReducedMotion();const [gente,setGente]=useState(false);const s=session.state;const now=session.serverTime;const mods=modsOf(s);const L=LIGHT[mods.light];
  const active=s.activeUntil>now&&s.activeDeckId!==null;
  const vip=s.badge||active&&['VIP','EVENT_VIP'].includes(s.role)||s.distractionUntilLeft>now&&s.distractionUntilRight>now||vipRouteLeft(session)>0;
  const entry=vip||active&&s.role==='GUEST';
@@ -204,9 +205,11 @@ export function HeistWorld({session,look,onTarget}:{session:AdventureSession;loo
   <VelvetRope x0={-3} x1={3} z={0} open={entry} name="heist-rope-gate"/>
   <VelvetRope x0={-3} x1={3} z={-3} open={vip} name="heist-rope-vip"/>
   <SightZone zoneMul={mods.zoneMul} seen={seen&&s.status==='ACTIVE'}/>
-  <Guard x={-1.4} distracted={s.distractionUntilLeft>now} zoneMul={mods.zoneMul}/><Guard x={1.4} distracted={s.distractionUntilRight>now} zoneMul={mods.zoneMul}/>
+  <Guard x={-1.4} distracted={s.distractionUntilLeft>now} zoneMul={mods.zoneMul} hide={gente}/><Guard x={1.4} distracted={s.distractionUntilRight>now} zoneMul={mods.zoneMul} hide={gente}/>
+  {/* os seguranças e os convidados como gente; as figuras simples ficam só até a primeira pessoa entrar */}
+  <GenteDoSalao segurancas={[{x:-1.4,z:-.1,distraido:s.distractionUntilLeft>now},{x:1.4,z:-.1,distraido:s.distractionUntilRight>now}]} convidados={GUEST_SPOTS.slice(0,mods.guests)} reduzido={reduced} onPronta={()=>setGente(true)}/>
   <ServiceDoor x={HALL.minX+.06} label={t('afterparty.scene.staff')}/><ServiceDoor x={HALL.maxX-.06} label={t('afterparty.scene.staff')}/>
-  <Guests count={mods.guests} reduced={reduced}/>
+  <Guests count={mods.guests} reduced={reduced} hide={gente}/>
   <BadgeVanity taken={s.badge}/>
   <JewelDisplay taken={s.item} reduced={reduced}/>
   <Player session={session} look={look} mods={mods}/>

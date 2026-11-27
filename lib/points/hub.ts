@@ -15,7 +15,7 @@ const demo = (id: PointsModeId, seconds: number, recorded = true): HubDemo => ({
 export const POINTS_MODES: PointsMode[] = [
   { id: "balance", group: "balance", href: "/points/saldo", guide: "points.balance", demo: demo("balance", 12) },
   { id: "earn", group: "earn", href: "/points/ganhar", guide: "points.earn", demo: demo("earn", 13) },
-  // a gravação da loja mostrava a loja do quarto (saiu em 15/11/2026): sem vídeo até gravar a loja física
+  // a gravação da loja mostrava a loja do quarto (saiu em 15/11/2026): sem vídeo até gravar a Loja FAI Points
   { id: "store", group: "spend", href: "/points/loja", guide: "points.fai", demo: demo("store", 11, false) },
   { id: "statement", group: "history", href: "/notifications?cat=POINTS", guide: "points.statement", demo: demo("statement", 12) },
 ];

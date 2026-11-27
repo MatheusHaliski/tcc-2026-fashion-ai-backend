@@ -49,7 +49,7 @@ export type AcaoDeCarta =
   | "PULAR";
 
 /** Acionamento pela pessoa: um por jogo, no momento em que a tabela do desenho permite. */
-export type AcionamentoTipo = "ESPECIAL" | "ESPELHO" | "TROCA" | "RESPOSTA" | "MERCADO" | "CARTA" | "JOGADA" | "LANCE";
+export type AcionamentoTipo = "ESPECIAL" | "ESPELHO" | "TROCA" | "RESPOSTA" | "MERCADO" | "CARTA" | "JOGADA" | "LANCE" | "EXECUCAO";
 
 export interface Acionamento {
   tipo: AcionamentoTipo;

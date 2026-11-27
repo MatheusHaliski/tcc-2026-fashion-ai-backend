@@ -24,6 +24,9 @@ import type { NucleoCodigo, NucleoPersonagem } from "@/lib/flair/nucleos/types";
 /** O corpo inteiro (a avatar ou um figurante), sem a passada de sombra: a sombra desenha tudo outra vez. */
 export const CORPO_INTEIRO = { triangulos: TRIANGULOS_POR_PESSOA.humano / 2, chamadas: 13 } as const;
 /** As pessoas leves de uma cena: os triângulos de cada uma e as chamadas de todas juntas (malhas instanciadas). */
+// A conta usa as cápsulas de reserva, que é o que o teste consegue montar sem rede. Na tela, o corpo leve é o humano
+// modelado no motor Blender (pessoa-leve.glb: 1072 triângulos e oito chamadas para todas as pessoas juntas): a cena
+// mais cheia, a Passarela, vai de 15 mil para 25 mil triângulos, dentro do teto de todas as qualidades.
 export const CORPO_LEVE = { triangulos: TRIANGULOS_POR_PESSOA.torcida, chamadasPorCena: 5 } as const;
 
 /**

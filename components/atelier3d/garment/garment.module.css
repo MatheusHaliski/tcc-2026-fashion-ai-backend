@@ -1,0 +1,114 @@
+.studio {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  min-width: 0;
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.tabs button[aria-selected="true"] {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: start;
+}
+.group {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.field input[type="range"] {
+  width: 100%;
+  accent-color: var(--ink);
+}
+.field output {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted, inherit);
+}
+.color {
+  width: 100%;
+  min-height: 2.25rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.15rem;
+}
+.choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.choice legend {
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+.choice button[aria-pressed="true"] {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.swatch {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  margin-inline-end: 0.35rem;
+  vertical-align: -0.1rem;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.layers {
+  display: grid;
+  gap: 0.35rem;
+}
+.layer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 0.5rem;
+}
+.layer[aria-current="true"] {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.thumb {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 0.4rem;
+  border: 1px solid var(--line-soft);
+}
+.preview {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line-soft);
+}
+.hint {
+  margin: 0;
+}

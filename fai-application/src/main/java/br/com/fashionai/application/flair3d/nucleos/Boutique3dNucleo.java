@@ -9,20 +9,32 @@ import br.com.fashionai.application.flair3d.Definicao.Obrigatoria;
 import br.com.fashionai.application.flair3d.Definicao.Regra;
 import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
+import br.com.fashionai.application.flair3d.Flair3dExecucao;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
 import br.com.fashionai.application.flair3d.Flair3dPercurso;
 import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
 import br.com.fashionai.application.flair3d.Resultado;
+import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
+import br.com.fashionai.application.flair3d.recurso.Flair3dDesgaste;
 
 import java.util.List;
 import java.util.Map;
 
-/** Núcleo 7 — Cliente 1 pede "festa à noite, em preto": 33 por peça de ocasião festa e cor preta (3 vagas); 100 com as 3. */
+/**
+ * Núcleo 7 — Cliente 1 pede "festa à noite, em preto": 33 por peça de ocasião festa e cor preta (3 vagas); 100 com as 3.
+ * A cliente tem paciência (a VIDA do jogo, 60 no começo): cada peça entregue fora do pedido tira {@value #POR_PECA_FORA}
+ * (Flair3dDesgaste), e a execução no percurso segue tirando nos erros; zerada, ela vai embora sem comprar
+ * ({@value #FOI_EMBORA}). Peça usada como recurso que dá vida devolve paciência.
+ */
 public class Boutique3dNucleo implements Flair3dNucleo {
     public static final double POR_PECA = 33;
     public static final List<String> VAGAS = List.of("SUP", "INF", "CAL");
+    /** O que cada peça fora do pedido tira da paciência da cliente. */
+    public static final int POR_PECA_FORA = 15;
+    /** A cliente perdeu a paciência e saiu da loja sem comprar. */
+    public static final String FOI_EMBORA = "CLIENTE_FOI_EMBORA";
 
     @Override
     public String codigo() {
@@ -75,7 +87,13 @@ public class Boutique3dNucleo implements Flair3dNucleo {
         boolean todas = regras.stream().allMatch(RegraResultado::ok);
         double pontos = todas ? 100 : regras.stream().mapToDouble(RegraResultado::pontos).sum();
         Flair3dRateio rateio = new Flair3dRateio(vestidas).cada(todas ? 100.0 / VAGAS.size() : POR_PECA, Boutique3dNucleo::bate);
-        return Resultado.of(pontos, pontos >= 60 ? "APROVADO" : "REPROVADO", regras, List.of()).comCartas(rateio.lista());
+        Flair3dDesgaste paciencia = Flair3dDesgaste.de(Flair3dDesgaste.vidaDo(codigo()), contexto.andamento().usos())
+                .com("PECA_FORA_DO_PEDIDO", (int) vestidas.values().stream().filter(c -> !bate(c)).count(), POR_PECA_FORA);
+        List<Evento> eventos = List.of(paciencia.evento());
+        if (paciencia.esgotou()) {
+            return Resultado.of(Math.min(pontos, Flair3dExecucao.NOTA_DE_QUEM_ESGOTOU), FOI_EMBORA, regras, eventos).comCartas(rateio.lista());
+        }
+        return Resultado.of(pontos, pontos >= 60 ? "APROVADO" : "REPROVADO", regras, eventos).comCartas(rateio.lista());
     }
 
     @Override

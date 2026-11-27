@@ -38,7 +38,7 @@ export function AccessibilityDeclarations() {
     <h2 id="acc-decl-title" className="type-h2">{t("accessibility.declareTitle")}</h2>
     <p className="type-body-sm text-muted">{t("accessibility.declareHint")}</p>
     <div className="grid gap-2 sm:grid-cols-3">
-      <Field id="acc-product" label={t("physicalStore.catalogProduct")}><Select id="acc-product" value={productId} onChange={(event) => setProductId(event.target.value)}><option value="">{t("physicalStore.chooseProduct")}</option>{(products.data ?? []).map((product) => <option key={product.id} value={product.id}>{product.productName}</option>)}</Select></Field>
+      <Field id="acc-product" label={t("accessibility.productLabel")}><Select id="acc-product" value={productId} onChange={(event) => setProductId(event.target.value)}><option value="">{t("accessibility.chooseProduct")}</option>{(products.data ?? []).map((product) => <option key={product.id} value={product.id}>{product.productName}</option>)}</Select></Field>
       <Choice id="acc-source" label={t("accessibility.sourceLabel")} value={form.declarationSource} options={SOURCES} prefix="source" onChange={(value) => set({ declarationSource: value as Declaration["declarationSource"] })} />
       <Choice id="acc-closure" label={t("accessibility.closureLabel")} value={form.closureType} options={CLOSURES} prefix="closure" onChange={(value) => set({ closureType: value })} />
       <Choice id="acc-opening" label={t("accessibility.openingLabel")} value={form.openingPosition} options={OPENINGS} prefix="opening" onChange={(value) => set({ openingPosition: value })} />

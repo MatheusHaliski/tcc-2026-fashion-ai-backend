@@ -28,7 +28,7 @@ function fitKey(src: GlbSource, spec: GarmentSpec, below: GarmentSpec[], label?:
 /** Dicas do manifesto para o encaixe (tamanho por região, aceite do modelo, braços abertos, escala real). */
 function meshyFitOf(src: GlbSource, label?: string | null) {
   const m = src.manifest; if (!m) return {};
-  return { sizes: m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos, realScale: m.medidaReal === true,
+  return { sizes: m.tamanhos, accept: m.dicas.aceite, armsSpread: m.dicas.bracosAbertos, realScale: m.medidaReal === true, shoulderTop: m.pontoAlto,
     sizeShift: generatedSizeShift(m, label) };
 }
 

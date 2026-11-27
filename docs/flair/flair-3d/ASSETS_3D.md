@@ -57,6 +57,21 @@ python -m scripts.blender3d.preview --pasta /tmp/previas   # folha de contato re
 | `trilho-spots-6-5.glb`, `trilho-spots-9-6.glb` | `trilhoSpots` | 1760 / 2144 |
 | `bancada-20/22/24.glb` | `bancada` | 1180 |
 | `rolos-de-tecido.glb` | `rolosDeTecido` | 964 |
+| `mesa-dos-jurados.glb` | `mesaDosJurados` | 1452 |
+| `balcao.glb` | `balcao` | 648 |
+| `prateleira-de-bolsas.glb` | `prateleiraDeBolsas` | 2272 |
+| `carro-de-corrida.glb` | `carroDeCorrida` | 2412 |
+| `capacete-no-suporte.glb` | `capaceteNoSuporte` | 980 |
+| `espelho-de-parede.glb` | `espelhoDeParede` | 536 |
+| `pedestais-com-cordao.glb` | `pedestaisComCordao` | 1548 |
+| `monitor-de-video.glb` | `monitorDeVideo` | 452 |
+| `banco-reservas.glb` | `bancoReservas` | 1596 |
+| `tabela-de-basquete.glb` | `tabelaDeBasquete` | 832 |
+| `predio-18x32/15x24/20x34/17x27.glb` | `predio` (janelas acesas, cornija, casa de máquinas) | 392 a 524 |
+| `fachada-vitrine-22/26/28/30.glb` | `fachadaVitrine` (vitrine com bustos e toldo) | 952 |
+| `palco-pequeno.glb` | `palcoPequeno` | 1216 |
+| `cenario-de-tres-paredes.glb` | `cenarioDeTresParedes` | 396 |
+| `arquibancada-72/90.glb` | `arquibancada` | 1288 / 1504 |
 
 Móvel que muda de medida por sala tem um arquivo por medida: a fábrica do móvel monta o slug com as medidas
 (por exemplo `arara-16-7`: 1,6 m e 7 peças) e o aponta com `comGlb`. Medida sem arquivo cai no móvel procedural, sem erro.
@@ -89,6 +104,34 @@ Conferido: a folha de contato dos arquivos; no navegador, as salas `PERSONAGEM_F
 diretor) e `ROAD_TO_GLORY` (penteadeira e cadeira com o magenta da sala, versão leve carregada). **Não conferido: as
 demais salas**, uma a uma, nem a luminária, a cadeira de camarim, o canhão de luz e o poste dentro da sala depois de
 refeitos (só na folha de contato e no teste de proporção).
+
+## Pessoas de cena: humanoides prontos e corpo humano leve
+
+Os figurantes, os seguranças e os convidados não são mais cápsulas. Há três níveis, do mais perto para o mais longe:
+
+1. o corpo inteiro do FashionAI (o mesmo do avatar), para os poucos que a cena aguenta;
+2. **humanoides prontos** baixados do Sketchfab (`public/flair/3d/gente`, catálogo e créditos em
+   `lib/flair/nucleos/gente/humanoides.ts`), para quem está perto e não tem o corpo inteiro: 8 por cena na qualidade
+   alta, 5 na média, 3 na baixa;
+3. o **corpo humano leve** do motor Blender (`pessoa-leve.glb`), para o resto e para a arquibancada.
+
+| Arquivo | Modelo | Autor | Licença | Triângulos |
+| --- | --- | --- | --- | --- |
+| `eric.glb` | [Eric Rigged 001](https://sketchfab.com/3d-models/eric-rigged-001-rigged-3d-business-man-a46bc9f67aaa415bb4f3241eef900e7f) | Renderpeople | CC BY 4.0 | 10270 |
+| `carla.glb` | [Carla Rigged 001](https://sketchfab.com/3d-models/carla-rigged-001-rigged-3d-business-women-acf520f450d14dd799f98a6fede3edf5) | Renderpeople | CC BY 4.0 | 9993 |
+| `claudia.glb` | [Claudia Rigged 002](https://sketchfab.com/3d-models/claudia-rigged-002-3d-rigged-business-women-c659bd0accab47c6bbe390cf822a2b92) | Renderpeople | CC BY 4.0 | 10745 |
+| `seguranca.glb` | [Security Guard – Rigged 3D Model](https://sketchfab.com/3d-models/security-guard-rigged-3d-model-1e3307732bbf4453b30f021bfec5bcaf) | Q.SARDOR | CC BY 4.0 | 10222 |
+
+- Os arquivos foram reduzidos com `gltf-transform optimize` (metade dos triângulos, texturas em WebP de 1024 px).
+- A pose é procedural (`poseHumana`): cada braço e cada perna aponta para uma direção, então serve a qualquer esqueleto
+  com os ossos de `OSSOS` (Mixamo e Renderpeople). Não há animação gravada: andar, sentar, conversar, aplaudir e
+  fotografar saem dessa pose.
+- **Três dos quatro são pessoas reais escaneadas** (Renderpeople). A licença publicada no Sketchfab é CC BY, que exige
+  o crédito acima; antes de publicar o jogo fora do TCC, confira os termos da Renderpeople para os modelos gratuitos.
+- Baixados e descartados: um modelo com roupa imprópria para 13 anos ou mais, um mascarado e dois que não foram
+  conferidos de perto. O catálogo tem só um homem comum (Eric): a plateia masculina repete o modelo. A API limitou os
+  downloads; para variar, acrescente modelos ao catálogo (o teste confere arquivo, crédito e ossos).
+- Conferir: `/lab/salas?humanoides=1` (todos lado a lado) e `/lab/salas?jogo=PASSARELA&gente=0`.
 
 ## O que foi conferido e o que não foi
 

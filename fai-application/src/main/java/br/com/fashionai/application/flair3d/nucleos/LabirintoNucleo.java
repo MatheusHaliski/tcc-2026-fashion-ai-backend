@@ -14,6 +14,7 @@ import br.com.fashionai.application.flair3d.Flair3dRateio;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
+import br.com.fashionai.application.flair3d.recurso.Flair3dDesgaste;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 
 import java.util.ArrayList;
@@ -26,17 +27,17 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Núcleo 10 — Espelho 1, "3 peças da mesma família de cor". A pessoa apresenta o look ao espelho quantas vezes quiser:
- * quando não abre, o evento FALTAM_PECAS diz quantas peças faltaram na família mais perto de fechar e a partida segue
- * ABERTA; quando abre, vale 100 na 1ª apresentação, 80 na 2ª, 60 na 3ª e 0 daí em diante (a porta abre do mesmo jeito).
- * Depois de 2 apresentações sem abrir, a peça achada na sala entra na mala da partida e conta como uma peça da família
- * mais perto de fechar (evento PECA_ACHADA); depois de 4, entra uma segunda. As outras rodadas estão em
- * {@link LabirintoRodadas}.
+ * Núcleo 10 — Espelho 1, "3 peças da mesma família de cor". Cada apresentação que não abre gasta
+ * {@value Flair3dDesgaste#POR_FALHA} do Reflexo (a ENERGIA, recurso-vida do jogo) e o evento FALTAM_PECAS diz quantas
+ * peças faltaram na família mais perto de fechar; com Reflexo, a partida segue ABERTA; sem ele, fecha em DERROTA. Usar
+ * peça como recurso devolve Reflexo, e com ele mais apresentações. Quando abre, vale 100 na 1ª apresentação, 80 na 2ª,
+ * 60 na 3ª, 40 na 4ª e 20 na 5ª. Não há mais pena (a peça achada na sala, o espelho que cedia): o espelho só abre com o
+ * look certo (reauditoria de 25/11/2026). As outras rodadas estão em {@link LabirintoRodadas}.
  */
 public class LabirintoNucleo implements Flair3dNucleo {
     public static final int PECAS = 3;
-    /** Pontos de quem abre o espelho, pela apresentação (1ª, 2ª, 3ª); depois disso, zero. */
-    public static final List<Integer> PONTOS_POR_TENTATIVA = List.of(100, 80, 60);
+    /** Pontos de quem abre o espelho, pela apresentação (da 4ª em diante, só com Reflexo devolvido por peça usada). */
+    public static final List<Integer> PONTOS_POR_TENTATIVA = List.of(100, 80, 60, 40, 20);
 
     @Override
     public String codigo() {
@@ -61,11 +62,6 @@ public class LabirintoNucleo implements Flair3dNucleo {
             return LabirintoRodadas.ESCADA_ETAPAS;
         }
         return LabirintoRodadas.PORTAS.equals(rodada) ? LabirintoRodadas.PORTAS_ETAPAS : null;
-    }
-
-    /** Peças achadas na sala até esta apresentação: uma a partir da 3ª, duas a partir da 5ª. */
-    public static int achadas(int tentativa) {
-        return Math.min(2, Math.max(0, (tentativa - 1) / 2));
     }
 
     @Override
@@ -107,20 +103,22 @@ public class LabirintoNucleo implements Flair3dNucleo {
         vestidas.values().forEach(c -> familias(c).forEach(f -> porFamilia.merge(f, 1, Integer::sum)));
         Map.Entry<String, Integer> melhor = porFamilia.entrySet().stream().max(Map.Entry.comparingByValue()).orElse(null);
         int tentativa = Math.max(1, contexto.andamento().tentativas());
-        int daSala = melhor == null || melhor.getValue() >= PECAS ? 0 : Math.min(achadas(tentativa), PECAS - melhor.getValue());
-        int maior = melhor == null ? 0 : melhor.getValue() + daSala;
+        int maior = melhor == null ? 0 : melhor.getValue();
         boolean abre = maior >= PECAS;
         List<Evento> eventos = new ArrayList<>();
         if (melhor != null) {
             eventos.add(new Evento("FAMILIA", codigoFamilia(melhor.getKey())));
         }
         eventos.add(new Evento("TENTATIVA", tentativa));
-        if (daSala > 0) {
-            eventos.add(new Evento("PECA_ACHADA", Map.of("pecas", daSala, "familia", codigoFamilia(melhor.getKey()))));
-        }
+        // as apresentações anteriores não abriram (senão a partida já teria fechado); a de agora gasta se também não abrir
+        Flair3dDesgaste reflexo = Flair3dDesgaste.de(Flair3dDesgaste.vidaDo(codigo()), contexto.andamento().usos())
+                .com(LabirintoRodadas.APRESENTACAO_ERRADA, tentativa - (abre ? 1 : 0), Flair3dDesgaste.POR_FALHA);
+        eventos.add(reflexo.evento());
         if (!abre) {
             eventos.add(new Evento("FALTAM_PECAS", PECAS - maior));
-            return Resultado.parcial(Resultado.ABERTA, "NAO_ABRE", List.of(RegraResultado.de("MESMA_FAMILIA", false, 100)), eventos);
+            List<RegraResultado> regras = List.of(RegraResultado.de("MESMA_FAMILIA", false, 100));
+            return reflexo.esgotou() ? Resultado.of(0, Flair3dDesgaste.ESGOTOU, regras, eventos)
+                    : Resultado.parcial(Resultado.ABERTA, "NAO_ABRE", regras, eventos);
         }
         int pontos = pontos(tentativa);
         Flair3dRateio rateio = new Flair3dRateio(vestidas).dividirEntre(pontos, c -> familias(c).contains(melhor.getKey()));

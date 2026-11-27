@@ -1,0 +1,23 @@
+{
+ "produto": "Effie Wool-Blend Cocoon Coat",
+ "marca": "AllSaints",
+ "url_oficial": "https://www.allsaints.com/us/womenswear/effie-wool-blend-cocoon-coat/USW059OF-5.html",
+ "subcategoria": "coat",
+ "sexo": "FEMININO",
+ "caimento": "amplo",
+ "tecido": {
+  "tipo": "malha_la",
+  "cor": "#b89c7c",
+  "gramatura": 420
+ },
+ "gola": "lapela",
+ "fechamento": "botoes",
+ "botoes": 3,
+ "ribana": false,
+ "medidas_marca": {
+  "comprimento": 105,
+  "decote_frente": 24
+ },
+ "observacao": "casaco casulo longo (105 cm) com lapela e 3 botões. Cor não conferida (camelo escolhido).",
+ "tamanho": "M"
+}

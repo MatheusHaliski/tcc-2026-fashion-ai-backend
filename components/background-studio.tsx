@@ -23,25 +23,15 @@ import { AuraHype } from "@/components/hype/aura-hype";
 import { AuraFashionPicker } from "@/components/aura-fashion-picker";
 import type { AuraFamily, FashionPreset } from "@/lib/aura-fashion";
 
-export interface BgConfig { auraImpersonation?: boolean | null; impersonationData?: Record<string,unknown> | null; compositionPreset?: FashionPreset | null; border?: CardBorderConfig | null; auraMetamorphose?: "OFF" | "PRISMA" | "CONSTELACAO" | "FIO_VIVO" | "HOLOGRAFIA" | null; auraMetamorphosePreset?: string | null; auraEntitlementCode?: string | null; auraHype?: string | null; color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
+export interface BgConfig { infoGrid?: import("@/lib/cards/info-grid").InfoGridConfig | null; auraImpersonation?: boolean | null; impersonationData?: Record<string,unknown> | null; compositionPreset?: FashionPreset | null; border?: CardBorderConfig | null; auraMetamorphose?: "OFF" | "PRISMA" | "CONSTELACAO" | "FIO_VIVO" | "HOLOGRAFIA" | null; auraMetamorphosePreset?: string | null; auraEntitlementCode?: string | null; auraHype?: string | null; color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
 interface Variant { id: string; theme?: string; description?: string; code?: string; static?: { previewUrl?: string; url?: string; cardUrl?: string }; }
 export interface BgCatalog { colors: string[]; gradients: { id: string; name: string; stops: string[]; type?: string; angle?: number }[]; seasonal: { id: string; name: string; season: string; stops: string[] }[]; auraPresets: { id: string; name: string; archetype?: string; palette?: string[]; recommendedMaterials?: string[]; variants?: Variant[] }[]; materials: { id: string; name: string; finish?: string; static?: { previewUrl?: string } }[]; skins: { id: string; displayName?: string }[]; directions: Record<string, { label: string; skin?: string; aura?: string; material?: string }>; anatomies: string[]; pieceAnatomies?: string[]; animations: string[]; imageGenerationAvailable: boolean; }
 
 export { ArtSegments, ART_SEGMENTS, type ArtSegment } from "@/components/art-segments";
 
-/**
- * Um grupo de opções: rótulo + mini cards selecionáveis em grade ("grid"; "wide" para cards com diagrama e texto) ou
- * uma linha que quebra ("row", para bolinhas de cor e chips curtos). Nunca rolagem lateral escondendo opções.
- */
-export function OptionStrip({ title, hint, children, kind = "grid" }: { title: string; hint?: ReactNode; children: ReactNode; kind?: "grid" | "wide" | "row" }) {
-  return (
-    <div className="opt-group">
-      <p className="label">{title}</p>
-      {hint}
-      <div className={kind === "row" ? "opt-row" : kind === "wide" ? "opt-grid is-wide" : "opt-grid"} role="group" aria-label={title}>{children}</div>
-    </div>
-  );
-}
+import { OptionStrip } from "@/components/option-strip";
+import { CardInfoGridPanel } from "@/components/card-info-grid-panel";
+export { OptionStrip };
 
 export function useBgCatalog() {
   const data = useApi<BgCatalog>((signal) => api.get("/api/backgrounds/catalog", { signal, anonymous: true }), []).data;
@@ -330,7 +320,7 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
         </div>
       )}
       <SeasonalDialog open={!!seasonal} onClose={() => setSeasonal(null)} value={value} onApply={applySeasonal} season={season} />
-      {seg === "container" && <ContainerColor value={value} onChange={set} skin={skin} />}
+      {seg === "container" && <><ContainerColor value={value} onChange={set} skin={skin} /><CardInfoGridPanel kind="look" value={value.infoGrid} onChange={(infoGrid) => set({ infoGrid })} /></>}
       {seg === "borda" && <CardBorderDesigner value={value.border} background={value} onChange={(border) => set({ border })} />}
     </div>
   );

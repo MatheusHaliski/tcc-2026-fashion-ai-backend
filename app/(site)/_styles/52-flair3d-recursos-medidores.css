@@ -1,0 +1,120 @@
+/* ── FLAIR 3D · roda de recursos da partida (components/flair/nucleos/recursos/nucleo-roda-recursos.tsx) ──────────
+   Medidores de vida, energia e foco, as moedas e as peças do deck que dá para usar como recurso, na faixa direita do
+   palco. O "+25" sobe com a animação n3d-roda-sobe (51-flair3d-recursos.css). Com .is-calm, nada se move. */
+.n3d-recursos {
+  position: absolute;
+  z-index: 3;
+  top: 34%;
+  right: 8px;
+  display: grid;
+  gap: 6px;
+  width: min(176px, calc(var(--n3d-zona-x, 30%) - 16px));
+  padding: 6px;
+  border-radius: 12px;
+  background: rgb(10 10 14 / 60%);
+  color: #fff;
+  pointer-events: auto;
+}
+
+.n3d-recursos-medidores,
+.n3d-recursos-pecas {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.n3d-recurso {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 6px;
+  font-size: var(--text-caption);
+}
+
+.n3d-recurso-barra {
+  grid-column: 1 / -1;
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 18%);
+}
+
+.n3d-recurso-cheio {
+  display: block;
+  width: var(--n3d-recurso-nivel, 0%);
+  height: 100%;
+  background: var(--n3d-recurso-cor, #fff);
+  transition: width 500ms ease-out;
+}
+
+.n3d-recurso-valor {
+  grid-row: 1;
+  grid-column: 2;
+  font-weight: 700;
+}
+
+.n3d-recurso-ganho {
+  position: absolute;
+  top: -4px;
+  right: 28px;
+  color: var(--n3d-recurso-cor, #fff);
+  font-weight: 800;
+  animation: n3d-roda-sobe 1600ms ease-out both;
+}
+
+.n3d-recurso.is-up .n3d-recurso-nome {
+  color: var(--n3d-recurso-cor, #fff);
+}
+
+.n3d-recurso-usar {
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 8%);
+  color: #fff;
+  font-size: var(--text-caption);
+  text-align: left;
+  cursor: pointer;
+}
+
+.n3d-recurso-usar:hover:not(:disabled),
+.n3d-recurso-usar:focus-visible {
+  border-color: #e0b04d;
+  background: rgb(224 176 77 / 22%);
+}
+
+.n3d-recurso-usar:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.n3d-recurso-erro {
+  margin: 0;
+  color: #ffb4b4;
+  font-size: var(--text-caption);
+}
+
+.n3d-recursos.is-calm .n3d-recurso-cheio {
+  transition: none;
+}
+
+.n3d-recursos.is-calm .n3d-recurso-ganho {
+  animation: none;
+}
+
+/* O que as decisões da partida já gastaram do recurso-vida (Flair3dDesgaste): o "−30" ao lado do valor. */
+.n3d-recurso-gasto {
+  color: #ffb3b3;
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.n3d-recurso.is-gasto .n3d-recurso-cheio {
+  background: linear-gradient(90deg, var(--n3d-recurso-cor, #fff), #e5484d);
+}

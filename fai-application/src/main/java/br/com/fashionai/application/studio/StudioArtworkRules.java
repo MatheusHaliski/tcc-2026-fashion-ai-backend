@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
@@ -19,6 +20,9 @@ import br.com.fashionai.application.common.Msg;
 public final class StudioArtworkRules {
     /** Enquadramento da foto da peça no card: recorte de tecido (padrão) ou Total frame (a peça inteira no quadro). */
     public static final Set<String> PHOTO_FRAMINGS = Set.of("FABRIC", "WHOLE");
+
+    /** RF11 §7.6 / exercício 19 — modalidade visual da Aura comum, gravada em {@code aura.format}. */
+    public static final List<String> AURA_FORMATS = List.of("IMAGEM_UNICA", "MOSAICO");
 
     private static final List<String> HYPE_FIXED_MODES = List.of("OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS");
     private static final String HYPE_FINISH_LAYOUT = "(COMMON|RARE|LEGENDARY|COLLAB_DROP)_(STATIC_HORIZONTAL|STATIC_VERTICAL"
@@ -55,6 +59,44 @@ public final class StudioArtworkRules {
         if (framing != null && !PHOTO_FRAMINGS.contains(framing))
             throw ApiException.badRequest("PHOTO_FRAMING_INVALID", Msg.t("backgroundStudio.enquadramento_invalido"));
         validateBorder(config.get("border"));
+        validateAura(config.get("aura"));
+    }
+
+    /**
+     * Objeto {@code aura} da configuração: quando vem, é um objeto com o preset ({@code variantId}, texto) e, se
+     * quiser, a modalidade visual ({@code format}) dentro da lista permitida. Tipo errado ou formato desconhecido é 400
+     * aqui, antes de qualquer gravação; configuração antiga sem {@code aura} ou sem {@code format} continua válida.
+     */
+    private static void validateAura(Object value) {
+        if (value == null) return;
+        if (!(value instanceof Map<?, ?> aura))
+            throw ApiException.badRequest("AURA_INVALIDA", Msg.t("backgroundStudio.aura_invalida"));
+        Object variant = aura.get("variantId");
+        if (variant != null && (!(variant instanceof String id) || id.isBlank()))
+            throw ApiException.badRequest("AURA_INVALIDA", Msg.t("backgroundStudio.aura_invalida"));
+        Object format = aura.get("format");
+        if (format != null && !AURA_FORMATS.contains(format))
+            throw ApiException.badRequest("FORMATO_INVALIDO", Msg.t("backgroundStudio.formato_do_preset_aura_imagem"));
+    }
+
+    /**
+     * Arte do card da PEÇA: além das regras puras, o preset da Aura precisa existir no catálogo e o formato só vale com
+     * um preset. O preset que já estava gravado na peça é aceito mesmo fora do catálogo (preset retirado), para a pessoa
+     * poder editar o resto da arte sem perder o que tinha.
+     */
+    public static Object pieceBackground(String currentJson, Object cfg, Predicate<String> auraVariantExists) {
+        if (cfg instanceof Map<?, ?> in) {
+            validateArtwork(in);
+            if (in.get("aura") instanceof Map<?, ?> aura) {
+                Object variant = aura.get("variantId");
+                if (variant == null && aura.get("format") != null)
+                    throw ApiException.badRequest("FORMATO_INVALIDO", Msg.t("backgroundStudio.o_formato_so_se_aplica"));
+                Object stored = Json.map(currentJson).get("aura") instanceof Map<?, ?> old ? old.get("variantId") : null;
+                if (variant instanceof String id && !id.equals(stored) && !auraVariantExists.test(id))
+                    throw ApiException.badRequest("PRESET_INVALIDO", Msg.t("backgroundStudio.preset_aura_desconhecido", id));
+            }
+        }
+        return withRevision(currentJson, cfg);
     }
 
     private static boolean validComposition(Object composition) {

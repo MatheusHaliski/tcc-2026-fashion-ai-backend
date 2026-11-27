@@ -1,13 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
-import { devolverFoto, facesComFoto, fotosGuardadas, MAX_FOTOS, pedirFoto, type CarregadorDeFoto } from "./fotos";
+import { devolverFoto, fotosGuardadas, MAX_FOTOS, pedirFoto, recorteDoCanvas, type CarregadorDeFoto } from "./fotos";
 
 const canvas = () => ({ width: 128, height: 128 }) as HTMLCanvasElement;
 
 describe("fotos das peças na cena 3D", () => {
-  it("a foto vai nas faces grandes de cada forma", () => {
-    expect(facesComFoto("pendurada")).toEqual([true, true, false, false, false, false]);
-    expect(facesComFoto("dobrada")).toEqual([false, false, true, false, false, false]);
-    expect(facesComFoto("calcado")).toEqual([true, true, true, false, false, false]);
+  it("o recorte da foto vem do canvas; sem ele (canvas de teste, JSON quebrado), null", () => {
+    const c = { dataset: {} as DOMStringMap } as HTMLCanvasElement;   // ambiente node: só o dataset importa aqui
+    c.dataset.recorte = JSON.stringify({ removido: 0.4, caixa: [0.2, 0.1, 0.8, 0.9] });
+    expect(recorteDoCanvas(c)).toEqual({ removido: 0.4, caixa: [0.2, 0.1, 0.8, 0.9] });
+    c.dataset.recorte = "{";
+    expect(recorteDoCanvas(c)).toBeNull();
+    expect(recorteDoCanvas(canvas())).toBeNull();
   });
 
   it("a mesma foto é carregada uma vez, compartilhada e descartada quando ninguém mais usa", async () => {

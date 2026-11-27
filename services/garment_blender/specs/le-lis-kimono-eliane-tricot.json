@@ -1,0 +1,24 @@
+{
+ "produto": "Kimono Le Lis Eliane Tricot Feminino",
+ "marca": "Le Lis Blanc",
+ "url_oficial": "https://www.lelis.com.br/kimono-le-lis-eliane-tricot-feminino-bicolor-off-white-",
+ "subcategoria": "kimono",
+ "sexo": "FEMININO",
+ "caimento": "amplo",
+ "tecido": {
+  "tipo": "malha_la",
+  "cor": "#ece6da",
+  "gramatura": 300
+ },
+ "fechamento": "aberto",
+ "ribana": false,
+ "medidas_marca": {
+  "comprimento": 80,
+  "biceps": 52,
+  "punho": 48,
+  "manga": 50
+ },
+ "observacao": "quimono de tricô aberto na frente, mangas largas 3/4. Bicolor no produto: só o off-white modelado.",
+ "tamanho": "M",
+ "gola": "faixa"
+}

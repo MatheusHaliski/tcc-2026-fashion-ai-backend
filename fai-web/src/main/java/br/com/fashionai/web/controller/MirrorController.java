@@ -80,13 +80,13 @@ public class MirrorController {
         return mirror.wardrobe(user, slot);
     }
 
-    public record VistaMeRequest(String prompt, List<UUID> anchorIds, UUID focusPieceId, Boolean keepMirror) {
+    public record VistaMeRequest(String prompt, List<UUID> anchorIds, UUID focusPieceId, Boolean keepMirror, UUID nivelTermicoId) {
     }
 
     @PostMapping("/vista-me")
     @Operation(summary = "RF33.CA04–CA07 — Vista-me: look completo a partir de um pedido em linguagem natural")
     public Map<String, Object> vistaMe(CurrentUser user, @RequestBody VistaMeRequest body) {
-        return mirror.vistaMe(user, body.prompt(), body.anchorIds(), body.focusPieceId(), Boolean.TRUE.equals(body.keepMirror()));
+        return mirror.vistaMe(user, body.prompt(), body.anchorIds(), body.focusPieceId(), Boolean.TRUE.equals(body.keepMirror()), body.nivelTermicoId());
     }
 
     @PostMapping("/another")

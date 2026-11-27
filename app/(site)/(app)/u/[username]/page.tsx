@@ -14,6 +14,7 @@ import { ProfileHeader } from "@/components/profile-header";
 import { EditProfileButton } from "@/components/edit-profile";
 import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
 import { InsightStrip } from "@/components/insights/insight-strip";
+import { SignaturePieceBlock } from "@/components/signature-piece-block";
 
 import type {LevelProgress} from "@/components/profile-level-progress";
 interface Profile { levelProgress?:LevelProgress; user: UserCard; bio?: string | null; pronouns?: string | null; links?: { title: string; url: string }[]; coverUrl?: string | null; layout: "PESSOAL" | "INSTITUCIONAL"; institutionalSlug?: string; self: boolean; relation: string; counters: { followers: number; following: number; published: number; pieces?: number; schemes?: number }; visibility: string; contentVisible: boolean; invite?: { message: string; action?: string }; pendingFollowRequests?: number; }
@@ -66,6 +67,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         </>} />
       {/* RF53 · Lote A5 (P3-15): leitura pública do criador (só itens públicos; perfil fechado ou bloqueado = nada) */}
       {data.contentVisible && data.visibility === "PUBLIC" && <InsightStrip context="CREATOR_PROFILE" params={{ key: data.user.username }} collapsible className="mb-3" />}
+      {/* exercício 18 · Peça Assinatura: só a que o servidor autoriza para quem está vendo */}
+      {data.contentVisible && <SignaturePieceBlock username={data.user.username} self={data.self} signedIn={!!user} />}
       {!data.contentVisible
         ? <EmptyState icon={<FaiIcon id="ACT-04" size={48} decorative />} title={t("profile.privateTitle")} hint={data.invite?.message ?? t("u.username.este_perfil_e_privado")} action={user && !data.self && data.relation !== "PENDENTE" ? <Button variant="primary" disabled={followingBusy || data.relation === "BLOQUEADO"} onClick={follow}>{t("profile.requestFollow")}</Button> : !user ? <Link href="/login" className="btn btn-primary">{t("nav.login")}</Link> : undefined} />
         : <LookbookTabs ownerId={data.user.id} initialTab={profileTab(initialTab, data.self)} initialSaved={initialTab === "saved_pieces" ? "pieces" : "looks"} />}

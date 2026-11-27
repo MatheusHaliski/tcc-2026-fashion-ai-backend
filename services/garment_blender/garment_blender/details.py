@@ -1,4 +1,4 @@
-"""Detalhes aplicados sobre o tronco: bolsos (canguru, de peito), zíper da frente com cadarço, dentes e cursor.
+"""Detalhes aplicados sobre o tronco: bolsos (canguru, de peito) com pesponto, e o puxador do zíper.
 
 Cada detalhe é uma placa que acompanha a superfície do tronco (amostrada nos mesmos anéis que o formam), um pouco
 acima dela, com uma saia até a superfície nas bordas costuradas (o detalhe parece costurado, não flutuando) e vinco de
@@ -11,6 +11,7 @@ import math
 import numpy as np
 
 from .geometry import COLUMNS, TILE, Mesh, Row
+from .stitches import stitch_line
 
 FRONT = math.pi / 2
 
@@ -31,9 +32,10 @@ def surface(rows: list[Row], theta: float, y: float) -> tuple[np.ndarray, np.nda
 
 
 def patch(mesh: Mesh, rows: list[Row], corners, lift: float, mat: str, stitched=(True, True, True, True),
-          segments=(10, 8), part="detalhe") -> None:
+          segments=(10, 8), part="detalhe", point: float = 0.0) -> None:
     """Placa entre quatro cantos (theta, y) — baixo-esq., baixo-dir., cima-dir., cima-esq. — ``lift`` metros acima do
-    tronco. ``stitched``: (baixo, direita, cima, esquerda) costuradas (saia + pesponto) ou abertas."""
+    tronco. ``stitched``: (baixo, direita, cima, esquerda) costuradas (saia + pesponto) ou abertas. ``point``: a borda
+    de baixo desce em V até ``point`` m no meio (o bolso de cinco lados do jeans)."""
     nu, nv = segments
     grid = np.empty((nv + 1, nu + 1), int)
     base = np.empty((nv + 1, nu + 1, 3))
@@ -43,6 +45,7 @@ def patch(mesh: Mesh, rows: list[Row], corners, lift: float, mat: str, stitched=
             s, t = i / nu, j / nv
             th = (t0 * (1 - s) + t1 * s) * (1 - t) + (t3 * (1 - s) + t2 * s) * t
             y = (y0 * (1 - s) + y1 * s) * (1 - t) + (y3 * (1 - s) + y2 * s) * t
+            y -= point * (1 - abs(2 * s - 1)) * (1 - t)
             p, n = surface(rows, th, y)
             base[j, i] = p
             grid[j, i] = mesh.add(p + n * lift)
@@ -59,6 +62,10 @@ def patch(mesh: Mesh, rows: list[Row], corners, lift: float, mat: str, stitched=
         if not sewn:   # boca do bolso: sem saia nem pesponto
             continue
         mesh.seams.update(int(k) for k in ring)
+        top = np.array([mesh.verts[k] for k in ring])
+        inward = top + (pos[nv // 2, nu // 2] - top) * 0.004 / np.maximum(
+            np.linalg.norm(pos[nv // 2, nu // 2] - top, axis=1, keepdims=True), 1e-9)   # pesponto a 4 mm da borda
+        stitch_line(mesh, inward, top - under, part=part)
         low = [mesh.add(p) for p in under]   # saia até o tronco: a borda costurada encosta no tecido de baixo
         for k in range(len(ring) - 1):
             mesh.quad((ring[k], ring[k + 1], low[k + 1], low[k]), [(0, 0), (0.2, 0), (0.2, 0.05), (0, 0.05)], mat, part)
@@ -82,25 +89,14 @@ def kangaroo(mesh: Mesh, rows: list[Row], y_rib: float, split: bool, mat: str) -
     patch(mesh, rows, c, 0.003, mat, (True, False, True, False))   # bocas laterais abertas
 
 
-def chest_pocket(mesh: Mesh, rows: list[Row], y_arm: float, mat: str) -> None:
-    """Bolso de peito chapado no lado esquerdo de quem veste (+x), 11 × 13 cm, boca em cima."""
+def chest_pocket(mesh: Mesh, rows: list[Row], y_arm: float, mat: str, side: int = 1) -> None:
+    """Bolso de peito chapado, 11 × 13 cm, boca em cima; ``side`` +1 no lado esquerdo de quem veste (+x), −1 no outro."""
     a = rows[len(rows) // 2].a
-    c0 = FRONT - 0.10 / a
+    c0 = FRONT - side * 0.10 / a
     w = 0.055 / a
     yb, yt = y_arm - 0.17, y_arm - 0.04
     patch(mesh, rows, [(c0 + w, yb), (c0 - w, yb), (c0 - w, yt), (c0 + w, yt)], 0.0025, mat, (True, True, False, True),
           (6, 6))
-
-
-def zipper(mesh: Mesh, rows: list[Row], y0: float, y1: float, tape: str, teeth: str) -> None:
-    """Zíper da frente fechado: cadarço de 2,6 cm, corrente de dentes de 7 mm e o cursor no topo."""
-    a = rows[len(rows) // 2].a
-    patch(mesh, rows, [(FRONT + 0.013 / a, y0), (FRONT - 0.013 / a, y0), (FRONT - 0.013 / a, y1),
-                       (FRONT + 0.013 / a, y1)], 0.0015, tape, segments=(2, 40))
-    patch(mesh, rows, [(FRONT + 0.0035 / a, y0), (FRONT - 0.0035 / a, y0), (FRONT - 0.0035 / a, y1),
-                       (FRONT + 0.0035 / a, y1)], 0.0035, teeth, (False, False, False, False), segments=(1, 60))
-    top, n = surface(rows, FRONT, y1 - 0.012)
-    puller(mesh, top + n * 0.006, n, teeth)
 
 
 def puller(mesh: Mesh, at: np.ndarray, normal: np.ndarray, mat: str) -> None:

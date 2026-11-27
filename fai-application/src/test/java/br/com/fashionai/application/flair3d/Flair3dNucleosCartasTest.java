@@ -107,6 +107,9 @@ class Flair3dNucleosCartasTest {
                 card("INF", "occasion:party", "color:black"), card("CAL", "occasion:party", "color:white"));
         assertThat(duas.pontos()).isEqualTo(66);
         assertThat(jogar(new Boutique3dNucleo(), card("SUP", "occasion:work", "color:black")).pontos()).isZero();
+        // a peça fora do pedido tira 15 da paciência da cliente (a vida da loja, 60 no começo)
+        assertThat(duas.eventos()).containsExactly(new Resultado.Evento("DESGASTE", java.util.Map.of("recurso", "VIDA", "reserva", 60,
+                "gasto", 15, "restante", 45, "motivos", java.util.Map.of("PECA_FORA_DO_PEDIDO", 15))));
     }
 
     @Test

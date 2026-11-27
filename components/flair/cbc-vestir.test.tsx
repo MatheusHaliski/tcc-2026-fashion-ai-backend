@@ -5,7 +5,7 @@ import { CbcList, CbcPlay } from "@/components/flair/cbc";
 import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
 
 /**
- * Desafios de Montagem "vestir a cena" (V110): a cena é a imagem ANTES; a carta que o servidor aceita para a vaga veste
+ * Desafios de Montagem "vestir a cena" (V127): a cena é a imagem ANTES; a carta que o servidor aceita para a vaga veste
  * aquele personagem com o recorte da roupa da imagem DEPOIS; carta recusada não veste e a vaga avisa; tirar a carta
  * despe; as quatro certas mostram a imagem DEPOIS inteira. A lista mostra a imagem ANTES como miniatura.
  */
@@ -45,20 +45,27 @@ beforeEach(() => { localStorage.clear(); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("vestir a cena", () => {
-  it("a lista mostra a imagem ANTES como miniatura", async () => {
-    loggedAs(ME, { "GET /api/flair/challenges": { season: "SPRING", groups: [], now: [], always: [summary], upcoming: [], memories: [] } });
+  it("a lista mostra a imagem ANTES como miniatura, mesmo com um cenário preferido salvo (exercício 16)", async () => {
+    const { calls } = loggedAs(ME, { "GET /api/flair/challenges": { season: "SPRING", groups: [], now: [], always: [summary], upcoming: [], memories: [] },
+      "GET /api/flair/challenge-preferences": [{ challengeId: "v4", scenario: { id: "s-livre", codigo: "livre", nome: "Livre" } }] });
     renderApp(<CbcList />);
     await screen.findByRole("heading", { name: "Show no galpão" });
+    await waitFor(() => expect(calls.some((c) => c.path === "/api/flair/challenge-preferences")).toBe(true));
+    await settle();
+    // num desafio de vestir a cena é o próprio desafio: a preferência não troca a arte nem aparece no cartão
+    expect(document.querySelector("[data-cbc-cenario]")).toBeNull();
     expect(cena().getAttribute("data-cenario")).toBe("vestir-show");
     expect(cena().querySelector(".cv-antes")?.getAttribute("src")).toBe("/flair/desafios/vestir-show/antes.webp");
     expect(cena().getAttribute("data-vestidos")).toBe("0,0,0,0");
   });
 
   it("carta certa veste o personagem, a errada não veste e avisa, tirar despe e as quatro mostram a imagem DEPOIS", async () => {
-    loggedAs(ME, { "GET /api/flair/challenges/show-no-galpao": detail, "GET /api/me/flair/cards": CARDS, "POST /api/flair/challenges/show-no-galpao/check": check });
+    const { calls } = loggedAs(ME, { "GET /api/flair/challenges/show-no-galpao": detail, "GET /api/me/flair/cards": CARDS, "POST /api/flair/challenges/show-no-galpao/check": check });
     renderApp(<CbcPlay slug="show-no-galpao" />);
     await screen.findByRole("heading", { name: "Show no galpão" });
     expect(cena().getAttribute("aria-label")).toBe("Show no galpão: 0 de 4 personagens já vestem a roupa nova");
+    // sem seletor de cenário preferido (exercício 16): não há outra cena para este desafio
+    expect(screen.queryByLabelText("Cenário que você prefere ver")).toBeNull();
     expect(cena().querySelectorAll(".cv-veste")).toHaveLength(4);
     expect(cena().querySelector(".cv-veste[data-vaga=voz]")?.getAttribute("src")).toBe("/flair/desafios/vestir-show/veste-2.webp");
     // a bandeja da vaga 1 põe primeiro a carta que é a roupa pedida
@@ -85,6 +92,7 @@ describe("vestir a cena", () => {
     fireEvent.click(within(screen.getByTestId("mesa-bandeja")).getByRole("button", { name: "Tirar" }));
     await waitFor(() => expect(cena().getAttribute("data-vestidos")).toBe("0,1,1,1"));
     expect(cena().querySelector(".cv-depois")?.classList.contains("is-on")).toBe(false);
+    expect(calls.some((c) => /\/(preference|scenarios)$/.test(c.path))).toBe(false);
     await settle();
   });
 });

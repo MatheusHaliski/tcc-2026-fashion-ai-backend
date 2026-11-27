@@ -58,6 +58,10 @@ export interface Retrato {
   ponto: string;
   escondido: boolean;
   vida: number;
+  /** a vida máxima: o look resistente dá uma marca a mais (DetetiveDoLook.java); partidas antigas não mandam (3) */
+  vidaMaxima?: number;
+  /** o que o look da gala muda no corpo da detetive: vida máxima, cone dos vigias e segundos por passo */
+  doLook?: { vidaMaxima: number; alcance: number; segundosPorPasso: number };
   tempo: number;
   limite: number;
   pistas: { id: string; completa: boolean }[];
@@ -70,7 +74,10 @@ export interface Retrato {
   avisos: string[];
   dica: boolean;
   tentativas: number;
-  final: "COMPLETO" | "PARCIAL" | "ERRADO_REVELA" | null;
+  final: "COMPLETO" | "PARCIAL" | "ERRADO_REVELA" | "CAPTURADO" | null;
+  /** a acusação abre com as pistas bastantes ou com o tempo esgotado; partidas antigas não mandam (aberta) */
+  podeAcusar?: boolean;
+  pistasParaAcusar?: number;
   mao: string[];
   baralho: number;
   alcance: number;

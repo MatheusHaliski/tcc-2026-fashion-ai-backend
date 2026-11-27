@@ -24,11 +24,14 @@ import { useCbcMesa } from "@/components/flair/use-cbc-mesa";
 import { HowItWorks } from "@/components/guide/guide";
 import { cenaDoCenario } from "@/lib/flair/cenas/catalogo";
 import { vestidos, vestirDoCenario } from "@/lib/flair/vestir/cenas";
+import { useState } from "react";
+import { CbcCenarioPreferido } from "@/components/flair/cbc-cenario-preferido";
 
 export function CbcPlay({ slug }: { slug: string }) {
   const { t } = useI18n();
   const { slotLabel, storyText, tOr } = useCbcLabels();
   const m = useCbcMesa(slug);
+  const [preferido, setPreferido] = useState<string | null>(null);   // exercício 16: só a cena muda; o desafio é o mesmo
   const j = useCbcJogo(m);
   const d = m.d;
   const foco = useCbcControle(j, d?.slots.map((s) => s.key) ?? [], !!d && !m.readOnly);
@@ -36,9 +39,10 @@ export function CbcPlay({ slug }: { slug: string }) {
   if (m.detail.error) return <ErrorState error={m.detail.error} onRetry={m.detail.reload} />;
   if (m.detail.loading || !d) return <Skeleton className="h-96" />;
   const w = windowOf(d, t);
-  const cena = cenaDoCenario(d.scenario);
+  const cena = cenaDoCenario(preferido ?? d.scenario);
+  // "vestir a cena": o personagem troca de roupa quando o servidor aceita a carta da vaga dele (lib/flair/vestir). A cena
+  // é o próprio desafio (cada vaga é um personagem da imagem), por isso ali não há cenário preferido (exercício 16).
   const vestir = vestirDoCenario(d.scenario);
-  // "vestir a cena": o personagem troca de roupa quando o servidor aceita a carta da vaga dele (lib/flair/vestir)
   const julgadas = m.check?.evaluation.slots;
   const recusadas = new Set((julgadas ?? []).filter((r) => r.accepted === false && r.cardId === m.placed[r.slot]).map((r) => r.slot));
   const cartas = Object.fromEntries(m.available.map((c) => [c.id, c]));
@@ -57,6 +61,7 @@ export function CbcPlay({ slug }: { slug: string }) {
           actions={<div className="flex flex-wrap items-center gap-2"><HowItWorks id="flair.cbc" /><Badge tone={w.tone}>{w.text}</Badge>{d.moment && <Badge>{d.moment.name}</Badge>}</div>} />
       </div>
       {d.description && <p className="type-body-lg mb-4 max-w-prose">{d.description}</p>}
+      {!vestir && <CbcCenarioPreferido slug={slug} onCodigo={setPreferido} />}
       {d.status === "UPCOMING" && <p className="cbc-note" role="note">{t("cbc.note.upcoming")}</p>}
       {d.status === "ENDED" && <p className="cbc-note" role="note">{t("cbc.note.ended")}</p>}
       {delivered && d.status !== "ENDED" && (

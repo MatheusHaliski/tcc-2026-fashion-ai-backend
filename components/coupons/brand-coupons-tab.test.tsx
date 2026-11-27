@@ -141,11 +141,13 @@ describe("BrandCouponsTab", () => {
     fireEvent.change(screen.getByLabelText("Termina em"), { target: { value: "2026-11-30" } });
     fireEvent.change(screen.getByLabelText("Link da loja onde o cupom é usado"), { target: { value: "https://loja.example" } });
     fireEvent.change(screen.getByLabelText("Regras"), { target: { value: "1 por CPF" } });
+    fireEvent.click(screen.getByLabelText("Hype mínimo do card"));   // Circuito Aura: cupom só para card em alta
+    fireEvent.click(screen.getByRole("option", { name: "Em alta" }));
     fireEvent.click(save);
     expect(await screen.findByText("Promoção salva — quem tiver o selo será notificado para resgatar.")).toBeTruthy();
     expect(calls.find((c) => c.method === "POST" && c.path === "/api/promotions")?.body).toEqual({
       type: "MEET_GREET", title: "Encontro VIP", description: "Conheça a artista", rules: "1 por CPF", discountPercent: 15, sealId: "s1",
-      startsAt: new Date("2026-11-01").toISOString(), expiresAt: new Date("2026-11-30").toISOString(), totalQuota: 50, perUserLimit: 1, storeUrl: "https://loja.example",
+      startsAt: new Date("2026-11-01").toISOString(), expiresAt: new Date("2026-11-30").toISOString(), totalQuota: 50, perUserLimit: 1, storeUrl: "https://loja.example", canalCupomId: null, minPurchase: null, minPurchaseCurrency: null, minHypeLevel: "HOT",
     });
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Nova promoção do selo" })).toBeNull());
   });
@@ -165,7 +167,7 @@ describe("BrandCouponsTab", () => {
     fireEvent.click(within(form).getByRole("button", { name: "Salvar" }));
     expect(await screen.findByText("Título repetido")).toBeTruthy();
     expect(screen.getByRole("dialog", { name: "Nova promoção do selo" })).toBeTruthy();
-    expect(calls.find((c) => c.method === "POST")?.body).toEqual({ type: "BRINDE", title: "Brinde surpresa", description: null, rules: null, discountPercent: null, sealId: null, startsAt: null, expiresAt: null, totalQuota: null, perUserLimit: 1, storeUrl: null });
+    expect(calls.find((c) => c.method === "POST")?.body).toEqual({ type: "BRINDE", title: "Brinde surpresa", description: null, rules: null, discountPercent: null, sealId: null, startsAt: null, expiresAt: null, totalQuota: null, perUserLimit: 1, storeUrl: null, canalCupomId: null, minPurchase: null, minPurchaseCurrency: null, minHypeLevel: null });
     fireEvent.click(within(form).getByRole("button", { name: "Cancelar" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Nova promoção do selo" })).toBeNull());
     fail = false;

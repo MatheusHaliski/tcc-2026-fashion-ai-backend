@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
+import { BatalhaPlacar } from "@/components/flair/nucleos/batalha-placar";
 import { NucleoAvisoDaRodada } from "@/components/flair/nucleos/nucleo-aviso-da-rodada";
 import { NucleoBriefing } from "@/components/flair/nucleos/nucleo-briefing";
 import { NucleoCutscene } from "@/components/flair/nucleos/nucleo-cutscene";
@@ -43,7 +44,8 @@ export function NucleoApresentacao({ definicao, partida, tentativa, apresentacao
     return () => window.clearTimeout(timer);
   }, [lida, texto, partida?.id]);
   const aviso = efeitos ? viabilidade(definicao.objetivo.regras.map((r) => r.codigo), cartas.map((c) => efeitos(c.id)), definicao.recursos.includes("MAQUIAGEM")) : null;
-  const avisoNaTela = <NucleoAvisoDaRodada codigo={codigo} escopo="partida" viabilidade={aviso} />;
+  // na Batalha, a comparação das rodadas já entregues fica à vista enquanto a pessoa monta o look da seguinte
+  const avisoNaTela = <><NucleoAvisoDaRodada codigo={codigo} escopo="partida" viabilidade={aviso} />{codigo === "BATALHA_LOOKS" && <BatalhaPlacar anterior={tentativa} />}</>;
   // com um briefing (tema, etapa, oponente), a premissa abre o mesmo cartão; sem ele, ganha o cartão dela
   if (apresentacao.briefing) {
     const fechar = () => {

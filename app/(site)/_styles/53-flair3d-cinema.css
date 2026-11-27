@@ -1,0 +1,115 @@
+/* ── FLAIR 3D · cutscenes (components/flair/cinema) ─────────────────────────────────────────────────────────────
+   Faixas de cinema que entram em 300 ms, a legenda da tomada embaixo e o pular no canto. Acima do HUD e dos efeitos,
+   sem bloquear o palco: só o botão recebe o toque. Com "reduzir movimento", as faixas entram sem animação. */
+.n3d-cinema {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  pointer-events: none;
+}
+
+.n3d-cinema-faixa {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 11%;
+  background: #000;
+  animation: n3d-cinema-entra 300ms ease-out both;
+}
+
+.n3d-cinema-faixa.is-cima {
+  top: 0;
+  transform-origin: top;
+}
+
+.n3d-cinema-faixa.is-baixo {
+  bottom: 0;
+  transform-origin: bottom;
+}
+
+.n3d-cinema-legenda {
+  position: absolute;
+  right: 12%;
+  bottom: calc(11% + 10px);
+  left: 12%;
+  margin: 0;
+  color: #fff;
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 85%);
+}
+
+.n3d-cinema-contador {
+  position: absolute;
+  top: calc(11% + 8px);
+  left: 12px;
+  color: rgb(255 255 255 / 75%);
+  font-size: var(--text-caption);
+}
+
+.n3d-cinema-pular {
+  position: absolute;
+  right: 12px;
+  bottom: calc(11% + 8px);
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid rgb(255 255 255 / 55%);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 55%);
+  color: #fff;
+  font-size: var(--text-caption);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.n3d-cinema-pular:hover,
+.n3d-cinema-pular:focus-visible {
+  border-color: #e0b04d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .n3d-cinema-faixa {
+    animation: none;
+  }
+}
+
+@keyframes n3d-cinema-entra {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+/* ── desfile jogável (components/flair/nucleos/desfile-hud.tsx): a faixa das marcas e a pose final, em cima ── */
+.n3d-desfile {
+  position: absolute;
+  z-index: 4;
+  top: 8px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 2 * var(--n3d-zona-x, 30%));
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(10 10 14 / 65%);
+  color: #fff;
+  font-size: var(--text-caption);
+  transform: translateX(-50%);
+}
+
+.n3d-desfile p {
+  margin: 0;
+}
+
+.n3d-desfile-pose {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid #e0b04d;
+  border-radius: 999px;
+  background: rgb(224 176 77 / 25%);
+  color: #fff;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  cursor: pointer;
+}

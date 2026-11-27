@@ -65,7 +65,7 @@ public final class Views {
                             boolean aiGeneratedImage, boolean forDonation,
                             String variation, Map<String, List<String>> attributes, ReferenceOptionView estadoConservacao,
                             ReferenceOptionView tipoLavagem, ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica,
-                            ReferenceOptionView origem, ReferenceOptionView corte) {
+                            ReferenceOptionView origem, ReferenceOptionView corte, UUID catalogProductId, UUID catalogVariantId) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -120,7 +120,7 @@ public final class Views {
                 w.getVariationCode(), TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS),
                 estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()),
                 PieceReferenceViews.colecao(w.getColecao()), PieceReferenceViews.intensidadeTermica(w.getIntensidadeTermica()),
-                PieceReferenceViews.origem(w.getOrigem()), PieceReferenceViews.corte(w.getCorte()));
+                PieceReferenceViews.origem(w.getOrigem()), PieceReferenceViews.corte(w.getCorte()), w.getCatalogProductId(), w.getCatalogVariantId());
     }
 
     /**
@@ -224,7 +224,7 @@ public final class Views {
                              UUID remixedFromId, boolean revalidationPending, Counters counters, ViewerState viewer,
                              Instant publishedAt, Instant createdAt, Instant updatedAt,
                              List<Map<String, Object>> sealBadges, String mannequinImageUrl, String mannequinImageFace, TipoLookView tipoLook,
-                             ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica) {
+                             ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica, ReferenceOptionView nivelTermico) {
     }
 
     public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions) {
@@ -253,7 +253,7 @@ public final class Views {
                 s.getRemixCount(), s.getViewCount(), s.getSaveCount(), reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt(),
                 sealBadges == null ? List.of() : sealBadges, s.getMannequinImageUrl(), s.getMannequinImageFace(), tipoLook(s.getTipoLook()),
-                PieceReferenceViews.colecao(s.getColecao()), PieceReferenceViews.intensidadeTermica(s.getIntensidadeTermica()));
+                PieceReferenceViews.colecao(s.getColecao()), PieceReferenceViews.intensidadeTermica(s.getIntensidadeTermica()), PieceReferenceViews.nivelTermico(s.getNivelTermico()));
     }
 
     public record PhotoView(UUID id, String origin, UUID sourceEntityId, String url, String thumbnailUrl,

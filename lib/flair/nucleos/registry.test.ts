@@ -117,14 +117,19 @@ describe("deck, abas, estado e comandos", () => {
     expect(s.objetivo).toBe(true);
   });
 
-  it("teclado e gamepad (layout padrão) viram as ações do contrato", () => {
-    expect(comandoDaTecla("Q")).toEqual({ acao: "TROCAR_ABA", dir: -1 });
+  it("teclado e gamepad (padrão de console) viram as ações do contrato", () => {
+    expect(comandoDaTecla("I")).toEqual({ acao: "TROCAR_ABA", dir: 1 });
     expect(comandoDaTecla(" ")).toEqual({ acao: "VESTIR" });
+    expect(comandoDaTecla("e")).toEqual({ acao: "VESTIR" });
+    expect(comandoDaTecla("w")).toEqual({ acao: "NAVEGAR", dir: -1, eixo: "y" });
+    expect(comandoDaTecla("Escape")).toEqual({ acao: "VER_OBJETIVO" });
     expect(comandoDaTecla("Enter")).toEqual({ acao: "ENTREGAR" });
     expect(comandoDaTecla("x")).toBeNull();
+    // a posição da tecla vale sobre o caractere (WASD no teclado AZERTY)
+    expect(comandoDaTecla("z", "KeyW")).toEqual({ acao: "NAVEGAR", dir: -1, eixo: "y" });
     const pad = (pressed: number[], axes = [0, 0, 0, 0]) => ({ buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: pressed.includes(i) })), axes });
     const r1 = lerGamepad(pad([0, 9]), PAD_INICIAL, 0);
-    expect(r1.comandos.map((c) => c.acao)).toEqual(["VESTIR", "ENTREGAR"]);
+    expect(r1.comandos.map((c) => c.acao)).toEqual(["VESTIR", "VER_OBJETIVO"]);
     expect(lerGamepad(pad([0, 9]), r1.estado, 16).comandos).toEqual([]);
     const giro = lerGamepad(pad([], [0, 0, 0.9, 0]), PAD_INICIAL, 1000);
     expect(giro.comandos).toEqual([{ acao: "GIRAR", dir: 1 }]);

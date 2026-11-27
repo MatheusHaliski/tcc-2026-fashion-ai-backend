@@ -16,6 +16,19 @@ import { NucleoBarrasDeVida } from "@/components/flair/nucleos/nucleo-barras-de-
 import type { Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { NucleoCameraSelector } from "@/components/flair/nucleos/nucleo-camera-selector";
 import { NucleoCardFx } from "@/components/flair/nucleos/nucleo-card-fx";
+import { NucleoRodaAtributos } from "@/components/flair/nucleos/recursos/nucleo-roda-atributos";
+import type { LookDosRecursos } from "@/components/flair/nucleos/recursos/use-look-dos-recursos";
+import { NucleoRodaRecursos } from "@/components/flair/nucleos/recursos/nucleo-roda-recursos";
+import type { RecursosNaTela } from "@/components/flair/nucleos/recursos/use-recursos-da-partida";
+import { CinemaOverlay } from "@/components/flair/cinema/cinema-overlay";
+import { andaAgora } from "@/lib/flair/nucleos/movimento/quando-anda";
+import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
+import { desgasteNaRoda } from "@/lib/flair/recursos/desgaste";
+import { SALA_DE_USO, salaDaFaseDeUso } from "@/lib/flair/nucleos/movimento/fase-de-uso";
+import { DesfileHud } from "@/components/flair/nucleos/desfile-hud";
+import { AnalogicoDeToque } from "@/components/flair/nucleos/analogico-de-toque";
+import type { Toque } from "@/lib/flair/nucleos/movimento/execucao";
+import type { CinemaNaTela } from "@/components/flair/cinema/use-cinema-da-partida";
 import { NucleoCast } from "@/components/flair/nucleos/nucleo-cast";
 import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoHud, NucleoScore } from "@/components/flair/nucleos/nucleo-hud";
@@ -29,7 +42,7 @@ import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import type { FxPrefs } from "@/lib/flair/nucleos/fx-sound";
 import { comandoPermitido, type Momento } from "@/lib/flair/nucleos/moments";
-import type { AvatarTipo, NucleoConfig, NucleoDefinicao, NucleoResultado, ZonaEscolha } from "@/lib/flair/nucleos/types";
+import type { AvatarTipo, MaquiagemEscolha, NucleoConfig, NucleoDefinicao, NucleoResultado, ZonaEscolha } from "@/lib/flair/nucleos/types";
 
 export interface NucleoStageProps {
   definicao: NucleoDefinicao;
@@ -44,6 +57,8 @@ export interface NucleoStageProps {
   objetivoAberto: boolean;
   /** última resposta do servidor (entrega ou acionamento); null na preparação */
   resultado: NucleoResultado | null;
+  /** a última entrega que não fechou a partida (a rodada anterior, nas rodadas em etapas) */
+  tentativa?: NucleoResultado | null;
   /** prévia do look de agora (preparação) */
   previa: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
@@ -52,9 +67,22 @@ export interface NucleoStageProps {
   semente?: number;
   /** o que a pessoa já pintou em cada zona (modos do Ateliê) */
   zonas?: Record<string, ZonaEscolha>;
+  maquiagem?: Record<string, MaquiagemEscolha>;
   prefs: FxPrefs;
   onPref: (campo: keyof FxPrefs) => void;
   entrada: EntradaNaTela | null;
+  /** a roda de atributos da regra peça-recurso (some sem perfil, como no servidor antigo) */
+  recursos?: LookDosRecursos;
+  /** vida, energia, foco e moedas da partida, e as peças que dá para usar como recurso */
+  usoDeRecursos?: RecursosNaTela;
+  /** a cutscene na tela (faixas, legenda e pular); a câmera dela é a da cena 3D */
+  cinema?: CinemaNaTela;
+  /** desfile jogável: a pose final na ponta revela o resultado */
+  onFimDesfile?: () => void;
+  /** a execução no percurso: os toques vão ao servidor como acionamento */
+  onExecucao?: (toques: Toque[]) => void;
+  /** a janela do acionamento aberta entre dois lances: no Dress Fighter, a lutadora circula pelo ringue */
+  entreLances?: boolean;
   reduzido: boolean;
   passos: PassoAcao[];
   mostrados: number;
@@ -67,14 +95,24 @@ export function NucleoStage(props: NucleoStageProps) {
   const tx = useNucleoText();
   const voltar = tx.t("flair3d.ui.back");
   const naAcao = momento === "ACAO" || momento === "RESULTADO";
+  const desfileNaAcao = momento === "ACAO" && DESFILE_JOGAVEL.has(definicao.codigo);
   const [camera, setCamera] = useState<string>(CAMERA_AUTOMATICA);
+  // nos jogos de zonas, a peça pronta sai do ateliê: a fase de uso é no campo, no palco, na pista ou no terraço
+  const variante = salaDaFaseDeUso(definicao.codigo, momento, props.resultado) ?? props.variante;
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
-      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={props.variante} semente={props.semente}
+      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} anterior={props.tentativa} variante={variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
-        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} />
+        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem}
+        andarLivre={andaAgora(definicao.codigo, definicao.acoes, momento, props.entreLances)}
+        agilidade={props.recursos?.look.atributos.AGILIDADE} desfileAtivo={desfileNaAcao} />
+      {desfileNaAcao && props.onFimDesfile && <DesfileHud codigo={definicao.codigo} onFim={props.onFimDesfile} resultado={props.resultado} onExecucao={props.onExecucao} reduzido={reduzido} />}
+      <AnalogicoDeToque ativo={andaAgora(definicao.codigo, definicao.acoes, momento, props.entreLances) && !reduzido} rotulo={tx.t("flair3d.ui.analogico")} />
       <div className="n3d-zone" aria-hidden data-testid="nucleo-zone" />
       <NucleoCardFx atual={props.entrada} reduzido={reduzido} efeitos={prefs.efeitos} />
+      {props.recursos && <NucleoRodaAtributos recursos={props.recursos} reduzido={reduzido} efeitos={prefs.efeitos} />}
+      {props.usoDeRecursos && <NucleoRodaRecursos recursos={props.usoDeRecursos} reduzido={reduzido} efeitos={prefs.efeitos} codigo={definicao.codigo} desgaste={desgasteNaRoda(props.resultado, props.previa)} />}
+      {props.cinema && <CinemaOverlay cinema={props.cinema} />}
       {naAcao && definicao.codigo === "DRESS_FIGHTER" && <NucleoBarrasDeVida resultado={props.resultado} />}
       {naAcao && <NucleoActionFx nucleo={definicao.codigo} variante={props.variante} passos={props.passos} mostrados={props.mostrados} reduzido={reduzido} efeitos={prefs.efeitos} />}
       <NucleoHud
@@ -88,7 +126,8 @@ export function NucleoStage(props: NucleoStageProps) {
         }
         topoDireita={<NucleoScore momento={momento} resultado={props.resultado} previa={props.previa} prefs={prefs} onPref={props.onPref} />}
         baseEsquerda={
-          definicao.avatares ? (
+          // na fase de uso o canto é do painel dos lances (o elenco é o do ateliê, que ficou para trás)
+          definicao.avatares && variante !== SALA_DE_USO ? (
             <NucleoCast
               compacto
               avatares={avataresDaSala(definicao.avatares, salaDe(definicao.codigo, props.variante).personagens)}

@@ -44,7 +44,7 @@ function SharePostPreview({ type, id }: { type: TargetType; id: string }) {
     <figure className="share-post" aria-label={t("interactions.post_preview")}>
       <figcaption className="label">{t("interactions.post_preview")}</figcaption>
       {!data ? <Skeleton className="h-64" />
-        : data.piece ? <PieceCard piece={data.piece} href="#" flip={false} extra={note} />
+        : data.piece ? <PieceCard piece={data.piece} mode="preview" extra={note} />
         : data.scheme ? <SchemeCard scheme={data.scheme} href="#" flip={false} extra={note} /> : null}
     </figure>
   );

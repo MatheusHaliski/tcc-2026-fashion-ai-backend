@@ -169,6 +169,19 @@
   font-size: var(--text-body, 1rem);
 }
 
+/* jogos de zonas: as latas de tinta que a pintura gastou (vermelho ao passar do orçamento) */
+.n3d-score-tinta {
+  margin: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: #000a;
+  font-size: var(--text-small, 0.8125rem);
+}
+
+.n3d-score-tinta[data-passou] {
+  color: #ff8a8a;
+}
+
 .n3d-score-stars .n3d-star {
   color: #fff6;
 }

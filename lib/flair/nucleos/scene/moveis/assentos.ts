@@ -82,7 +82,7 @@ export function bancoReservas(em: Em, metal: string, assento: string, cobertura:
     ...postes,
     chanfrada(cobertura, [largura + 0.1, 0.03, 1.15], [0, 2.14, 0.05], [-20, 0, 0]),
     caixa(cobertura, [largura, 1.9, 0.02], [0, 1.0, -0.47]),
-  ]);
+  ], { metal, assento, cobertura });
 }
 
 /** Arquibancada de degraus de concreto, com uma fileira de assentos em cada degrau. */
@@ -100,5 +100,5 @@ export function arquibancada(em: Em, concreto: string, assento: string, largura 
     }
   }
   partes.push(caixa(concreto, [largura, 0.4 * degraus + 0.5, 0.12], [0, (0.4 * degraus + 0.5) / 2, -0.8 * degraus + 0.34]));
-  return movel("arquibancada", em, partes);
+  return comGlb(movel("arquibancada", em, partes, { concreto, assento }), `arquibancada-${Math.round(largura * 10)}`);
 }

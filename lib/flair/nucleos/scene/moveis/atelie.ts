@@ -51,7 +51,7 @@ export function palcoPequeno(em: Em, piso: string, metal: string, luz: string, l
     cilindro(metal, [0.02, 0.16], 0.04, [0, 0.42, 0.5], undefined, 12),
     cilindro(metal, 0.012, 1.35, [0, 1.08, 0.5], undefined, 6),
     esfera(metal, [0.035, 0.05, 0.035], [0, 1.79, 0.5], 8),
-  ]);
+  ], { piso, metal, luz });
 }
 
 /** Capa do herói pendurada atrás do manequim; a dobra de cima fica na origem (animada: "capa ao vento"). */

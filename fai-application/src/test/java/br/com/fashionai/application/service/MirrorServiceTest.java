@@ -143,26 +143,26 @@ class MirrorServiceTest {
 
     @Test
     void vistaMeMontaUmLookNovoDoPedido() {
-        Map<String, Object> v = mirror.vistaMe(ana, "um look casual para o fim de semana com tênis", List.of(), null, false);
+        Map<String, Object> v = mirror.vistaMe(ana, "um look casual para o fim de semana com tênis", List.of(), null, false, null);
         assertThat(v).isNotEmpty();
         // as ações do Vista-me somam às do estado (não substituem): VISTA_ME do estado e OUTRA_SUGESTAO da resposta
         assertThat(String.valueOf(v.get("actions"))).contains("VISTA_ME").contains("OUTRA_SUGESTAO");
         assertThat(mirror.another(ana)).isNotEmpty();
         assertThat(mirror.swap(ana, "shoes")).isNotEmpty();
-        Map<String, Object> focus = mirror.vistaMe(ana, "noite elegante", List.of(piece("blazer")), piece("oxford_shoes"), true);
+        Map<String, Object> focus = mirror.vistaMe(ana, "noite elegante", List.of(piece("blazer")), piece("oxford_shoes"), true, null);
         assertThat(focus).isNotEmpty();
-        MirrorService.Interpretation it = MirrorService.localInterpretation("trabalho formal no inverno sem salto", List.of());
+        MirrorService.Interpretation it = MirrorPromptRules.localInterpretation("trabalho formal no inverno sem salto", List.of());
         assertThat(it).isNotNull();
         // as células do Vista-me mandam o rótulo no idioma da pessoa: ocasião, humor e clima valem em pt, en e es
-        MirrorService.Interpretation en = MirrorService.localInterpretation("Work, comfortable, cold", List.of());
+        MirrorService.Interpretation en = MirrorPromptRules.localInterpretation("Work, comfortable, cold", List.of());
         assertThat(en.occasion()).contains("work");
         assertThat(en.mood()).isEqualTo("COMFORTABLE");
         assertThat(en.constraints()).contains("cold");
-        MirrorService.Interpretation es = MirrorService.localInterpretation("Trabajo, cómodo, calor", List.of());
+        MirrorService.Interpretation es = MirrorPromptRules.localInterpretation("Trabajo, cómodo, calor", List.of());
         assertThat(es.occasion()).contains("work");
         assertThat(es.mood()).isEqualTo("COMFORTABLE");
         assertThat(es.constraints()).contains("hot");
-        assertThat(MirrorService.localInterpretation("photo shoot", List.of()).constraints()).doesNotContain("hot");
+        assertThat(MirrorPromptRules.localInterpretation("photo shoot", List.of()).constraints()).doesNotContain("hot");
         assertThat(MirrorService.localCompose(it, world.piecesOf(world.me), java.util.Set.of())).isNotEmpty();
     }
 

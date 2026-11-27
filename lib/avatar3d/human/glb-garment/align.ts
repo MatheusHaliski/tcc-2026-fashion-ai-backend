@@ -12,6 +12,7 @@
 import * as THREE from "three";
 import type { GarmentKind } from "../garments";
 import { bandExtent, type BodyFrame } from "./frame";
+import { hangOnLimb } from "./hang";
 import { labelParts } from "./parts";
 
 export type GarmentClass = "upper" | "lower" | "full";
@@ -59,6 +60,9 @@ function shoulderLine(p: Float32Array, top: number, height: number) {
  * até ficar justa e a manga parava no cotovelo. A medida que não muda é a manga: ela vai do ombro ao punho. A escala
  * passa a ser a que leva o punho da peça ao punho do corpo, entre a do tronco e 1,5 × ela. Manga curta: null.
  */
+/** Do osso do pescoço ao ponto alto do ombro (junção ombro-pescoço, em cima do trapézio), em metros. */
+const NECK_TO_SHOULDER_TOP = 0.025;
+
 /** Manga comprida: a partir desta fração da largura do tronco (a manga curta em T fica perto de 0,45). */
 const LONG_SLEEVE = 0.6;
 
@@ -145,7 +149,7 @@ function inflate(p: Float32Array, part: Int8Array, label: number, f: BodyFrame, 
  * só posicionada pela linha dos ombros (calça: pelo topo do cós) — o corpo não reescala a peça (era isso que fazia
  * o suéter P sair enorme).
  */
-export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, lengthSteps = 0, index?: ArrayLike<number>, sleeveAngle = 1.4, realScale = false): Aligned | null {
+export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, lengthSteps = 0, index?: ArrayLike<number>, sleeveAngle = 1.4, realScale = false, shoulderTop?: number, knownParts?: Int8Array | null): Aligned | null {
   const { lo, hi } = bounds(src); const height = hi[1] - lo[1];
   if (!(height > 0)) return null;
   const shL = f.joint("LeftArm"), shR = f.joint("RightArm");
@@ -171,18 +175,29 @@ export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass,
     s = realScale ? 1 : sh.width > 1.35 * torso ? (chest.x1 - chest.x0 + 2 * clearance) / torso : (body.x1 - body.x0 + 2 * clearance) / sh.width;
     const open = !realScale && sh.width > 1.35 * torso ? openSleeveScale(src, s, torso, cx, sh.y, hi[0], shL.distanceTo(f.joint("LeftHand"))) : null;
     if (open !== null) { s = open; longOpen = true; }
-    pos = transform(src, s, [cx, sh.y, cz], [0, shY + 0.01, (chest.z0 + chest.z1) / 2]);
+    // escala real com o ponto alto do ombro conhecido: ele vai para a base do pescoço (a largura máxima, com a manga
+    // caída, fica no braço e assentava a peça baixa, com o decote no peito)
+    pos = realScale && shoulderTop !== undefined
+      ? transform(src, 1, [cx, shoulderTop, cz], [0, f.joint("Neck").y + NECK_TO_SHOULDER_TOP, (chest.z0 + chest.z1) / 2])
+      : transform(src, s, [cx, sh.y, cz], [0, shY + 0.01, (chest.z0 + chest.z1) / 2]);
   }
   if (!(s > 0.05 && s < 20)) return null;
   // tamanho maior: barra e manga um pouco mais compridas (a mesma regra do molde, 2% por número), a partir do topo
   if (lengthSteps) { let top = -Infinity; for (let i = 1; i < pos.length; i += 3) top = Math.max(top, pos[i]); const k = 1 + 0.02 * lengthSteps; for (let i = 1; i < pos.length; i += 3) pos[i] = top - (top - pos[i]) * k; }
-  const part = labelParts(pos, f, cls, clearance, index);
+  // rótulos do motor Blender (cor do vértice): a manga caída fica ao lado do tronco, onde a rotulagem por posição erra
+  const part = knownParts && knownParts.length === pos.length / 3 ? Int8Array.from(knownParts) : labelParts(pos, f, cls, clearance, index);
   // `sleeveAngle`: giro máximo da manga; a peça da Meshy de braços abertos (manifesto) traz a manga na horizontal
   if (cls !== "lower") { alignLimb(pos, part, 1, shL, f.joint("LeftHand"), sleeveAngle, longOpen); alignLimb(pos, part, -1, shR, f.joint("RightHand"), sleeveAngle, longOpen); }
   if (cls !== "upper") { alignLimb(pos, part, 2, hipL, f.joint("LeftFoot")); alignLimb(pos, part, -2, hipR, f.joint("RightFoot")); }
   // escala real: a peça já tem a profundidade de verdade (o motor Blender a constrói pelos perímetros); esticar por faixa
   // de altura, feito para a Meshy rasa, estufaria o tronco em faixas. Só a colisão (wrap.ts) a tira de dentro da pele.
-  if (realScale) return { pos, part, scale: s };
+  if (realScale) {   // a manga real, mais larga que o braço, pendura nele: o eixo dela passa a ser o do braço
+    if (cls !== "lower") {
+      hangOnLimb(pos, part, 1, shL, f.joint("LeftForeArm"), f.joint("LeftHand"), f);
+      hangOnLimb(pos, part, -1, shR, f.joint("RightForeArm"), f.joint("RightHand"), f);
+    }
+    return { pos, part, scale: s };
+  }
   inflate(pos, part, 0, f, cls === "lower" ? [1, 3] : [1], clearance);
   if (cls !== "upper") { inflate(pos, part, 2, f, [3], clearance, (x) => x > 0); inflate(pos, part, -2, f, [3], clearance, (x) => x < 0); }
   // manga: a Meshy também a faz rasa e nem sempre na profundidade do braço; centra no braço e dá a espessura dele

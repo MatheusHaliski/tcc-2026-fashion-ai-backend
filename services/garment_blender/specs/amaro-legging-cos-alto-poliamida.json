@@ -1,0 +1,20 @@
+{
+ "produto": "Calça Legging de Cós Alto em Poliamida - Preto",
+ "marca": "Amaro",
+ "url_oficial": "https://amaro.com/produtos/calca-legging-de-cos-alto-em-poliamida-preto/",
+ "subcategoria": "leggings",
+ "tamanho": "38",
+ "sexo": "FEMININO",
+ "tecido": {
+  "tipo": "jersey",
+  "cor": "#141416",
+  "gramatura": 220
+ },
+ "fechamento": "nenhum",
+ "medidas_marca": {
+  "cos": 8
+ },
+ "observacao": "poliamida com elastano: malha jersey no motor; cós alto de 8 cm; cor: a do nome (preto).",
+ "caimento": "regular",
+ "ribana": false
+}

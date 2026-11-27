@@ -19,13 +19,13 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * V110 — os Desafios de Montagem "vestir a cena": a migration retira os desafios antigos sem apagar nada (DRAFT, só
+ * V127 — os Desafios de Montagem "vestir a cena": a migration retira os desafios antigos sem apagar nada (DRAFT, só
  * linhas sem série) e semeia cinco desafios de quatro vagas, uma por personagem, cada uma pedindo a roupa dele
  * (subcategoria e cor). As vagas, na ordem, são as mesmas do manifesto das cenas do front (lib/flair/vestir/cenas.json),
  * que diz qual recorte de roupa aparece em cada vaga.
  */
 class CbcVestirSeedTest {
-    static final Path SQL = CbcSeedTest.MIGRATIONS.resolve("V110__desafios_de_montagem_vestir_a_cena.sql");
+    static final Path SQL = CbcSeedTest.MIGRATIONS.resolve("V127__desafios_de_montagem_vestir_a_cena.sql");
     static final Path MANIFESTO = Path.of("..", "lib", "flair", "vestir", "cenas.json");
     static final Pattern ROW = Pattern.compile("^\\('7e[^']*','([a-z0-9-]+)',.*?'(vestir-[a-z]+)','(EASY|MEDIUM|HARD|LEGENDARY)','ACTIVE',NULL,'(\\[.*?\\])','(\\[.*?\\])',",
             Pattern.MULTILINE);
@@ -56,9 +56,10 @@ class CbcVestirSeedTest {
     }
 
     /**
-     * Escopo (pedido da dona): só a montagem muda. A migration só escreve em flair_challenges (UPDATE de status e INSERT),
-     * nunca nas tabelas dos elencos, cartas, decks ou partidas do Flair; e os cinco elencos (definidos em código) seguem
-     * os mesmos. As tabelas de elenco (flair_cbc_squad_*) não referenciam flair_challenges, então não há ligação a desfazer.
+     * Escopo (pedido da dona): só a montagem muda. A migration só escreve em flair_challenges (UPDATE de status e INSERT
+     * que não sobrescreve), nunca nas tabelas dos elencos, cartas, decks ou partidas do Flair, nem nas do cenário
+     * preferido (V121); e o catálogo de elencos (em código) nem é citado. As tabelas de elenco (flair_cbc_squad_*) não
+     * referenciam flair_challenges, então não há ligação a desfazer: a contagem de elencos e de cartas não muda.
      */
     @Test
     void soAMontagemMudaOsElencosECartasDoFlairFicamIntactos() throws IOException {
@@ -68,12 +69,12 @@ class CbcVestirSeedTest {
         String sql = String.join(" ", comandos);
         assertThat(comandos).hasSize(2);
         assertThat(comandos.get(0)).startsWith("UPDATE flair_challenges SET status = 'DRAFT', version = version + 1, updated_at = '2026-11-26 12:00:00', "
-                + "last_modified_by = 'V110' WHERE series IS NULL");
-        assertThat(comandos.get(1)).startsWith("INSERT INTO flair_challenges (");
+                + "last_modified_by = 'V127' WHERE series IS NULL");
+        assertThat(comandos.get(1)).startsWith("INSERT INTO flair_challenges (").endsWith("ON DUPLICATE KEY UPDATE id = id");
         assertThat(sql.toLowerCase()).doesNotContain("flair_cbc_squad", "flair_card_instance", "flair_deck", "flair3d_", "flair_challenge_submissions",
-                "flair_challenge_groups", "flair_game_rewards", "alter table", "delete", "drop", "truncate");
-        assertThat(FlairCbcElencos.TODOS).extracting(e -> e.codigo())
-                .containsExactly("PRIMEIRO_ELENCO", "PALETA_ATELIE", "CASA_MARCA", "NOITE_ESTREIA", "ELENCO_LENDARIO");
+                "flair_challenge_groups", "flair_game_rewards", "cbc_scenarios", "cbc_challenge_scenarios", "cbc_preferences", "alter table",
+                "delete", "drop", "truncate");
+        assertThat(FlairCbcElencos.TODOS).isNotEmpty().allSatisfy(e -> assertThat(sql).doesNotContain(e.codigo()));
     }
 
     @Test

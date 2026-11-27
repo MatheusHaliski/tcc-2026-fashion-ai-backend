@@ -10,12 +10,14 @@ import math
 
 import numpy as np
 
-from .geometry import COLUMNS, TILE, Mesh, Row, _arc, _ring, ellipse_semi_axes
+from .geometry import COLUMNS, TILE, Mesh, Row, _arc, _ring, densify, ellipse_semi_axes
 from .sizes_pants import PantsMeasures
 
 BRIDGE = 8          # segmentos da costura do gancho (frente → costas, por baixo)
 BLEND = 0.10        # do gancho até a coxa a seção muda aos poucos (m)
 LEG_RATIO = 0.92
+SEAT_SHIFT = 0.14   # quanto a seção da calça vai para trás (fração da profundidade)
+SHORT_LEG = 0.35    # entreperna abaixo disso (m): perna de short ou bermuda
 
 
 def upper_rows(m: PantsMeasures) -> tuple[list[Row], int]:
@@ -31,18 +33,21 @@ def upper_rows(m: PantsMeasures) -> tuple[list[Row], int]:
     rows, i_band = [], 0
     ys = list(np.linspace(y_c, band0, max(6, int((band0 - y_c) / 0.015)) + 1))
     for y in ys + list(np.linspace(band0, top, 4)[1:]):
+        smooth = lambda t: t * t * (3 - 2 * t)   # noqa: E731 - sem quina na linha do quadril nem no gancho
         if y <= hip_y:
             t = (y - y_c) / max(hip_y - y_c, 1e-6)
-            perim = (m.quadril * (0.97 + 0.03 * t)) * cm
+            perim = (m.quadril * (0.9 + 0.1 * smooth(min(1.0, t) ** 0.7))) * cm   # o assento estreita até o gancho
         else:
             t = min(1.0, (y - hip_y) / max(band0 - hip_y, 1e-6))
-            perim = (m.quadril + (m.cintura - m.quadril) * t) * cm
+            perim = (m.quadril + (m.cintura - m.quadril) * smooth(t)) * cm
         a, b = ellipse_semi_axes(perim, 0.72)
         k = float(np.clip((y - hip_y) / (top - hip_y), 0, 1))
         mat = "cos" if y > band0 + 1e-6 else "corpo"
         if mat == "cos" and not i_band:
             i_band = len(rows) - 1
-        rows.append(Row(y, a, b, mat, front * lift * k))
+        # a seção vai para trás: frente mais reta (a barriga), costas mais cheias (o assento). Centrada no eixo do corpo
+        # a frente ficava tão funda quanto o assento e a braguilha parecia estufada
+        rows.append(Row(y, a, b, mat, front * lift * k, dz=-SEAT_SHIFT * b if y_c >= SHORT_LEG else 0.0))
     return rows, i_band
 
 
@@ -81,6 +86,10 @@ def leg_rows(m: PantsMeasures, side: int, hip_a: float) -> list[Row]:
     cx = side * hip_a * 0.5
     rib = m.ribana_barra * cm
     above = (m.barra * (1.35 if rib else 1.0)) * cm
+    if y_c < SHORT_LEG:   # short, bermuda: a transição do gancho cabe na perna curta e não há joelho
+        blend = min(BLEND, y_c * 0.6)
+        st = [(y_c - blend * t, None, "corpo") for t in (0.33, 0.66)] + [(y_c - blend, m.coxa * cm, "corpo"), (0.0, m.barra * cm, "corpo")]
+        return [Row(y, *ellipse_semi_axes(perim or m.coxa * cm, LEG_RATIO), mat, cx=cx) for y, perim, mat in densify(st, 0.02)]
     st = [(y_c - BLEND * t, None, "corpo") for t in (0.25, 0.5, 0.75)]
     st += [(y_c - BLEND, m.coxa * cm, "corpo"), (y_c * 0.45, m.joelho * cm, "corpo"), (rib + 0.004, above, "corpo")]
     if rib:
@@ -88,7 +97,7 @@ def leg_rows(m: PantsMeasures, side: int, hip_a: float) -> list[Row]:
     else:
         st.append((0.0, m.barra * cm, "corpo"))
     rows = []
-    for y, perim, mat in st:
+    for y, perim, mat in densify(st):
         a, b = ellipse_semi_axes(perim or m.coxa * cm, LEG_RATIO)
         rows.append(Row(y, a, b, mat, cx=cx - side * 0.012 * (1 - y / y_c)))   # a perna fecha um pouco até a barra
     return rows
@@ -102,8 +111,11 @@ def build_leg(mesh: Mesh, loop: list[int], rows: list[Row], part: str) -> list[i
     perim0 = float(_arc(p0)[-1])
     rings, pts_rows, y_c = [list(loop)], [p0], c[1]
     for r in rows:
-        ell = np.stack([r.cx + r.a * np.cos(phi), np.full(len(phi), r.y), r.b * np.sin(phi)], 1)
-        w = min(1.0, (y_c - r.y) / BLEND); w = w * w * (3 - 2 * w)
+        # a perna sai de onde está o gancho (a seção do quadril foi para trás, SEAT_SHIFT) e volta ao eixo dela aos poucos;
+        # começando no eixo, a perna curta do short torcia em poucos centímetros e a barra abria em abas
+        back = c[2] * max(0.0, 1 - (y_c - r.y) / 0.3)
+        ell = np.stack([r.cx + r.a * np.cos(phi), np.full(len(phi), r.y), r.b * np.sin(phi) + back], 1)
+        w = min(1.0, (y_c - r.y) / min(BLEND, max(y_c * 0.6, 1e-3))); w = w * w * (3 - 2 * w)
         if w < 1:
             k = float(_arc(ell)[-1]) / perim0
             shape = c + (p0 - c) * k

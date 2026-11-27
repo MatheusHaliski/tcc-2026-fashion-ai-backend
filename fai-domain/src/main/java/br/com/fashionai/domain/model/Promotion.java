@@ -98,4 +98,20 @@ public class Promotion extends VersionedAuditableEntity {
     /** Link da loja terceira onde o cupom é usado (sobrepõe o site da marca). */
     @Column(name = "store_url", length = 512)
     private String storeUrl;
+
+    /** Exercício 15 — compra mínima do cupom (nulo = sem mínimo; zero é um mínimo declarado) e a moeda contratada. */
+    @Column(name = "min_purchase", precision = 10, scale = 2)
+    private java.math.BigDecimal minPurchase;
+
+    @Column(name = "min_purchase_currency", length = 3, columnDefinition = "char(3)")
+    private String minPurchaseCurrency;
+
+    /** Exercício 14 — canal em que o cupom desta oferta pode ser usado; nulo = não informado (oferta antiga). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "canal_cupom_id")
+    private CanalCupom canalCupom;
+
+    /** Circuito Aura (fase 1) — faixa mínima de Hype do card que destrava o cupom; nulo = oferta sem exigência de Hype. */
+    @Column(name = "min_hype_level", length = 20)
+    private String minHypeLevel;
 }

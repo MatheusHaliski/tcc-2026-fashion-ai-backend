@@ -37,6 +37,8 @@ export interface PieceView {
   flatLayMetadata?: Record<string, unknown>; background?: Record<string, unknown>;
   /** curtidas da peça (vem na linha resumida da peça dentro de um look) */
   likes?: number;
+  /** exercício 20 · origem no catálogo: produto e variante (SKU e cor da mesma variante) guardados na peça */
+  catalogProductId?: string | null; catalogVariantId?: string | null; sku?: string | null;
   tags: string[]; notes?: string | null; purchaseDate?: string | null; model3dStatus?: string | null; model3dUrl?: string | null;
   /** RF4 · Estúdio: foto de produto (fundo de estúdio, luz e sombra) + miniatura 640 px para grades */
   studioImageUrl?: string | null; studioBackdrop?: string | null; studioThumbUrl?: string | null; mannequinImageUrl?: string | null; mannequinImageFace?: string | null;
@@ -56,7 +58,7 @@ export interface SchemeView {
   coverImageUrl?: string | null; mannequinImageUrl?: string | null; mannequinImageFace?: string | null; background?: Record<string, unknown>; cardSkin?: string | null; layoutAnatomy?: string | null; containerOrigin?: string;
   containerColor?: string; items: SchemeItemView[]; totalPrice?: number | null; seals: string[]; sealBadges?: { tier: string; owner: string; premium: boolean; name?: string | null; iconUrl?: string | null; design?: import("@/components/seal-medallion").SealDesign | null; linkedPieceIds?: string[] }[]; tags: string[]; renderingStatus?: string;
   virtualTryOnUrl?: string | null; remixedFromId?: string | null; revalidationPending: boolean;
-  hypeScore?: number | null; hypeScoreGlobal?: number | null;
+  hypeScore?: number | null; hypeScoreGlobal?: number | null; nivelTermico?: ReferenceOption | null;
   counters: Counters; viewer: ViewerState; publishedAt?: string | null; createdAt: string; updatedAt: string;
 }
 export interface Page<T> { items: T[]; page: number; size: number; total: number; hasMore: boolean; }

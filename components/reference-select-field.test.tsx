@@ -7,6 +7,7 @@ import { PieceColecaoField } from "./piece-colecao-field";
 import { PieceConservationField } from "./piece-conservation-field";
 import { PieceIntensidadeTermicaField } from "./piece-intensidade-termica-field";
 import { TipoLavagemField } from "./tipo-lavagem-field";
+import { LookNivelTermicoField } from "./look-nivel-termico-field";
 import { ReferenceSelectField, type ReferenceFieldProps } from "./reference-select-field";
 
 afterEach(() => {
@@ -27,6 +28,7 @@ const FIELDS: [string, string, Render][] = [
   ["Tipo de lavagem", "/api/tipos-lavagem", props => <TipoLavagemField {...props} />],
   ["Coleção", "/api/colecoes", props => <PieceColecaoField {...props} />],
   ["Intensidade térmica", "/api/intensidades-termicas", props => <PieceIntensidadeTermicaField {...props} />],
+  ["Nível térmico do look", "/api/opcoes/niveis-termicos", props => <LookNivelTermicoField {...props} />],
   // campo novo: GET que ninguém cadastrou em SecurityConfig
   ["Tipo de lavagem", "/api/exemplo/novo-campo", props => <ReferenceSelectField {...props} id="novoCampoId" path="/api/exemplo/novo-campo" messages="pieceReferences.tipoLavagem" />],
 ];

@@ -20,7 +20,8 @@ const ICONES: Record<string, HudIconName> = {
 };
 
 const GRUPOS: Record<"camera" | "deck", string[]> = {
-  camera: ["turn-left", "turn-right", "zoom-in", "zoom-out", "pose"],
+  // na tela de toque só o que não tem outro jeito: girar a câmera (o zoom é a pinça; posar é o □ do jogo)
+  camera: ["turn-left", "turn-right"],
   deck: ["remove", "walk"],
 };
 

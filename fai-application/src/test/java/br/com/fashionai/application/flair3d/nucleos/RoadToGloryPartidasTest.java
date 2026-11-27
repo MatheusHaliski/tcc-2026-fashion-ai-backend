@@ -9,7 +9,6 @@ import br.com.fashionai.application.flair3d.Flair3dCores;
 import br.com.fashionai.application.flair3d.Flair3dFixtures;
 import br.com.fashionai.application.flair3d.Flair3dJogadaDeCena;
 import br.com.fashionai.application.flair3d.Flair3dNucleo;
-import br.com.fashionai.application.flair3d.Flair3dNucleos;
 import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class RoadToGloryPartidasTest {
     static final List<String> RODADAS = List.of("ENSAIO_VERAO", "ENTREVISTA", "PRIMEIRO_ENCONTRO");
-    final Flair3dNucleo jogo = Flair3dNucleos.porCodigo("ROAD_TO_GLORY").orElseThrow();
+    /** O núcleo com a sessão de fotos, sem a execução no percurso (Flair3dExecucao): aqui se mede o equilíbrio do look e da luz. */
+    final Flair3dNucleo jogo = new RoadToGloryNucleo();
 
     /** 13 cartas Bronze de OVR 52 a 57, nas seis famílias de cor: algodão e poliéster, casual e esporte; nada de festa nem de trabalho. */
     static final CbcRules.Card[] BRONZE = {

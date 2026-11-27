@@ -14,6 +14,9 @@ import { NucleoCard } from "@/components/flair/nucleos/nucleo-card";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { narracao, nomeDaAcao, situacaoEmTexto } from "@/components/flair/esporte/esporte-texto";
 import { useMaoNoControle } from "@/components/flair/esporte/use-mao-controle";
+import { BarraDeTempo } from "@/components/flair/esporte/barra-de-tempo";
+import { useReducedMotion } from "@/components/three/common";
+import { precisaDeTempo, type FaixaDoTempo } from "@/lib/flair/esporte/tempo";
 import type { Jogada, Situacao } from "@/lib/flair/esporte/types";
 import type { EfeitoItem } from "@/lib/flair/nucleos/types";
 
@@ -49,20 +52,29 @@ interface Props {
   mao: CartaNaMao[];
   ocupado: boolean;
   erro: ApiError | null;
-  /** joga a carta (ou nenhuma: seguir sem carta) */
-  onJogar: (cardId: string | null) => void;
+  /** joga a carta (ou nenhuma: seguir sem carta), com o acerto da barra de tempo no chute e no desarme */
+  onJogar: (cardId: string | null, tempo?: FaixaDoTempo | null) => void;
   /** pula a animação dos lances que faltam aparecer */
   onPular: () => void;
 }
 
 export function EsportePainel({ modalidade, jogadas, situacao, mao, ocupado, erro, onJogar, onPular }: Props) {
   const tx = useNucleoText();
+  const reduzido = useReducedMotion();
   const [foco, setFoco] = useState(0);
   const [resta, setResta] = useState(JANELA_S);
+  /** a carta que chuta ou desarma espera a barra de tempo antes de ir ao servidor */
+  const [tempo, setTempo] = useState<{ cardId: string; acao: string } | null>(null);
+  const apertar = useRef<(() => void) | null>(null);
   const jogar = useRef(onJogar);
   jogar.current = onJogar;
   const aberta = !!situacao && !ocupado;
   const vez = situacao?.jogada ?? 0;
+  const escolher = (c: CartaNaMao) => {
+    if (precisaDeTempo(c.acao)) setTempo({ cardId: c.card.id, acao: nomeDaAcao(tx, modalidade, c.acao) });
+    else jogar.current(c.card.id, null);
+  };
+  useEffect(() => setTempo(null), [vez]);
 
   // a janela da jogada: conta os segundos e, no fim, segue sem carta
   useEffect(() => {
@@ -81,7 +93,8 @@ export function EsportePainel({ modalidade, jogadas, situacao, mao, ocupado, err
     ativo: aberta,
     onMover: (dir) => setFoco((f) => (f + dir + Math.max(1, mao.length)) % Math.max(1, mao.length)),
     onJogar: () => {
-      if (mao[foco]) jogar.current(mao[foco].card.id);
+      if (tempo) apertar.current?.();
+      else if (mao[foco]) escolher(mao[foco]);
     },
     onSeguir: () => jogar.current(null),
   });
@@ -100,14 +113,16 @@ export function EsportePainel({ modalidade, jogadas, situacao, mao, ocupado, err
             <strong>{tx.t("flair3d.esporte.jogada", { n: situacao.jogada, total: situacao.total })}</strong> {situacaoEmTexto(tx, situacao, modalidade)}
           </p>
           <p className="fsp-janela tabular" data-testid="esporte-janela">{tx.t("flair3d.esporte.janela", { n: Math.max(0, resta) })}</p>
+          <p className="n3d-hint fsp-capita">{tx.t("flair3d.esporte.capita")}</p>
+          {tempo && <BarraDeTempo acao={tempo.acao} reduzido={reduzido} apertar={apertar} onFim={(faixa) => jogar.current(tempo.cardId, faixa)} />}
           {mao.length === 0 ? <p className="n3d-hint">{tx.t("flair3d.esporte.semMao")}</p> : (
             <div className="fsp-mao" role="group" aria-label={tx.t("flair3d.esporte.mao", { n: situacao.baralho })}>
               {mao.map((c, i) => {
                 const acao = nomeDaAcao(tx, modalidade, c.acao);
                 const rotulo = tx.t("flair3d.esporte.carta", { nome: c.card.name, acao, poder: c.poder });
                 return (
-                  <button key={c.card.id} type="button" className={cn("fsp-carta", i === foco && "is-foco")} aria-label={rotulo} title={rotulo} disabled={!aberta}
-                    data-acao={c.acao} onFocus={() => setFoco(i)} onClick={() => onJogar(c.card.id)}>
+                  <button key={c.card.id} type="button" className={cn("fsp-carta", i === foco && "is-foco")} aria-label={rotulo} title={rotulo} disabled={!aberta || !!tempo}
+                    data-acao={c.acao} onFocus={() => setFoco(i)} onClick={() => escolher(c)}>
                     <NucleoCard card={c.card} tamanho="mini" />
                     <span className="fsp-carta-acao">{acao}</span>
                     <span className="fsp-carta-poder tabular">{tx.t("flair3d.esporte.poder", { n: c.poder })}</span>

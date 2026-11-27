@@ -67,9 +67,10 @@ export function DetetivePainel({ r, mao, ocupado, erro, onAcao }: Props) {
       {r.sala === "PASSARELA" && (
         <section className="dtv-bloco" data-testid="detetive-acusacao">
           <h4>{tx.t("flair3d.detetive.ui.acusar")}</h4>
+          {r.podeAcusar === false && <p className="dtv-dica" role="status">{tx.t("flair3d.detetive.ui.acusarCom", { n: r.pistasParaAcusar ?? 6, achadas: r.pistas.length })}</p>}
           <div className="dtv-suspeitos">
             {SUSPEITOS.map((n) => (
-              <button key={n} type="button" className="btn btn-sm dtv-suspeito" disabled={ocupado} onClick={() => onAcao(`ACUSAR:${n}`)}>
+              <button key={n} type="button" className="btn btn-sm dtv-suspeito" disabled={ocupado || r.podeAcusar === false} onClick={() => onAcao(`ACUSAR:${n}`)}>
                 <b>{n}</b> {tx.t(`flair3d.detetive.suspeito.${n}.nome`)}<small>{tx.t(`flair3d.detetive.suspeito.${n}.papel`)}</small>
               </button>
             ))}

@@ -7,8 +7,14 @@ import { EYES } from "@/lib/avatar3d/iris";
 import { BROW_LINES } from "@/lib/avatar3d/identity/brows";
 import type { FaceStyle } from "./looks";
 
-const OUTER_LIPS = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
-const INNER_LIPS = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191];
+export const OUTER_LIPS = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
+export const INNER_LIPS = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191];
+/** Pálpebras de cima (a sombra dos olhos) e o centro das maçãs (o blush), no UV canônico. */
+export const PALPEBRAS = {
+  right: [33, 246, 161, 160, 159, 158, 157, 173, 133, 55, 65, 52, 53, 46],
+  left: [263, 466, 388, 387, 386, 385, 384, 398, 362, 285, 295, 282, 283, 276],
+} as const;
+export const MACAS = [50, 280] as const;
 /** Contorno da barba (queixo, mandíbula e buço). */
 const BEARD = [132, 58, 172, 136, 150, 149, 176, 148, 152, 377, 400, 378, 379, 365, 397, 288, 361, 323, 435, 410, 322, 391, 393, 164, 167, 165, 92, 186, 215, 138];
 
@@ -27,12 +33,11 @@ export function paintFace(skin: string, f: FaceStyle, size = 1024): HTMLCanvasEl
   g.filter = `blur(${size / 60}px)`;
   g.globalAlpha = 0.12; g.fillStyle = "#000000";
   for (const i of [129, 358]) { const [x, y] = pt(i); g.beginPath(); g.ellipse(x, y - size * 0.02, size * 0.012, size * 0.04, 0, 0, Math.PI * 2); g.fill(); }
-  if (f.blush) { g.globalAlpha = 0.28; g.fillStyle = f.blush; for (const i of [50, 280]) { const [x, y] = pt(i); g.beginPath(); g.ellipse(x, y, size * 0.05, size * 0.032, 0, 0, Math.PI * 2); g.fill(); } }
+  if (f.blush) { g.globalAlpha = 0.28; g.fillStyle = f.blush; for (const i of MACAS) { const [x, y] = pt(i); g.beginPath(); g.ellipse(x, y, size * 0.05, size * 0.032, 0, 0, Math.PI * 2); g.fill(); } }
   if (f.shadow) {
     g.globalAlpha = 0.5; g.fillStyle = f.shadow;
     for (const side of ["right", "left"] as const) {
-      const lid = side === "right" ? [33, 246, 161, 160, 159, 158, 157, 173, 133, 55, 65, 52, 53, 46] : [263, 466, 388, 387, 386, 385, 384, 398, 362, 285, 295, 282, 283, 276];
-      poly(lid); g.fill();
+      poly(PALPEBRAS[side]); g.fill();
     }
   }
   if (f.stubble > 0) {
