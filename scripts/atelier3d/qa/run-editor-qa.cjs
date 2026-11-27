@@ -18,13 +18,13 @@ const COLORS = [
   ["Faixa da frente (vista)", "#7a00ff"], ["Faixa da barra", "#00c2a8"],
 ];
 
-async function logoPng(page) {
-  const url = await page.evaluate(() => {
+async function logoPng(page, fill = "#e4002b", text = "FAI") {
+  const url = await page.evaluate(([fill, text]) => {
     const c = document.createElement("canvas");
     c.width = 256;
     c.height = 160;
     const g = c.getContext("2d");
-    g.fillStyle = "#e4002b";
+    g.fillStyle = fill;
     g.beginPath();
     g.ellipse(128, 80, 120, 72, 0, 0, Math.PI * 2);
     g.fill();
@@ -32,9 +32,9 @@ async function logoPng(page) {
     g.font = "bold 72px sans-serif";
     g.textAlign = "center";
     g.textBaseline = "middle";
-    g.fillText("FAI", 128, 84);
+    g.fillText(text, 128, 84);
     return c.toDataURL("image/png");
-  });
+  }, [fill, text]);
   return Buffer.from(url.split(",")[1], "base64");
 }
 
@@ -54,7 +54,9 @@ async function step(ctx, name, action) {
   await shotCanvas(ctx.page, after);
   const diff = await imageDiff(ctx.page, before, after);
   const alert = await ctx.page.locator("[data-testid=garment-panel] [role=alert]").allTextContents();
-  ctx.results.push({ step: name, ok: diff.changedPct > 0.01 && !alert.length, diff, note, alert, before, after });
+  // costura e botões são finos: a esta distância ocupam poucos pixels; basta mudar algum
+  const threshold = /costura|botões|zíper/.test(name) ? 0 : 0.01;
+  ctx.results.push({ step: name, ok: diff.changedPct > threshold && !alert.length, diff, note, alert, before, after });
 }
 
 async function setNumber(page, label, value) {
@@ -77,6 +79,11 @@ async function runPiece(browserCtx, store, id) {
     if (!labels.includes(`Cor: ${part}`)) continue;
     await step(ctx, `cor-${part.split(" ")[0].toLowerCase()}${part.includes("cadarço") ? "-cadarco" : ""}`, () => page.getByLabel(`Cor: ${part}`, { exact: true }).fill(color));
   }
+  const hide = ["Faixa da frente (vista)", "Zíper (dentes)", "Ribana (punhos e gola)", "Costura (linha)"].find((part) => labels.includes(`Cor: ${part}`));
+  if (hide) {
+    await step(ctx, "ocultar-parte", () => page.getByLabel(`Ocultar ${hide}`, { exact: true }).check());
+    await step(ctx, "mostrar-parte", () => page.getByLabel(`Ocultar ${hide}`, { exact: true }).uncheck());
+  }
   await step(ctx, "tamanho-comprimento", () => setNumber(page, "Comprimento (%)", 118));
   await step(ctx, "tamanho-largura", () => setNumber(page, "Largura (%)", 115));
   await step(ctx, "barra-alongar", async () => {
@@ -93,18 +100,23 @@ async function runPiece(browserCtx, store, id) {
     await step(ctx, "desenho-escala", () => setNumber(page, "Largura (cm)", 20));
     await step(ctx, "desenho-giro", () => setNumber(page, "Giro (graus)", 35));
     await step(ctx, "desenho-cor", () => page.getByLabel("Cor do desenho", { exact: true }).fill("#00e0ff"));
+    await step(ctx, "desenho-trocar-imagem", async () => page.locator("#decal-replace").setInputFiles({ name: "novo.png", mimeType: "image/png", buffer: await logoPng(page, "#1d4ed8", "NOVO") }));
   }
   const png = await logoPng(page);
   await step(ctx, "logo-novo", () => page.locator("#decal-add").setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png }));
   await step(ctx, "logo-mover-descer", async () => {
     for (let i = 0; i < 6; i++) await page.getByRole("button", { name: "Descer" }).click();
   });
-  await step(ctx, "logo-escala", () => setNumber(page, "Largura (cm)", 14));
-  await step(ctx, "desfazer", async () => {
-    await page.locator("canvas").first().click({ position: { x: 5, y: 5 } });
-    await page.keyboard.press("Control+z");
+  await step(ctx, "logo-escala", async () => {
+    const width = Number(await page.getByLabel("Largura (cm)", { exact: true }).inputValue());
+    await setNumber(page, "Largura (cm)", width > 10 ? width - 5 : width + 5);
   });
-  await step(ctx, "refazer", () => page.keyboard.press("Control+Shift+z"));
+  await step(ctx, "logo-girar", () => setNumber(page, "Giro (graus)", -20));
+  await step(ctx, "desfazer", () => page.getByRole("button", { name: "Desfazer", exact: true }).click());
+  await step(ctx, "refazer", async () => {
+    await page.getByRole("heading", { name: "Editor 3D da peça" }).click();
+    await page.keyboard.press("Control+Shift+z");
+  });
   const saveStart = store.pieces.get(id).revision;
   await page.getByRole("button", { name: "Salvar" }).click();
   await page.waitForTimeout(1500);
@@ -147,8 +159,12 @@ async function runBlocked(browserCtx, store, id) {
   const report = { pieces: [], blocked: [] };
   for (const id of glbs) {
     if (ONLY && !ONLY.includes(id)) continue;
-    if (id === "relevo") report.blocked.push(await runBlocked(browserCtx, store, id));
-    else report.pieces.push(await runPiece(browserCtx, store, id));
+    try {
+      if (id === "relevo") report.blocked.push(await runBlocked(browserCtx, store, id));
+      else report.pieces.push(await runPiece(browserCtx, store, id));
+    } catch (error) {
+      report.pieces.push({ id, steps: [], crashed: String(error.message || error).slice(0, 500), errors: browserCtx.errors.splice(0) });
+    }
     fs.writeFileSync(path.join(OUT, "resultados.json"), JSON.stringify(report, null, 2));
     const documents = Object.fromEntries([...store.pieces].filter(([, p]) => p.revision).map(([key, p]) => [key, p.document]));
     fs.writeFileSync(path.join(OUT, "documentos.json"), JSON.stringify(documents));

@@ -64,7 +64,7 @@ export function SceneInspector({
         <h2 className="type-h3">{t("atelier3d.inspector")}</h2>
         {relief && <p role="status" data-testid="photo-relief-notice">{t("atelier3d.photoRelief")}</p>}
         {engine && <GarmentPanel asset={loaded} document={doc} editable={canEdit} onChange={change} />}
-        <Technical collapsed={engine} label={t("atelier3d.garment.technical")}>
+        <Technical collapsed={engine} label={t("editor3d.part.technical")}>
         <SceneCommandPanel key={`${selected}:${primitive?.[0] ?? ""}`} asset={loaded} document={doc}
           selected={selected} primitive={primitive?.[0]} editable={canEdit}
           deformationBlocked={!!(inspection?.skinned || inspection?.morphs || inspection?.animated)} onChange={change} />

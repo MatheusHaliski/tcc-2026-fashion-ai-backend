@@ -31,7 +31,7 @@ export function DecalPanel({ asset, document: doc, node, editable, onChange }: P
   const current = entries.find((entry) => entry.key === chosen) ?? entries[0];
   const label = (entry: DecalEntry) => {
     const part = entry.kind === "print" ? listParts(asset).find((p) => p.key === entry.key) : undefined;
-    return part ? partLabel(part, t) : t("atelier3d.decal.logo", { n: entry.key.replace(/\D/g, "") });
+    return part ? partLabel(part, t) : t("editor3d.decal.logo", { n: entry.key.replace(/\D/g, "") });
   };
   // cliques seguidos (mover 1 cm três vezes) chegam antes de o editor redesenhar: cada edição parte da anterior
   const latest = useRef(doc);
@@ -95,51 +95,51 @@ export function DecalPanel({ asset, document: doc, node, editable, onChange }: P
   }
   return (
     <section className={styles.stack} aria-labelledby="decal-panel-title" data-testid="decal-panel">
-      <h3 id="decal-panel-title" className="type-h3">{t("atelier3d.decal.title")}</h3>
-      {!current && <p className="type-caption">{t("atelier3d.decal.empty")}</p>}
+      <h3 id="decal-panel-title" className="type-h3">{t("editor3d.decal.title")}</h3>
+      {!current && <p className="type-caption">{t("editor3d.decal.empty")}</p>}
       {current && (
         <>
-          <Field id="decal-pick" label={t("atelier3d.decal.pick")}>
+          <Field id="decal-pick" label={t("editor3d.decal.pick")}>
             <Select id="decal-pick" value={current.key} onChange={(e) => setChosen(e.target.value)}>
               {entries.map((entry) => <option key={entry.key} value={entry.key}>{label(entry)}</option>)}
             </Select>
           </Field>
           <fieldset className="flex flex-wrap gap-2" data-testid="decal-move">
-            <legend className="label">{t("atelier3d.decal.move")}</legend>
-            {MOVES.map(([name, dx, dy]) => <button key={name} type="button" className="btn btn-sm" onClick={() => move(dx, dy)}>{t(`atelier3d.decal.${name}`)}</button>)}
+            <legend className="label">{t("editor3d.decal.move")}</legend>
+            {MOVES.map(([name, dx, dy]) => <button key={name} type="button" className="btn btn-sm" onClick={() => move(dx, dy)}>{t(`editor3d.decal.${name}`)}</button>)}
           </fieldset>
-          <Field id="decal-size" label={t("atelier3d.decal.size")}>
+          <Field id="decal-size" label={t("editor3d.decal.size")}>
             <Input id="decal-size" type="number" min={DECAL_SIZE.min * 100} max={DECAL_SIZE.max * 100} step={0.5} value={+(current.edit.size * 100).toFixed(1)}
               onChange={(e) => {
                 const size = e.target.valueAsNumber / 100;
                 if (size >= DECAL_SIZE.min && size <= DECAL_SIZE.max) edit({ size });
               }} />
           </Field>
-          <Field id="decal-rotation" label={t("atelier3d.decal.rotation")}>
+          <Field id="decal-rotation" label={t("editor3d.decal.rotation")}>
             <Input id="decal-rotation" type="number" min={-180} max={180} step={5} value={Math.round((current.edit.rotation * 180) / Math.PI)}
               onChange={(e) => Number.isFinite(e.target.valueAsNumber) && edit({ rotation: (e.target.valueAsNumber * Math.PI) / 180 })} />
           </Field>
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2">
-              <input type="color" aria-label={t("atelier3d.decal.color")} value={current.edit.color ?? "#ffffff"} onChange={(e) => edit({ color: e.target.value })} />
-              {t("atelier3d.decal.color")}
+              <input type="color" aria-label={t("editor3d.decal.color")} value={current.edit.color ?? "#ffffff"} onChange={(e) => edit({ color: e.target.value })} />
+              {t("editor3d.decal.color")}
             </label>
-            <button type="button" className="btn btn-sm" disabled={!current.edit.color} onClick={() => edit({ color: null })}>{t("atelier3d.decal.originalColors")}</button>
+            <button type="button" className="btn btn-sm" disabled={!current.edit.color} onClick={() => edit({ color: null })}>{t("editor3d.decal.originalColors")}</button>
           </div>
           <label className={styles.check}>
             <input type="checkbox" checked={!current.edit.visible} onChange={(e) => edit({ visible: !e.target.checked })} />
-            {t("atelier3d.decal.hidden")}
+            {t("editor3d.decal.hidden")}
           </label>
-          <ImageButton id="decal-replace" label={t("atelier3d.decal.replace")} onFile={replaceImage} />
+          <ImageButton id="decal-replace" label={t("editor3d.decal.replace")} onFile={replaceImage} />
           {current.edited && (
             <button type="button" className="btn btn-sm" onClick={() => attempt((base) => removeDecal(base(), current.key))}>
-              {t(current.kind === "logo" ? "atelier3d.decal.remove" : "atelier3d.decal.restore")}
+              {t(current.kind === "logo" ? "editor3d.decal.remove" : "editor3d.decal.restore")}
             </button>
           )}
         </>
       )}
-      <ImageButton id="decal-add" label={t("atelier3d.decal.add")} onFile={addLogo} />
-      {error && <p role="alert" className="type-body-sm text-critical">{t(`atelier3d.decal.${error}`)}</p>}
+      <ImageButton id="decal-add" label={t("editor3d.decal.add")} onFile={addLogo} />
+      {error && <p role="alert" className="type-body-sm text-critical">{t(`editor3d.decal.${error}`)}</p>}
     </section>
   );
 }

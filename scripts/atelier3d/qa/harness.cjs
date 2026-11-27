@@ -100,8 +100,11 @@ async function openPiece(page, id) {
 
 /** Recorte só do canvas 3D, para comparar antes e depois sem o resto da página. */
 async function shotCanvas(page, file) {
+  const canvas = page.locator("canvas").first();
+  // centraliza o canvas: rente ao topo, o cabeçalho fixo da página cobriria parte da captura
+  await canvas.evaluate((element) => element.scrollIntoView({ block: "center" }));
   await page.waitForTimeout(700);
-  await page.locator("canvas").first().screenshot({ path: file });
+  await canvas.screenshot({ path: file });
   return file;
 }
 
