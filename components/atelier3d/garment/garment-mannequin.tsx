@@ -15,7 +15,7 @@ export function GarmentMannequin({ asset }: { asset: LoadedAsset }) {
     const box = new THREE.Box3();
     for (const primitive of asset.primitives.values()) box.expandByObject(primitive);
     const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
-    const radius = Math.max(0.01, (size.z / 2) * 0.7);
+    const radius = Math.max(0.01, (size.z / 2) * 0.6);
     const geometry = new THREE.LatheGeometry(PROFILE.map(([y, r]) => new THREE.Vector2(r * radius, y * size.y)), 40);
     geometry.scale(Math.min(1.3, Math.max(1, (size.x * 0.3) / radius)), 1, 1);
     const pole = new THREE.CylinderGeometry(radius * 0.06, radius * 0.06, size.y * 0.6, 12);
