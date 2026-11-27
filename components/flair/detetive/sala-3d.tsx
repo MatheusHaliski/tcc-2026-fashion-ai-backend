@@ -7,7 +7,9 @@
  */
 import { useMemo } from "react";
 import * as THREE from "three";
+import { SalaAlta } from "@/components/flair/salas-altas/sala-alta";
 import type { Retrato } from "@/lib/flair/detetive/types";
+import { slugDoDetetive } from "@/lib/flair/salas-altas/manifesto";
 
 /** Piso, parede, detalhe e o esconderijo de cada sala. */
 const ESTILO: Record<string, { piso: string; parede: string; detalhe: string; esconderijo: "coluna" | "arara" | "estante" | "caixas" }> = {
@@ -64,14 +66,18 @@ function Esconderijo({ tipo, cor, x, z }: { tipo: string; cor: string; x: number
   );
 }
 
-function Armario({ x, z, aberto, cor }: { x: number; z: number; aberto: boolean; cor: string }) {
+/** `soEstado`: na sala high poly o móvel vem do GLB; daqui só a gaveta puxada, quando aberto. */
+function Armario({ x, z, aberto, cor, soEstado = false }: { x: number; z: number; aberto: boolean; cor: string; soEstado?: boolean }) {
   const [px, pz, giro] = contraParede(x, z);
+  if (soEstado && !aberto) return null;
   return (
     <group position={[px, 0, pz]} rotation={[0, (giro * Math.PI) / 180, 0]} name="armario">
-      <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.0, 1.0, 0.5]} />
-        <meshStandardMaterial color={cor} roughness={0.6} />
-      </mesh>
+      {!soEstado && (
+        <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
+          <boxGeometry args={[1.0, 1.0, 0.5]} />
+          <meshStandardMaterial color={cor} roughness={0.6} />
+        </mesh>
+      )}
       <mesh position={[0, 0.62, aberto ? 0.42 : 0.26]}>
         <boxGeometry args={[0.86, 0.28, 0.04]} />
         <meshStandardMaterial color="#D8D2C4" roughness={0.4} metalness={0.3} />
@@ -80,7 +86,8 @@ function Armario({ x, z, aberto, cor }: { x: number; z: number; aberto: boolean;
   );
 }
 
-function Porta({ x, z, estado }: { x: number; z: number; estado: "aberta" | "trancada" | "barrada" }) {
+/** `soEstado`: na sala high poly a porta vem do GLB; daqui só a luz do estado (e a soleira da frente aberta). */
+function Porta({ x, z, estado, soEstado = false }: { x: number; z: number; estado: "aberta" | "trancada" | "barrada"; soEstado?: boolean }) {
   const [px, pz, giro] = contraParede(x, z);
   const cor = estado === "aberta" ? "#4FB36A" : estado === "barrada" ? "#E0A030" : "#C9443A";
   if (giro === 180) {
@@ -94,15 +101,34 @@ function Porta({ x, z, estado }: { x: number; z: number; estado: "aberta" | "tra
   }
   return (
     <group position={[px, 0, pz]} rotation={[0, (giro * Math.PI) / 180, 0]} name={`porta-${estado}`}>
-      <mesh position={[0, 1.15, 0]}>
-        <boxGeometry args={[1.3, 2.3, 0.08]} />
-        <meshStandardMaterial color="#3A2A20" roughness={0.6} />
-      </mesh>
+      {!soEstado && (
+        <mesh position={[0, 1.15, 0]}>
+          <boxGeometry args={[1.3, 2.3, 0.08]} />
+          <meshStandardMaterial color="#3A2A20" roughness={0.6} />
+        </mesh>
+      )}
       <mesh position={[0, 2.42, 0.05]}>
         <boxGeometry args={[0.6, 0.12, 0.04]} />
         <meshStandardMaterial color={cor} emissive={cor} emissiveIntensity={0.8} />
       </mesh>
     </group>
+  );
+}
+
+/** Armários e portas: inteiros na sala procedural; na high poly, só o que muda com a partida (gaveta, luz da porta). */
+function Estados({ r, soEstado }: { r: Retrato; soEstado: boolean }) {
+  const e = estiloDaSala(r.sala);
+  return (
+    <>
+      {r.layout.armarios.map((a) => {
+        const p = r.layout.pontos.find((x) => x.id === a.ponto);
+        return p ? <Armario key={a.id} x={p.x} z={p.z} aberto={a.aberto} cor={e.detalhe} soEstado={soEstado} /> : null;
+      })}
+      {r.layout.saidas.map((s) => {
+        const p = r.layout.pontos.find((x) => x.id === s.ponto);
+        return p ? <Porta key={s.para} x={p.x} z={p.z} estado={s.barrada ? "barrada" : s.aberta ? "aberta" : "trancada"} soEstado={soEstado} /> : null;
+      })}
+    </>
   );
 }
 
@@ -116,8 +142,9 @@ interface Props {
 export function Sala3D({ r, vizinhos, onIr }: Props) {
   const e = estiloDaSala(r.sala);
   const parede = useMemo(() => new THREE.MeshStandardMaterial({ color: e.parede, roughness: 0.9 }), [e.parede]);
-  return (
-    <group name={`sala-${r.sala}`}>
+  // a sala procedural é a reserva da sala high poly (scripts/blender3d_high): mesma planta, mesmos pontos
+  const procedural = (
+    <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[LARGURA, FUNDO]} />
         <meshStandardMaterial color={e.piso} roughness={0.75} />
@@ -141,14 +168,14 @@ export function Sala3D({ r, vizinhos, onIr }: Props) {
         </mesh>
       )}
       {r.layout.pontos.filter((p) => p.esconderijo).map((p) => <Esconderijo key={p.id} tipo={e.esconderijo} cor={e.detalhe} x={p.x} z={p.z} />)}
-      {r.layout.armarios.map((a) => {
-        const p = r.layout.pontos.find((x) => x.id === a.ponto);
-        return p ? <Armario key={a.id} x={p.x} z={p.z} aberto={a.aberto} cor={e.detalhe} /> : null;
-      })}
-      {r.layout.saidas.map((s) => {
-        const p = r.layout.pontos.find((x) => x.id === s.ponto);
-        return p ? <Porta key={s.para} x={p.x} z={p.z} estado={s.barrada ? "barrada" : s.aberta ? "aberta" : "trancada"} /> : null;
-      })}
+      <Estados r={r} soEstado={false} />
+    </>
+  );
+  return (
+    <group name={`sala-${r.sala}`}>
+      <SalaAlta slug={slugDoDetetive(r.sala)} reserva={procedural}>
+        <Estados r={r} soEstado />
+      </SalaAlta>
       {r.layout.pontos.map((p) => {
         const perto = vizinhos.includes(p.id);
         const aqui = p.id === r.ponto;

@@ -182,3 +182,64 @@ Fase 0 → Fase 1 (lote 1) → Fase 2 → Fase 1 (lotes 2 e 3) → Fase 3 → Fa
 
 A fase 2 sobe na fila porque Detetive e Esporte são as telas onde os gráficos simplificados mais aparecem, e porque
 destrava a frente de jogabilidade dessas duas telas.
+
+## 7. Perfil `high`: salas inteiras em alta densidade
+
+Data: 27/11/2026. Pedido da dona: "Gráficos estão muito simples: crie com o motor blender uma sala com High Poly". O
+perfil `high` (`scripts/blender3d_high`) modela a **sala inteira** (casca, móveis-herói e peças de jogo) num GLB por
+nível de detalhe, em vez de um objeto solto por móvel.
+
+### 7.1 Regra do teto
+
+- Objeto comum continua com o teto do motor: **3 mil triângulos** (`scripts/blender3d/build.py`, `MAX_TRIANGULOS`).
+- Objeto marcado como **herói** (`obj["heroi"] = True` na receita da sala: passarela, poltrona, refletor, cortina,
+  coluna, cofre...) pode chegar a **80 mil** (`perfil.TETO_HEROI`), e só dentro de uma sala do perfil `high`.
+- A sala inteira respeita o orçamento do nível (`perfil.ORCAMENTO`), conferido no build e no teste
+  (`scripts/blender3d_high/tests/test_perfil.py`): triângulos desenhados (cada cópia conta), chamadas de desenho (um
+  grupo instanciado conta uma por material) e o tamanho do arquivo.
+- O pacote fica fora de `scripts/blender3d`: o resumo (hash) dos objetos soltos não muda, nenhum dos GLB das salas
+  precisa ser gerado de novo.
+
+### 7.2 O que o perfil sabe fazer
+
+| Peça | Onde | Como |
+| --- | --- | --- |
+| Moldura, rodapé, sanca, corrimão, batente | `formas.varrer` | perfil 2D arrastado pelo caminho, com meia-esquadria nas quinas |
+| Cortina, saia de passarela, tecido sobre a mesa | `formas.cortina` | malha com pregas de fase própria que abrem para baixo, caimento puxado por laço, espessura |
+| Estofado capitonê (poltrona, painel acústico, cadeira) | `formas.capitone` | grade com botões afundados em losango e bordas arredondadas, subdivisão |
+| Repetição (poltronas, refletores, almofadas do lambri, garrafas) | `formas.instancia` | cópias que dividem a malha; o gltfpack grava `EXT_mesh_gpu_instancing` (uma chamada para todas) |
+| Texturas PBR | `pbr.py` | ruído periódico por FFT (repete sem emenda): cor, mapa normal e aspereza de veludo, laca, concreto, escovado, madeira, mármore, tecido, carpete |
+| Materiais | `materiais.py` | laca com verniz (clearcoat), veludo com brilho de fibra (sheen), emissão; extensões do glTF que o three.js lê |
+| Oclusão assada | `assar.assar_oclusao` | Cycles (CPU) assa a oclusão da casca com a sala toda montada (contato dos móveis no piso), num segundo mapa de UV |
+| Relevo do alto no médio | `assar.assar_relevo` | mapa normal do herói (com subdivisão) gravado na versão decimada |
+| Mapa de ambiente | `render.ambiente` | panorama equirretangular do meio da sala no Cycles, WebP; vira `scene.environment` no jogo |
+| Níveis de detalhe | `niveis.para_o_medio` | Decimate nas malhas grandes (razão 0,3), texturas pela metade |
+| Compressão | `exportar.comprimir` | gltfpack 0.22 (npm, WebAssembly): meshopt + quantização + instancing; texturas WebP do exportador do Blender |
+| Modelos prontos | `importados.py` | os GLB do MET Gala Heist (Meshy) entram pelo manifesto, sem copiar bytes; o médio tem versão simplificada |
+
+### 7.3 Como gerar
+
+```bash
+uv venv -p python3.11 ~/.venv-blender && uv pip install -p ~/.venv-blender/bin/python bpy==4.2.0 numpy pillow
+~/.venv-blender/bin/python -m scripts.blender3d_high.build --listar
+~/.venv-blender/bin/python -m scripts.blender3d_high.build --so passarela --provas /tmp/provas   # uma sala, com a foto
+python -m unittest discover -s scripts/blender3d_high/tests -t .
+```
+
+O gltfpack vem do npm (`npx -y gltfpack@0.22.0`, ou o binário em `GLTFPACK`). Cada sala sai em
+`public/flair/3d/salas/<slug>.glb` (alto), `<slug>-medio.glb`, `<slug>-ambiente.webp` e uma linha em `manifest.json`.
+Uma sala nova: receita em `scripts/blender3d_high/salas/`, registrada com `@sala(...)`, no espaço do jogo
+(`formas.jogo(x, y, z)`), com as peças de jogo nos mesmos pontos da sala procedural.
+
+### 7.4 No jogo
+
+- `components/flair/salas-altas/sala-alta.tsx` carrega o nível da qualidade (Alta = alto, médio em tela < 768 px;
+  Média = médio; Baixa = a sala procedural). Enquanto carrega ou se falha, aparece a sala procedural (reserva).
+- O `useGLTF` do drei já traz o decodificador meshopt (o mesmo `MeshoptDecoder` que o carregador do Heist usa); nada
+  vem de CDN. Draco não é usado.
+- Mapa de ambiente do Blender em `scene.environment`, tone mapping ACES do R3F, bloom leve (`brilho.tsx`, o mesmo
+  `UnrealBloomPass` do Heist) só no nível alto.
+- Seletor de qualidade (Automática, Alta, Média, Baixa) ao lado do seletor de câmera; a escolha fica no navegador e a
+  qualidade automática deixa de descer sozinha quando a pessoa escolheu um nível.
+- Conferência: `/lab/salas?jogo=PASSARELA&q=ALTA` (e `&glb=0` para a procedural), `/lab/jogo?jogo=PASSARELA`,
+  `/lab/detetive-salas?sala=SALAO&q=ALTA` (e `q=BAIXA`).

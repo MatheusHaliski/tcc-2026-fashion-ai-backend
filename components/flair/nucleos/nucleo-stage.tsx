@@ -15,6 +15,7 @@ import { NucleoActionFx } from "@/components/flair/nucleos/nucleo-action-fx";
 import { NucleoBarrasDeVida } from "@/components/flair/nucleos/nucleo-barras-de-vida";
 import type { Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { NucleoCameraSelector } from "@/components/flair/nucleos/nucleo-camera-selector";
+import { SeletorDeQualidade } from "@/components/flair/salas-altas/seletor-de-qualidade";
 import { NucleoCardFx } from "@/components/flair/nucleos/nucleo-card-fx";
 import { NucleoRodaAtributos } from "@/components/flair/nucleos/recursos/nucleo-roda-atributos";
 import type { LookDosRecursos } from "@/components/flair/nucleos/recursos/use-look-dos-recursos";
@@ -144,6 +145,7 @@ export function NucleoStage(props: NucleoStageProps) {
         baseDireita={
           <>
             {!reduzido && <NucleoCameraSelector opcoes={opcoesDeCamera(definicao.codigo)} atual={camera} onTrocar={setCamera} />}
+            <SeletorDeQualidade />
             <NucleoControls grupo="camera" acoes={definicao.acoes} gamepad={props.gamepad} permitido={(a) => comandoPermitido(momento, a)} onComando={props.onComando} />
           </>
         }

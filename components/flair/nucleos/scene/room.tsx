@@ -11,6 +11,8 @@ import { partesNoLugar } from "@/lib/flair/nucleos/scene/parts";
 import { cascaDaSala } from "@/lib/flair/nucleos/scene/shell";
 import type { Movel, Parte, Sala } from "@/lib/flair/nucleos/scene/types";
 import { MovelGlb, ObjetoGlb } from "@/components/flair/nucleos/scene/glb-prop";
+import { SalaAlta } from "@/components/flair/salas-altas/sala-alta";
+import { salaAltaDoJogo } from "@/lib/flair/salas-altas/manifesto";
 import { fundirPorMaterial } from "@/components/flair/nucleos/scene/part-geometry";
 import { LuzesDaSala } from "@/components/flair/nucleos/scene/room-lights";
 import { Placar } from "@/components/flair/nucleos/scene/scoreboard";
@@ -85,8 +87,9 @@ export function Sala3D({ sala, placar, semObjetos = false }: { sala: Sala; placa
   const casca = useFundidas(() => cascaDaSala(sala), sala, [sala]);
   const fixos = useFundidas(() => sala.moveis.filter((m) => !m.id && !comGlb.includes(m)).flatMap(partesNoLugar), sala, [sala, comGlb]);
   const animados = useMemo(() => sala.moveis.filter((m) => !!m.id), [sala]);
-  return (
-    <group name="sala">
+  // a casca e os móveis fixos são a reserva da sala high poly (scripts/blender3d_high), quando o jogo tem uma
+  const procedural = (
+    <>
       <group name="casca">
         <Malhas fundidas={casca} sala={sala} materiais={materiais} sombra={false} />
       </group>
@@ -97,6 +100,11 @@ export function Sala3D({ sala, placar, semObjetos = false }: { sala: Sala; placa
         <MovelGlb key={`${m.tipo}-${i}`} movel={m} slug={glbDoMovel(m, manifesto, sala.codigo)?.slug ?? ""} materiais={materiais}
           leve={!!glbDoMovel(m, manifesto, sala.codigo)?.leve} reserva={<MovelFixo movel={m} sala={sala} materiais={materiais} />} />
       ))}
+    </>
+  );
+  return (
+    <group name="sala">
+      <SalaAlta slug={semObjetos ? null : salaAltaDoJogo(sala.codigo)} reserva={procedural} />
       {animados.map((m) => <MovelAnimado key={m.id} movel={m} sala={sala} materiais={materiais} glb={glbDoMovel(m, manifesto, sala.codigo)} />)}
       {sala.placar && <Placar em={sala.placar} texto={placar} />}
       <LuzesDaSala sala={sala} />

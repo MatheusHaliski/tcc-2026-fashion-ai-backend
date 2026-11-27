@@ -281,3 +281,14 @@ o desenho e o recorte (`services/garment_blender/README.md`, "Peças do catálog
   da importação). **Tempo:** análise ~50 min (rótulos em cache, 2 processos × 2 núcleos), montagem ~50 min, envio ao
   bucket ~11 min (12 conexões). **Custo:** zero (CPU do contêiner). Seleção para o download:
   `docs/provador/motor-blender/2026-11-27/selecao.csv`.
+
+## Salas high poly do FLAIR 3D (perfil `high` do motor Blender, 27/11/2026)
+
+- **Provedor/modelo:** nenhum novo. Modelagem por código no Blender 4.2 (`bpy` do pip), Cycles na CPU para a oclusão
+  assada, o relevo do alto no médio, o mapa de ambiente e as provas; compressão com gltfpack 0.22 (npm, WebAssembly).
+  Os modelos prontos reaproveitados são os 22 GLB do MET Gala Heist já gerados pela Meshy para o projeto (31/10 a
+  02/11/2026, `scripts/heist/meshy/run.mjs`): nenhuma chamada nova à Meshy, nenhum crédito gasto.
+- **Custo:** zero (CPU do contêiner, 4 vCPU, sem GPU; a RunPod não foi necessária).
+- **Tempo medido:** 4 a 8 min por sala do Detective (oclusão de piso e três paredes a 48 amostras, panorama de
+  1024 × 512, foto de prova de 1280 × 720 e os dois níveis); a Passarela do jogo 1, ~15 min. A folha de contato dos 22
+  modelos do Heist (320 px, 16 amostras), ~1 min.
