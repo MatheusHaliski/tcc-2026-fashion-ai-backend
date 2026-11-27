@@ -44,8 +44,9 @@ public final class Flair3dZonas {
         return familia.equals(familia(zona));
     }
 
+    /** O acabamento só conta numa zona pintada (com cor válida): acabamento sem cor não é peça pronta. */
     public static boolean acabamento(Entrega.Zona zona, String acabamento) {
-        return zona != null && acabamento.equalsIgnoreCase(Objects.toString(zona.acabamento(), ""));
+        return hex(zona) != null && acabamento.equalsIgnoreCase(Objects.toString(zona.acabamento(), ""));
     }
 
     /** O hex normalizado (#RRGGBB maiúsculo), para contar cores distintas. */

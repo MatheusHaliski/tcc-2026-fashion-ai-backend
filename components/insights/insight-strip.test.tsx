@@ -46,7 +46,8 @@ describe("InsightStrip", () => {
     expect(screen.getByRole("link", { name: /Ver ranking/ }).getAttribute("href")).toBe("/explorer?tab=ranking&category=shoes_piece");
     expect(screen.queryByText("Fora do app")).toBeNull();
     expect(screen.getByText("Base: HypeScore v2 · ranking público")).toBeTruthy();
-    expect(screen.getByText(/Atualizado .* · Algoritmo HYPE_V2 · motor local/)).toBeTruthy();
+    expect(screen.getByText(/Atualizado .* · calculado no app, sem IA online/)).toBeTruthy();
+    expect(document.body.textContent).not.toContain("HYPE_V2");
     // público e sem sessão: anônimo, com o recorte (vazio fica fora) e sem "Reescrever com IA"
     const call = calls.find((c) => c.path.startsWith("/api/insights"))!;
     expect(call.path).toBe("/api/insights?context=EXPLORER_TRENDING&window=7&category=shoes_piece");

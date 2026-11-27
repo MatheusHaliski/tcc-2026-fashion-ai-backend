@@ -1,7 +1,7 @@
 "use client";
 import { FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
-import { mediaUrl } from "@/lib/api/client";
+import { pieceImageUrl } from "@/lib/pieces/piece-image";
 import { useI18n } from "@/lib/i18n/i18n";
 import { FlairPieceCardArt, FlairPieceCardBack, FlairPieceCardHeader } from "./flair-piece-card-art";
 import { FlairPieceCardPanels } from "./flair-piece-card-panels";
@@ -47,7 +47,7 @@ export function FlairGameCard({ card, size = "md", flip = true, interactive = tr
         <div className="pc-content">
           <FlairPieceCardHeader card={card} tierName={tierName} flip={flip} />
           <div className="pc-media fpc-media">
-            {card.imageUrl ? <img src={mediaUrl(card.imageUrl)} alt="" loading="lazy" decoding="async" className="is-contain" /> : null}
+            {card.imageUrl ? <img src={pieceImageUrl({ imageUrl: card.imageUrl, category: card.category, subcategory: card.subcategory, color: card.tags?.colors?.[0] })} alt="" loading="lazy" decoding="async" className="is-contain" /> : null}
           </div>
           <div className="pc-id">
             <span className="pc-name">{card.name}</span>

@@ -98,10 +98,12 @@ describe("casos de uso", () => {
 
   it("vestir peça que já tem tamanho conserva o tamanho dela; sem tamanho, recebe o da grade", () => {
     localStorage.setItem("fai.tryon.sizes", JSON.stringify({ letter: "G" }));
-    const { hook } = setup();
+    const { hook, onStatus } = setup();
     const base = { key: "c:p5", source: "catalog", slot: "upper_piece", wear: "TOP", name: "Camisa", category: "upper_piece", subcategory: "t_shirt", productId: "p5", addedAt: 1 } as FittingItem;
     act(() => hook.result.current.tryOn({ ...base, size: "PP" }));
     expect(hook.result.current.items[0].size).toBe("PP");
+    // regressão da auditoria: peça sem marca não gera "Provando Camisa () na…"
+    expect(onStatus).toHaveBeenLastCalledWith(`tryOn.provando_status_sem_marca ${JSON.stringify({ name: "Camisa", slot: "tryOn.slot_upper" })}`);
     act(() => hook.result.current.tryOn({ ...base, key: "c:p6", productId: "p6", wear: "OUTERWEAR" }));
     expect(hook.result.current.items.find((item) => item.key === "c:p6")?.size).toBe("G");
   });

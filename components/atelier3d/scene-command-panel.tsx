@@ -4,6 +4,7 @@ import { Field, Input } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/i18n";
 import type { LoadedAsset, SceneDocument } from "@/lib/atelier3d/document";
 import { executeSceneCommand, type SceneCommand } from "@/lib/atelier3d/commands";
+import { nodeLabel } from "./node-label";
 import styles from "./editor.module.css";
 
 interface Props {
@@ -47,7 +48,7 @@ export function SceneCommandPanel({ asset, document, selected, primitive, editab
       <button type="button" className="btn btn-sm" disabled={!editable || !primitive}
         onClick={() => primitive && run({ type: "reset-material", primitive })}>{t("atelier3d.commands.reset-material")}</button>
     </div>
-    {primitive && <p className="type-caption">{t("atelier3d.commands.mesh", { name: asset.primitives.get(primitive)?.name || primitive })}</p>}
+    {primitive && <p className="type-caption">{t("atelier3d.commands.mesh", { name: nodeLabel(asset.primitives.get(primitive)?.name, primitive, t) })}</p>}
     <div className="flex flex-wrap gap-2">
       {(["reset-vertices", "smooth"] as const).map((type) => <button key={type} type="button" className="btn btn-sm"
         disabled={!deformable} onClick={() => primitive && run({ type, primitive })}>{t(`atelier3d.commands.${type}`)}</button>)}

@@ -12,6 +12,8 @@
 import * as THREE from "three";
 import type { GarmentKind } from "../garments";
 import { bandExtent, type BodyFrame } from "./frame";
+import { hangOnLimb } from "./hang";
+import { labelParts } from "./parts";
 
 export type GarmentClass = "upper" | "lower" | "full";
 
@@ -53,6 +55,26 @@ function shoulderLine(p: Float32Array, top: number, height: number) {
   return { width: best, y: top - (first + 0.5) * step };
 }
 
+/**
+ * Peça de manga aberta e comprida (moletom largo em pose T): encaixar o tronco no peito do corpo encolhia a peça larga
+ * até ficar justa e a manga parava no cotovelo. A medida que não muda é a manga: ela vai do ombro ao punho. A escala
+ * passa a ser a que leva o punho da peça ao punho do corpo, entre a do tronco e 1,5 × ela. Manga curta: null.
+ */
+/** Do osso do pescoço ao ponto alto do ombro (junção ombro-pescoço, em cima do trapézio), em metros. */
+const NECK_TO_SHOULDER_TOP = 0.025;
+
+/** Manga comprida: a partir desta fração da largura do tronco (a manga curta em T fica perto de 0,45). */
+const LONG_SLEEVE = 0.6;
+
+function openSleeveScale(p: Float32Array, torsoScale: number, torso: number, cx: number, shoulderY: number, maxX: number, arm: number) {
+  let tx = 0, ty = 0, n = 0;
+  for (let i = 0; i < p.length; i += 3) if (p[i] > maxX - 0.03 * torso) { tx += p[i]; ty += p[i + 1]; n++; }
+  if (!n) return null;
+  const sleeve = Math.hypot(tx / n - (cx + torso / 2), ty / n - shoulderY);
+  if (sleeve < LONG_SLEEVE * torso) return null;
+  return Math.min(1.5 * torsoScale, Math.max(torsoScale, arm / sleeve));
+}
+
 function transform(p: Float32Array, s: number, from: number[], to: number[]) {
   const out = new Float32Array(p.length);
   for (let i = 0; i < p.length; i += 3) for (let k = 0; k < 3; k++) out[i + k] = (p[i + k] - from[k]) * s + to[k];
@@ -60,7 +82,7 @@ function transform(p: Float32Array, s: number, from: number[], to: number[]) {
 }
 
 /** Gira os vértices do membro em torno do pivô até o eixo do corpo, entrando aos poucos perto da junta. */
-function alignLimb(p: Float32Array, part: Int8Array, label: number, pivot: THREE.Vector3, target: THREE.Vector3) {
+function alignLimb(p: Float32Array, part: Int8Array, label: number, pivot: THREE.Vector3, target: THREE.Vector3, maxAngle = 1.4, reach = false) {
   const idx: number[] = []; for (let v = 0; v < part.length; v++) if (part[v] === label) idx.push(v);
   if (idx.length < 30) return;
   // eixo do membro da peça: pivô → centro do terço mais distante (punho/barra)
@@ -71,7 +93,7 @@ function alignLimb(p: Float32Array, part: Int8Array, label: number, pivot: THREE
   const axis = tip.divideScalar(m).sub(pivot).normalize();
   const want = target.clone().sub(pivot).normalize();
   const angle = axis.angleTo(want);
-  if (angle < 0.02 || angle > 1.4) return;   // já alinhado, ou longe demais para ser o mesmo membro: não força
+  if (angle < 0.02 || angle > maxAngle) return;   // já alinhado, ou longe demais para ser o mesmo membro: não força
   const full = new THREE.Quaternion().setFromUnitVectors(axis, want); const q = new THREE.Quaternion(), r = new THREE.Vector3();
   const ramp = 0.35 * Math.max(...dist);
   idx.forEach((v, i) => {
@@ -79,6 +101,20 @@ function alignLimb(p: Float32Array, part: Int8Array, label: number, pivot: THREE
     r.set(p[v * 3] - pivot.x, p[v * 3 + 1] - pivot.y, p[v * 3 + 2] - pivot.z).applyQuaternion(q).add(pivot);
     p[v * 3] = r.x; p[v * 3 + 1] = r.y; p[v * 3 + 2] = r.z;
   });
+  if (reach) reachWrist(p, idx, pivot, target);
+}
+
+/**
+ * Manga comprida que ainda não chega ao punho depois do giro (a foto da peça larga traz a manga curta para o tronco):
+ * estica ao longo do braço, no máximo 35%, até o punho da peça chegar ao punho do corpo.
+ */
+function reachWrist(p: Float32Array, idx: number[], pivot: THREE.Vector3, target: THREE.Vector3) {
+  const want = target.clone().sub(pivot), arm = want.length(); want.normalize();
+  const along = idx.map((v) => (p[v * 3] - pivot.x) * want.x + (p[v * 3 + 1] - pivot.y) * want.y + (p[v * 3 + 2] - pivot.z) * want.z);
+  const tip = [...along].sort((a, b) => a - b)[Math.floor(0.97 * (along.length - 1))];
+  if (!(tip > 0.05) || tip >= 0.97 * arm) return;
+  const k = Math.min(1.35, arm / tip) - 1;
+  idx.forEach((v, i) => { const d = Math.max(0, along[i]) * k; p[v * 3] += want.x * d; p[v * 3 + 1] += want.y * d; p[v * 3 + 2] += want.z * d; });
 }
 
 /** Estica a profundidade (z) dos vértices de uma parte, por faixa de altura, até cobrir o corpo com a folga. */
@@ -105,19 +141,26 @@ function inflate(p: Float32Array, part: Int8Array, label: number, f: BodyFrame, 
   }
 }
 
-/** Encaixa a peça no corpo. `clearance` é a folga (m) da classe de caimento + tamanho; `lengthSteps` o comprimento. */
-export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, lengthSteps = 0): Aligned | null {
+/**
+ * Encaixa a peça no corpo. `clearance` é a folga (m) da classe de caimento + tamanho; `lengthSteps` o comprimento;
+ * `index` (os triângulos) deixa o rótulo da manga enxergar o vão entre manga e tronco (parts.ts).
+ * `sleeveAngle` (rad): até quanto a manga gira até o braço (1,4 por padrão; 1,8 para a peça de braços abertos).
+ * `realScale`: a peça já está em metros com as medidas do tamanho (motor Blender, manifesto `medidaReal`): escala 1,
+ * só posicionada pela linha dos ombros (calça: pelo topo do cós) — o corpo não reescala a peça (era isso que fazia
+ * o suéter P sair enorme).
+ */
+export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass, clearance: number, lengthSteps = 0, index?: ArrayLike<number>, sleeveAngle = 1.4, realScale = false, shoulderTop?: number, knownParts?: Int8Array | null): Aligned | null {
   const { lo, hi } = bounds(src); const height = hi[1] - lo[1];
   if (!(height > 0)) return null;
   const shL = f.joint("LeftArm"), shR = f.joint("RightArm");
   const hipL = f.joint("LeftUpLeg"), hipR = f.joint("RightUpLeg"), neck = f.joint("Neck");
   const cx = (lo[0] + hi[0]) / 2, cz = (lo[2] + hi[2]) / 2;
-  let pos: Float32Array, s: number;
+  let pos: Float32Array, s: number, longOpen = false;
   if (cls === "lower") {
     const yTop = (hipL.y + hipR.y) / 2 + 0.18 * (neck.y - (hipL.y + hipR.y) / 2);   // cós de cintura média
     const body = bandExtent(f, yTop, 0.012, [1]); if (!body) return null;
     const top = widthAt(src, hi[1] - 0.04 * height, hi[1]); if (!top) return null;
-    s = (body.x1 - body.x0 + 2 * clearance) / top;
+    s = realScale ? 1 : (body.x1 - body.x0 + 2 * clearance) / top;
     pos = transform(src, s, [cx, hi[1], cz], [0, yTop, (body.z0 + body.z1) / 2]);
     // calça mais comprida que a perna: a barra para no tornozelo (o resto da peça mantém a proporção)
     const ankle = (f.joint("LeftFoot").y + f.joint("RightFoot").y) / 2 - 0.03; const bottom = yTop - height * s;
@@ -129,30 +172,35 @@ export function alignGarment(src: Float32Array, f: BodyFrame, cls: GarmentClass,
     // peça fotografada com a manga aberta (camiseta estendida): a largura do topo é a envergadura das mangas, não os
     // ombros; aí o encaixe é pelo tronco abaixo da axila (a menor largura entre 35% e 70% da altura) × peito do corpo
     let torso = Infinity; for (let i = 0; i < 12; i++) { const y = hi[1] - height * (0.35 + 0.03 * i); const w = widthAt(src, y - 0.01 * height, y + 0.01 * height); if (w) torso = Math.min(torso, w); }
-    s = sh.width > 1.35 * torso ? (chest.x1 - chest.x0 + 2 * clearance) / torso : (body.x1 - body.x0 + 2 * clearance) / sh.width;
-    pos = transform(src, s, [cx, sh.y, cz], [0, shY + 0.01, (chest.z0 + chest.z1) / 2]);
+    s = realScale ? 1 : sh.width > 1.35 * torso ? (chest.x1 - chest.x0 + 2 * clearance) / torso : (body.x1 - body.x0 + 2 * clearance) / sh.width;
+    const open = !realScale && sh.width > 1.35 * torso ? openSleeveScale(src, s, torso, cx, sh.y, hi[0], shL.distanceTo(f.joint("LeftHand"))) : null;
+    if (open !== null) { s = open; longOpen = true; }
+    // escala real com o ponto alto do ombro conhecido: ele vai para a base do pescoço (a largura máxima, com a manga
+    // caída, fica no braço e assentava a peça baixa, com o decote no peito)
+    pos = realScale && shoulderTop !== undefined
+      ? transform(src, 1, [cx, shoulderTop, cz], [0, f.joint("Neck").y + NECK_TO_SHOULDER_TOP, (chest.z0 + chest.z1) / 2])
+      : transform(src, s, [cx, sh.y, cz], [0, shY + 0.01, (chest.z0 + chest.z1) / 2]);
   }
   if (!(s > 0.05 && s < 20)) return null;
   // tamanho maior: barra e manga um pouco mais compridas (a mesma regra do molde, 2% por número), a partir do topo
   if (lengthSteps) { let top = -Infinity; for (let i = 1; i < pos.length; i += 3) top = Math.max(top, pos[i]); const k = 1 + 0.02 * lengthSteps; for (let i = 1; i < pos.length; i += 3) pos[i] = top - (top - pos[i]) * k; }
-  // partes: manga = abaixo do ombro, fora da largura do TRONCO naquela altura (o quadril é mais largo que a cintura: o
-  // punho caído ao lado do quadril é manga, a barra que cobre o quadril é tronco), até o punho; perna = abaixo do gancho
-  const part = new Int8Array(pos.length / 3);
-  const half = new Map<number, number>(); const STEP = 0.02;
-  const torsoHalf = (y: number) => {
-    const b = Math.round(y / STEP); if (!half.has(b)) { const e = bandExtent(f, b * STEP, STEP, [1]); half.set(b, e ? Math.max(-e.x0, e.x1) : 0.15); }
-    return half.get(b)!;
-  };
-  const crotch = Math.min(hipL.y, hipR.y) - 0.06, wrist = Math.min(f.joint("LeftHand").y, f.joint("RightHand").y) - 0.06;
-  for (let v = 0; v < part.length; v++) {
-    const x = pos[v * 3], y = pos[v * 3 + 1];
-    const sleeve = y > wrist && (y < shL.y ? Math.abs(x) > torsoHalf(Math.min(y, shL.y - 0.12)) + clearance + 0.012 : Math.abs(x) > Math.abs(shL.x) + 0.02);
-    if (cls !== "lower" && sleeve) part[v] = x > 0 ? 1 : -1;
-    else if (cls !== "upper" && y < crotch) part[v] = x > 0 ? 2 : -2;
-  }
-  if (cls !== "lower") { alignLimb(pos, part, 1, shL, f.joint("LeftHand")); alignLimb(pos, part, -1, shR, f.joint("RightHand")); }
+  // rótulos do motor Blender (cor do vértice): a manga caída fica ao lado do tronco, onde a rotulagem por posição erra
+  const part = knownParts && knownParts.length === pos.length / 3 ? Int8Array.from(knownParts) : labelParts(pos, f, cls, clearance, index);
+  // `sleeveAngle`: giro máximo da manga; a peça da Meshy de braços abertos (manifesto) traz a manga na horizontal
+  if (cls !== "lower") { alignLimb(pos, part, 1, shL, f.joint("LeftHand"), sleeveAngle, longOpen); alignLimb(pos, part, -1, shR, f.joint("RightHand"), sleeveAngle, longOpen); }
   if (cls !== "upper") { alignLimb(pos, part, 2, hipL, f.joint("LeftFoot")); alignLimb(pos, part, -2, hipR, f.joint("RightFoot")); }
+  // escala real: a peça já tem a profundidade de verdade (o motor Blender a constrói pelos perímetros); esticar por faixa
+  // de altura, feito para a Meshy rasa, estufaria o tronco em faixas. Só a colisão (wrap.ts) a tira de dentro da pele.
+  if (realScale) {   // a manga real, mais larga que o braço, pendura nele: o eixo dela passa a ser o do braço
+    if (cls !== "lower") {
+      hangOnLimb(pos, part, 1, shL, f.joint("LeftForeArm"), f.joint("LeftHand"), f);
+      hangOnLimb(pos, part, -1, shR, f.joint("RightForeArm"), f.joint("RightHand"), f);
+    }
+    return { pos, part, scale: s };
+  }
   inflate(pos, part, 0, f, cls === "lower" ? [1, 3] : [1], clearance);
   if (cls !== "upper") { inflate(pos, part, 2, f, [3], clearance, (x) => x > 0); inflate(pos, part, -2, f, [3], clearance, (x) => x < 0); }
+  // manga: a Meshy também a faz rasa e nem sempre na profundidade do braço; centra no braço e dá a espessura dele
+  if (cls !== "lower") { inflate(pos, part, 1, f, [2], clearance, (x) => x > 0); inflate(pos, part, -1, f, [2], clearance, (x) => x < 0); }
   return { pos, part, scale: s };
 }

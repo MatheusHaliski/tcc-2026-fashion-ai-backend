@@ -1,0 +1,234 @@
+/* ── FLAIR · mesa de montagem (components/flair/montagem): a bandeja de cartas dos elencos e dos Desafios de Montagem ──
+   A bandeja gruda no pé da tela enquanto o tabuleiro está à vista (acima da barra de navegação do celular), ao alcance
+   do polegar; fica dentro da coluna do tabuleiro, então nunca cobre o painel ao lado nem o resto da página. Só tokens
+   do tema: vale em claro, escuro e alto contraste. Movimento reduzido: as transições somem pela regra global de 01. */
+.mt-tray {
+  position: sticky;
+  bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-sticky);
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  margin: 0 -10px;
+  padding: 8px 10px 6px;
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 -10px 30px #0000002e;
+  animation: mt-tray-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (min-width: 1024px) {
+  .mt-tray {
+    bottom: 8px;
+    margin: 0;
+  }
+}
+
+@keyframes mt-tray-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+.mt-tray-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mt-tray-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--text-body-sm);
+}
+
+.mt-tray-title span {
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.mt-tray-actions {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.mt-cards {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 3px 3px 6px;
+  overflow-x: auto;
+  list-style: none;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+}
+
+.mt-cards li {
+  flex: none;
+  scroll-snap-align: start;
+}
+
+.mt-card {
+  display: grid;
+  gap: 2px;
+  width: 92px;
+  padding: 5px;
+  border: 1.5px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+  /* rolar a bandeja de lado continua valendo; puxar a carta para cima arrasta */
+  touch-action: pan-x;
+  cursor: grab;
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+
+.mt-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--line);
+}
+
+.mt-card:focus-visible,
+.mt-card.is-focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.mt-card.is-match {
+  border-color: var(--thread);
+}
+
+.mt-card.is-here {
+  border-color: var(--thread);
+  background: var(--thread-soft);
+}
+
+.mt-card.is-off {
+  opacity: 0.5;
+}
+
+.mt-card[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.mt-card-art {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface-3);
+}
+
+.mt-card-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.mt-card-art b {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.mt-card.tier-ouro .mt-card-art {
+  box-shadow: inset 0 0 0 2px #e0b04d;
+}
+
+.mt-card.tier-prata .mt-card-art {
+  box-shadow: inset 0 0 0 2px #9da3aa;
+}
+
+.mt-card.tier-bronze .mt-card-art {
+  box-shadow: inset 0 0 0 2px #b07a52;
+}
+
+.mt-card.tier-especial .mt-card-art {
+  box-shadow: inset 0 0 0 2px var(--mark);
+}
+
+.mt-card-name {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mt-card-note {
+  display: -webkit-box;
+  min-height: 2.5em;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.mt-card.is-match .mt-card-note {
+  color: var(--thread-ink, var(--thread));
+}
+
+.mt-tray-empty,
+.mt-tray-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+/* no celular a bandeja é mais baixa, para o tabuleiro continuar à vista */
+@media (max-height: 960px), (max-width: 480px) {
+  .mt-tray-hint {
+    display: none;
+  }
+}
+
+@media (max-height: 700px), (max-width: 480px) {
+  .mt-card {
+    width: 78px;
+    padding: 4px;
+  }
+
+  .mt-card-art {
+    aspect-ratio: 4 / 3;
+  }
+
+}
+
+/* a carta que segue o ponteiro e a vaga que acende embaixo dela */
+.mt-ghost {
+  position: fixed;
+  z-index: var(--z-toast);
+  margin: 0;
+  opacity: 0.94;
+  box-shadow: 0 14px 30px #00000059;
+  pointer-events: none;
+  transition: none;
+}
+
+[data-dragging="sim"] {
+  opacity: 0.35;
+}
+
+[data-drop="sim"] {
+  outline: 3px solid var(--thread);
+  outline-offset: 2px;
+}

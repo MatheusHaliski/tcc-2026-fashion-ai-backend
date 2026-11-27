@@ -132,7 +132,7 @@ class MirrorScoresTest {
         events = mock(ApplicationEventPublisher.class);
         ai = mock(AiEngine.class);
         ObjectProvider<MirrorService.PieceRestrictionProvider> restrictions = mock(ObjectProvider.class);
-        mirror = new MirrorService(mirrors, pieces, wardrobe, mock(RoomService.class), mock(SchemeService.class), schemes,
+        mirror = new MirrorService(mirrors, pieces, wardrobe, mock(br.com.fashionai.application.acervo.AcervoLugares.class), mock(SchemeService.class), schemes,
                 mock(SchemeItemRepository.class), mock(DailyLookService.class), dnas, restrictions, ai, new Audit(e -> { }), events, hype, mock(br.com.fashionai.domain.repository.TipoLookRepository.class));
         state.setUserId(uid);
         state.setSlotsJson("{}");
@@ -229,7 +229,7 @@ class MirrorScoresTest {
         when(wardrobe.eligible(uid)).thenReturn(List.of(top, bottom, shoes));
         when(ai.text(any())).thenReturn(new AiOutcome<>(null, null, AiCallResult.FALLBACK_LOCAL, true, "local", "local", 0, BigDecimal.ZERO, null, null, null));
 
-        Map<String, Object> out = mirror.vistaMe(me, "algo confortável para o trabalho", List.of(), null, false);
+        Map<String, Object> out = mirror.vistaMe(me, "algo confortável para o trabalho", List.of(), null, false, null);
         Map<String, Object> s = scores(out);
         assertThat(s).containsOnlyKeys("compatibility", "hype", "novelty", "reuse", "usage", "sustainability");
         assertThat(s.get("hype")).isEqualTo(70);

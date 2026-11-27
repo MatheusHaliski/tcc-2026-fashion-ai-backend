@@ -20,7 +20,6 @@ const ACCOUNT = { balance: 1240, lifetime: 2980, level: "Prata", nextLevel: { le
   rules: [{ action: "LOOK_DO_DIA", points: 10, description: "Look do dia confirmado", dailyCap: 1 }, { action: "FLAIR_CBC", points: 15, description: "Desafio de Montagem entregue" }] };
 const ROUTES = {
   "GET /api/me/points": ACCOUNT,
-  "GET /api/points/shop": [{ sku: "a", availability: "DISPONIVEL", affordable: true, levelOk: true }, { sku: "b", availability: "DISPONIVEL", affordable: false, levelOk: false }, { sku: "c", availability: "EM_BREVE", affordable: true }],
   "GET /api/notifications": { unread: 0, items: [{ id: "n1", category: "POINTS" }, { id: "n2", category: "SOCIAL" }] },
   "GET /api/me/guides": { guides: { "points.fai": { version: 2, hidden: true, autoCount: 1, lastShownAt: "2026-10-01T00:00:00Z" } } },
 };
@@ -29,29 +28,29 @@ beforeEach(() => { localStorage.clear(); push.mockReset(); replace.mockReset(); 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("modelo", () => {
-  it("todo lugar tem rota, tutorial registrado e demonstração; a situação vem da conta e da loja", () => {
+  it("todo lugar tem rota, tutorial registrado e demonstração; a situação vem da conta (a loja do quarto saiu)", () => {
     for (const m of POINTS_MODES) { expect(GUIDES[m.guide], m.guide).toBeTruthy(); expect(m.demo.mp4).toMatch(/^\/points\/demos\/.*\.mp4$/); }
     expect(pointsAvailability("balance", { account: ACCOUNT })).toMatchObject({ available: true, status: { key: "points.hub.status.balance", vars: { balance: 1240, level: "Prata" } } });
-    expect(pointsAvailability("store", { shop: { items: 0, affordable: 0 } }).available).toBe(false);
-    expect(pointsAvailability("store", { shop: { items: 2, affordable: 1 } })).toMatchObject({ status: { key: "points.hub.status.store_affordable", vars: { n: 1 } } });
+    expect(pointsAvailability("store", {})).toEqual({ available: true, status: null, action: "open" });
     expect(pointsAvailability("statement", { statement: 0 })).toMatchObject({ status: { key: "points.hub.status.statement", vars: { n: 0 } } });
   });
 });
 
 describe("PointsHub", () => {
-  it("lista os quatro lugares em grupos, escolher troca o painel sem navegar e a situação mostra saldo e loja", async () => {
-    loggedAs(ME, ROUTES);
+  it("lista os quatro lugares em grupos, escolher troca o painel sem navegar; a Loja é a Loja FAI Points (sem loja física nem do quarto)", async () => {
+    const { calls } = loggedAs(ME, ROUTES);
     renderApp(<PointsHub />);
-    const store = await screen.findByRole("tab", { name: /Loja do quarto/ });
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Saldo e níveis", "Como ganhar", "Loja do quarto", "Extrato"]);
+    const store = await screen.findByRole("tab", { name: /Loja/ });
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Saldo e níveis", "Como ganhar", "Loja", "Extrato"]);
     await waitFor(() => expect(screen.getByRole("status").textContent).toBe("1240 pontos · nível Prata"));
     fireEvent.click(store);
     expect(store.getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("tabpanel").textContent).toContain("Blocos do guarda-roupa");
-    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("1 item ao seu alcance"));
+    expect(screen.getByRole("tabpanel").textContent).toContain("presets de Aura");
+    expect(screen.getByRole("tabpanel").textContent).not.toMatch(/loja física|entrega/i);
+    expect(screen.getByRole("tabpanel").textContent).not.toMatch(/quarto/i);
     expect(push).not.toHaveBeenCalled();
     expect(localStorage.getItem(`fai.points.hub.selected:${ME.user.id}`)).toBe("store");
-    expect(document.querySelector("video source")?.getAttribute("src")).toBe("/points/demos/store.webm");
+    expect(calls.some((c) => c.path === "/api/points/shop")).toBe(false);
   });
 });
 
@@ -71,6 +70,15 @@ describe("seções", () => {
     expect(screen.getByText("(máx. 1/dia)")).toBeTruthy();
     const links = screen.getAllByRole("link", { name: "Ir" });
     expect(links.map((l) => l.getAttribute("href"))).toEqual(["/autopilot", "/flair/desafios"]);
+  });
+
+  it("regra de valor variável (0 no cadastro) mostra \"varia\", nunca \"+0\" (auditoria)", async () => {
+    loggedAs(ME, { ...ROUTES, "GET /api/me/points": { ...ACCOUNT, rules: [{ action: "FLAIR_3D", points: 0, description: "Jogo FLAIR 3D concluído (valor do jogo)" }, { action: "LOOK_DO_DIA", points: 10, description: "Look do dia confirmado" }] } });
+    renderApp(<PointsSection section="ganhar" />);
+    const variable = (await screen.findByText("Jogo FLAIR 3D concluído (valor do jogo)")).closest("li")!;
+    expect(variable.textContent).toContain("varia");
+    expect(variable.textContent).not.toContain("+0");
+    expect(screen.getByText("Look do dia confirmado").closest("li")!.textContent).toContain("+10");
   });
 
   it("mostra a progressão FAI XP com o nível localizado e percentual entre limiares", () => {

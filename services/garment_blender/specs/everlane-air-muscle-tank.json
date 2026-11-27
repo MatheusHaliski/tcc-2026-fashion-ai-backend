@@ -1,0 +1,24 @@
+{
+ "produto": "The Air Muscle Tank",
+ "marca": "Everlane",
+ "url_oficial": "https://www.everlane.com/products/womens-air-muscle-tee-white",
+ "subcategoria": "tank_top",
+ "sexo": "FEMININO",
+ "caimento": "regular",
+ "tecido": {
+  "tipo": "jersey",
+  "cor": "#f1f0ec",
+  "gramatura": 150
+ },
+ "ribana": false,
+ "sem_manga": true,
+ "alca": 6,
+ "alca_centro": 0.55,
+ "medidas_marca": {
+  "cava": 25,
+  "decote_frente": 9
+ },
+ "observacao": "regata de cava funda (25 cm). Cor: a da variante na URL (white).",
+ "tamanho": "M",
+ "gola": "vies"
+}

@@ -172,8 +172,9 @@
   color: var(--color-critical);
 }
 
+/* estrela não ganha: tom claro da linha suave (com --line ela ficava preta e cheia, igual a uma estrela ganha) */
 .n3d-stars .n3d-star {
-  color: var(--line);
+  color: var(--line-soft);
   font-size: 1.75rem;
 }
 

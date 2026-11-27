@@ -28,6 +28,16 @@ const dismiss = async () => fireEvent.click(await screen.findByRole("button", { 
 async function dismissAll() { await settle(); while (screen.queryByRole("button", { name: "Entendi" })) { fireEvent.click(screen.getByRole("button", { name: "Entendi" })); await settle(); } }
 const puts = (calls: { method: string; path: string; body?: unknown }[]) => calls.filter((c) => c.method === "PUT" && c.path === "/api/me/preferences").map((c) => c.body as Record<string, unknown>);
 
+describe("configurações — endereço da aba", () => {
+  it("?tab=sessions (link da notificação de novo acesso) abre direto em Sessões", async () => {
+    window.history.replaceState({}, "", "/settings?tab=sessions");
+    loggedAs(ME, { "GET /api/me/preferences": PREFS, "GET /api/auth/sessions": [] });
+    renderApp(<SettingsPage />);
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Sessões" }).getAttribute("aria-selected")).toBe("true"));
+    window.history.replaceState({}, "", "/");
+  });
+});
+
 describe("configurações — conta", () => {
   it("passarela, capa, país, dados sensíveis e confirmação do novo e-mail", async () => {
     const { calls } = loggedAs(ME_FULL as typeof ME, { "GET /api/me/preferences": PREFS, "PATCH /api/me/profile": {}, "POST /api/me/cover": {}, "PATCH /api/me/sensitive": {}, "POST /api/me/email-change/confirm": {} });
@@ -97,13 +107,13 @@ describe("configurações — aparência", () => {
     pick("theme", "Escuro");
     fireEvent.click(screen.getByRole("switch", { name: "Alto contraste" }));
     fireEvent.click(screen.getByRole("switch", { name: "Reduzir animações" }));
-    fireEvent.click(screen.getByRole("switch", { name: "Sons do quarto" }));
-    fireEvent.click(screen.getByRole("switch", { name: "Vibração leve no celular" }));
+    // som e vibração eram das portas e gavetas do Meu Quarto, que saiu (15/11/2026): sem interruptor
+    expect(screen.queryByRole("switch", { name: "Sons do quarto" })).toBeNull();
     pick("sizeSystem", "US");
     pick("unitSystem", "IN");
-    await waitFor(() => expect(puts(calls).length).toBeGreaterThanOrEqual(7));
+    await waitFor(() => expect(puts(calls).length).toBeGreaterThanOrEqual(5));
     const all = Object.assign({}, ...puts(calls));
-    expect(all).toMatchObject({ theme: "DARK", highContrast: true, reduceMotion: true, soundEnabled: true, hapticsEnabled: false, sizeSystem: "US", unitSystem: "IN" });
+    expect(all).toMatchObject({ theme: "DARK", highContrast: true, reduceMotion: true, sizeSystem: "US", unitSystem: "IN" });
     expect(screen.getAllByText("Preferências salvas").length).toBeGreaterThan(0);
     expect(document.documentElement.dataset.theme).toBeDefined();
   });
@@ -183,20 +193,27 @@ describe("configurações — aparência", () => {
 describe("configurações — privacidade", () => {
   it("visibilidade, tópicos do Hype, consentimento ligado e erro ao mudar consentimento", async () => {
     let n = 0;
-    const consent = [{ purpose: "AI_RECOMMENDATION", granted: false }, { purpose: "MARKETING_EMAIL", label: "E-mails", granted: true, description: "Novidades" }];
+    // contrato do servidor (AccountService.consents): o nome da finalidade vem em `title`, já no idioma da pessoa
+    const consent = [{ purpose: "AI_RECOMMENDATION", title: "Recomendações por IA", granted: false }, { purpose: "MARKETING_EMAIL", label: "E-mails", granted: true, description: "Novidades" },
+      { purpose: "FACIAL_RECOGNITION", title: "Reconhecimento facial (dado sensível)", granted: false }];
     const { calls } = loggedAs({ ...ME, user: { ...ME.user, privateAccount: true } }, { "GET /api/me/preferences": PREFS, "GET /api/me/consents": consent, "PUT /api/me/privacy": {},
       "PUT /api/me/consents/AI_RECOMMENDATION": () => (++n === 1 ? [{ ...consent[0], granted: true }, consent[1]] : fail(500, "Consentimento falhou")()) });
     renderApp(<SettingsPage />);
     await tab("Privacidade");
-    // sem rótulo, o nome vem do propósito
-    const sw = await screen.findByRole("switch", { name: "AI RECOMMENDATION" });
+    // regressão da auditoria: nada de código em inglês ("FACIAL RECOGNITION") quando o servidor manda o nome
+    expect(await screen.findByRole("switch", { name: "Reconhecimento facial (dado sensível)" })).toBeTruthy();
+    expect(screen.queryByText(/FACIAL RECOGNITION/)).toBeNull();
+    const sw = await screen.findByRole("switch", { name: "Recomendações por IA" });
     fireEvent.click(sw);
-    await waitFor(() => expect(screen.getByRole("switch", { name: "AI RECOMMENDATION" }).getAttribute("aria-checked")).toBe("true"));
-    fireEvent.click(screen.getByRole("switch", { name: "AI RECOMMENDATION" }));
+    await waitFor(() => expect(screen.getByRole("switch", { name: "Recomendações por IA" }).getAttribute("aria-checked")).toBe("true"));
+    expect(await screen.findByText("Ligado: Recomendações por IA.")).toBeTruthy();
+    // o aviso do consentimento é um toast: nenhuma janela "Entendi" a cada troca (auditoria 10.6, item 15)
+    expect(screen.queryByRole("button", { name: "Entendi" })).toBeNull();
+    fireEvent.click(screen.getByRole("switch", { name: "Recomendações por IA" }));
     expect(await screen.findByText("Consentimento falhou")).toBeTruthy();
     // informação do consentimento sem descrição
-    fireEvent.click(screen.getByRole("button", { name: "Informações sobre AI RECOMMENDATION" }));
-    const dlg = await screen.findByRole("dialog", { name: "AI RECOMMENDATION" });
+    fireEvent.click(screen.getByRole("button", { name: "Informações sobre Recomendações por IA" }));
+    const dlg = await screen.findByRole("dialog", { name: "Recomendações por IA" });
     fireEvent.click(within(dlg).getAllByRole("button", { name: "Fechar" }).at(-1)!);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     // tópicos do Hype: o de notificações tem link que fecha a explicação
@@ -229,16 +246,22 @@ describe("configurações — dados e sessões", () => {
     const open = vi.fn(); vi.stubGlobal("open", open);
     URL.createObjectURL = vi.fn(() => "blob:pacote");
     const { calls } = loggedAs(undefined, { "GET /api/me/preferences": PREFS, "POST /api/me/exports": {}, "POST /api/me/deletion": {},
-      "GET /api/me/exports": [{ id: "e1", status: "READY", requestedAt: "2026-10-01T10:00:00Z" }, { id: "e2", status: "PENDING" }],
+      "GET /api/me/exports": [{ id: "e1", status: "READY", readyAt: "2026-10-01T10:00:00Z" }, { id: "e2", status: "PENDING" }],
       "GET /api/me/exports/e1/file": () => new Response("zip", { status: 200, headers: { "content-type": "application/zip" } }) });
     renderApp(<SettingsPage />);
     await tab("Seus dados (LGPD)");
-    expect(await screen.findByText("READY · 2026-10-01")).toBeTruthy();
+    expect(await screen.findByText("Pronto em 1 de out. de 2026")).toBeTruthy();
+    expect(screen.getByText(/^Em preparação · pedido em —$/)).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button", { name: "Exportar meus dados" }).at(-1)!);
     expect(await screen.findByText("Exportação solicitada.")).toBeTruthy();
     await dismissAll();
-    fireEvent.click(screen.getByRole("link", { name: "Baixar" }));
-    await waitFor(() => expect(open).toHaveBeenCalledWith("blob:pacote"));
+    const clicked: { href: string; download: string }[] = [];
+    const realClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) { clicked.push({ href: this.href, download: this.download }); };
+    fireEvent.click(screen.getByRole("button", { name: "Baixar" }));
+    await waitFor(() => expect(clicked).toEqual([{ href: "blob:pacote", download: "fashionai-meus-dados.json" }]));
+    HTMLAnchorElement.prototype.click = realClick;
+    expect(open).not.toHaveBeenCalled();
     // exclusão: sem senha não confirma; cancelar fecha; com senha agenda
     fireEvent.click(screen.getAllByRole("button", { name: "Excluir conta" }).at(-1)!);
     let dlg = await screen.findByRole("dialog", { name: "Excluir conta" });
@@ -274,14 +297,23 @@ describe("configurações — dados e sessões", () => {
 
   it("sessões: encerra outra sessão; falha ao sair de todas avisa", async () => {
     const { calls } = loggedAs(undefined, { "GET /api/me/preferences": PREFS,
-      "GET /api/auth/sessions": [{ sessionId: "cur", current: true, createdAt: "2026-10-01T10:00:00Z" }, { sessionId: "s2", device: "Celular", ip: "1.2.3.4", lastUsedAt: "2026-10-20T08:30:00Z" }],
+      "GET /api/auth/sessions": [{ sessionId: "cur", current: true, createdAt: "2026-10-01T10:00:00Z" }, { sessionId: "s2", device: "Celular", ip: "1.2.3.4", lastUsedAt: "2026-10-20T08:30:00Z" },
+        { sessionId: "s3", device: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, l", userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/140.0.0.0 Safari/537.36", lastUsedAt: "2026-10-21T08:30:00Z" },
+        { sessionId: "s4", device: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, l", lastUsedAt: "2026-10-19T08:30:00Z" }],
       "DELETE /api/auth/sessions/s2": {}, "DELETE /api/auth/sessions": fail(500, "Não deu para sair") });
     renderApp(<SettingsPage />);
     await tab("Sessões");
-    expect(await screen.findByText(/Celular · 1.2.3.4 · 2026-10-20T08:30/)).toBeTruthy();
+    // regressão da auditoria: data no formato do idioma (não "2026-10-20T08:30") e o navegador em palavras
+    expect(await screen.findByText(/Celular · 1\.2\.3\.4 · 20\/10\/2026/)).toBeTruthy();
+    // o device vem cortado pelo servidor: o texto inteiro (userAgent) dá o navegador; sem ele, diz que não identificou
+    expect(screen.getByText(/Chrome no Linux · 21\/10\/2026/)).toBeTruthy();
+    expect(screen.getByText(/Navegador não identificado no Linux · 19\/10\/2026/)).toBeTruthy();
+    // esta sessão no topo, depois da mais recente para a mais antiga
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent?.slice(0, 12))).toEqual(["Navegador nã", "Chrome no Li", "Celular · 1.", "Navegador nã"]);
+    expect(screen.queryByText(/Mozilla\/5\.0|2026-10-2\dT/)).toBeNull();
     expect(screen.getByText("· esta sessão")).toBeTruthy();
-    expect(screen.getByText("· esta sessão").parentElement!.textContent).toBe("dispositivo ·  · 2026-10-01T10:00· esta sessão");
-    fireEvent.click(screen.getByRole("button", { name: "Encerrar" }));
+    expect(screen.getByText("· esta sessão").parentElement!.textContent).toMatch(/^Navegador não identificado · 01\/10\/2026[^·]*· esta sessão$/);
+    fireEvent.click(within(screen.getByText(/^Celular/).closest("li")!).getByRole("button", { name: "Encerrar" }));
     expect(await screen.findByText("Sessão encerrada.")).toBeTruthy();
     expect(calls.some((c) => c.method === "DELETE" && c.path === "/api/auth/sessions/s2")).toBe(true);
     await dismiss();

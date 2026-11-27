@@ -9,6 +9,14 @@ import type { Sala } from "@/lib/flair/nucleos/scene/types";
 
 const LARGURA = 512;
 const ALTURA = 192;
+const FONTE = 150;
+const fonte = (px: number) => `bold ${px}px ui-monospace, Menlo, Consolas, monospace`;
+
+/** O tamanho da fonte para o texto caber no painel com folga ("100 × 75" não pode virar "00 × 7"). */
+export function fonteQueCabe(larguraNaFonteCheia: number, largura = LARGURA, cheia = FONTE): number {
+  const util = largura * 0.9;
+  return larguraNaFonteCheia <= util ? cheia : Math.floor((cheia * util) / larguraNaFonteCheia);
+}
 
 function desenhar(texto: string): THREE.CanvasTexture | null {
   if (typeof document === "undefined") return null;
@@ -18,7 +26,8 @@ function desenhar(texto: string): THREE.CanvasTexture | null {
   const g = canvas.getContext("2d");
   if (!g) return null;
   g.clearRect(0, 0, LARGURA, ALTURA);
-  g.font = "bold 150px ui-monospace, Menlo, Consolas, monospace";
+  g.font = fonte(FONTE);
+  g.font = fonte(fonteQueCabe(g.measureText(texto).width));
   g.textAlign = "center";
   g.textBaseline = "middle";
   g.shadowColor = "#FFFFFF";

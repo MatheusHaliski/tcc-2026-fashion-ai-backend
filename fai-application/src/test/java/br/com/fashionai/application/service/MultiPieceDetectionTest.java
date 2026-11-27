@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.LocalVision;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import org.junit.jupiter.api.Test;
@@ -99,6 +100,21 @@ class MultiPieceDetectionTest {
             assertThat(piece.occasion()).isEmpty();
             assertThat(piece.confidence()).isLessThan(LocalVision.PREFILL_CONFIDENCE);
         }
+    }
+
+    /** Reauditoria de 14/11/2026: uma calça virava 2 a 5 "peças", lida sobre preto no PNG transparente. */
+    @Test
+    void fotoDeUmaCalcaJeansViraUmaPecaAzulSemTipoNemNomeInventados() throws Exception {
+        java.io.File jeans = new java.io.File("../01_jeans.png");
+        org.junit.jupiter.api.Assumptions.assumeTrue(jeans.isFile(), "arte de teste na raiz do repositório");
+        var pieces = MultiPieceService.surfacePieces(ImageOps.decode(java.nio.file.Files.readAllBytes(jeans.toPath())));
+        assertThat(pieces).hasSize(1);
+        var piece = pieces.get(0);
+        assertThat(piece.color()).as("família Azul da paleta").isIn("blue", "navy", "light_blue", "sky_blue", "cobalt", "denim");
+        assertThat(piece.category()).isNull();
+        assertThat(piece.subcategory()).isNull();
+        assertThat(piece.name()).isNull();
+        assertThat(piece.confidence()).isLessThan(LocalVision.PREFILL_CONFIDENCE);
     }
 
     @Test

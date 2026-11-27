@@ -1,5 +1,7 @@
 # RF56 · Digital twin do quarto real — escanear o próprio quarto e viver nele no app
 
+> **Retirado em 15/11/2026.** O Quarto 3D (Meu Quarto) saiu do app por decisão da dona ("Retire totalmente o Quarto 3D do app FashionAI"); o guarda-roupa em perspectiva é o ACERVO (`/acervo`). Este documento fica como histórico do desenho. O que saiu, o que ficou e os dados que ficaram sem uso: `docs/quarto/RETIRADA_DO_QUARTO_3D.md`.
+
 > Rascunho de requisito. Integra o Meu Quarto ao Aurora CPS pela camada de **percepção**: a pessoa escaneia o quarto
 > de verdade com o celular (vídeo e fotos), o sistema reconstrói uma versão digital, e o Meu Quarto passa a acontecer
 > **dentro do quarto dela**, com o guarda-roupa, o espelho e as peças nos lugares reais. É independente dos portais de

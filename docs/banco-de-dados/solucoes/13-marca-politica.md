@@ -1,5 +1,22 @@
 # Exercício 13 — Política do selo: marca exigida
 
+> **Implementado em 26/11/2026.** A regra nova guarda `brandReference: {kind, id, nome}`: `kind` é `CATALOG` (`brands`) ou
+> `PROFILE` (`brand_profiles`), `id` é o UUID e `nome` é só o texto exibido. Decisões tomadas:
+> - **Sem mudança de schema** (a V118 ficou sem uso). A política continua em JSON em `seals.background_config_json`, então
+>   **não há FK no MySQL**: quem confere que o ID existe na tabela do `kind` é o `SealPolicyBrandResolver`, ao salvar
+>   (400 `MARCA_POLITICA_INVALIDA`). A tabela `seal_policy_brand_requirements` deste roteiro não foi criada: com RESTRICT
+>   ela passaria a impedir a exclusão de marca e de perfil de marca, o que é uma decisão de produto à parte.
+> - **Avaliação por ID** (`SealPolicyBrandMatch`): compara `wardrobe_items.brand_id` ou o perfil de marca da peça. O nome
+>   digitado na peça não conta. A regra antiga com `brand` em texto continua valendo por semelhança, como antes, e aparece
+>   nas telas como "marca em texto, não verificada"; nada é convertido automaticamente para ID.
+> - **Leitura**: `GET /api/users/{id}/seals` devolve o nome atual da marca e `disponivel`. Marca que sumiu fica com o nome
+>   gravado e `disponivel: false`; o selo que já a tinha continua editável, mas ela não pode ser escolhida de novo.
+> - **Opções**: `GET /api/opcoes/marcas-politica?kind=CATALOG|PROFILE&q=` (até 50; perfis só os aprovados).
+> - **Fora desta entrega**: o modelo de referência do Copilot e do selo de nível Perfil (`referenceModel.pieces[].brand`)
+>   continua com a marca em texto.
+> - Telas: `components/seal-policy-brand-field.tsx` (escolha) e `components/seal-policy-brands.tsx` (card do selo).
+>   Testes: `SealPolicyBrandReferenceTest`, `OpcoesConvencaoTest`, `seal-policy-brand-field.test.tsx`.
+
 **Situação na revisão `9f5512a77`:** Parcial: a regra atual guarda brand como texto e compara similaridade; isso não é uma FK de marca.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

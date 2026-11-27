@@ -11,7 +11,7 @@ import { Button, Field, FileButton, Input, Select, Skeleton, Textarea } from '@/
 import { PassportTransfers } from './passport-transfers';
 import styles from './passport.module.css';
 
-const origins: PassportOrigin[] = ['UNKNOWN', 'COMPRADA', 'GARIMPADA', 'HERDADA', 'PRESENTE', 'FEITA_A_MAO', 'TROCADA'];
+const origins: PassportOrigin[] = ['UNKNOWN', 'COMPRADA', 'GARIMPADA', 'HERDADA', 'PRESENTE', 'FEITA_A_MAO', 'TROCADA', 'SOB_ENCOMENDA'];
 const fields: PassportField[] = ['NAME', 'ORIGIN', 'COMPOSITION', 'CARE', 'HISTORY'];
 const eventKinds: PassportEventKind[] = ['PURCHASE', 'CARE', 'REPAIR', 'ALTERATION', 'CORRECTION'];
 type EvidenceAction = (run: () => Promise<void>, refresh?: boolean) => Promise<void>;
@@ -83,7 +83,7 @@ function PassportForm({ data, reload }: { data: GarmentPassport; reload: () => v
     </section>
     <section className={styles.panel}><h2>{t('passport.history')}</h2>
       {!data.events.length ? <p className={styles.note}>{t('passport.noEvents')}</p> : <ol className={styles.timeline}>{data.events.map(event => <li key={event.id}><strong>{t(`passport.event.${event.kind}`)}</strong> · {fmtDate(event.occurredOn)}
-        <p className={styles.status}>{t('passport.declared')}</p>{event.notes && (event.kind === 'DECLARATION' ? <DeclarationSnapshot notes={event.notes} /> : <p className={styles.details}>{event.notes}</p>)}{event.correctsEventId && <small>{t('passport.correctionRecorded')}</small>}
+        <p className={styles.status}>{t(event.provenance === 'SYSTEM_RECORDED' ? 'passport.systemRecorded' : 'passport.declared')}</p>{event.notes && (event.kind === 'DECLARATION' ? <DeclarationSnapshot notes={event.notes} /> : <p className={styles.details}>{event.notes}</p>)}{event.correctsEventId && <small>{t('passport.correctionRecorded')}</small>}
       </li>)}</ol>}
       <form className={styles.form} onSubmit={event => { event.preventDefault(); void action(async () => {
         await passportApi.event(data.id, { version: data.version, kind, occurredOn: date, notes, ...(kind === 'CORRECTION' ? { correctsEventId: corrects } : {}) }, retryKey('event'));

@@ -72,13 +72,13 @@ describe("criador de peças — modo Fotografar sem modal", () => {
     expect(screen.getAllByRole("button", { name: "Usar esta peça" })).toHaveLength(1);
   });
 
-  it("sem escolher uma peça da foto, salvar avisa em vez de criar a peça com a ilustração", async () => {
+  it("sem escolher uma peça da foto, a etapa Peça não deixa avançar e avisa, em vez de criar a peça com a ilustração", async () => {
     const { calls } = loggedAs(ME, { "GET /api/taxonomy": TAXONOMY });
     renderApp(<NewPiecePage />);
     fireEvent.click(await screen.findByRole("radio", { name: /Fotografar/ }));
     fireEvent.click(screen.getByRole("radio", { name: /Revisar/ }));
-    fireEvent.click(screen.getAllByRole("button").find((b) => /Salvar/.test(b.textContent ?? ""))!);
     expect(await screen.findByText(/Escolha uma das peças encontradas na foto/)).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Depois de salvar" })).toBeNull();
     expect(calls.some((c) => c.method === "POST" && c.path === "/api/pieces")).toBe(false);
   });
 });

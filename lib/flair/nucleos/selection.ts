@@ -20,6 +20,10 @@ export interface ResourceTab {
   tipo: "vaga" | "zona" | "area" | "resposta";
   icone: AbaIcone;
   items: ResourceItem[];
+  /** chave do nome da aba quando o jogo dá um nome próprio a ela (a aba de resposta do FASHION_SPORTS é "Modalidade") */
+  rotulo?: string;
+  /** chave do nome da aba no jogo, quando a rodada não tem um nome próprio para ela */
+  rotuloReserva?: string;
 }
 
 export interface Selecao {
@@ -38,6 +42,9 @@ export interface TabsInput {
   areas: string[];
   opcoes: string[];
   paleta?: Paleta | null;
+  codigo?: string;
+  /** a rodada escolhida: a aba de resposta pode ter o nome dela (a porta, a década) */
+  rodada?: string | null;
 }
 
 const ICONE_VAGA: Record<string, AbaIcone> = { SUP: "sup", INF: "inf", CAL: "cal", ACE: "ace", VES: "ves" };
@@ -74,7 +81,9 @@ export function buildTabs(input: TabsInput, cards: FlairCollectionCard[]): Resou
   }
   if (input.recursos.includes("RESPOSTA") && input.opcoes.length) {
     const items = input.opcoes.map((o): ResourceItem => ({ kind: "opcao", key: `op-${o}`, codigo: o }));
-    tabs.push({ id: "RESPOSTA", tipo: "resposta", icone: "resposta", items });
+    const doJogo = input.codigo && `flair3d.nucleo.${input.codigo}.tab.RESPOSTA`;
+    const daRodada = input.codigo && input.rodada ? `flair3d.rodada.${input.codigo}.${input.rodada}.tab` : doJogo;
+    tabs.push({ id: "RESPOSTA", tipo: "resposta", icone: "resposta", items, rotulo: daRodada, rotuloReserva: doJogo });
   }
   return tabs;
 }

@@ -1,7 +1,8 @@
 export type PassportField = 'NAME' | 'ORIGIN' | 'COMPOSITION' | 'CARE' | 'HISTORY';
-export type PassportOrigin = 'UNKNOWN' | 'COMPRADA' | 'GARIMPADA' | 'HERDADA' | 'PRESENTE' | 'FEITA_A_MAO' | 'TROCADA';
-export type PassportEventKind = 'PURCHASE' | 'CARE' | 'REPAIR' | 'ALTERATION' | 'CORRECTION' | 'TRANSFER' | 'DECLARATION';
-export interface PassportEvent { id: string; kind: PassportEventKind; occurredOn: string; notes: string | null; provenance: 'OWNER_DECLARED'; correctsEventId: string | null }
+export type PassportOrigin = 'UNKNOWN' | 'COMPRADA' | 'GARIMPADA' | 'HERDADA' | 'PRESENTE' | 'FEITA_A_MAO' | 'TROCADA' | 'SOB_ENCOMENDA';
+export type PassportEventKind = 'PURCHASE' | 'CARE' | 'REPAIR' | 'ALTERATION' | 'CORRECTION' | 'TRANSFER' | 'DECLARATION' | `FACTORY_${string}`;
+export type EventProvenance = 'OWNER_DECLARED' | 'SYSTEM_RECORDED';
+export interface PassportEvent { id: string; kind: PassportEventKind; occurredOn: string; notes: string | null; provenance: EventProvenance; correctsEventId: string | null }
 export interface PassportEvidence { id: string; kind: string; status: 'PRESENTED_UNVERIFIED' | 'EXPIRED'; expiresAt: string; version: number }
 export interface PassportShare { id: string; fields: PassportField[]; expiresAt: string; revoked: boolean; version: number }
 export interface PassportTransfer { id: string; passportId: string; status: 'PENDING' | 'ACCEPTED' | 'CANCELLED' | 'EXPIRED'; expiresAt: string; version: number; recipientPieceId: string | null }

@@ -1,6 +1,6 @@
 "use client";
 import { rangeFill } from "@/lib/range-fill";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { PieceView } from "@/lib/api/types";
 import { api, type ApiError } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -8,11 +8,11 @@ import { Button, Chip, Dialog, SegmentPicker, Switch, useToast } from "@/compone
 import { ArtSegments, AuraMaterialPanel, CLEAR_CARTELA, ColorPanel, OptionStrip, SeasonalDialog, SkinPicker, useRecommendedSkins, type ArtSegment, type BgConfig } from "@/components/background-studio";
 import { useUndo } from "@/lib/hooks/use-undo";
 import { PieceContainerPanel } from "@/components/piece-container-panel";
+import { CardInfoGridPanel } from "@/components/card-info-grid-panel";
 import { CardBorderDesigner } from "@/components/card-border-designer";
 import { ART_INDEX } from "@/lib/card-art";
-import { PieceCard } from "@/components/piece-card";
-import { CardPreviewModeToggle } from "@/components/card-preview-mode-toggle";
-import { ArtStage, artSurfaceProps } from "@/components/piece-art";
+import { PieceArtPreview, type PiecePreviewPlacement } from "@/components/pieces/piece-art-preview";
+import { PieceArtSwatch } from "@/components/pieces/piece-art-swatch";
 import {
   AURA_MAX, EFFECT_LIMIT, FAMILIES, FAMILY_EFFECTS, FAMILY_EMPHASIS, SEASONS, STUDIO_KEYS, activeEffects, constrainEffects, defaultArt, readPieceArt, studioPart, writePieceArt,
   type ArtEffects, type ArtFamily, type ArtVariant, type Emphasis, type PieceArt, type Season,
@@ -27,29 +27,35 @@ const TOGGLES = ["rim", "glow", "glass", "relief", "collage", "particles"] as co
  * A arte só ocupa a faixa entre a borda externa e o container; a prévia ao lado é o PRÓPRIO {@link PieceCard} do feed
  * (ou a moldura do card ampliado), com a mesma largura de uma coluna da grade; nada aqui altera a foto da peça.
  */
-export function PieceArtEditor({ value, onChange, piece, styles, occasions, mediaPanel, actions }: {
-  /** config completo do fundo (Studio + v2): o editor é controlado */
-  value: Record<string, unknown>; onChange: (bg: Record<string, unknown>) => void;
-  piece: PieceView; styles?: string[]; occasions?: string[];
-  /** fundo da área da peça (a foto de estúdio), quando o contexto permite trocá-lo */
+type PieceArtEditorProps = {
+  piece: PieceView;
+  background: Record<string, unknown>;
+  onBackgroundChange: (background: Record<string, unknown>) => void;
+  styles?: string[];
+  occasions?: string[];
+  /** Painel opcional para alterar a área da foto de estúdio. */
   mediaPanel?: ReactNode;
-  /** aplicar / cancelar / restaurar (no detalhe) ou a navegação do cadastro */
+  /** Controles externos de aplicação, cancelamento ou navegação. */
   actions?: ReactNode;
-}) {
+  previewPlacement?: PiecePreviewPlacement;
+};
+
+export function PieceArtEditor({
+  piece, background, onBackgroundChange, styles, occasions, mediaPanel, actions,
+  previewPlacement = "inline",
+}: PieceArtEditorProps) {
   const { t } = useI18n();
   const [seg, setSeg] = useState<ArtSegment>("cor");
-  const [view, setView] = useState<"feed" | "expanded">("feed");
   // modal da Cartela sazonal (como no look e no DNA): aberto ao clicar na família; variant = a variação em que se entra
   // ao Aplicar (Cancelar não muda nada)
   const [seasonal, setSeasonal] = useState<{ variant?: ArtVariant } | null>(null);
-  const art = readPieceArt(value);
-  const studio = studioPart(value) as BgConfig & { skin?: string };
-  const emit = (next: PieceArt, patch: Record<string, unknown> = {}) => onChange(writePieceArt(value, next, patch));
+  const art = readPieceArt(background);
+  const studio = studioPart(background) as BgConfig & { skin?: string };
+  const emit = (next: PieceArt, patch: Record<string, unknown> = {}) => onBackgroundChange(writePieceArt(background, next, patch));
   const family = art.template.family;
-  const preview = useMemo(() => ({ ...piece, background: value }), [piece, value]);
   // mesmo padrão do Background Studio do look e do DNA: skins recomendadas, Desfazer e Limpar arte acima da prévia
   const recommendedSkins = useRecommendedSkins(styles, occasions);
-  const artUndo = useUndo(value, onChange);
+  const artUndo = useUndo(background, onBackgroundChange);
 
   // a composição volta à da família (ênfase própria) e só ficam os efeitos que combinam com ela
   const withTemplate = (f: ArtFamily, v: ArtVariant): PieceArt =>
@@ -73,11 +79,11 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
   const on = activeEffects(art.effects).length;
   const allowed = new Set(FAMILY_EFFECTS[family]);
   const clearStudio = Object.fromEntries(STUDIO_KEYS.filter((k) => k !== "skin").map((k) => [k, null]));
-  const hasStudioArt = STUDIO_KEYS.some((k) => k !== "skin" && value[k] != null && value[k] !== "");
-  const setStudio = (p: Partial<BgConfig>) => emit(art, { ...p });
+  const hasStudioArt = STUDIO_KEYS.some((k) => k !== "skin" && background[k] != null && background[k] !== "");
+  const setStudio = (patch: Partial<BgConfig>) => emit(art, { ...patch });
 
   return (
-    <div className="pae">
+    <div className={previewPlacement === "dialog" ? "pae pae-modal" : "pae"}>
       <div className="pae-main art-editor">
         <ArtSegments value={seg} onChange={setSeg} />
         {/* cartela sazonal e animação moram no modal da família Cartela sazonal (Layout & Estilo), como no look e no DNA */}
@@ -99,7 +105,7 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
                         return (
                           <button key={v} type="button" className="pae-swatch-btn" aria-pressed={current} aria-haspopup={f === "seasonal" ? "dialog" : undefined} onClick={() => chooseTemplate(f, v)}
                             aria-label={t("pieceArt.template_rotulo", { family: t(`pieceArt.family.${f}`), variant: v.toUpperCase(), desc: t(`pieceArt.variant.${f}.${v}`) })}>
-                            <Swatch art={{ ...defaultArt(f, v), template: { family: f, variant: v, season: art.template.season } }} pieceHex={piece.colorHex} />
+                            <PieceArtSwatch art={{ ...defaultArt(f, v), template: { family: f, variant: v, season: art.template.season } }} pieceHex={piece.colorHex} />
                             <span className="pae-swatch-cap">{v.toUpperCase()} · {t(`pieceArt.variant.${f}.${v}`)}</span>
                           </button>
                         );
@@ -123,7 +129,7 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
             <OptionStrip title={t("pieceArt.step.composition")} hint={<p className="type-caption text-muted">{t("pieceArt.composicao_ajuda")}</p>}>
               {(["balanced", "top", "bottom"] as Emphasis[]).map((e) => (
                 <button key={e} type="button" aria-pressed={art.composition.emphasis === e} className="pae-swatch-btn" onClick={() => emit({ ...art, composition: { emphasis: e } })}>
-                  <Swatch art={{ ...art, composition: { emphasis: e }, effects: { ...art.effects, motion: false } }} bg={value} pieceHex={piece.colorHex} />
+                  <PieceArtSwatch art={{ ...art, composition: { emphasis: e }, effects: { ...art.effects, motion: false } }} bg={background} pieceHex={piece.colorHex} />
                   <span className="pae-swatch-cap">{t(`pieceArt.emphasis.${e}`)}{FAMILY_EMPHASIS[family][art.template.variant] === e ? ` · ${t("pieceArt.padrao_da_familia")}` : ""}</span>
                 </button>
               ))}
@@ -155,37 +161,24 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
           </div>
         )}
 
-        {seg === "container" && <PieceContainerPanel art={art} skin={studio.skin ?? ""} onArt={(next) => emit(next)} mediaPanel={mediaPanel} />}
-        {seg === "borda" && <CardBorderDesigner value={studio.border} background={value} onChange={(border) => setStudio({ border })} />}
+        {seg === "container" && <><PieceContainerPanel art={art} skin={studio.skin ?? ""} onArt={(next) => emit(next)} mediaPanel={mediaPanel} /><CardInfoGridPanel kind="piece" value={studio.infoGrid} onChange={(infoGrid) => setStudio({ infoGrid })} /></>}
+        {seg === "borda" && <CardBorderDesigner value={studio.border} background={background} onChange={(border) => setStudio({ border })} />}
 
         <SeasonalDialog open={!!seasonal} onClose={() => setSeasonal(null)} value={studio} onApply={applySeasonal} />
         {actions && <div className="pae-nav">{actions}</div>}
       </div>
-      {/* sem "card-preview": a prévia é idêntica ao card do feed (nem o lugar reservado do selo aparece) */}
-      <aside className="pae-preview" aria-label={view === "feed" ? t("pieceArt.previa_no_feed") : t("pieceArt.previa_ampliada")}>
-        {/* limpa só a arte do Background Studio (cor, gradiente, cartela, AURA, material, animação, cor do container); família, efeitos e skin ficam */}
-        <span className="flex justify-end gap-1"><Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>{t("backgroundStudio.desfazer")}</Button><Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={!hasStudioArt && !art.surface.color} onClick={() => emit({ ...art, surface: { ...art.surface, color: null } }, clearStudio)}>{t("backgroundStudio.limpar_arte")}</Button></span>
-        <CardPreviewModeToggle expanded={view === "expanded"} onToggle={() => setView(current => current === "feed" ? "expanded" : "feed")} feedLabel={t("pieceArt.previa_feed")} expandedLabel={t("pieceArt.previa_ampliado")}>
-          {view === "feed"
-            ? <div className="pae-preview-card"><PieceCard piece={preview} href="#" /></div>
-            : <div className="pae-expanded-card" aria-label={t("pieceArt.previa_ampliada")}><PieceCard piece={preview} href="#" flip={false} expanded /></div>}
-        </CardPreviewModeToggle>
-        <p className="type-caption text-muted">{t("pieceArt.camadas_legenda")}</p>
-      </aside>
+      <PieceArtPreview piece={{ ...piece, background }} placement={previewPlacement} toolbar={
+        <span className="flex justify-end gap-1">
+          <Button size="sm" title={t("backgroundStudio.desfazer_dica")} disabled={!artUndo.canUndo} onClick={artUndo.undo}>
+            {t("backgroundStudio.desfazer")}
+          </Button>
+          <Button size="sm" title={t("backgroundStudio.limpar_arte_dica")} disabled={!hasStudioArt && !art.surface.color}
+            onClick={() => emit({ ...art, surface: { ...art.surface, color: null } }, clearStudio)}>
+            {t("backgroundStudio.limpar_arte")}
+          </Button>
+        </span>
+      } />
     </div>
-  );
-}
-
-const pieceImage = (p: PieceView) => p.studioFeedUrl ?? p.studioImageUrl ?? p.thumbnailUrl ?? p.imageUrl ?? null;
-
-/** Miniatura das camadas (template e composição): a mesma área artística do card, com um container vazio no lugar do conteúdo. */
-function Swatch({ art, bg, pieceHex, density = "compact", photo }: { art: PieceArt; bg?: Record<string, unknown>; pieceHex?: string | null; density?: "compact" | "expanded"; photo?: string | null }) {
-  const surface = artSurfaceProps(bg ?? null, art, density);
-  return (
-    <span {...surface} className={`fai-card ${surface.className} pae-swatch`} style={{ ...surface.style }}>
-      <ArtStage bg={bg ?? null} art={art} density={density} pieceHex={pieceHex} />
-      <span className="pc-frame"><span className="pc-content">{photo ? <img src={photo} alt="" className="pae-swatch-photo" /> : <span className="pae-swatch-box" />}</span></span>
-    </span>
   );
 }
 
@@ -248,7 +241,7 @@ export function PieceArtDialog({ piece, open, onClose, onSaved }: { piece: Piece
         <Button variant="primary" onClick={apply} loading={busy} disabled={!dirty}>{t("pieceArt.aplicar")}</Button>
       </>}>
       {error && <p role="alert" className="mb-3 rounded-md bg-mark-soft p-2 type-body-sm">{error}</p>}
-      <PieceArtEditor value={draft} onChange={setDraft} piece={piece} styles={piece.style} occasions={piece.occasion} />
+      <PieceArtEditor background={draft} onBackgroundChange={setDraft} piece={piece} styles={piece.style} occasions={piece.occasion} />
     </Dialog>
   );
 }

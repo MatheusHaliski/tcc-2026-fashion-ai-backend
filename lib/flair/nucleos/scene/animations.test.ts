@@ -118,10 +118,66 @@ describe("sequências automáticas", () => {
     expect(roundsDaLuta(LUTA).map((r) => r.venceu)).toEqual([true, false, true]);
     const luta = sequenciaDaLuta(LUTA);
     expect(clipsDe(luta, "avatar")).toEqual(["MEIA_VOLTA", "GUARDA", "SOCO", "GUARDA", "DEFESA", "GUARDA", "GOLPE_ESPECIAL", "MEIA_VOLTA"]);
-    expect(clipsDe(luta, "fig:OPONENTE:0")).toEqual(["F_GUARDA", "F_RECUO", "F_GUARDA", "F_SOCO", "F_GUARDA", "F_RECUO", "F_QUEDA"]);
+    // o oponente vem em guarda até a distância da luta antes do primeiro round
+    expect(clipsDe(luta, "fig:OPONENTE:0")).toEqual(["F_GUARDA", "F_GUARDA", "F_RECUO", "F_GUARDA", "F_SOCO", "F_GUARDA", "F_RECUO", "F_QUEDA"]);
+    expect(luta.passos.find((p) => p.ator === "fig:OPONENTE:0")?.mover).toEqual({ x: 1.1, z: -0.3 });
     expect(clipsDe(luta, "luz:rastro")).toEqual(["L_RASTRO"]);
     const derrota = sequenciaDaLuta(resultado({ resultado: "DERROTA", estrelas: 0, eventos: [round(1, "VELOCIDADE", false), round(2, "ATAQUE", false), round(3, "DEFESA", false)] }));
     expect(clipsDe(derrota, "avatar")).toEqual(["MEIA_VOLTA", "GUARDA", "ESQUIVA", "GUARDA", "DEFESA", "GUARDA", "DEFESA", "QUEDA", "MEIA_VOLTA"]);
+  });
+
+  it("no meio da luta (EM_ACAO) só o round novo, sem queda nem reação: quem vence o round não cai (auditoria DF-1)", () => {
+    const meio = resultado({ resultado: "EM_ACAO", status: "EM_ACAO", estrelas: 0, pontos: 0, eventos: [round(1, "VELOCIDADE", true)] });
+    expect(clipsDe(sequenciaDaLuta(meio), "avatar")).toEqual(["MEIA_VOLTA", "GUARDA", "SOCO", "MEIA_VOLTA"]);
+    expect(clipsDe(sequenciaDaLuta(meio), "fig:OPONENTE:0")).not.toContain("F_COMEMORA");
+    const segundo = resultado({ resultado: "EM_ACAO", status: "EM_ACAO", estrelas: 0, pontos: 0, eventos: [round(1, "VELOCIDADE", true), round(2, "ATAQUE", false)] });
+    const seq = sequenciaDoResultado("DRESS_FIGHTER", segundo);
+    expect(clipsDe(seq, "avatar")).toEqual(["MEIA_VOLTA", "GUARDA", "DEFESA", "MEIA_VOLTA"]);
+  });
+
+  it("as pessoas de cena reagem ao desfecho (auditoria dos jogos: NPCs 3,1)", () => {
+    const ruim = resultado({ estrelas: 0, pontos: 0, resultado: "REPROVADO" });
+    const bom = resultado({ estrelas: 3, pontos: 100, resultado: "APROVADO" });
+    expect(clipsDe(sequenciaDoResultado("PASSARELA", ruim), "fig:FOTOGRAFO:*")).toEqual(["F_LAMENTA"]);
+    expect(clipsDe(sequenciaDoResultado("PASSARELA", bom), "fig:FOTOGRAFO:*")).toEqual([]);
+    expect(clipsDe(sequenciaDoResultado("DRESS_THE_STAR", ruim), "fig:ESTRELA:0")).toContain("F_LAMENTA");
+    expect(clipsDe(sequenciaDoResultado("DRESS_THE_STAR", bom), "fig:ESTRELA:0")).toContain("F_COMEMORA");
+    const titulo = resultado({ regras: [{ codigo: "TITULO", ok: true, pontos: 50 }] });
+    expect(clipsDe(sequenciaDoResultado("PERSONAGEM_FILME", titulo), "fig:CAMERA:*")).toEqual(["F_APLAUSO"]);
+    expect(clipsDe(sequenciaDoResultado("PERSONAGEM_FILME", ruim), "fig:CAMERA:*")).toEqual(["F_LAMENTA"]);
+    expect(clipsDe(sequenciaDoResultado("AROUND_THE_WORLD", bom), "fig:PASSANTE:*")).toEqual(["F_APLAUSO"]);
+    expect(clipsDe(sequenciaDoResultado("AROUND_THE_WORLD", ruim), "fig:PASSANTE:*")).toEqual([]);
+  });
+
+  it("na batalha vencida o braço que sobe é o da pessoa; o adversário lamenta", () => {
+    const seq = sequenciaDoResultado("BATALHA_LOOKS", resultado({ resultado: "VITORIA", estrelas: 3 }));
+    expect(clipsDe(seq, "fig:ADVERSARIO:0")).toContain("F_LAMENTA");
+    expect(clipsDe(seq, "fig:ADVERSARIO:0")).not.toContain("F_LEVANTA_O_BRACO");
+    expect(clipsDe(seq, "avatar")).toContain("VENCEDOR_LEVANTA_O_BRACO");
+  });
+
+  it("na campanha a rodada da batalha (ETAPA_CUMPRIDA) é decidida pelo placar: 100 × 25 não levanta o braço do adversário", () => {
+    const rodada = resultado({ resultado: "ETAPA_CUMPRIDA", status: "ABERTA", estrelas: 0, pontos: 100, eventos: [{ codigo: "ADVERSARIO", valor: 25 }] });
+    const seq = sequenciaDoResultado("BATALHA_LOOKS", rodada);
+    expect(clipsDe(seq, "fig:ADVERSARIO:0")).not.toContain("F_LEVANTA_O_BRACO");
+    expect(clipsDe(seq, "avatar")).toContain("VENCEDOR_LEVANTA_O_BRACO");
+    expect(clipsDe(seq, "avatar").at(-1)).toBe("REACAO_3");
+    const perdeu = sequenciaDoResultado("BATALHA_LOOKS", { ...rodada, pontos: 10 });
+    expect(clipsDe(perdeu, "fig:ADVERSARIO:0")).toContain("F_LEVANTA_O_BRACO");
+  });
+
+  it("os jogos de zonas do ateliê têm cena de resultado; concluir com 0 estrela é vitória, não lamento", () => {
+    const concluido = resultado({ resultado: "CONCLUIDO", estrelas: 0, pontos: 0 });
+    const incompleto = resultado({ resultado: "INCOMPLETO", estrelas: 0, pontos: 0 });
+    for (const codigo of ["CLUBE_CORACAO", "FAVORITE_SINGER", "PILOTO_FAVORITO", "SUPER_HEROI"] as const) {
+      const seq = sequenciaDoResultado(codigo, concluido);
+      expect(clipsDe(seq, "avatar").length, codigo).toBeGreaterThan(1);
+      expect(clipsDe(seq, "avatar").at(-1), codigo).toBe("REACAO_3");
+      expect(clipsDe(sequenciaDoResultado(codigo, incompleto), "avatar").at(-1), codigo).toBe("REACAO_0");
+    }
+    expect(clipsDe(sequenciaDoResultado("CLUBE_CORACAO", concluido), "fig:TORCIDA:*")).toEqual(["F_COMEMORA"]);
+    expect(clipsDe(sequenciaDoResultado("CLUBE_CORACAO", incompleto), "fig:TORCIDA:*")).toEqual(["F_LAMENTA"]);
+    expect(clipsDe(sequenciaDoResultado("PILOTO_FAVORITO", incompleto), "avatar")).toContain("BRACOS_CRUZADOS");
   });
 
   it("a partida mostra os gols do placar e o passe errado quando falta coesão", () => {
@@ -147,7 +203,9 @@ describe("sequências automáticas", () => {
     }
     const abre = sequenciaDoResultado("LABIRINTO", resultado({ resultado: "ABRE", estrelas: 3 }));
     expect(clipsDe(abre, "movel:porta")).toEqual(["M_PORTA_ABRE"]);
-    expect(clipsDe(abre, "avatar").at(-1)).toBe("ATRAVESSAR_A_PORTA");
+    // a pessoa levou a personagem até o espelho (ação jogável): a porta abre e ela comemora diante dele
+    expect(clipsDe(abre, "avatar")).toContain("APRESENTAR_O_LOOK");
+    expect(clipsDe(abre, "avatar").at(-1)).toBe("REACAO_3");
     expect(clipsDe(sequenciaDoResultado("LABIRINTO", resultado({ resultado: "NAO_ABRE", estrelas: 0 })), "luz:falha")).toEqual(["L_ONDULA"]);
     const gala = sequenciaDoResultado("FASHION_DETECTIVE", resultado({ resultado: "FAVORAVEL", estrelas: 3, regras: [{ codigo: "ACESSO", ok: true, pontos: 50 }] }));
     expect(clipsDe(gala, "movel:portaE")).toEqual(["M_PORTA_ABRE"]);
@@ -215,10 +273,10 @@ describe("diretor de cena e reduzir movimento", () => {
     expect(d.lugar("avatar", 0, origem)).toEqual(origem);
     expect(d.amostra("avatar", 0.01)["LeftArm.rz"]).toBe(155);
     expect(d.amostra("avatar", 0.01)["LeftUpLeg.rx"]).toBeUndefined();
-    // quem atravessa a porta já aparece do outro lado, sem caminhar
+    // a porta já aparece aberta; a personagem fica onde a pessoa a levou (o percurso é da pessoa)
     const porta = new Diretor();
     porta.tocar(sequenciaDoResultado("LABIRINTO", resultado({ resultado: "ABRE", estrelas: 3 })), 0, true);
-    expect(porta.lugar("avatar", 0, origem).z).toBeLessThan(-4);
+    expect(porta.lugar("avatar", 0, origem)).toEqual(origem);
     expect(porta.amostra("movel:porta", 30)["movel.ry"]).toBe(96);
   });
 

@@ -1,0 +1,158 @@
+"""Faixas de manga: o punho de outra cor, o friso e as listras que dão a volta na manga perto da barra dela.
+
+Só detecta — o resultado vai para a ``origem`` da ficha, o motor ainda não desenha faixa. Cada manga é o que sobra da
+peça para fora do ombro; ao longo dela (da ponta do ombro à ponta mais distante da manga) mede-se, fatia por fatia,
+quanto do pano foge da cor do tecido. Faixa é um trecho de fatias quase todas de outra cor, estreito perto do
+comprimento da manga; só vale quando as duas mangas mostram a mesma faixa (a mão, a dobra e a sombra do braço não
+se repetem iguais dos dois lados).
+"""
+from __future__ import annotations
+
+import numpy as np
+
+from .cores import lab_to_rgb, to_hex
+from .estampa import THRESHOLD
+
+FULL = 0.6        # fração da fatia de outra cor para a fatia ser de faixa
+MIN_W = 0.006     # faixa mais estreita (m): o friso do punho
+MAX_PART = 0.45   # faixa mais larga, em fração do comprimento da manga (mais que isso é manga de outra cor)
+
+
+def _side(dist, lab, mask, frame, ppm: float, sleeve: dict, sign: int) -> tuple[list[dict], float]:
+    """As faixas de uma manga (``sign`` +1 = à direita na foto, a manga esquerda de quem veste) e o comprimento
+    visto dela (m). O eixo da manga vai da ponta do ombro à ponta mais distante dela."""
+    tip_x = frame.center + sign * sleeve["meia_ombro"] * ppm
+    tip_y = frame.top + sleeve["queda"] * ppm
+    ys, xs = np.nonzero(mask)
+    out = (xs - tip_x) * sign > 0
+    ys, xs = ys[out], xs[out]
+    if len(ys) < 150:
+        return [], 0.0
+    far = np.hypot(xs - tip_x, ys - tip_y)
+    k = int(np.argmax(far))
+    length = float(far[k])
+    if length < 0.06 * ppm:
+        return [], 0.0
+    ux, uy = (xs[k] - tip_x) / length, (ys[k] - tip_y) / length
+    values, vectors = np.linalg.eigh(np.cov(np.vstack([xs, ys])))
+    if values[1] > 2.5 * values[0]:   # manga comprida na foto: o eixo dela é o da própria mancha, não a diagonal
+        ax, ay = vectors[:, 1]
+        ux, uy = (ax, ay) if ax * ux + ay * uy > 0 else (-ax, -ay)
+        length = float(((xs - tip_x) * ux + (ys - tip_y) * uy).max())
+    along = (xs - tip_x) * ux + (ys - tip_y) * uy
+    step = max(1.0, 0.003 * ppm)
+    bins = np.clip((along / step).astype(int), 0, None)
+    n = int(bins.max()) + 1
+    other = dist[ys, xs] > THRESHOLD
+    count = np.bincount(bins, minlength=n).astype(float)
+    frac = np.bincount(bins, weights=other, minlength=n) / np.maximum(count, 1)
+    hit = (frac > FULL) & (count >= 0.25 * np.median(count[count > 0]))
+    bands, start = [], None
+    for i in range(n + 1):
+        on = i < n and hit[i]
+        if on and start is None:
+            start = i
+        elif not on and start is not None:
+            width = (i - start) * step / ppm
+            if MIN_W <= width <= MAX_PART * length / ppm:
+                sel = (bins >= start) & (bins < i) & other
+                color = np.median(lab[ys[sel], xs[sel]], 0)
+                bands.append({"distancia_m": round((start + i) / 2 * step / ppm, 4), "largura_m": round(width, 4),
+                              "cor": to_hex(lab_to_rgb(color)), "_lab": color})
+            start = None
+    return bands, length / ppm
+
+
+def sleeve_bands(dist: np.ndarray, lab: np.ndarray, mask: np.ndarray, frame, ppm: float, sleeve: dict | None,
+                 base=None) -> list[dict]:
+    """``[{lado, distancia_m, largura_m, cor}]``: as faixas que aparecem nas duas mangas, à mesma distância da ponta
+    da manga (medida de volta a partir da barra dela, que é o que as duas fotos de manga têm em comum) e da mesma
+    cor. ``distancia_m`` é da ponta do ombro ao meio da faixa, manga abaixo."""
+    if sleeve is None or frame.worn or frame.symmetry < 0.72:
+        return []
+    left, len_l = _side(dist, lab, mask, frame, ppm, sleeve, -1)
+    right, len_r = _side(dist, lab, mask, frame, ppm, sleeve, 1)
+    out = []
+    for a in right:
+        for b in left:
+            same_place = abs((len_r - a["distancia_m"]) - (len_l - b["distancia_m"])) < 0.02
+            same_width = 0.5 < a["largura_m"] / b["largura_m"] < 2.0
+            shading = base is not None and float(np.hypot(*(a["_lab"] - base)[1:])) < 8 and \
+                abs(float(a["_lab"][0] - base[0])) < 25   # a sombra da ribana do punho: mesmo tom, só mais claro
+            # friso fino (< 1,2 cm) só com contraste forte: o brilho na crista da ribana do punho também é fino
+            shading = shading or (base is not None and a["largura_m"] < 0.012 and
+                                  float(np.linalg.norm(a["_lab"] - base)) < 40)
+            if same_place and same_width and not shading and float(np.linalg.norm(a["_lab"] - b["_lab"])) < 20:
+                for side, band in (("manga_esquerda", a), ("manga_direita", b)):
+                    out.append({"lado": side, **{k: v for k, v in band.items() if k != "_lab"}})
+                break
+    return out
+
+
+def hem_band(lab, mask, frame, base) -> dict | None:
+    """Faixa de outra cor que desce até a barra (o top bege com a barra amarela, o moletom com o cós contrastante):
+    ``{"fracao": altura da faixa / altura da peça, "cor"}``; None sem faixa. Linha a linha, no meio do tronco (±20 %
+    da largura), da barra para cima: a faixa é o trecho de linhas longe da cor do tecido e perto umas das outras; ela
+    precisa cruzar a peça de lado a lado (o desenho no pé da frente não é faixa)."""
+    w = frame.right - frame.left
+    xs = slice(max(0, int(frame.center - 0.2 * w)), int(frame.center + 0.2 * w))
+    rows = []
+    for y in range(frame.hem - int(0.02 * frame.height), frame.top + int(0.5 * frame.height), -1):
+        m = mask[y, xs]
+        if m.sum() < 0.3 * (xs.stop - xs.start):   # a barra arredondada: linhas com pouco pano não contam
+            rows.append(None)
+            continue
+        rows.append((y, np.median(lab[y, xs][m], 0)))
+    run = []
+    for r in rows:
+        if r is None:
+            if run:
+                break
+            continue
+        if np.linalg.norm(r[1] - base) <= THRESHOLD:
+            break
+        if run and np.linalg.norm(r[1] - np.median([c for _, c in run], 0)) > 12:
+            break
+        run.append(r)
+    if not run or len(run) < 0.03 * frame.height:
+        return None
+    color = np.median([c for _, c in run], 0)
+    mid = run[len(run) // 2][0]
+    across = mask[mid]
+    if across.sum() < 10 or (np.linalg.norm(lab[mid][across] - color, axis=1) < THRESHOLD).mean() < 0.7:
+        return None
+    return {"fracao": round((frame.hem - run[-1][0]) / frame.height, 3), "cor": to_hex(lab_to_rgb(color))}
+
+
+def placket_band(rgb, lab, mask, frame, ppm: float, base) -> dict | None:
+    """Faixa de outra cor ou padronagem pelas bordas da frente que abre (a vista xadrez do cardigã), na foto da peça
+    sozinha: em cada linha do peito à barra, quanto pano a partir do meio foge da cor do tecido, de cada lado.
+    ``{"largura_m" (as duas bordas), "cor", "imagem" (pedaço da faixa, RGB), "lado_m"}``; None sem faixa."""
+    if frame.worn:
+        return None   # vestida e aberta: o que aparece no meio é a roupa de baixo
+    w = frame.right - frame.left
+    reach = int(0.12 * w)
+    halves = []
+    for y in np.linspace(frame.top + 0.35 * frame.height, frame.hem - 0.1 * frame.height, 24).astype(int):
+        for sign in (-1, 1):
+            xs = np.round(frame.center + sign * np.arange(reach)).astype(int)
+            xs = xs[(xs >= 0) & (xs < mask.shape[1])]
+            off = mask[y, xs] & (np.linalg.norm(lab[y, xs] - base, axis=1) > THRESHOLD)
+            run = int(np.argmin(off)) if not off.all() else len(off)
+            halves.append(run)
+    halves = np.array(halves)
+    half = float(np.median(halves))
+    if half < 0.01 * ppm or half > 0.08 * ppm or (halves > 0.6 * half).mean() < 0.7:
+        return None
+    y0, y1 = int(frame.top + 0.45 * frame.height), int(frame.hem - 0.12 * frame.height)
+    x0 = int(frame.center + 0.15 * half)
+    side = int(min(half * 0.85, y1 - y0))
+    if side < 8:
+        return None
+    ym = (y0 + y1) // 2
+    piece = rgb[ym - side // 2:ym + side // 2, x0:x0 + side]
+    color = np.median(lab[y0:y1, x0:x0 + side][mask[y0:y1, x0:x0 + side]], 0)
+    row = np.concatenate([piece, piece[:, ::-1]], 1)
+    tile = np.concatenate([row, row[::-1]], 0)
+    return {"largura_m": round(2 * half / ppm, 4), "cor": to_hex(lab_to_rgb(color)), "imagem": tile,
+            "lado_m": round(2 * side / ppm, 4), "_meia_px": half}

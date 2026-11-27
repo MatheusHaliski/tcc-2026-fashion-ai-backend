@@ -5,7 +5,6 @@ import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.local.Similarity;
 import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.hype.HypeQueryService;
 import br.com.fashionai.application.security.CurrentUser;
@@ -75,6 +74,13 @@ public class InstitutionalService {
     @org.springframework.beans.factory.annotation.Autowired
     public void setLevelProgress(LevelProgressService progress) { this.levelProgress = progress; }
 
+    /** Edição dos dados institucionais (com as escolhas de categoria da marca e de área principal), extraída deste serviço. */
+    private InstitutionalProfileEditor editor;
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setReferenceWriters(BrandCategoryWriter brandCategory, CelebrityAreaWriter celebrityArea) {
+        this.editor = new InstitutionalProfileEditor(brands, celebrities, guard, brandCategory, celebrityArea);
+    }
+
     private final UserRepository users;
     private final BrandProfileRepository brands;
     private final CelebrityProfileRepository celebrities;
@@ -129,6 +135,7 @@ public class InstitutionalService {
         m.put("coverUrl", b.getCoverUrl());
         m.put("country", b.getCountry());
         m.put("category", b.getFashionCategory());
+        m.put("categoriaPrincipal", BrandCategoryWriter.view(b.getCategoriaMarca()));
         m.put("officialHashtag", b.getOfficialHashtag());
         m.put("bio", b.getBio());
         m.put("storeUrl", b.getStoreUrl());
@@ -147,6 +154,7 @@ public class InstitutionalService {
         m.put("coverUrl", c.getCoverUrl());
         m.put("country", c.getOwner().getCountry());
         m.put("areas", Json.strings(c.getAreasJson()));
+        m.put("areaPrincipal", CelebrityAreaWriter.view(c.getAreaArtisticaPrincipal()));
         m.put("bio", c.getBio());
         // Não há loja no cadastro da celebridade; o link de verificação não é um link comercial público.
         m.put("storeUrl", null);
@@ -719,49 +727,15 @@ public class InstitutionalService {
         return Map.of("url", b.getStoreUrl(), "external", true, "note", Msg.t("institutional.sua_sessao_no_fashion_ai"));
     }
 
-    /** RF1.CA08 — administrador da marca edita bio, site, logo, capa, categoria. */
+    /** RF1.CA08 — o dono da marca edita os dados institucionais ({@link InstitutionalProfileEditor}); a resposta é o card. */
     @Transactional
     public Map<String, Object> updateBrand(CurrentUser user, Map<String, String> fields) {
-        BrandProfile b = brands.findByOwnerId(user.id()).orElseThrow(() -> guard.deny(user, "brand-profile", Msg.t("institutional.apenas_o_perfil_da_marca")));
-        if (fields.containsKey("bio")) {
-            b.setBio(InputSanitizer.clean(fields.get("bio"), 500));
-        }
-        if (fields.containsKey("storeUrl")) {
-            String url = fields.get("storeUrl");
-            if (url != null && !url.isBlank() && !url.matches("^https://.+")) {
-                throw ApiException.badRequest("URL_INVALIDA", Msg.t("institutional.o_link_da_loja_precisa"));
-            }
-            b.setStoreUrl(url);
-        }
-        if (fields.containsKey("logoUrl")) {
-            b.setLogoUrl(fields.get("logoUrl"));
-        }
-        if (fields.containsKey("coverUrl")) {
-            b.setCoverUrl(fields.get("coverUrl"));
-        }
-        if (fields.containsKey("fashionCategory")) {
-            b.setFashionCategory(InputSanitizer.clean(fields.get("fashionCategory"), 60));
-        }
-        brands.save(b);
-        return brandCard(b);
+        return brandCard(editor.updateBrand(user, fields));
     }
 
+    /** RF22 — a celebridade edita os dados institucionais ({@link InstitutionalProfileEditor}); a resposta é o card. */
     @Transactional
     public Map<String, Object> updateCelebrity(CurrentUser user, Map<String, Object> fields) {
-        CelebrityProfile c = celebrities.findByOwnerId(user.id()).orElseThrow(() -> guard.deny(user, "celebrity-profile", Msg.t("institutional.apenas_o_perfil_da_celebridade")));
-        if (fields.containsKey("bio")) {
-            c.setBio(InputSanitizer.clean(String.valueOf(fields.get("bio")), 500));
-        }
-        if (fields.containsKey("coverUrl")) {
-            c.setCoverUrl(String.valueOf(fields.get("coverUrl")));
-        }
-        if (fields.get("styleSignature") instanceof Map<?, ?> sig) {
-            c.setStyleSignatureJson(Json.write(sig));
-        }
-        if (fields.containsKey("sealConsentGranted")) {
-            c.setSealConsentGranted(Boolean.TRUE.equals(fields.get("sealConsentGranted")));
-        }
-        celebrities.save(c);
-        return celebrityCard(c);
+        return celebrityCard(editor.updateCelebrity(user, fields));
     }
 }

@@ -7,8 +7,14 @@ import { useI18n, tr } from '@/lib/i18n/i18n';
 import { mediaUrl } from '@/lib/api/client';
 import { digitalPassportApi, type DigitalPassport, type Provenance, type SheetField, type SizeRow } from '@/lib/passport/digital';
 import { Badge, Button, Card, ErrorState, Skeleton } from '@/components/ui';
+import { label, subcategoryLabel } from '@/lib/api/taxonomy';
+import { sizeLabel } from '@/components/piece-snapshot';
 
-const PieceModelViewer = dynamic(() => import('@/components/room3d/piece-model-viewer'), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr('pieces.id.carregando_o_modelo_3d')}</div> });
+const PieceModelViewer = dynamic(() => import('@/components/piece3d/piece-model-viewer'), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr('pieces.id.carregando_o_modelo_3d')}</div> });
+
+/** Código do cadastro ("lower_piece", "COTTON", "GOOD") no idioma de quem lê; texto livre fica como veio. */
+const codigo = (value: unknown) => { const v = String(value); return /^[a-z]+(_[a-z]+)*$|^[A-Z]+(_[A-Z]+)*$/.test(v) ? label(v) : v; };
+const LEGIVEL: Partial<Record<string, (value: unknown) => React.ReactNode>> = { category: codigo, subcategory: (value) => subcategoryLabel(String(value)), composition: codigo, condition: codigo };
 
 function ProvenanceBadge({ provenance }: { provenance: Provenance }) {
   const { t } = useI18n();
@@ -24,7 +30,7 @@ export function SizeTable({ rows }: { rows: SizeRow[] }) {
   const { t } = useI18n();
   if (rows.length === 0) return <p className="type-body-sm text-muted">{t('sheet.notInformed')}</p>;
   return <table className="w-full type-body-sm"><thead><tr><th className="text-left">{t('size.col.size')}</th><th className="text-left">{t('sheet.availability')}</th><th className="text-left">{t('sheet.measurements')}</th><th className="text-left">{t('sheet.representation')}</th></tr></thead>
-    <tbody>{rows.map((row) => <tr key={row.label}><td>{row.label}{row.ownerDeclared ? ` · ${t('sheet.ownerSize')}` : ''}</td><td>{t(`sheet.availabilityValue.${row.availability}`)}</td>
+    <tbody>{rows.map((row) => <tr key={row.label}><td>{sizeLabel(row.label)}{row.ownerDeclared ? ` · ${t('sheet.ownerSize')}` : ''}</td><td>{t(`sheet.availabilityValue.${row.availability}`)}</td>
       <td>{row.measurements.length === 0 ? <span className="text-muted">{t('sheet.notInformed')}</span> : row.measurements.map((m, index) => <span key={index} className="block">{m.region} · {m.min ?? '—'}–{m.max ?? '—'} {m.unit} · {m.protocol} · {t(`sheet.measurementProvenance.${m.provenance}`)}{m.sourceName ? ` (${m.sourceName})` : ''}</span>)}</td>
       <td>{t(`sheet.representationValue.${row.representation}`)}</td></tr>)}</tbody></table>;
 }
@@ -42,12 +48,12 @@ export function DigitalPassportSheet({ pieceId }: { pieceId: string }) {
     <Card><div className="flex flex-wrap items-center gap-2"><code className="type-caption">{sheet.identifier}</code><Badge tone="chalk">{t(`sheet.access.${sheet.access}`)}</Badge><span className="type-caption text-muted">{t('sheet.lastUpdated', { date: sheet.lastUpdated ? fmtDateTime(sheet.lastUpdated) : t('sheet.notInformed') })}</span></div>
       <p className="type-caption text-muted">{t('sheet.legend')}</p></Card>
     <Card><h2 className="type-h3">{t('sheet.identification')}</h2><dl>
-      {(['name', 'brand', 'category', 'subcategory', 'description', 'productCode', 'gtin'] as const).map((key) => <Row key={key} label={t(`sheet.field.${key}`)} field={sheet.identification[key]} />)}
+      {(['name', 'brand', 'category', 'subcategory', 'description', 'productCode', 'gtin'] as const).map((key) => <Row key={key} label={t(`sheet.field.${key}`)} field={sheet.identification[key]} render={LEGIVEL[key]} />)}
       <Row label={t('sheet.field.catalogVerifiedAt')} field={sheet.identification.catalogVerifiedAt} render={(value) => fmtDate(String(value))} /></dl></Card>
     <Card><h2 className="type-h3">{t('sheet.images')}</h2>{reference && <img src={reference} alt={String(sheet.identification.name.value ?? '')} className="max-h-64 rounded object-contain" />}<dl>
       <Row label={t('sheet.field.reference')} field={{ ...sheet.images.reference, value: t('sheet.imageAvailable') }} />
       <Row label={t('sheet.field.sourceUrl')} field={sheet.images.sourceUrl} render={(value) => <a className="underline" href={String(value)} target="_blank" rel="noreferrer noopener">{String(sheet.images.sourceDomain.value ?? value)}</a>} /></dl></Card>
-    <Card><h2 className="type-h3">{t('sheet.materials')}</h2><dl>{(['composition', 'catalogMaterial', 'care', 'washing', 'condition', 'origin', 'manufacturing'] as const).map((key) => <Row key={key} label={t(`sheet.field.${key}`)} field={sheet.materials[key]} />)}</dl></Card>
+    <Card><h2 className="type-h3">{t('sheet.materials')}</h2><dl>{(['composition', 'catalogMaterial', 'care', 'washing', 'condition', 'origin', 'manufacturing'] as const).map((key) => <Row key={key} label={t(`sheet.field.${key}`)} field={sheet.materials[key]} render={LEGIVEL[key]} />)}</dl></Card>
     <Card><h2 className="type-h3">{t('sheet.sizes')}</h2><SizeTable rows={sheet.sizes.sizes} /><p className="type-caption text-muted">{t(`sheet.note.${sheet.sizes.visualApproximationNote}`)}</p></Card>
     <Card><h2 className="type-h3">{t('sheet.model3d')}</h2><dl>
       <Row label={t('sheet.field.modelKind')} field={{ value: t(`sheet.modelKind.${sheet.model3d.kind}`), provenance: sheet.model3d.provenance, informed: sheet.model3d.kind !== 'NONE' }} />

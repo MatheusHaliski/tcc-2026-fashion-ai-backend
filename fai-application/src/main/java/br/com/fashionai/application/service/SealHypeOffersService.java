@@ -1,22 +1,24 @@
 package br.com.fashionai.application.service;
 
+import java.time.Instant;
+import java.util.*;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.seal.SealPolicies;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.*;
 import br.com.fashionai.domain.model.enums.*;
 import br.com.fashionai.domain.repository.*;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.*;
 
 /** Campanhas Hype de emissores aprovados, distintas dos medalhões automáticos do HypeSeals. */
 @Service

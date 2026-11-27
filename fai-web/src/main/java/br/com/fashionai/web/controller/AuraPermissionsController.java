@@ -7,5 +7,6 @@ import java.util.Map;
 public class AuraPermissionsController {
  private final AuraPermissionsService permissions;private final Guard guard;
  public AuraPermissionsController(AuraPermissionsService permissions,Guard guard){this.permissions=permissions;this.guard=guard;}
- @GetMapping("/api/me/aura-permissions") public Map<String,Object> mine(CurrentUser user){guard.requireCanCreate(user);return permissions.permissions(user.id());}
+ /** Só leitura do próprio nível: e-mail pendente também vê o que tem liberado (gravar continua exigindo e-mail confirmado). */
+ @GetMapping("/api/me/aura-permissions") public Map<String,Object> mine(CurrentUser user){guard.requireSession(user);return permissions.permissions(user.id());}
 }

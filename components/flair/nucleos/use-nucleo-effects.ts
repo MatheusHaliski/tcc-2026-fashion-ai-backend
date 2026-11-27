@@ -1,26 +1,32 @@
 "use client";
 /**
  * Efeito de cada carta da pessoa neste núcleo (POST .../efeitos): os selos do deck, o efeito de entrada e as cartas
- * que brilham no resultado leem daqui. Enquanto o servidor não responde, `itens` devolve undefined (nada se afirma).
+ * que brilham no resultado leem daqui. Com a partida aberta, os selos valem para a rodada e o sorteio dela (o tema já
+ * revelado); antes, para a rodada escolhida. Enquanto o servidor não responde, `itens` devolve undefined (nada se afirma).
  */
 import { useCallback, useMemo } from "react";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useApi } from "@/lib/hooks/use-api";
-import { efeitosDasCartas } from "@/lib/flair/nucleos/api";
+import { efeitosDasCartas, type OndeDosEfeitos } from "@/lib/flair/nucleos/api";
 import type { EfeitoItem, NucleoCodigo } from "@/lib/flair/nucleos/types";
+import type { PerfilDaPeca } from "@/lib/flair/recursos/types";
 
-export function useNucleoEffects(codigo: NucleoCodigo, cartas: FlairCollectionCard[], ligado = true) {
+export function useNucleoEffects(codigo: NucleoCodigo, cartas: FlairCollectionCard[], ligado = true, onde: OndeDosEfeitos = {}) {
   const ids = useMemo(() => cartas.map((c) => c.id), [cartas]);
   const chave = ids.join(",");
-  const efeitos = useApi((signal) => efeitosDasCartas(codigo, ids, signal), [codigo, chave], { enabled: ligado && ids.length > 0 });
+  const { rodada = null, partida = null, vez = null } = onde;
+  const efeitos = useApi((signal) => efeitosDasCartas(codigo, ids, signal, { rodada, partida }), [codigo, chave, rodada, partida, vez], { enabled: ligado && ids.length > 0 });
   const carregado = !!efeitos.data;
   const porCarta = useMemo(() => {
     const lista = efeitos.data?.efeitos ?? [];
     return new Map<string, EfeitoItem[]>(lista.map((e) => [e.cardId, e.itens]));
   }, [efeitos.data]);
+  const perfis = useMemo(() => new Map((efeitos.data?.efeitos ?? []).filter((e) => e.perfil).map((e) => [e.cardId, e.perfil!])), [efeitos.data]);
+  /** o perfil peça-recurso da carta (atributos, recurso do uso, ações destravadas), quando o servidor mandou */
+  const perfil = useCallback((cardId: string): PerfilDaPeca | undefined => perfis.get(cardId), [perfis]);
   const itens = useCallback(
     (cardId: string): EfeitoItem[] | undefined => (carregado ? porCarta.get(cardId) ?? [] : undefined),
     [carregado, porCarta],
   );
-  return { porCarta, carregado, itens };
+  return { porCarta, carregado, itens, perfil };
 }

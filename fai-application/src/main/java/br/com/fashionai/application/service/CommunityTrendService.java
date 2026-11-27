@@ -39,7 +39,7 @@ public class CommunityTrendService {
     @Transactional
     public Map<String, Object> create(CurrentUser user, Create request) {
         guard.requireCanCreate(user);
-        if (request == null || !KINDS.contains(request.kind())) throw invalid("kind");
+        if (request == null || request.kind() == null || !KINDS.contains(request.kind())) throw invalid("kind");   // List.of não aceita contains(null)
         if (request.durationDays() == null || request.durationDays() < 1 || request.durationDays() > 30) throw invalid("durationDays");
         String title = InputSanitizer.moderated("title", request.title() == null ? "" : request.title(), 80);
         String description = InputSanitizer.moderated("description", request.description() == null ? "" : request.description(), 1000);

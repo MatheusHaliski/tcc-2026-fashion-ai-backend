@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
+import { pieceImageUrl } from "@/lib/pieces/piece-image";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
@@ -39,7 +40,7 @@ function Autopilot() {
   const PickCard = ({ p, i, onUse }: { p: Pick; i: number; onUse: () => void }) => { const { t } = useI18n(); return ((
     <Card key={p.key ?? i}>
       <p className="type-h3">{p.title ?? t("autopilot.sugestao", { value: i + 1 })}{p.score != null && !p.scores && <span className="ml-2 type-data text-faint">{Math.round(p.score * 100)}%</span>}</p>
-      <div className="mt-2 flex flex-wrap gap-2">{(p.pieces ?? []).map((x) => <Link key={x.id} href={`/pieces/${x.id}`} className="flex w-20 flex-col items-center gap-1 text-center type-caption"><img src={mediaUrl(x.thumbnailUrl ?? x.imageUrl)} alt="" className="h-16 w-16 rounded bg-surface-2 object-contain" /><span className="line-clamp-2">{x.name}</span></Link>)}</div>
+      <div className="mt-2 flex flex-wrap gap-2">{(p.pieces ?? []).map((x) => <Link key={x.id} href={`/pieces/${x.id}`} className="flex w-20 flex-col items-center gap-1 text-center type-caption"><img src={pieceImageUrl(x, 320)} alt="" className="h-16 w-16 rounded bg-surface-2 object-contain" /><span className="line-clamp-2">{x.name}</span></Link>)}</div>
       {(p.why ?? p.reason) && <p className="mt-2 type-body-sm text-muted">{p.why ?? p.reason}</p>}
       <LookScores scores={p.scores} />
       <Button className="mt-3" variant="primary" onClick={onUse}><FaiIcon id="ACT-36" size={24} decorative />{t("autopilot.usar_hoje")}</Button>
@@ -81,7 +82,7 @@ function Autopilot() {
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{(week.data as Week).days.map((d) => (
               <Card key={d.id ?? d.date}><p className="label">{fmtDate(d.date, { weekday: "long", day: "2-digit", month: "short" })}</p>{d.gap ? <p className="type-body text-muted">{t("autopilot.sem_look", { value: d.title ?? t("autopilot.pecas_insuficientes_sem_repetir") })}</p> : <>
                 <p className="type-h3">{d.title ?? label(d.occasion)}</p>{d.event && <p className="type-caption text-muted">{d.event}</p>}
-                <div className="mt-2 flex flex-wrap gap-1">{(d.pieces ?? []).map((x) => <img key={x.id} src={mediaUrl(x.thumbnailUrl ?? x.imageUrl)} alt={x.name} title={x.name} className="h-12 w-12 rounded bg-surface-2 object-contain" />)}</div>
+                <div className="mt-2 flex flex-wrap gap-1">{(d.pieces ?? []).map((x) => <img key={x.id} src={pieceImageUrl(x, 320)} alt={x.name} title={x.name} className="h-12 w-12 rounded bg-surface-2 object-contain" />)}</div>
                 <LookScores scores={d.scores} />
                 <div className="mt-2 flex gap-2">{!d.used && <Button size="sm" variant="primary" onClick={async () => { try { await api.post(`/api/autopilot/days/${d.id}/use`); toast.success(t("common.look_do_dia_registrado")); week.reload(); } catch (e) { toast.fromError(e); } }}>{t("autopilot.usar_hoje")}</Button>}{d.schemeId && <Link href={`/schemes/${d.schemeId}`} className="btn btn-sm">{t("common.see")}</Link>}</div></>}</Card>))}</div>
             {((week.data as Week).gaps ?? []).length > 0 && <p className="mt-3 type-body-sm text-muted">{t("autopilot.lacunas")}{" "}{((week.data as Week).gaps ?? []).map((g) => g.message ?? g.date).join("; ")}</p>}

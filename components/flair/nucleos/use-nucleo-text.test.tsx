@@ -1,0 +1,184 @@
+// @vitest-environment jsdom
+/**
+ * Regressão da auditoria: os jogos FLAIR 3D mostravam códigos crus do servidor ("FAMILIA_AMARELO",
+ * "FORCA_SEGUNDO_TEMPO: 23") e pontos sem arredondar ("13.333333333333334 pts").
+ */
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, renderApp } from "@/test-utils/render";
+import ptBR from "@/lib/i18n/messages/pt-BR.json";
+import { useNucleoText } from "./use-nucleo-text";
+
+afterEach(cleanup);
+
+type Tx = ReturnType<typeof useNucleoText>;
+function texto(): Tx {
+  let tx: Tx | null = null;
+  const Probe = () => { tx = useNucleoText(); return null; };
+  renderApp(<Probe />);
+  return tx!;
+}
+
+const NUCLEOS = join(process.cwd(), "fai-application/src/main/java/br/com/fashionai/application/flair3d/nucleos");
+const fontes = readdirSync(NUCLEOS).filter((f) => f.endsWith(".java")).map((f) => readFileSync(join(NUCLEOS, f), "utf8")).join("\n");
+const codigos = (re: RegExp) => [...new Set([...fontes.matchAll(re)].map((m) => m[1]))];
+const catalogo = ptBR as Record<string, string>;
+
+describe("textos dos núcleos FLAIR 3D", () => {
+  it("todo código de Evento que o servidor emite tem frase", () => {
+    const eventos = [...codigos(/new Evento\("([A-Z0-9_]+)"/g), "ESPECIAL"];
+    expect(eventos.length).toBeGreaterThan(25);
+    expect(eventos.filter((c) => !catalogo[`flair3d.ui.evento.${c}`])).toEqual([]);
+  });
+
+  it("todo código de Efeito tem frase; os motivos têm explicação", () => {
+    const efeitos = codigos(/new Efeito\("([A-Z0-9_]+)",/g);
+    expect(efeitos.filter((c) => !catalogo[`flair3d.ui.efeito.${c}`])).toEqual([]);
+    const motivos = [...codigos(/Efeito\.motivo\("([A-Z0-9_]+)"\)/g), "SEM_BONUS"];
+    expect(motivos.filter((c) => !catalogo[`flair3d.ui.fx.reason.${c}`])).toEqual([]);
+  });
+
+  it("família de cor aparece pelo nome, nunca \"FAMILIA_AMARELO\"", () => {
+    const tx = texto();
+    expect(tx.evento({ codigo: "FAMILIA", valor: "FAMILIA_AMARELO" })).toBe("Família mais forte no espelho: Amarelo");
+    expect(tx.efeito({ codigo: "FAMILIA_LARANJA", valor: 1, motivo: false })).toBe("família laranja");
+    expect(tx.evento({ codigo: "FORCA_SEGUNDO_TEMPO", valor: 23 })).toBe("Força do seu time no segundo tempo: 23");
+  });
+
+  it("código sem frase sai em letras comuns e os números com no máximo duas casas", () => {
+    const tx = texto();
+    expect(tx.evento({ codigo: "CODIGO_NOVO", valor: 13.333333333333334 })).toBe("Codigo novo: 13,33");
+    expect(tx.evento({ codigo: "PONTOS_DO_SALAO", valor: 13.333333333333334 })).toBe("Pontos do salão: 13,33");
+    expect(tx.pontos(13.333333333333334)).toBe("13,33 pts");
+    expect(tx.pontosTotal(73.33333)).toBe("73,33 pontos");
+  });
+});
+
+/** Regressão da auditoria: o Fashion Sports dizia "Futebol de 5" depois de a pessoa escolher outra modalidade. */
+describe("Fashion Sports — a modalidade escolhida aparece em todo texto", () => {
+  it("objetivo, cenário e personagens falam da modalidade; sem escolha (ou futebol) fica o texto do futebol de 5", () => {
+    const tx = texto();
+    expect(tx.daVariante("FASHION_SPORTS", "objective", "BASQUETE")).toBe("Basquete 3×3: um uniforme para o seu time contra o time-padrão.");
+    expect(tx.daVariante("FASHION_SPORTS", "scene", "SKATE")).toBe("Pista de skate.");
+    expect(tx.daVariante("FASHION_SPORTS", "characters", "TENIS")).not.toMatch(/5 adversários/);
+    expect(tx.daVariante("FASHION_SPORTS", "objective", "FUTEBOL")).toMatch(/^Futebol de 5/);
+    expect(tx.daVariante("FASHION_SPORTS", "objective", null)).toMatch(/^Futebol de 5/);
+    for (const m of ["BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"]) {
+      expect(tx.daVariante("FASHION_SPORTS", "objective", m)).not.toMatch(/Futebol/i);
+      expect(tx.daVariante("FASHION_SPORTS", "scene", m)).not.toMatch(/futebol/i);
+    }
+  });
+
+  it("a cena da ação fala em jogada e ponto fora do futebol; o evento MODALIDADE diz o esporte", async () => {
+    const { textoDoPasso } = await import("./nucleo-action-text");
+    const tx = texto();
+    const especial = { fonte: "especial" as const, codigo: "VITORIA", ok: true, pontos: 100, vaga: null };
+    expect(textoDoPasso(tx, "FASHION_SPORTS", especial, "BASQUETE")).toBe("Ponto e o time comemora");
+    expect(textoDoPasso(tx, "FASHION_SPORTS", especial, "FUTEBOL")).toBe("Gol e o time comemora");
+    expect(textoDoPasso(tx, "FASHION_SPORTS", especial)).toBe("Gol e o time comemora");
+    expect(tx.evento({ codigo: "MODALIDADE", valor: "BASQUETE" })).toBe("Modalidade: Basquete 3×3 (placar em pontos)");
+  });
+});
+
+/** Reauditoria: empate com legenda de derrota, lance sem dizer o que mudou e "Pista do salão encontrada? false". */
+describe("reauditoria — legenda do empate, efeito do lance e pista do salão", () => {
+  it("no empate a cena diz que a partida terminou empatada, no futebol e nas outras modalidades", async () => {
+    const { textoDoPasso } = await import("./nucleo-action-text");
+    const tx = texto();
+    const empate = { fonte: "especial" as const, codigo: "EMPATE", ok: false, pontos: 60, vaga: null };
+    expect(textoDoPasso(tx, "FASHION_SPORTS", empate, "TENIS")).toBe("A partida termina empatada");
+    expect(textoDoPasso(tx, "FASHION_SPORTS", empate)).toBe("A partida termina empatada");
+    const derrota = { ...empate, codigo: "DERROTA", pontos: 0 };
+    expect(textoDoPasso(tx, "FASHION_SPORTS", derrota, "SKATE")).toBe("O time adversário leva a partida");
+  });
+
+  it("o lance diz o que mudou: força do time, placar ou um lance a menos do adversário", () => {
+    const tx = texto();
+    const lance = (valor: Record<string, unknown>) => tx.evento({ codigo: "LANCE", valor: { lance: 1, modalidade: "BASQUETE", carta: "c1", venceu: true, ...valor } });
+    expect(lance({ acao: "PASSE", efeito: "FORCA", ganho: 3, forca: 26 })).toBe("Lance 1: assistência, deu certo · força do seu time +3 (agora 26)");
+    expect(lance({ acao: "CHUTE", efeito: "PONTO", ganho: 0, forca: 23 })).toBe("Lance 1: arremesso, deu certo · entra no placar");
+    expect(lance({ acao: "DEFESA", efeito: "DEFESA", ganho: 0, forca: 23 })).toMatch(/toco, deu certo · o adversário perde um lance/);
+    // servidor antigo, sem o campo: a frase termina no desfecho
+    expect(lance({ acao: "PASSE" })).toBe("Lance 1: assistência, deu certo");
+  });
+
+  it("a pista do salão aparece por extenso, nunca como true ou false", () => {
+    const tx = texto();
+    expect(tx.evento({ codigo: "PISTA", valor: false })).toBe("Pista do salão: não encontrada");
+    expect(tx.evento({ codigo: "PISTA", valor: true })).toBe("Pista do salão: encontrada");
+  });
+});
+
+/** Regressão da auditoria: "Ver o resultado" ficava clicável e mudo enquanto a janela do acionamento esperava a escolha. */
+describe("painel da ação — botão Ver o resultado", () => {
+  it("com a janela do acionamento aberta fica desligado e a tela explica o que falta", async () => {
+    const { NucleoActionPanel } = await import("./nucleo-action-panel");
+    const { screen } = await import("@/test-utils/render");
+    const onPular = vi.fn();
+    const view = renderApp(<NucleoActionPanel nucleo="DRESS_FIGHTER" passos={[]} mostrados={0} onPular={onPular} esperando />);
+    const waiting = screen.getByRole("button", { name: "Ver o resultado" }) as HTMLButtonElement;
+    expect(waiting.disabled).toBe(true);
+    expect(screen.getByText(/A partida espera a sua escolha abaixo/)).toBeTruthy();
+    view.unmount();
+    renderApp(<NucleoActionPanel nucleo="DRESS_FIGHTER" passos={[]} mostrados={0} onPular={onPular} />);
+    const free = screen.getByRole("button", { name: "Ver o resultado" }) as HTMLButtonElement;
+    expect(free.disabled).toBe(false);
+    free.click();
+    expect(onPular).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/A partida espera a sua escolha abaixo/)).toBeNull();
+  });
+
+  it("estrela não ganha usa o tom claro da linha (era preta e cheia, igual à ganha, no resultado Reprovado)", () => {
+    const css = readFileSync(join(process.cwd(), "app/(site)/_styles/29-flair3d-nucleos.css"), "utf8");
+    expect(css).toMatch(/\.n3d-stars \.n3d-star \{\s*color: var\(--line-soft\);/);
+    expect(css).toMatch(/\.n3d-stars \.n3d-star\.is-on \{\s*color: var\(--chalk\);/);
+  });
+});
+
+/** Regressão da auditoria: o Clube do Coração marcava os dois objetivos como cumpridos e mostrava "0 pontos". */
+describe("resultado de jogo artístico (sem placar)", () => {
+  it("só a definição do servidor sem pontos conta como artística", async () => {
+    const { semPlacar } = await import("@/lib/flair/nucleos/variante");
+    const def = (codigo: string, pontos: number[]) => ({ objetivo: { codigo, regras: pontos.map((p, i) => ({ codigo: `R${i}`, pontos: p })) } }) as never;
+    expect(semPlacar(def("CLUBE_ATLANTICO", [0, 0]))).toBe(true);
+    expect(semPlacar(def("TEMA_BRASIL", [50, 0]))).toBe(false);
+    expect(semPlacar(def("BASE", [0, 0]))).toBe(false);
+    expect(semPlacar(def("VAZIO", []))).toBe(false);
+  });
+
+  it("o painel diz que não há pontos, sem \"0 pontos\", \"0 pts\" nem estrelas", async () => {
+    const { NucleoResult } = await import("./nucleo-result");
+    const { screen } = await import("@/test-utils/render");
+    const resultado = { pontos: 0, estrelas: 0, resultado: "CONCLUIDO", status: "ENTREGUE", regras: [{ codigo: "TODAS_AS_ZONAS", ok: true, pontos: 0 }, { codigo: "CORES_DO_CLUBE", ok: true, pontos: 0 }], eventos: [], cartas: [] } as never;
+    const { container, unmount } = renderApp(<NucleoResult codigo="CLUBE_CORACAO" resultado={resultado} onAgain={vi.fn()} semPlacar />);
+    expect(screen.getByText("Jogo artístico: aqui não há pontos nem estrelas.")).toBeTruthy();
+    expect(container.textContent).not.toMatch(/0 pontos|0 pts/);
+    expect(container.querySelector(".n3d-stars")).toBeNull();
+    expect(screen.getByText("Todas as zonas pintadas")).toBeTruthy();
+    unmount();
+    const comPlacar = renderApp(<NucleoResult codigo="CLUBE_CORACAO" resultado={resultado} onAgain={vi.fn()} />);
+    expect(comPlacar.container.textContent).toMatch(/0 pontos/);
+  });
+});
+
+describe("auditoria dos jogos (15/11) — tela de resultado", () => {
+  it("nunca mostra o estado do caso em JSON; mostra a conta da nota e o final da rodada", async () => {
+    const { NucleoResult } = await import("./nucleo-result");
+    const detetive = { pontos: 75, estrelas: 1, resultado: "FAVORAVEL", status: "ENTREGUE", eventos: [{ codigo: "DETETIVE", valor: { sala: "passarela", vida: 2 } }],
+      regras: [{ codigo: "PISTAS", ok: true, pontos: 45 }, { codigo: "ENIGMAS", ok: true, pontos: 18 }, { codigo: "ACUSACAO", ok: true, pontos: 26 }, { codigo: "PENALIDADES", ok: false, pontos: -14 }], cartas: [] } as never;
+    const r = renderApp(<NucleoResult codigo="FASHION_DETECTIVE" resultado={detetive} onAgain={vi.fn()} />);
+    expect(r.container.textContent).not.toMatch(/[{}]|"sala"/);
+    expect(r.container.textContent).toMatch(/Vezes que os vigias pegaram você/);
+    r.unmount();
+    const passarela = { pontos: 85.71, estrelas: 2, resultado: "APROVADO", status: "ENTREGUE", eventos: [{ codigo: "CONTA", valor: { soma: 60, maximo: 70 } }],
+      regras: [{ codigo: "NO_TEMA", ok: true, pontos: 40 }, { codigo: "TUDO_NO_TEMA", ok: true, pontos: 20 }], cartas: [] } as never;
+    const p = renderApp(<NucleoResult codigo="PASSARELA" resultado={passarela} onAgain={vi.fn()} />);
+    expect(p.container.querySelector("[data-testid=nucleo-result-conta]")?.textContent).toBe("As regras somam 60 de 70 pontos; a nota é essa soma levada a 100.");
+    p.unmount();
+    const relampago = { pontos: 50, estrelas: 0, resultado: "REPROVADO", status: "ENTREGUE", eventos: [], regras: [], cartas: [] } as never;
+    const d = renderApp(<NucleoResult codigo="DRESS_THE_STAR" resultado={relampago} rodada="LOOK_RELAMPAGO" onAgain={vi.fn()} />);
+    expect(d.container.querySelector("[data-testid=nucleo-desfecho]")?.textContent).toMatch(/look-alvo/);
+    expect(d.container.textContent).not.toMatch(/perfil dela/);
+  });
+});

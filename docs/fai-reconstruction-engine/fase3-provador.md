@@ -76,3 +76,49 @@ só no visualizador. Limites conhecidos: os furos da própria malha da Meshy apa
 blazer); borda serrilhada onde a fusão foi cortada; peça muito larga ou fotografada aberta (camiseta estendida) e
 tamanhos bem acima do corpo costumam ser recusados e ficam com o molde. Não há simulação de tecido: a peça segue o
 esqueleto, não cai nem dobra.
+
+## Atualização (14/11/2026): forro no lugar da pele coberta, profundidade e rótulo da manga
+
+Com os 136 `.glb` importados, a VMBLISS Top passou no aceite e apareceu furada no avatar (pele pelo peito e pelas
+costas, barra rasgada). Medido com os `.glb` reais nos corpos padrão: o pano raso da Meshy ficava até 8 cm DENTRO do
+corpo depois do encaixe, e a colisão pela normal da pele mais próxima espalhava esses vértices para os lados.
+
+**Como os jogos vestem personagem** (referências lidas: componentes de ped do GTA V, em que `uppr`/`lowr` são malhas
+com pele que TROCAM a parte do corpo; sistemas modulares que escondem os triângulos do corpo debaixo da peça por um
+mapa; gaiolas interna e externa do Roblox; peça feita na pose de referência com os pesos do corpo): a pele debaixo
+da roupa não é desenhada, e a peça é presa ao corpo de referência em vez de ser empurrada a cada quadro.
+
+O que entrou (`lib/avatar3d/human/glb-garment/`, tudo geométrico, sem IA nem GPU):
+
+1. **Pele debaixo da peça trocada por forro** (`cover.ts`, `components/three/outfit-skin.ts`): o vértice de pele com
+   a peça logo à frente (até 7 cm, do lado para onde a pele olha, parte por parte), o que atravessa o pano e a ilha
+   de pele cercada pela peça (não chega à cabeça, à mão nem ao pé por pele descoberta) ficam "debaixo da peça". O
+   corpo deixa de desenhar como pele o triângulo com os três vértices nessa situação e, no lugar, entra o forro: a
+   mesma área do corpo, no mesmo esqueleto, na cor mediana do pano. Furo, malha rala ou pele atravessando o `.glb`
+   mostram o forro — nunca pele, nunca o vazio. Cabeça, mãos e pés nunca trocam; na borda a pele continua por baixo.
+2. **Profundidade** (`depth.ts`): antes da colisão, o pano dentro do corpo sai só em z até a pele + folga, na metade
+   (frente ou costas) em que está. x e y não mudam: a frente continua igual à foto. O meio de cada triângulo passa
+   pela mesma conta (malha rala nas costas).
+3. **Largura** (`width.ts`): a parte mais estreita que o corpo alarga em x por faixa de altura (tronco e perna até
+   1,6×, manga até 3× presa na cava); da axila para cima o tronco da peça também cobre o ombro.
+4. **Rótulo da manga** (`parts.ts`): quando a silhueta da peça tem um vão entre manga e tronco, a linha da manga é o
+   meio do vão. A barra de uma blusa mais larga que o corpo deixa de virar "manga" e de ser cortada; o punho abaixo
+   da mão continua manga. Sem vão vale a regra antiga (largura do tronco do corpo).
+5. **Aceite**: o esticamento passa a ser medido de frente (x e y) e entra `FURADA` — mais de 3% da pele debaixo da
+   peça atravessando o pano.
+
+**Medido** (corpos padrão, pose de exibição, render de frente, lado e costas num rasterizador próprio):
+
+| Peça | Feminino | Masculino |
+|---|---|---|
+| VMBLISS Top | recusada (ESTICADA 2,15) → molde | aceita (1,74; furada 0,7%) |
+| Jeans VMRIVER | aceito (1,04; 0%) | aceito (1,07; 0,3%) |
+| Vestido Cady | aceito (1,20; 1,3%) | aceito (1,11; 1,2%) |
+| Camiseta Billabong (manga aberta) | recusada (ESTICADA) | recusada (ESTICADA) |
+| Leggings Valentino (`THIN_PROFILE`) | recusada (FURADA 8,5%) | recusada (FURADA 6,7%) |
+
+Tempo do ajuste: 0,4–1,0 s por peça. **Não conferido:** o resultado no navegador (three.js, animações, medidas reais
+de uma pessoa) — só os corpos padrão na pose de exibição. **Limites:** o forro é liso (uma cor só, sem a estampa); com o braço levantado, o que aparece na
+axila é o forro; o ombro de uma peça estreita num corpo largo fica curto; não há
+simulação de tecido. Passo seguinte, no mesmo conceito: ajustar cada peça UMA vez no corpo de referência (offline) e
+gravar a malha já com pesos e cobertura, em vez de refazer o ajuste no navegador.

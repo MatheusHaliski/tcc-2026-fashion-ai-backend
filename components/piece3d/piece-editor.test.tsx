@@ -33,6 +33,25 @@ describe('piece 3D editor', () => {
     expect(calls.find((c) => c.method === 'PUT')!.body).toMatchObject({ expectedRevision: 2, document: { nodes: {}, materials: {}, vertices: {} } });
   });
 
+  it('peça sem modelo 3D: estado explicado com saída, sem "Algo deu errado" nem etiquetas de modelo (auditoria 10.6, item 5)', async () => {
+    loggedAs(undefined, { 'GET /api/pieces/piece1/customization': { ...customization, baseModelUrl: null, modelAvailable: false, editable: false, quarantine: false, assetApproval: 'NONE', revision: 0 } });
+    renderApp(<PieceEditor pieceId="piece1" />);
+    await screen.findByText('Esta peça ainda não tem modelo 3D');
+    expect(screen.getByText(/O modelo vem do produto do catálogo/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ver a peça' }).getAttribute('href')).toBe('/pieces/piece1');
+    expect(screen.queryByText('Algo deu errado')).toBeNull();
+    expect(screen.queryByText(/Modelo de vitrine/)).toBeNull();
+    expect(screen.queryByText(/personalização v0/i)).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('sem personalização salva, a etiqueta diz isso em vez de "v0"', async () => {
+    loggedAs(undefined, { 'GET /api/pieces/piece1/customization': { ...customization, revision: 0 }, 'GET /media/jaqueta.glb': () => new Response(new ArrayBuffer(16)) });
+    renderApp(<PieceEditor pieceId="piece1" />);
+    await screen.findByTestId('viewport');
+    expect(screen.getByText('Ainda sem personalização salva')).toBeTruthy();
+  });
+
   it('shows a clear message when the model cannot be loaded and keeps others read-only', async () => {
     loggedAs(undefined, { 'GET /api/pieces/piece1/customization': { ...customization, editable: false, viewOnly: true } });
     renderApp(<PieceEditor pieceId="piece1" />);

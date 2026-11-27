@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -99,6 +100,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ApiError> integrity(DataIntegrityViolationException ex, HttpServletRequest req) {
+        if (isDataError(ex.getMostSpecificCause())) {
+            return unexpected(ex, req);
+        }
         log.warn("Violação de integridade em {}: {}", req.getRequestURI(), ex.getMostSpecificCause().getMessage());
         return respond(req, 409, "CONFLITO", Msg.t("globalExceptionHandler.esta_acao_conflita_com_um"), Map.of());
     }
@@ -114,6 +118,14 @@ public class GlobalExceptionHandler {
         log.error("Erro inesperado em {} {}", req.getMethod(), req.getRequestURI(), ex);
         return respond(req, 500, "ERRO_INTERNO",
                 Msg.t("globalExceptionHandler.algo_deu_errado_do_nosso"), Map.of());
+    }
+
+    /**
+     * Valor que não cabe ou não converte na coluna (SQLState classe 22) é defeito do servidor, não um conflito com
+     * outro registro: a pessoa recebe o erro interno, não um "já existe".
+     */
+    private static boolean isDataError(Throwable cause) {
+        return cause instanceof SQLException sql && sql.getSQLState() != null && sql.getSQLState().startsWith("22");
     }
 
     private static ResponseEntity<ApiError> respond(HttpServletRequest req, int status, String code, String message,

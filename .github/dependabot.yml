@@ -10,6 +10,10 @@ updates:
       # Testcontainers, JUnit). Major do Boot é migração (docs/MIGRACAO_SPRING_BOOT_4.md), não um bump: só com o CI verde.
       spring:
         patterns: ["org.springframework*", "io.spring*", "org.springdoc*"]
+    ignore:
+      # anthropic-java 3.x removeu addUserMessageOfBlockParams usado em ClaudeProvider; só migrar junto com o código.
+      - dependency-name: "com.anthropic:anthropic-java"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: /
     schedule: { interval: weekly, day: monday }

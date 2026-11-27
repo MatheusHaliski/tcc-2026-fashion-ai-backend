@@ -1,15 +1,15 @@
 /**
  * Palco fotográfico do confronto: lê a configuração por modo (lib/flair/match-stages.json — foto real licenciada e seis
  * âncoras por lado, ancoradas em objetos da foto: lado A à esquerda, lado B à direita) e transforma os momentos revelados
- * em inserções da cena do FLAIR 3D (PhotoSceneHit): uma carta por lado e por momento, com Flair3dSlot (faixa real, faixa
+ * em inserções da cena fotográfica (PhotoSceneHit): uma carta por lado e por momento, com Flair3dSlot (faixa real, faixa
  * de partida, efeito e texto) e CbcSlotResult (sintonia 3 vencedor / 1 empate / 0 perdedor; `neighbor` = o lado tem
  * sinergia na rodada, o que liga por luz as cartas vizinhas do mesmo lado). Puro: sem texto de interface.
  */
 import STAGES from "@/lib/flair/match-stages.json";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
-import type { PhotoPin } from "@/components/flair/games/photo-scene";
+import type { PhotoPin } from "@/components/flair/match/photo-scene";
 import type { CbcSlotResult } from "@/lib/flair/cbc";
-import { HYPE_BANDS, type GameSceneCredit, type Flair3dSlot, type SceneFx } from "@/lib/flair/games";
+import { HYPE_BANDS, type GameSceneCredit, type Flair3dSlot, type SceneFx } from "@/lib/flair/photo-scene";
 import { sideEffect, type AuraPermissions, type MatchCard, type MatchData, type MatchMoment, type MatchSide, type SideEffect } from "@/lib/flair/match-stage";
 import { stageMode } from "@/lib/flair/match-modes";
 
@@ -36,7 +36,7 @@ export interface SceneHit {
 }
 export interface MatchScene { hits: SceneHit[]; pins: Record<MatchSide, PhotoPin[]>; score: Record<MatchSide, number> }
 
-/** A carta do momento no formato que a cena do FLAIR 3D desenha (só id, nome, nível e imagem importam ali). */
+/** A carta do momento no formato que a cena fotográfica desenha (só id, nome, nível e imagem importam ali). */
 export function sceneCard(c: MatchCard): FlairCollectionCard {
   return {
     id: c.id, originType: "PIECE", originId: c.id, season: "", tier: c.tier, ovr: 0, rare: c.tier === "ESPECIAL", position: "", name: c.name,

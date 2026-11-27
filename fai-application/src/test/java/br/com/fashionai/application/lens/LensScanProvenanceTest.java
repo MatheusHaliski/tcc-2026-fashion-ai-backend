@@ -75,6 +75,19 @@ class LensScanProvenanceTest {
         assertThat(LensScanProvenance.degradedReason(LensScanProvenance.localDetection())).isNull();   // sem outcome
     }
 
+    /** Regressão da auditoria: "local-pessoa"/"local-superficie" não cabiam em ai_source (10) e o scan dava 409. */
+    @Test
+    void origemDetalhadaDoDetectorLocalViraLocalNoScan() {
+        List<MultiPieceService.DetectedPiece> one = List.of(at(0, 1, 1));
+        for (String source : List.of("local", "local-pessoa", "local-superficie")) {
+            LensScan s = new LensScan();
+            LensScanProvenance.stamp(s, det(one, source, AiCallResult.RATE_LIMITED, "local", null));
+            assertThat(s.getAiSource()).as(source).isEqualTo("local").hasSizeLessThanOrEqualTo(10);
+            assertThat(s.getStatus()).isEqualTo(LensScanStatus.READY);
+            assertThat(s.getErrorCode()).as(source).isEqualTo("QUOTA");
+        }
+    }
+
     @Test
     void leituraLocalSemIaExterna() {
         MultiPieceService.PieceDetection local = LensScanProvenance.localDetection();

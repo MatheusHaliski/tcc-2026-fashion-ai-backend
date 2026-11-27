@@ -1,25 +1,24 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.ai.AiCapability;
-import br.com.fashionai.application.ai.AiEngine;
-import br.com.fashionai.application.ai.AiOutcome;
-import br.com.fashionai.application.ai.AiRequest;
+import java.awt.image.BufferedImage;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.fashionai.application.ai.*;
 import br.com.fashionai.application.ai.local.ColorMath;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.Hashing;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.imaging.AiSeal;
-import br.com.fashionai.application.imaging.BrandReader;
-import br.com.fashionai.application.imaging.BrandRegions;
-import br.com.fashionai.application.imaging.WornPieceRegions;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.imaging.*;
 import br.com.fashionai.application.moderation.ImageSafetyPorts;
-import br.com.fashionai.application.imaging.FlatLayPipeline;
-import br.com.fashionai.application.imaging.ImageProviderPorts;
-import br.com.fashionai.application.imaging.ImageOps;
-import br.com.fashionai.application.imaging.LocalVision;
-import br.com.fashionai.application.imaging.LocalPieceRegions;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -31,19 +30,6 @@ import br.com.fashionai.domain.model.enums.PipelineJobStatus;
 import br.com.fashionai.domain.model.enums.PipelineJobType;
 import br.com.fashionai.domain.repository.PipelineJobRepository;
 import br.com.fashionai.domain.repository.UserRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.awt.image.BufferedImage;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * RF4 · Várias peças numa foto. Duas etapas, para a pessoa revisar entre elas:
@@ -169,7 +155,8 @@ public class MultiPieceService {
      * as peças da foto já orientada; sem IA (consentimento, cota, orçamento, provedor), regiões locais a conferir. Usado
      * pelo cadastro de várias peças ({@link #detect}) e pelo FashionAI Lens (RF54).
      */
-    public PieceDetection detectPieces(UUID userId, BufferedImage photo) {
+    public PieceDetection detectPieces(UUID userId, BufferedImage raw) {
+        BufferedImage photo = Transparency.onWhite(raw);   // PNG transparente: lido sobre branco, não sobre preto
         LocalDetection local = localPieces(photo);
         AiOutcome<List<DetectedPiece>> outcome = ai.text(new AiEngine.TextCall<>(userId, AiCapability.MULTI_PIECE_DETECTOR,
                 DETECTOR_SYSTEM, detectorPrompt(),
@@ -196,39 +183,8 @@ public class MultiPieceService {
      * de cima, de baixo, calçado); sem pessoa, as regiões de superfície. A cor vem dos pixels da própria peça.
      */
     LocalDetection localPieces(BufferedImage photo) {
-        List<WornPieceRegions.Worn> worn = segmenters.stream().filter(ImageSafetyPorts.PersonSegmentationPort::available)
-                .findFirst().flatMap(s -> s.classes(photo)).map(m -> WornPieceRegions.detect(photo, m)).orElse(List.of());
-        if (!worn.isEmpty()) {
-            List<DetectedPiece> pieces = new ArrayList<>();
-            for (WornPieceRegions.Worn r : worn) {
-                String category = switch (r.kind()) {
-                    case HEADWEAR -> "accessory_piece";
-                    case UPPER -> "upper_piece";
-                    case LOWER -> "lower_piece";
-                    case FULL -> "full_body_piece";
-                    case SHOES -> "shoes_piece";
-                };
-                String sub = switch (r.kind()) {
-                    case HEADWEAR -> "cap";
-                    case UPPER -> "t_shirt";
-                    case LOWER -> r.bottomFrac() < SHORTS_BOTTOM_FRAC ? "shorts" : "casual_pants";
-                    case FULL -> "dress";
-                    case SHOES -> "casual_sneakers";
-                };
-                if (!Taxonomy.SUBCATEGORIES.getOrDefault(category, List.of()).contains(sub)) {
-                    sub = Taxonomy.SUBCATEGORIES.getOrDefault(category, List.of()).stream().findFirst().orElse(null);
-                }
-                pieces.add(new DetectedPiece(pieces.size(), null, category, sub, ColorMath.nearestTaxonomyColor(r.rgb()), null, null,
-                        List.of(), List.of(), new Box(r.x(), r.y(), r.width(), r.height()), 0.6));
-            }
-            return new LocalDetection(List.copyOf(pieces), "local-pessoa");
-        }
-        List<DetectedPiece> surface = surfacePieces(photo);
-        return new LocalDetection(surface, surface.size() == 1 && surface.get(0).box().width() == 100 ? "local" : "local-superficie");
+        return LocalPieceDetector.detect(photo, segmenters);
     }
-
-    /** Peça de baixo que termina acima disto (fração da altura da pessoa, do topo da cabeça à sola) é bermuda/short. */
-    static final double SHORTS_BOTTOM_FRAC = 0.80;
 
     /** Peças sem cor da IA recebem a cor dominante dos pixels da própria caixa (nunca a da foto inteira). */
     static List<DetectedPiece> fillColors(BufferedImage photo, List<DetectedPiece> pieces) {
@@ -320,11 +276,11 @@ public class MultiPieceService {
     }
 
     static Map<Integer, String> parseBrands(String text) {
-        Map<String, Object> parsed = WardrobeService.extractJson(text);
+        Map<String, Object> parsed = AiResponseJson.extractJson(text);
         Map<Integer, String> out = new LinkedHashMap<>();
         if (parsed.get("brands") instanceof List<?> list) for (Object entry : list) {
             if (!(entry instanceof Map<?, ?> row) || !(row.get("index") instanceof Number index)) continue;
-            String brand = WardrobeService.brandName(WardrobeService.str(row.get("brandName")));
+            String brand = PieceAnalysisParser.brandName(AiResponseJson.str(row.get("brandName")));
             if (brand != null) out.putIfAbsent(index.intValue(), brand);
         }
         return out;
@@ -339,7 +295,7 @@ public class MultiPieceService {
         guard.requireCanCreate(user);
         String mime = ImageOps.requireAcceptedImage(bytes);
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
-        BufferedImage photo = ImageOps.decode(bytes);
+        BufferedImage photo = Transparency.onWhite(ImageOps.decode(bytes));
 
         PieceDetection detection = detectPieces(user.id(), photo);
         AiOutcome<List<DetectedPiece>> outcome = detection.outcome();
@@ -382,14 +338,7 @@ public class MultiPieceService {
     }
 
     static List<DetectedPiece> surfacePieces(BufferedImage photo) {
-        List<LocalPieceRegions.Region> regions = LocalPieceRegions.detect(photo);
-        if (regions.isEmpty()) return List.of(localPiece());
-        List<DetectedPiece> pieces = new ArrayList<>();
-        for (LocalPieceRegions.Region region : regions) {
-            pieces.add(new DetectedPiece(pieces.size(), null, null, null, ColorMath.nearestTaxonomyColor(region.rgb()), null, null, List.of(), List.of(),
-                    new Box(region.x(), region.y(), region.width(), region.height()), 0.45));
-        }
-        return List.copyOf(pieces);
+        return LocalPieceDetector.surfacePieces(photo);
     }
 
     static final String DETECTOR_SYSTEM = """
@@ -432,7 +381,7 @@ public class MultiPieceService {
      * JSON ilegível → null (o motor trata como falha do provedor e tenta o próximo); lista vazia é resposta válida.
      */
     static List<DetectedPiece> parseDetections(String text) {
-        Map<String, Object> m = WardrobeService.extractJson(text);
+        Map<String, Object> m = AiResponseJson.extractJson(text);
         if (!(m.get("pieces") instanceof List<?> list)) {
             return null;
         }
@@ -448,8 +397,8 @@ public class MultiPieceService {
             if (box == null) {
                 continue;
             }
-            String sub = Taxonomy.activeSubcategory(WardrobeService.str(p.get("subcategory")));   // legado → código novo
-            String category = WardrobeService.str(p.get("category"));
+            String sub = Taxonomy.activeSubcategory(AiResponseJson.str(p.get("subcategory")));   // legado → código novo
+            String category = AiResponseJson.str(p.get("category"));
             if (sub != null && Taxonomy.categoryOf(sub) != null) {
                 category = Taxonomy.categoryOf(sub);
             } else {
@@ -458,18 +407,18 @@ public class MultiPieceService {
                     category = null;
                 }
             }
-            String name = WardrobeService.str(p.get("name"));
-            String brand = WardrobeService.brandName(WardrobeService.str(p.get("brandName")));
-            if (brand == null) brand = WardrobeService.brandName(WardrobeService.str(p.get("brand")));
+            String name = AiResponseJson.str(p.get("name"));
+            String brand = PieceAnalysisParser.brandName(AiResponseJson.str(p.get("brandName")));
+            if (brand == null) brand = PieceAnalysisParser.brandName(AiResponseJson.str(p.get("brand")));
             double conf = p.get("confidence") instanceof Number n ? Math.max(0, Math.min(1, n.doubleValue())) : 0.5;
             out.add(new DetectedPiece(out.size(),
                     name == null || name.isBlank() ? null : InputSanitizer.clean(name, 80),
                     category, sub,
-                    WardrobeService.oneOf(WardrobeService.str(p.get("color")), Taxonomy.COLORS.keySet()),
-                    WardrobeService.oneOf(WardrobeService.str(p.get("material")), Taxonomy.MATERIALS),
-                    WardrobeService.oneOf(WardrobeService.str(p.get("sex")), Taxonomy.SEXES),
-                    Taxonomy.keepAllowed(WardrobeService.strings(p.get("style")), Taxonomy.STYLES, Taxonomy.MAX_PIECE_TAGS),
-                    Taxonomy.keepAllowed(WardrobeService.strings(p.get("occasion")), Taxonomy.allowedOccasions(category), Taxonomy.MAX_PIECE_TAGS),
+                    AiResponseJson.oneOf(AiResponseJson.str(p.get("color")), Taxonomy.COLORS.keySet()),
+                    AiResponseJson.oneOf(AiResponseJson.str(p.get("material")), Taxonomy.MATERIALS),
+                    AiResponseJson.oneOf(AiResponseJson.str(p.get("sex")), Taxonomy.SEXES),
+                    Taxonomy.keepAllowed(AiResponseJson.strings(p.get("style")), Taxonomy.STYLES, Taxonomy.MAX_PIECE_TAGS),
+                    Taxonomy.keepAllowed(AiResponseJson.strings(p.get("occasion")), Taxonomy.allowedOccasions(category), Taxonomy.MAX_PIECE_TAGS),
                     box, Math.round(conf * 100) / 100.0,
                     brand == null || brand.isBlank() ? null : InputSanitizer.clean(brand.trim(), 60)));
         }
@@ -563,9 +512,9 @@ public class MultiPieceService {
         // Moderação (#2) da imagem que vai para o acervo — nunca aprova por omissão.
         LocalVision.ModerationVerdict localVerdict = LocalVision.moderate(r.original(), r.cutout());
         AiOutcome<LocalVision.ModerationVerdict> moderation = ai.text(new AiEngine.TextCall<>(user.id(),
-                AiCapability.CONTENT_MODERATOR, WardrobeService.MODERATION_SYSTEM, Msg.t("wardrobe.classifique_a_imagem_anexada"),
+                AiCapability.CONTENT_MODERATOR, PieceAnalyzerPrompts.MODERATION_SYSTEM, Msg.t("wardrobe.classifique_a_imagem_anexada"),
                 List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(r.original(), 768, 768), 0.85f), "image/jpeg")),
-                400, List.of(Msg.t("wardrobe.foto_da_peca_reduzida_a")), wardrobe::parseModeration, () -> localVerdict, null));
+                400, List.of(Msg.t("wardrobe.foto_da_peca_reduzida_a")), PieceAnalysisParser::parseModeration, () -> localVerdict, null));
         LocalVision.ModerationVerdict verdict = moderation.value();
         if (verdict.status() == ModerationStatus.REJECTED_POLICY) {
             throw ApiException.badRequest("CONTEUDO_BLOQUEADO", Msg.t("wardrobe.a_foto_viola_a_politica"));

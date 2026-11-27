@@ -41,7 +41,6 @@ const out=process.env.UI_AUDIT_OUTPUT || '/tmp/fashionai-ux-audit';fs.mkdirSync(
    else if(p.startsWith('/api/profiles/'))body=profile;
    else if(p==='/api/me/schemes'||p==='/api/users/u1/schemes')body=pageData([SCHEME]);
    else if(p==='/api/me/points')body={balance:120,lifetime:300,level:'ESTREIA',levels:[],rules:[]};
-   else if(p==='/api/points/shop')body=[];
    else if(p==='/api/notifications')body={unread:0,items:[]};
    else if(p==='/api/notifications/unread-count')body={unread:0};
    else if(p==='/api/search')body={results:[],nextCursor:null};

@@ -41,26 +41,7 @@ def run(C):
     step('RF25', 'CA07', 'resgatar promoção sem selo aprovado (deve recusar)', 'POST', '/api/promotions/{promo}/redemptions', who=USER3, ctx=C, expect=(403, 409, 422))
     step('RF25', 'CA08', 'métricas do emissor', 'GET', '/api/me/issuer-metrics', who=BRAND, ctx=C)
 
-    # ================= RF27 Meu Quarto
-    step('RF27', 'CA01', 'meu quarto (módulos, endereços, estados)', 'GET', '/api/me/room', who=U, ctx=C,
-         save=lambda c, b: c.__setitem__('room_mod', next((m['id'] for m in b['modules'] if m['id'].startswith('door')), 'door:1')))
-    step('RF27', 'CA02', 'abrir porta/gaveta', 'GET', '/api/me/room/modules/{room_mod}', who=U, ctx=C)
-    step('RF27', 'CA03', 'visão em lista', 'GET', '/api/me/room/list', who=U, ctx=C)
-    step('RF27', 'CA04', 'endereço da peça no quarto', 'PUT', '/api/pieces/{p_top}/room-address', {'address': 'door:2/hanger:1'}, who=U, ctx=C)
-    step('RF27', 'CA04', 'onde está a peça', 'GET', '/api/pieces/{p_top}/room-location', who=U, ctx=C)
-    step('RF27', 'CA05', 'renomear gaveta', 'PUT', '/api/me/room/drawers/3', {'label': 'Gaveta E2E'}, who=U, ctx=C)
-    step('RF27', 'CA06', 'etiqueta costurada da peça', 'GET', '/api/pieces/{p_top}/tag', who=U, ctx=C)
-    step('RF27', 'CA06', 'diário de uso da peça', 'POST', '/api/pieces/{p_top}/diary', {'date': TODAY, 'occasion': 'casual', 'note': 'usei no teste E2E'}, who=U, ctx=C)
-    step('RF27', 'CA07', 'baú de estação exige nível Penthouse (nível Estreia é recusado)', 'POST', '/api/me/room/season-storage', body=lambda c: {'pieceIds': [c['p_dress']], 'store': True}, who=U, ctx=C, expect=(409,))
-    step('RF27', 'CA08', 'prévia da organização automática (IA opt-in)', 'GET', '/api/me/room/organization/preview?useAi=true', who=U, ctx=C, save=lambda c, b: c.__setitem__('org', b))
-    step('RF27', 'CA08', 'aplicar organização', 'POST', '/api/me/room/organization', who=U, ctx=C,
-         body=lambda c: {'labels': (c.get('org') or {}).get('labels') or {}, 'moves': (c.get('org') or {}).get('moves') or []})
-    step('RF27', 'CA08', 'desfazer organização', 'DELETE', '/api/me/room/organization', who=U, ctx=C)
-    step('RF27', 'CA09', 'monograma do quarto (Studio+)', 'PUT', '/api/me/room/monogram', {'initials': 'E2'}, who=ADMIN, ctx=C)
-    step('RF27', 'CA11', 'ilha central (Atelier+) — nível insuficiente recusa', 'POST', '/api/me/room/island', body=lambda c: {'schemeIds': [c['s1']]}, who=U, ctx=C, expect=(200, 403, 409))
-    step('RF27', 'CA12', 'dar a chave do quarto a um seguidor', 'POST', '/api/me/room/keys', body=lambda c: {'guestId': c['user2_id']}, who=U, ctx=C, expect=(200, 201, 403, 409))
-    step('RF27', 'CA12', 'visitar o quarto de alguém (com chave)', 'GET', '/api/users/{e2e_id}/room-tour', who=USER2, ctx=C, expect=(200, 403))
-    step('RF30', 'CA06', 'luz guiada (Studio+)', 'PUT', '/api/me/room/light', {'kelvin': 3200}, who=ADMIN, ctx=C)
+    # ================= RF27 Meu Quarto: saiu do app em 15/11/2026 (docs/quarto/RETIRADA_DO_QUARTO_3D.md)
 
     # ================= RF28 Smart Mirror + Vista-me
     step('RF28', 'CA01', 'estado do espelho', 'GET', '/api/me/mirror', who=U, ctx=C)
@@ -89,18 +70,10 @@ def run(C):
     step('RF29', 'CA08', 'entrar nos rankings (opt-in)', 'PUT', '/api/me/rankings/opt-in', {'optedIn': True, 'shareCity': False}, who=ADMIN, ctx=C)
     step('RF29', 'CA08', 'minha posição nos rankings', 'GET', '/api/me/rankings', who=ADMIN, ctx=C)
 
-    # ================= RF30 FAI Points, loja e montagem
+    # ================= RF30 FAI Points
     step('RF30', 'CA01', 'saldo, nível e extrato', 'GET', '/api/me/points', who=U, ctx=C)
     step('RF30', 'CA02', 'conquistas', 'GET', '/api/me/achievements', who=U, ctx=C)
-    step('RF30', 'CA03', 'loja do quarto', 'GET', '/api/points/shop', who=U, ctx=C,
-         save=lambda c, b: c.__setitem__('free_sku', next(x['sku'] for x in b if x['pricePoints'] == 0 and x['kind'] == 'COMPONENT' and x['slotType'] == 'DOOR' and x['levelOk'])))
-    step('RF30', 'CA03', 'provar no quarto (prévia sem compra)', 'POST', '/api/points/shop/{free_sku}/try-on', {'moduleId': 'door:1'}, who=U, ctx=C)
-    step('RF30', 'CA04', 'comprar com FAI Points', 'POST', '/api/points/shop/{free_sku}/purchase', who=U, ctx=C, save=lambda c, b: c.__setitem__('inv', b['inventoryId']))
-    step('RF30', 'CA05', 'montar o item num módulo', 'POST', '/api/me/room-inventory/{inv}/apply', {'moduleId': 'door:1'}, who=U, ctx=C)
-    step('RF30', 'CA05', 'módulo incompatível é recusado', 'POST', '/api/me/room-inventory/{inv}/apply', {'moduleId': 'rug'}, who=U, ctx=C, expect=(400, 409))
-
-    # ================= RF31 já coberto no bloco 1 (flags); aqui o reflexo no quarto
-    step('RF31', 'CA05', 'peça indisponível aparece no cesto do quarto', 'GET', '/api/me/room', who=U, ctx=C)
+    # a loja do quarto, a montagem em módulo e o cesto do quarto saíram com o Meu Quarto (15/11/2026)
 
     # ================= RF32 desafios
     # limpeza (fora da tabela): o convidado sai dos desafios ativos de execuções anteriores (limite de 3 ativos)
@@ -109,6 +82,8 @@ def run(C):
     for _c in (_b.get('active') or []) + (_b.get('waiting') or []):
         _h('POST', f"/api/challenges/{_c['id']}/leave", None, _l(USER2))
         _h('POST', f"/api/challenges/{_c['id']}/decline", None, _l(USER2))
+    # convite só para quem a pessoa segue (a chave do quarto saiu com o Meu Quarto): U segue o convidado antes do duelo
+    step('RF32', 'CA04', 'seguir o convidado do duelo', 'POST', '/api/users/{user2_id}/followers', who=U, ctx=C, expect=(200, 201, 409))
     step('RF32', 'CA01', 'catálogo de desafios', 'GET', '/api/challenges/catalog', who=U, ctx=C)
     step('RF32', 'CA02', 'iniciar duelo (Runway Battle)', 'POST', '/api/challenges', body=lambda c: {'code': 'RUNWAY_BATTLE', 'mode': 'DUELO', 'invitees': [c['user2_id']], 'photoConsent': True}, who=U, ctx=C,
          save=lambda c, b: c.__setitem__('ch1', (b.get('challenge') or b)['id']))
@@ -286,27 +261,4 @@ def run(C):
     step('RF38', 'CA01', 'aba Meus cupons promocionais (marca)', 'GET', '/api/me/coupons/admin', who=BRAND, ctx=C)
     step('RF38', 'CA10', 'marca valida o código no caixa', 'POST', '/api/me/coupons/validate', body=lambda c: {'code': c.get('coupon_code') or 'CODIGO-INEXISTENTE'}, who=BRAND, ctx=C, expect=(200, 404))
 
-    # ================= RF39 criar guarda-roupa 3D
-    step('RF39', 'CA01', 'opções do criador (marca)', 'GET', '/api/room-creator/options', who=BRAND, ctx=C)
-    step('RF39', 'CA01', 'usuário comum não acessa o criador', 'GET', '/api/room-creator/options', who=U, ctx=C, expect=(403,))
-    step('RF39', 'CA05', 'enviar logo', 'POST', '/api/room-creator/uploads?kind=logo', files={'file': ('logo.png', LOGO, 'image/png')}, who=BRAND, ctx=C, save=lambda c, b: c.__setitem__('logo', b['url']))
-    step('RF39', 'CA05', 'enviar arte', 'POST', '/api/room-creator/uploads?kind=art', files={'file': ('art.jpg', ART, 'image/jpeg')}, who=BRAND, ctx=C, save=lambda c, b: c.__setitem__('art', b['url']))
-    step('RF39', 'CA02', 'criar componente (tapete de lã, grátis)', 'POST', '/api/room-creator/items', who=BRAND, ctx=C,
-         body=lambda c: dict(kind='COMPONENT', name='Tapete Atelier E2E', slotType='RUG', moldId='TAP-RND', material='LA', colorName='Terracota', logoUrl=c['logo'], labelText='AL',
-                             pricePoints=0, requiredLevel='ESTREIA', stock=5, perUserLimit=1, availableUntil=iso(30), active=True),
-         save=lambda c, b: c.__setitem__('rug_sku', b['sku']))
-    step('RF39', 'CA02', 'criar guarda-roupa inteiro', 'POST', '/api/room-creator/items', who=BRAND, ctx=C,
-         body=lambda c: dict(kind='WARDROBE', name='Guarda-roupa E2E', labelText='Atelier E2E', logoUrl=c['logo'], artUrl=c['art'], pricePoints=100, requiredLevel='ESTREIA', active=True,
-                             bundle=[dict(slotType='DOOR', moldId='PRT-AB60', material='FOSCO', colorName='Areia'), dict(slotType='RUG', moldId='TAP-RND', material='LA', colorName='Areia')]),
-         save=lambda c, b: c.__setitem__('ward_sku', b['sku']))
-    step('RF39', 'CA04', 'material não aceito pelo bloco é recusado', 'POST', '/api/room-creator/items', who=BRAND, ctx=C, expect=(400,),
-         body=dict(kind='COMPONENT', name='Porta LED inválida', slotType='DOOR', moldId='PRT-AB60', material='LED', colorName='Quente 2700 K', pricePoints=10))
-    step('RF39', 'CA06', 'editar condições (expira em)', 'PUT', '/api/room-creator/items/{rug_sku}', who=BRAND, ctx=C,
-         body=lambda c: dict(kind='COMPONENT', name='Tapete Atelier E2E', slotType='RUG', moldId='TAP-RND', material='LA', colorName='Terracota', logoUrl=c['logo'], labelText='AL',
-                             pricePoints=0, requiredLevel='ESTREIA', stock=5, perUserLimit=1, availableUntil=iso(45), active=True))
-    step('RF39', 'CA08', 'minhas criações com vendas', 'GET', '/api/room-creator/items', who=BRAND, ctx=C)
-    step('RF39', 'CA10', 'comprar o componente da marca', 'POST', '/api/points/shop/{rug_sku}/purchase', who=U, ctx=C, save=lambda c, b: c.__setitem__('rug_inv', b['inventoryId']))
-    step('RF39', 'CA10', 'limite de 1 por pessoa', 'POST', '/api/points/shop/{rug_sku}/purchase', who=U, ctx=C, expect=(409,))
-    step('RF39', 'CA11', 'montar o tapete no quarto', 'POST', '/api/me/room-inventory/{rug_inv}/apply', {'moduleId': 'rug'}, who=U, ctx=C, expect=(200, 409))
-    step('RF39', 'CA08', 'excluir item vendido só retira da loja', 'DELETE', '/api/room-creator/items/{rug_sku}', who=BRAND, ctx=C)
-    step('RF39', 'CA08', 'excluir guarda-roupa sem vendas', 'DELETE', '/api/room-creator/items/{ward_sku}', who=BRAND, ctx=C)
+    # ================= RF39 criar guarda-roupa 3D: saiu com o Meu Quarto (15/11/2026)

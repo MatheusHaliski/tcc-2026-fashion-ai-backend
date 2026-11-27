@@ -1,0 +1,27 @@
+{
+ "produto": "Chambray Shirt Jacket",
+ "marca": "Alexander McQueen",
+ "url_oficial": "https://amq-mcq.dam.kering.com/asset/a370c634-bd8e-441c-a68f-147152d77646/eCom/871832QMAD84403_F.jpg?v=3",
+ "subcategoria": "shirt",
+ "tamanho": "M",
+ "sexo": "FEMININO",
+ "caimento": "amplo",
+ "tecido": {
+  "tipo": "denim",
+  "cor": "#878e98",
+  "gramatura": 340
+ },
+ "gola": "colarinho",
+ "fechamento": "botoes",
+ "botoes": 7,
+ "cor_botao": "#2a2f3a",
+ "cor_linha": "#b9b2a0",
+ "bolsos": [
+  "peito"
+ ],
+ "ribana": false,
+ "medidas_marca": {
+  "comprimento": 55
+ },
+ "observacao": "foto do catálogo (data/catalog/brands.json, id 22): denim lavado (cor = mediana do corpo na foto), colarinho, vista com 7 botões escuros, um bolso de peito à esquerda de quem veste, curta e ampla. Linha e botões: cor estimada da foto (pequenos demais para amostrar). Sem as tiras laterais e sem o recorte da barra. Sexo: provável linha feminina, não confirmado."
+}

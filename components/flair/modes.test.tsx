@@ -20,7 +20,7 @@ describe("FLAIR game categories", () => {
     expect(await screen.findByRole("heading", { name: "FLAIR" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "FLAIR 3D" })).toBeTruthy();
     expect(screen.queryAllByRole("link", { name: /Bloqueado até o nível Loft/ })).toHaveLength(0);
-    expect(screen.getByRole("link", { name: "Jogar FLAIR 3D" }).getAttribute("href")).toBe("/flair/jogos");
+    expect(screen.getByRole("link", { name: "Jogar FLAIR 3D" }).getAttribute("href")).toBe("/flair/3d");
   });
 
   it("at Loft neither the Afterparty nor the MET Gala Heist is listed (both stay for the future Glass Empire game)", async () => {

@@ -1214,7 +1214,7 @@ final class ServiceFakes {
 
     static final class FakeAdminCatalogService extends br.com.fashionai.application.service.AdminCatalogService {
         FakeAdminCatalogService() {
-            super((br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (br.com.fashionai.domain.repository.RoomCatalogItemRepository) Fk.arg(br.com.fashionai.domain.repository.RoomCatalogItemRepository.class), (br.com.fashionai.domain.repository.RoomInventoryItemRepository) Fk.arg(br.com.fashionai.domain.repository.RoomInventoryItemRepository.class), (br.com.fashionai.domain.repository.FlairMatchRepository) Fk.arg(br.com.fashionai.domain.repository.FlairMatchRepository.class), (br.com.fashionai.domain.repository.SealRepository) Fk.arg(br.com.fashionai.domain.repository.SealRepository.class), (br.com.fashionai.domain.repository.CouponRightRepository) Fk.arg(br.com.fashionai.domain.repository.CouponRightRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class));
+            super((br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.domain.repository.FlairMatchRepository) Fk.arg(br.com.fashionai.domain.repository.FlairMatchRepository.class), (br.com.fashionai.domain.repository.SealRepository) Fk.arg(br.com.fashionai.domain.repository.SealRepository.class), (br.com.fashionai.domain.repository.CouponRightRepository) Fk.arg(br.com.fashionai.domain.repository.CouponRightRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class));
         }
 
         @Override
@@ -1233,33 +1233,8 @@ final class ServiceFakes {
         }
 
         @Override
-        public java.util.Map<java.lang.String, java.lang.Object> roomItemCatalog(br.com.fashionai.application.security.CurrentUser a0, java.util.Map<java.lang.String, java.lang.String> a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "roomItemCatalog", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
         public java.util.Map<java.lang.String, java.lang.Object> sealCatalog(br.com.fashionai.application.security.CurrentUser a0, java.util.Map<java.lang.String, java.lang.String> a1) {
             return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "sealCatalog", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> setStoreItemActive(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, boolean a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "setStoreItemActive", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> storeItem(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "storeItem", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> storeItems(br.com.fashionai.application.security.CurrentUser a0, java.util.Map<java.lang.String, java.lang.String> a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "storeItems", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> updateStoreItem(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.util.Map<java.lang.String, java.lang.Object> a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "updateStoreItem", java.util.Map.class, new Object[]{a0, a1, a2});
         }
     }
 
@@ -1319,8 +1294,8 @@ final class ServiceFakes {
         }
 
         @Override
-        public java.util.List<br.com.fashionai.application.view.Views.UserCard> searchUsers(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            return (java.util.List<br.com.fashionai.application.view.Views.UserCard>) Fk.call(this, "searchUsers", java.util.List.class, new Object[]{a0, a1});
+        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> searchUsers(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
+            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "searchUsers", java.util.List.class, new Object[]{a0, a1});
         }
 
         @Override
@@ -1501,7 +1476,7 @@ final class ServiceFakes {
 
     static final class FakeAutopilotService extends br.com.fashionai.application.service.AutopilotService {
         FakeAutopilotService() {
-            super((br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.application.service.DailyLookService) Fk.arg(br.com.fashionai.application.service.DailyLookService.class), (br.com.fashionai.domain.repository.WeekPlanRepository) Fk.arg(br.com.fashionai.domain.repository.WeekPlanRepository.class), (br.com.fashionai.domain.repository.WeekPlanDayRepository) Fk.arg(br.com.fashionai.domain.repository.WeekPlanDayRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.UserPreferencesRepository) Fk.arg(br.com.fashionai.domain.repository.UserPreferencesRepository.class), (br.com.fashionai.application.service.PreferenceModel) Fk.arg(br.com.fashionai.application.service.PreferenceModel.class), (br.com.fashionai.application.service.WeatherService) Fk.arg(br.com.fashionai.application.service.WeatherService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (br.com.fashionai.application.hype.HypeQueryService) Fk.arg(br.com.fashionai.application.hype.HypeQueryService.class), (br.com.fashionai.application.insights.InsightService) Fk.arg(br.com.fashionai.application.insights.InsightService.class));
+            super((br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.application.service.DailyLookService) Fk.arg(br.com.fashionai.application.service.DailyLookService.class), (br.com.fashionai.domain.repository.WeekPlanRepository) Fk.arg(br.com.fashionai.domain.repository.WeekPlanRepository.class), (br.com.fashionai.domain.repository.WeekPlanDayRepository) Fk.arg(br.com.fashionai.domain.repository.WeekPlanDayRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.UserPreferencesRepository) Fk.arg(br.com.fashionai.domain.repository.UserPreferencesRepository.class), (br.com.fashionai.application.preference.PreferenceModel) Fk.arg(br.com.fashionai.application.preference.PreferenceModel.class), (br.com.fashionai.application.service.WeatherService) Fk.arg(br.com.fashionai.application.service.WeatherService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (br.com.fashionai.application.hype.HypeQueryService) Fk.arg(br.com.fashionai.application.hype.HypeQueryService.class), (br.com.fashionai.application.insights.InsightService) Fk.arg(br.com.fashionai.application.insights.InsightService.class));
         }
 
         @Override
@@ -1763,7 +1738,7 @@ final class ServiceFakes {
 
     static final class FakeChallengeService extends br.com.fashionai.application.service.ChallengeService {
         FakeChallengeService() {
-            super((br.com.fashionai.domain.repository.ChallengeTemplateRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeTemplateRepository.class), (br.com.fashionai.domain.repository.ChallengeInstanceRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeInstanceRepository.class), (br.com.fashionai.domain.repository.ChallengeParticipantRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeParticipantRepository.class), (br.com.fashionai.domain.repository.ChallengeEventRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeEventRepository.class), (br.com.fashionai.domain.repository.ChallengeNoteRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeNoteRepository.class), (br.com.fashionai.domain.repository.ChallengeVoteRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeVoteRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository) Fk.arg(br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository.class), (br.com.fashionai.domain.repository.FollowRepository) Fk.arg(br.com.fashionai.domain.repository.FollowRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (br.com.fashionai.application.service.RoomService) Fk.arg(br.com.fashionai.application.service.RoomService.class), (br.com.fashionai.application.service.FaiPointsService) Fk.arg(br.com.fashionai.application.service.FaiPointsService.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (br.com.fashionai.application.events.SideEffectRunner) Fk.arg(br.com.fashionai.application.events.SideEffectRunner.class));
+            super((br.com.fashionai.domain.repository.ChallengeTemplateRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeTemplateRepository.class), (br.com.fashionai.domain.repository.ChallengeInstanceRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeInstanceRepository.class), (br.com.fashionai.domain.repository.ChallengeParticipantRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeParticipantRepository.class), (br.com.fashionai.domain.repository.ChallengeEventRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeEventRepository.class), (br.com.fashionai.domain.repository.ChallengeNoteRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeNoteRepository.class), (br.com.fashionai.domain.repository.ChallengeVoteRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeVoteRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository) Fk.arg(br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository.class), (br.com.fashionai.domain.repository.FollowRepository) Fk.arg(br.com.fashionai.domain.repository.FollowRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (br.com.fashionai.application.wardrobe.PieceUsageDiary) Fk.arg(br.com.fashionai.application.wardrobe.PieceUsageDiary.class), (br.com.fashionai.application.service.FaiPointsService) Fk.arg(br.com.fashionai.application.service.FaiPointsService.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (br.com.fashionai.application.events.SideEffectRunner) Fk.arg(br.com.fashionai.application.events.SideEffectRunner.class));
         }
 
         @Override
@@ -1799,11 +1774,6 @@ final class ServiceFakes {
         @Override
         public java.util.Map<java.lang.String, java.lang.Object> decline(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
             return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "decline", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> decorations(java.util.UUID a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "decorations", java.util.List.class, new Object[]{a0});
         }
 
         @Override
@@ -1940,7 +1910,7 @@ final class ServiceFakes {
 
     static final class FakeCopilotService extends br.com.fashionai.application.service.CopilotService {
         FakeCopilotService() {
-            super((br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (br.com.fashionai.domain.repository.UserPreferencesRepository) Fk.arg(br.com.fashionai.domain.repository.UserPreferencesRepository.class), (br.com.fashionai.application.service.RoomService) Fk.arg(br.com.fashionai.application.service.RoomService.class), (br.com.fashionai.application.service.MirrorService) Fk.arg(br.com.fashionai.application.service.MirrorService.class), (br.com.fashionai.application.service.InventoryScoreService) Fk.arg(br.com.fashionai.application.service.InventoryScoreService.class), (br.com.fashionai.application.service.ChallengeService) Fk.arg(br.com.fashionai.application.service.ChallengeService.class), (br.com.fashionai.application.service.AutopilotService) Fk.arg(br.com.fashionai.application.service.AutopilotService.class), (br.com.fashionai.application.service.DailyLookService) Fk.arg(br.com.fashionai.application.service.DailyLookService.class), (br.com.fashionai.application.service.WeatherService) Fk.arg(br.com.fashionai.application.service.WeatherService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class), (br.com.fashionai.application.service.BackgroundStudioService) Fk.arg(br.com.fashionai.application.service.BackgroundStudioService.class), (br.com.fashionai.application.hype.HypeQueryService) Fk.arg(br.com.fashionai.application.hype.HypeQueryService.class), (br.com.fashionai.application.insights.InsightService) Fk.arg(br.com.fashionai.application.insights.InsightService.class));
+            super((br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (br.com.fashionai.domain.repository.UserPreferencesRepository) Fk.arg(br.com.fashionai.domain.repository.UserPreferencesRepository.class), (br.com.fashionai.application.acervo.AcervoLugares) Fk.arg(br.com.fashionai.application.acervo.AcervoLugares.class), (br.com.fashionai.application.wardrobe.PieceUsageDiary) Fk.arg(br.com.fashionai.application.wardrobe.PieceUsageDiary.class), (br.com.fashionai.application.service.MirrorService) Fk.arg(br.com.fashionai.application.service.MirrorService.class), (br.com.fashionai.application.service.InventoryScoreService) Fk.arg(br.com.fashionai.application.service.InventoryScoreService.class), (br.com.fashionai.application.service.ChallengeService) Fk.arg(br.com.fashionai.application.service.ChallengeService.class), (br.com.fashionai.application.service.AutopilotService) Fk.arg(br.com.fashionai.application.service.AutopilotService.class), (br.com.fashionai.application.service.DailyLookService) Fk.arg(br.com.fashionai.application.service.DailyLookService.class), (br.com.fashionai.application.service.WeatherService) Fk.arg(br.com.fashionai.application.service.WeatherService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class), (br.com.fashionai.application.service.BackgroundStudioService) Fk.arg(br.com.fashionai.application.service.BackgroundStudioService.class), (br.com.fashionai.application.hype.HypeQueryService) Fk.arg(br.com.fashionai.application.hype.HypeQueryService.class), (br.com.fashionai.application.insights.InsightService) Fk.arg(br.com.fashionai.application.insights.InsightService.class));
         }
 
         @Override
@@ -2238,17 +2208,12 @@ final class ServiceFakes {
 
     static final class FakeFaiPointsService extends br.com.fashionai.application.service.FaiPointsService {
         FakeFaiPointsService() {
-            super((br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository) Fk.arg(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class), (br.com.fashionai.domain.repository.FaiPointsRuleRepository) Fk.arg(br.com.fashionai.domain.repository.FaiPointsRuleRepository.class), (br.com.fashionai.domain.repository.RoomCatalogItemRepository) Fk.arg(br.com.fashionai.domain.repository.RoomCatalogItemRepository.class), (br.com.fashionai.domain.repository.RoomInventoryItemRepository) Fk.arg(br.com.fashionai.domain.repository.RoomInventoryItemRepository.class), (br.com.fashionai.application.service.FaiPointsService.RoomLayoutAccess) Fk.arg(br.com.fashionai.application.service.FaiPointsService.RoomLayoutAccess.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class), (br.com.fashionai.application.service.WardrobeCreatorService) Fk.arg(br.com.fashionai.application.service.WardrobeCreatorService.class));
+            super((br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository) Fk.arg(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class), (br.com.fashionai.domain.repository.FaiPointsRuleRepository) Fk.arg(br.com.fashionai.domain.repository.FaiPointsRuleRepository.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class));
         }
 
         @Override
         public java.util.Map<java.lang.String, java.lang.Object> account(br.com.fashionai.application.security.CurrentUser a0) {
             return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "account", java.util.Map.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> apply(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, java.lang.String a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "apply", java.util.Map.class, new Object[]{a0, a1, a2});
         }
 
         @Override
@@ -2267,16 +2232,6 @@ final class ServiceFakes {
         }
 
         @Override
-        public java.util.Map<java.lang.String, java.lang.Object> buy(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.lang.String a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "buy", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> buy(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "buy", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
         public int game(java.util.UUID a0, java.lang.String a1, java.lang.String a2, java.lang.String a3) {
             return (int) Fk.call(this, "game", int.class, new Object[]{a0, a1, a2, a3});
         }
@@ -2289,16 +2244,6 @@ final class ServiceFakes {
         @Override
         public long lifetime(java.util.UUID a0) {
             return (long) Fk.call(this, "lifetime", long.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> shop(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "shop", java.util.List.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> tryOn(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.lang.String a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "tryOn", java.util.Map.class, new Object[]{a0, a1, a2});
         }
     }
 
@@ -2892,7 +2837,7 @@ final class ServiceFakes {
 
     static final class FakeInventoryScoreService extends br.com.fashionai.application.service.InventoryScoreService {
         FakeInventoryScoreService() {
-            super((br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository) Fk.arg(br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository.class), (br.com.fashionai.domain.repository.WardrobeAvailabilityChangeRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeAvailabilityChangeRepository.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (br.com.fashionai.domain.repository.InventoryScoreSnapshotRepository) Fk.arg(br.com.fashionai.domain.repository.InventoryScoreSnapshotRepository.class), (br.com.fashionai.domain.repository.RankingOptInRepository) Fk.arg(br.com.fashionai.domain.repository.RankingOptInRepository.class), (br.com.fashionai.domain.repository.RankingPositionRepository) Fk.arg(br.com.fashionai.domain.repository.RankingPositionRepository.class), (br.com.fashionai.domain.repository.ChallengeTemplateRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeTemplateRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.application.service.RoomService) Fk.arg(br.com.fashionai.application.service.RoomService.class), (br.com.fashionai.application.service.AchievementService) Fk.arg(br.com.fashionai.application.service.AchievementService.class), (br.com.fashionai.application.events.SideEffectRunner) Fk.arg(br.com.fashionai.application.events.SideEffectRunner.class));
+            super((br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository) Fk.arg(br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository.class), (br.com.fashionai.domain.repository.WardrobeAvailabilityChangeRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeAvailabilityChangeRepository.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (br.com.fashionai.domain.repository.InventoryScoreSnapshotRepository) Fk.arg(br.com.fashionai.domain.repository.InventoryScoreSnapshotRepository.class), (br.com.fashionai.domain.repository.RankingOptInRepository) Fk.arg(br.com.fashionai.domain.repository.RankingOptInRepository.class), (br.com.fashionai.domain.repository.RankingPositionRepository) Fk.arg(br.com.fashionai.domain.repository.RankingPositionRepository.class), (br.com.fashionai.domain.repository.ChallengeTemplateRepository) Fk.arg(br.com.fashionai.domain.repository.ChallengeTemplateRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.application.acervo.AcervoLugares) Fk.arg(br.com.fashionai.application.acervo.AcervoLugares.class), (br.com.fashionai.application.service.AchievementService) Fk.arg(br.com.fashionai.application.service.AchievementService.class), (br.com.fashionai.application.events.SideEffectRunner) Fk.arg(br.com.fashionai.application.events.SideEffectRunner.class));
         }
 
         @Override
@@ -2961,11 +2906,6 @@ final class ServiceFakes {
         }
 
         @Override
-        public void invalidate(br.com.fashionai.application.events.DomainEvents.RoomOrganized a0) {
-            Fk.call(this, "invalidate", void.class, new Object[]{a0});
-        }
-
-        @Override
         public void invalidate(br.com.fashionai.application.events.DomainEvents.SchemeSaved a0) {
             Fk.call(this, "invalidate", void.class, new Object[]{a0});
         }
@@ -2993,7 +2933,7 @@ final class ServiceFakes {
 
     static final class FakeIssuerReviewService extends br.com.fashionai.application.service.IssuerReviewService {
         FakeIssuerReviewService() {
-            super((br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.BrandProfileRepository) Fk.arg(br.com.fashionai.domain.repository.BrandProfileRepository.class), (br.com.fashionai.domain.repository.CelebrityProfileRepository) Fk.arg(br.com.fashionai.domain.repository.CelebrityProfileRepository.class), (br.com.fashionai.application.ports.EmailSenderPort) Fk.arg(br.com.fashionai.application.ports.EmailSenderPort.class), (br.com.fashionai.application.events.SideEffectRunner) Fk.arg(br.com.fashionai.application.events.SideEffectRunner.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class), (br.com.fashionai.application.service.IssuerVerificationPolicy) Fk.arg(br.com.fashionai.application.service.IssuerVerificationPolicy.class), (br.com.fashionai.application.service.SealService) Fk.arg(br.com.fashionai.application.service.SealService.class), (br.com.fashionai.application.ports.MediaStoragePort) Fk.arg(br.com.fashionai.application.ports.MediaStoragePort.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (java.lang.String) Fk.arg(java.lang.String.class), (java.lang.String) Fk.arg(java.lang.String.class));
+            super((br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.BrandProfileRepository) Fk.arg(br.com.fashionai.domain.repository.BrandProfileRepository.class), (br.com.fashionai.domain.repository.CelebrityProfileRepository) Fk.arg(br.com.fashionai.domain.repository.CelebrityProfileRepository.class), (br.com.fashionai.application.ports.EmailSenderPort) Fk.arg(br.com.fashionai.application.ports.EmailSenderPort.class), (br.com.fashionai.application.events.SideEffectRunner) Fk.arg(br.com.fashionai.application.events.SideEffectRunner.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class), (br.com.fashionai.application.seal.IssuerVerificationPolicy) Fk.arg(br.com.fashionai.application.seal.IssuerVerificationPolicy.class), (br.com.fashionai.application.service.SealService) Fk.arg(br.com.fashionai.application.service.SealService.class), (br.com.fashionai.application.ports.MediaStoragePort) Fk.arg(br.com.fashionai.application.ports.MediaStoragePort.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (java.lang.String) Fk.arg(java.lang.String.class), (java.lang.String) Fk.arg(java.lang.String.class));
         }
 
         @Override
@@ -3055,7 +2995,7 @@ final class ServiceFakes {
 
     static final class FakeLookbookService extends br.com.fashionai.application.service.LookbookService {
         FakeLookbookService() {
-            super((br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.SavedItemRepository) Fk.arg(br.com.fashionai.domain.repository.SavedItemRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.AcervoGroupRepository) Fk.arg(br.com.fashionai.domain.repository.AcervoGroupRepository.class), (br.com.fashionai.domain.repository.SchemeGroupingRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeGroupingRepository.class), (br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class), (br.com.fashionai.application.service.SocialService) Fk.arg(br.com.fashionai.application.service.SocialService.class), (br.com.fashionai.application.service.DailyLookService) Fk.arg(br.com.fashionai.application.service.DailyLookService.class), (br.com.fashionai.application.service.HypeScoreService) Fk.arg(br.com.fashionai.application.service.HypeScoreService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.service.OwnMedia) Fk.arg(br.com.fashionai.application.service.OwnMedia.class));
+            super((br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.SavedItemRepository) Fk.arg(br.com.fashionai.domain.repository.SavedItemRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.AcervoGroupRepository) Fk.arg(br.com.fashionai.domain.repository.AcervoGroupRepository.class), (br.com.fashionai.domain.repository.SchemeGroupingRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeGroupingRepository.class), (br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class), (br.com.fashionai.application.service.SocialService) Fk.arg(br.com.fashionai.application.service.SocialService.class), (br.com.fashionai.application.service.DailyLookService) Fk.arg(br.com.fashionai.application.service.DailyLookService.class), (br.com.fashionai.application.service.HypeScoreService) Fk.arg(br.com.fashionai.application.service.HypeScoreService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.common.OwnMedia) Fk.arg(br.com.fashionai.application.common.OwnMedia.class));
         }
 
         @Override
@@ -3182,7 +3122,7 @@ final class ServiceFakes {
 
     static final class FakeMirrorService extends br.com.fashionai.application.service.MirrorService {
         FakeMirrorService() {
-            super((br.com.fashionai.domain.repository.MirrorStateRepository) Fk.arg(br.com.fashionai.domain.repository.MirrorStateRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.application.service.RoomService) Fk.arg(br.com.fashionai.application.service.RoomService.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.application.service.DailyLookService) Fk.arg(br.com.fashionai.application.service.DailyLookService.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (org.springframework.beans.factory.ObjectProvider) Fk.arg(org.springframework.beans.factory.ObjectProvider.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (org.springframework.context.ApplicationEventPublisher) Fk.arg(org.springframework.context.ApplicationEventPublisher.class), (br.com.fashionai.application.hype.HypeQueryService) Fk.arg(br.com.fashionai.application.hype.HypeQueryService.class), (br.com.fashionai.domain.repository.TipoLookRepository) Fk.arg(br.com.fashionai.domain.repository.TipoLookRepository.class));
+            super((br.com.fashionai.domain.repository.MirrorStateRepository) Fk.arg(br.com.fashionai.domain.repository.MirrorStateRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.application.acervo.AcervoLugares) Fk.arg(br.com.fashionai.application.acervo.AcervoLugares.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.application.service.DailyLookService) Fk.arg(br.com.fashionai.application.service.DailyLookService.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (org.springframework.beans.factory.ObjectProvider) Fk.arg(org.springframework.beans.factory.ObjectProvider.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (org.springframework.context.ApplicationEventPublisher) Fk.arg(org.springframework.context.ApplicationEventPublisher.class), (br.com.fashionai.application.hype.HypeQueryService) Fk.arg(br.com.fashionai.application.hype.HypeQueryService.class), (br.com.fashionai.domain.repository.TipoLookRepository) Fk.arg(br.com.fashionai.domain.repository.TipoLookRepository.class));
         }
 
         @Override
@@ -3266,8 +3206,8 @@ final class ServiceFakes {
         }
 
         @Override
-        public java.util.Map<java.lang.String, java.lang.Object> vistaMe(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.util.List<java.util.UUID> a2, java.util.UUID a3, boolean a4) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "vistaMe", java.util.Map.class, new Object[]{a0, a1, a2, a3, a4});
+        public java.util.Map<java.lang.String, java.lang.Object> vistaMe(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.util.List<java.util.UUID> a2, java.util.UUID a3, boolean a4, java.util.UUID a5) {
+            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "vistaMe", java.util.Map.class, new Object[]{a0, a1, a2, a3, a4, a5});
         }
 
         @Override
@@ -3384,7 +3324,7 @@ final class ServiceFakes {
         }
 
         @Override
-        public java.util.Map<java.lang.String, java.lang.Object> gallery(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.PhotoInsights.Filter a1, int a2, int a3) {
+        public java.util.Map<java.lang.String, java.lang.Object> gallery(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.imaging.PhotoInsights.Filter a1, int a2, int a3) {
             return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "gallery", java.util.Map.class, new Object[]{a0, a1, a2, a3});
         }
 
@@ -3416,72 +3356,6 @@ final class ServiceFakes {
         @Override
         public java.util.Map<java.lang.String, java.lang.Object> timeline(br.com.fashionai.application.security.CurrentUser a0) {
             return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "timeline", java.util.Map.class, new Object[]{a0});
-        }
-    }
-
-    static final class FakePhysicalStoreService extends br.com.fashionai.application.service.PhysicalStoreService {
-        FakePhysicalStoreService() {
-            super((br.com.fashionai.domain.repository.PhysicalStoreListingRepository) Fk.arg(br.com.fashionai.domain.repository.PhysicalStoreListingRepository.class), (br.com.fashionai.domain.repository.PhysicalStoreOrderRepository) Fk.arg(br.com.fashionai.domain.repository.PhysicalStoreOrderRepository.class), (br.com.fashionai.domain.repository.PhysicalStoreVariantRepository) Fk.arg(br.com.fashionai.domain.repository.PhysicalStoreVariantRepository.class), (br.com.fashionai.domain.repository.CatalogProductRepository) Fk.arg(br.com.fashionai.domain.repository.CatalogProductRepository.class), (br.com.fashionai.domain.repository.BrandRepository) Fk.arg(br.com.fashionai.domain.repository.BrandRepository.class), (br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository) Fk.arg(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.catalog.CatalogService) Fk.arg(br.com.fashionai.application.catalog.CatalogService.class), (br.com.fashionai.application.service.WardrobeCreatorService) Fk.arg(br.com.fashionai.application.service.WardrobeCreatorService.class));
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> adminListings(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "adminListings", java.util.List.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> adminOrders(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "adminOrders", java.util.List.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> buy(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PhysicalStoreService.OrderForm a2, java.lang.String a3) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "buy", java.util.Map.class, new Object[]{a0, a1, a2, a3});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> buy(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PhysicalStoreService.OrderForm a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "buy", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public void delete(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
-            Fk.call(this, "delete", void.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> mine(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "mine", java.util.List.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> myOrders(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "myOrders", java.util.List.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> save(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PhysicalStoreService.ListingForm a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "save", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> sellerProducts(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "sellerProducts", java.util.List.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> store(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "store", java.util.List.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> updateShipment(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PhysicalStoreService.ShipmentForm a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "updateShipment", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> updateStock(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.PhysicalStoreService.StockForm a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "updateStock", java.util.Map.class, new Object[]{a0, a1, a2});
         }
     }
 
@@ -3597,213 +3471,6 @@ final class ServiceFakes {
         }
     }
 
-    static final class FakeRoomAssetService extends br.com.fashionai.application.service.RoomAssetService {
-        FakeRoomAssetService() {
-            super((br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.PipelineJobRepository) Fk.arg(br.com.fashionai.domain.repository.PipelineJobRepository.class), (br.com.fashionai.domain.repository.RoomCatalogItemRepository) Fk.arg(br.com.fashionai.domain.repository.RoomCatalogItemRepository.class), (br.com.fashionai.application.ports.MediaStoragePort) Fk.arg(br.com.fashionai.application.ports.MediaStoragePort.class), (br.com.fashionai.application.ports.WebFetchPort) Fk.arg(br.com.fashionai.application.ports.WebFetchPort.class), (java.util.List) Fk.arg(java.util.List.class), (org.springframework.transaction.support.TransactionTemplate) Fk.arg(org.springframework.transaction.support.TransactionTemplate.class));
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> create(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.RoomAssetService.Command a1, byte[] a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "create", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> importMeshy(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.RoomAssetService.Command a1, byte[] a2, java.lang.String a3) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "importMeshy", java.util.Map.class, new Object[]{a0, a1, a2, a3});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> list(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "list", java.util.Map.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> publish(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "publish", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> review(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, boolean a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "review", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public void tick() {
-            Fk.call(this, "tick", void.class, new Object[]{});
-        }
-    }
-
-    static final class FakeRoomService extends br.com.fashionai.application.service.RoomService {
-        FakeRoomService() {
-            super((br.com.fashionai.domain.repository.RoomLayoutRepository) Fk.arg(br.com.fashionai.domain.repository.RoomLayoutRepository.class), (br.com.fashionai.domain.repository.RoomStorageEntryRepository) Fk.arg(br.com.fashionai.domain.repository.RoomStorageEntryRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.DailyLookRepository) Fk.arg(br.com.fashionai.domain.repository.DailyLookRepository.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository) Fk.arg(br.com.fashionai.domain.repository.PieceUsageDiaryEntryRepository.class), (br.com.fashionai.domain.repository.UserAchievementRepository) Fk.arg(br.com.fashionai.domain.repository.UserAchievementRepository.class), (br.com.fashionai.domain.repository.UserPreferencesRepository) Fk.arg(br.com.fashionai.domain.repository.UserPreferencesRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository) Fk.arg(br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository.class), (org.springframework.beans.factory.ObjectProvider) Fk.arg(org.springframework.beans.factory.ObjectProvider.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (org.springframework.context.ApplicationEventPublisher) Fk.arg(org.springframework.context.ApplicationEventPublisher.class), (br.com.fashionai.application.events.SideEffectRunner) Fk.arg(br.com.fashionai.application.events.SideEffectRunner.class), (org.springframework.beans.factory.ObjectProvider) Fk.arg(org.springframework.beans.factory.ObjectProvider.class), (br.com.fashionai.domain.repository.RoomInventoryItemRepository) Fk.arg(br.com.fashionai.domain.repository.RoomInventoryItemRepository.class), (br.com.fashionai.domain.repository.RoomCatalogItemRepository) Fk.arg(br.com.fashionai.domain.repository.RoomCatalogItemRepository.class), (org.springframework.beans.factory.ObjectProvider) Fk.arg(org.springframework.beans.factory.ObjectProvider.class));
-        }
-
-        @Override
-        public void applyFinish(java.util.UUID a0, java.lang.String a1, br.com.fashionai.domain.model.RoomCatalogItem a2) {
-            Fk.call(this, "applyFinish", void.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> applyOrganization(br.com.fashionai.application.security.CurrentUser a0, java.util.Map<java.lang.String, java.lang.String> a1, java.util.List<java.util.Map<java.lang.String, java.lang.Object>> a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "applyOrganization", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public br.com.fashionai.application.room.RoomAddress autoAssign(java.util.UUID a0, java.util.UUID a1) {
-            return (br.com.fashionai.application.room.RoomAddress) Fk.call(this, "autoAssign", br.com.fashionai.application.room.RoomAddress.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.List<java.lang.String> compatibleModules(java.util.UUID a0, br.com.fashionai.domain.model.RoomCatalogItem a1) {
-            return (java.util.List<java.lang.String>) Fk.call(this, "compatibleModules", java.util.List.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> diaryEntry(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, java.time.LocalDate a2, java.lang.String a3, java.lang.String a4) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "diaryEntry", java.util.Map.class, new Object[]{a0, a1, a2, a3, a4});
-        }
-
-        @Override
-        public java.util.List<br.com.fashionai.domain.model.RoomStorageEntry> entries(java.util.UUID a0, java.util.List<br.com.fashionai.domain.model.WardrobeItem> a1) {
-            return (java.util.List<br.com.fashionai.domain.model.RoomStorageEntry>) Fk.call(this, "entries", java.util.List.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> giveKey(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "giveKey", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public boolean hasKey(java.util.UUID a0, java.util.UUID a1) {
-            return (boolean) Fk.call(this, "hasKey", boolean.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> island(br.com.fashionai.application.security.CurrentUser a0, java.util.List<java.util.UUID> a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "island", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.util.UUID, java.time.LocalDate> lastDiaryDates(java.util.UUID a0, java.time.LocalDate a1) {
-            return (java.util.Map<java.util.UUID, java.time.LocalDate>) Fk.call(this, "lastDiaryDates", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public br.com.fashionai.domain.model.RoomLayout layout(java.util.UUID a0) {
-            return (br.com.fashionai.domain.model.RoomLayout) Fk.call(this, "layout", br.com.fashionai.domain.model.RoomLayout.class, new Object[]{a0});
-        }
-
-        @Override
-        public br.com.fashionai.application.service.FaiPointsService.Level levelOf(java.util.UUID a0) {
-            return (br.com.fashionai.application.service.FaiPointsService.Level) Fk.call(this, "levelOf", br.com.fashionai.application.service.FaiPointsService.Level.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.List<java.util.Map<java.lang.String, java.lang.Object>> listView(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.List<java.util.Map<java.lang.String, java.lang.Object>>) Fk.call(this, "listView", java.util.List.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.util.UUID, br.com.fashionai.application.service.RoomService.Location> locateAll(java.util.UUID a0) {
-            return (java.util.Map<java.util.UUID, br.com.fashionai.application.service.RoomService.Location>) Fk.call(this, "locateAll", java.util.Map.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Optional<br.com.fashionai.application.service.RoomService.Location> locate(java.util.UUID a0, java.util.UUID a1) {
-            return (java.util.Optional<br.com.fashionai.application.service.RoomService.Location>) Fk.call(this, "locate", java.util.Optional.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> move(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, java.lang.String a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "move", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public void onPieceCreated(br.com.fashionai.application.events.DomainEvents.PieceCreated a0) {
-            Fk.call(this, "onPieceCreated", void.class, new Object[]{a0});
-        }
-
-        @Override
-        public void onPieceDeleted(br.com.fashionai.application.events.DomainEvents.PieceDeleted a0) {
-            Fk.call(this, "onPieceDeleted", void.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> open(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "open", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> organizePreview(br.com.fashionai.application.security.CurrentUser a0, boolean a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "organizePreview", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Set<java.util.UUID> outOfSeason(java.util.UUID a0) {
-            return (java.util.Set<java.util.UUID>) Fk.call(this, "outOfSeason", java.util.Set.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> pieceTag(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "pieceTag", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.String> renameDrawer(br.com.fashionai.application.security.CurrentUser a0, int a1, java.lang.String a2) {
-            return (java.util.Map<java.lang.String, java.lang.String>) Fk.call(this, "renameDrawer", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> room(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "room", java.util.Map.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> seasonStorage(br.com.fashionai.application.security.CurrentUser a0, java.util.List<java.util.UUID> a1, boolean a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "seasonStorage", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public void setLevel(java.util.UUID a0, java.lang.String a1) {
-            Fk.call(this, "setLevel", void.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> setLight(br.com.fashionai.application.security.CurrentUser a0, java.lang.Integer a1, java.lang.Double a2, java.lang.Boolean a3) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "setLight", java.util.Map.class, new Object[]{a0, a1, a2, a3});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> setLight(br.com.fashionai.application.security.CurrentUser a0, int a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "setLight", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> setMonogram(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "setMonogram", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> showInRoom(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "showInRoom", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> tour(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "tour", java.util.Map.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> undoOrganization(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "undoOrganization", java.util.Map.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Set<java.util.UUID> usedRecently(java.util.UUID a0, java.time.LocalDate a1) {
-            return (java.util.Set<java.util.UUID>) Fk.call(this, "usedRecently", java.util.Set.class, new Object[]{a0, a1});
-        }
-    }
-
     static final class FakeSchemeService extends br.com.fashionai.application.service.SchemeService {
         FakeSchemeService() {
             super((br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.ReactionRepository) Fk.arg(br.com.fashionai.domain.repository.ReactionRepository.class), (br.com.fashionai.domain.repository.SavedItemRepository) Fk.arg(br.com.fashionai.domain.repository.SavedItemRepository.class), (br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.application.service.BackgroundStudioService) Fk.arg(br.com.fashionai.application.service.BackgroundStudioService.class), (br.com.fashionai.application.service.SealService) Fk.arg(br.com.fashionai.application.service.SealService.class), (br.com.fashionai.application.imaging.SchemeCardRenderer) Fk.arg(br.com.fashionai.application.imaging.SchemeCardRenderer.class), (br.com.fashionai.application.service.ProjectionService) Fk.arg(br.com.fashionai.application.service.ProjectionService.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class), (br.com.fashionai.application.ports.CounterStorePort) Fk.arg(br.com.fashionai.application.ports.CounterStorePort.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (br.com.fashionai.application.service.DailyLookService) Fk.arg(br.com.fashionai.application.service.DailyLookService.class), (org.springframework.context.ApplicationEventPublisher) Fk.arg(org.springframework.context.ApplicationEventPublisher.class), (br.com.fashionai.domain.repository.StyleDnaRepository) Fk.arg(br.com.fashionai.domain.repository.StyleDnaRepository.class), (br.com.fashionai.domain.repository.HypeScoreCurrentRepository) Fk.arg(br.com.fashionai.domain.repository.HypeScoreCurrentRepository.class), (br.com.fashionai.application.hype.HypeScoreConfig) Fk.arg(br.com.fashionai.application.hype.HypeScoreConfig.class));
@@ -3857,16 +3524,6 @@ final class ServiceFakes {
         @Override
         public br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView> mine(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.lang.String a2, java.lang.String a3, java.lang.String a4, java.lang.String a5, int a6, int a7) {
             return (br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView>) Fk.call(this, "mine", br.com.fashionai.application.view.Views.Page.class, new Object[]{a0, a1, a2, a3, a4, a5, a6, a7});
-        }
-
-        @Override
-        public br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView> mine(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.lang.String a2, java.lang.String a3, int a4, int a5) {
-            return (br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView>) Fk.call(this, "mine", br.com.fashionai.application.view.Views.Page.class, new Object[]{a0, a1, a2, a3, a4, a5});
-        }
-
-        @Override
-        public br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView> mine(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, java.lang.String a2, int a3, int a4) {
-            return (br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.SchemeView>) Fk.call(this, "mine", br.com.fashionai.application.view.Views.Page.class, new Object[]{a0, a1, a2, a3, a4});
         }
 
         @Override
@@ -3969,7 +3626,7 @@ final class ServiceFakes {
 
     static final class FakeSealService extends br.com.fashionai.application.service.SealService {
         FakeSealService() {
-            super((br.com.fashionai.domain.repository.SealRepository) Fk.arg(br.com.fashionai.domain.repository.SealRepository.class), (br.com.fashionai.domain.repository.SealBondRepository) Fk.arg(br.com.fashionai.domain.repository.SealBondRepository.class), (br.com.fashionai.domain.repository.PromotionRepository) Fk.arg(br.com.fashionai.domain.repository.PromotionRepository.class), (br.com.fashionai.domain.repository.PromotionRedemptionRepository) Fk.arg(br.com.fashionai.domain.repository.PromotionRedemptionRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.BrandProfileRepository) Fk.arg(br.com.fashionai.domain.repository.BrandProfileRepository.class), (br.com.fashionai.domain.repository.CelebrityProfileRepository) Fk.arg(br.com.fashionai.domain.repository.CelebrityProfileRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (org.springframework.context.ApplicationEventPublisher) Fk.arg(org.springframework.context.ApplicationEventPublisher.class), (br.com.fashionai.application.service.OwnMedia) Fk.arg(br.com.fashionai.application.service.OwnMedia.class));
+            super((br.com.fashionai.domain.repository.SealRepository) Fk.arg(br.com.fashionai.domain.repository.SealRepository.class), (br.com.fashionai.domain.repository.SealBondRepository) Fk.arg(br.com.fashionai.domain.repository.SealBondRepository.class), (br.com.fashionai.domain.repository.PromotionRepository) Fk.arg(br.com.fashionai.domain.repository.PromotionRepository.class), (br.com.fashionai.domain.repository.PromotionRedemptionRepository) Fk.arg(br.com.fashionai.domain.repository.PromotionRedemptionRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.BrandProfileRepository) Fk.arg(br.com.fashionai.domain.repository.BrandProfileRepository.class), (br.com.fashionai.domain.repository.CelebrityProfileRepository) Fk.arg(br.com.fashionai.domain.repository.CelebrityProfileRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (org.springframework.context.ApplicationEventPublisher) Fk.arg(org.springframework.context.ApplicationEventPublisher.class), (br.com.fashionai.application.common.OwnMedia) Fk.arg(br.com.fashionai.application.common.OwnMedia.class));
         }
 
         @Override
@@ -3998,7 +3655,7 @@ final class ServiceFakes {
         }
 
         @Override
-        public java.util.Map<java.lang.String, java.lang.Object> draft(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.domain.model.enums.SealTier a1, java.lang.String a2, java.util.Map<java.lang.String, java.lang.Object> a3, java.util.List<br.com.fashionai.application.service.SealPolicyCopilot.Message> a4) {
+        public java.util.Map<java.lang.String, java.lang.Object> draft(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.domain.model.enums.SealTier a1, java.lang.String a2, java.util.Map<java.lang.String, java.lang.Object> a3, java.util.List<br.com.fashionai.application.seal.SealPolicyCopilot.Message> a4) {
             return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "draft", java.util.Map.class, new Object[]{a0, a1, a2, a3, a4});
         }
 
@@ -4339,7 +3996,7 @@ final class ServiceFakes {
 
     static final class FakeTryOnService extends br.com.fashionai.application.service.TryOnService {
         FakeTryOnService() {
-            super((br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.UserPreferencesRepository) Fk.arg(br.com.fashionai.domain.repository.UserPreferencesRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class), (br.com.fashionai.application.imaging.TryOnCompositor) Fk.arg(br.com.fashionai.application.imaging.TryOnCompositor.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.assets.AssetCatalogService) Fk.arg(br.com.fashionai.application.assets.AssetCatalogService.class), (br.com.fashionai.application.service.Avatar3dService) Fk.arg(br.com.fashionai.application.service.Avatar3dService.class), (br.com.fashionai.application.service.OwnMedia) Fk.arg(br.com.fashionai.application.service.OwnMedia.class));
+            super((br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.UserPreferencesRepository) Fk.arg(br.com.fashionai.domain.repository.UserPreferencesRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.application.service.WardrobeService) Fk.arg(br.com.fashionai.application.service.WardrobeService.class), (br.com.fashionai.application.service.SchemeService) Fk.arg(br.com.fashionai.application.service.SchemeService.class), (br.com.fashionai.application.imaging.TryOnCompositor) Fk.arg(br.com.fashionai.application.imaging.TryOnCompositor.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.assets.AssetCatalogService) Fk.arg(br.com.fashionai.application.assets.AssetCatalogService.class), (br.com.fashionai.application.service.Avatar3dService) Fk.arg(br.com.fashionai.application.service.Avatar3dService.class), (br.com.fashionai.application.common.OwnMedia) Fk.arg(br.com.fashionai.application.common.OwnMedia.class));
         }
 
         @Override
@@ -4374,75 +4031,9 @@ final class ServiceFakes {
         }
     }
 
-    static final class FakeWardrobeCreatorService extends br.com.fashionai.application.service.WardrobeCreatorService {
-        FakeWardrobeCreatorService() {
-            super((br.com.fashionai.domain.repository.RoomCatalogItemRepository) Fk.arg(br.com.fashionai.domain.repository.RoomCatalogItemRepository.class), (br.com.fashionai.domain.repository.RoomInventoryItemRepository) Fk.arg(br.com.fashionai.domain.repository.RoomInventoryItemRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.BrandProfileRepository) Fk.arg(br.com.fashionai.domain.repository.BrandProfileRepository.class), (br.com.fashionai.domain.repository.CelebrityProfileRepository) Fk.arg(br.com.fashionai.domain.repository.CelebrityProfileRepository.class), (br.com.fashionai.domain.repository.SealRepository) Fk.arg(br.com.fashionai.domain.repository.SealRepository.class), (br.com.fashionai.domain.repository.SealBondRepository) Fk.arg(br.com.fashionai.domain.repository.SealBondRepository.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class));
-        }
-
-        @Override
-        public java.lang.String blocker(java.util.UUID a0, br.com.fashionai.domain.model.RoomCatalogItem a1) {
-            return (java.lang.String) Fk.call(this, "blocker", java.lang.String.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public void delete(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1) {
-            Fk.call(this, "delete", void.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public boolean hasSeal(java.util.UUID a0, br.com.fashionai.domain.model.RoomCatalogItem a1) {
-            return (boolean) Fk.call(this, "hasSeal", boolean.class, new Object[]{a0, a1});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> identity(br.com.fashionai.domain.model.User a0) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "identity", java.util.Map.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> mine(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "mine", java.util.Map.class, new Object[]{a0});
-        }
-
-        @Override
-        public void onStart(org.springframework.context.event.ContextRefreshedEvent a0) {
-            Fk.call(this, "onStart", void.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> options(br.com.fashionai.application.security.CurrentUser a0) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "options", java.util.Map.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> save(br.com.fashionai.application.security.CurrentUser a0, java.lang.String a1, br.com.fashionai.application.service.WardrobeCreatorService.ItemForm a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "save", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public int seedFactory() {
-            return (int) Fk.call(this, "seedFactory", int.class, new Object[]{});
-        }
-
-        @Override
-        public boolean sellerActive(br.com.fashionai.domain.model.RoomCatalogItem a0) {
-            return (boolean) Fk.call(this, "sellerActive", boolean.class, new Object[]{a0});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> uploadArt(br.com.fashionai.application.security.CurrentUser a0, byte[] a1, java.lang.String a2) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "uploadArt", java.util.Map.class, new Object[]{a0, a1, a2});
-        }
-
-        @Override
-        public java.util.Map<java.lang.String, java.lang.Object> view(br.com.fashionai.domain.model.RoomCatalogItem a0, java.util.UUID a1) {
-            return (java.util.Map<java.lang.String, java.lang.Object>) Fk.call(this, "view", java.util.Map.class, new Object[]{a0, a1});
-        }
-    }
-
     static final class FakeWardrobeService extends br.com.fashionai.application.service.WardrobeService {
         FakeWardrobeService() {
-            super((br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.BrandRepository) Fk.arg(br.com.fashionai.domain.repository.BrandRepository.class), (br.com.fashionai.domain.repository.PipelineJobRepository) Fk.arg(br.com.fashionai.domain.repository.PipelineJobRepository.class), (br.com.fashionai.domain.repository.ProcessingJobLogRepository) Fk.arg(br.com.fashionai.domain.repository.ProcessingJobLogRepository.class), (br.com.fashionai.domain.repository.QualityScoreRepository) Fk.arg(br.com.fashionai.domain.repository.QualityScoreRepository.class), (br.com.fashionai.domain.repository.ModerationQueueRepository) Fk.arg(br.com.fashionai.domain.repository.ModerationQueueRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.ReactionRepository) Fk.arg(br.com.fashionai.domain.repository.ReactionRepository.class), (br.com.fashionai.domain.repository.SavedItemRepository) Fk.arg(br.com.fashionai.domain.repository.SavedItemRepository.class), (br.com.fashionai.domain.repository.PhotoRepository) Fk.arg(br.com.fashionai.domain.repository.PhotoRepository.class), (br.com.fashionai.application.imaging.FlatLayPipeline) Fk.arg(br.com.fashionai.application.imaging.FlatLayPipeline.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.assets.AssetCatalogService) Fk.arg(br.com.fashionai.application.assets.AssetCatalogService.class), (br.com.fashionai.application.service.ProjectionService) Fk.arg(br.com.fashionai.application.service.ProjectionService.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class), (br.com.fashionai.application.ports.JobQueuePort) Fk.arg(br.com.fashionai.application.ports.JobQueuePort.class), (br.com.fashionai.application.service.Model3dService) Fk.arg(br.com.fashionai.application.service.Model3dService.class), (br.com.fashionai.application.imaging.StudioPipeline) Fk.arg(br.com.fashionai.application.imaging.StudioPipeline.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (org.springframework.context.ApplicationEventPublisher) Fk.arg(org.springframework.context.ApplicationEventPublisher.class), (br.com.fashionai.application.service.BrandLogoService) Fk.arg(br.com.fashionai.application.service.BrandLogoService.class), (br.com.fashionai.domain.repository.BrandProfileRepository) Fk.arg(br.com.fashionai.domain.repository.BrandProfileRepository.class), (br.com.fashionai.application.assets.PieceReferenceCatalog) Fk.arg(br.com.fashionai.application.assets.PieceReferenceCatalog.class), (br.com.fashionai.application.service.OwnMedia) Fk.arg(br.com.fashionai.application.service.OwnMedia.class), (br.com.fashionai.domain.repository.HypeScoreCurrentRepository) Fk.arg(br.com.fashionai.domain.repository.HypeScoreCurrentRepository.class), (br.com.fashionai.application.hype.HypeScoreConfig) Fk.arg(br.com.fashionai.application.hype.HypeScoreConfig.class));
+            super((br.com.fashionai.domain.repository.WardrobeItemRepository) Fk.arg(br.com.fashionai.domain.repository.WardrobeItemRepository.class), (br.com.fashionai.domain.repository.UserRepository) Fk.arg(br.com.fashionai.domain.repository.UserRepository.class), (br.com.fashionai.domain.repository.BrandRepository) Fk.arg(br.com.fashionai.domain.repository.BrandRepository.class), (br.com.fashionai.domain.repository.PipelineJobRepository) Fk.arg(br.com.fashionai.domain.repository.PipelineJobRepository.class), (br.com.fashionai.domain.repository.ProcessingJobLogRepository) Fk.arg(br.com.fashionai.domain.repository.ProcessingJobLogRepository.class), (br.com.fashionai.domain.repository.QualityScoreRepository) Fk.arg(br.com.fashionai.domain.repository.QualityScoreRepository.class), (br.com.fashionai.domain.repository.ModerationQueueRepository) Fk.arg(br.com.fashionai.domain.repository.ModerationQueueRepository.class), (br.com.fashionai.domain.repository.SchemeItemRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeItemRepository.class), (br.com.fashionai.domain.repository.SchemeRepository) Fk.arg(br.com.fashionai.domain.repository.SchemeRepository.class), (br.com.fashionai.domain.repository.ReactionRepository) Fk.arg(br.com.fashionai.domain.repository.ReactionRepository.class), (br.com.fashionai.domain.repository.SavedItemRepository) Fk.arg(br.com.fashionai.domain.repository.SavedItemRepository.class), (br.com.fashionai.domain.repository.PhotoRepository) Fk.arg(br.com.fashionai.domain.repository.PhotoRepository.class), (br.com.fashionai.application.imaging.FlatLayPipeline) Fk.arg(br.com.fashionai.application.imaging.FlatLayPipeline.class), (br.com.fashionai.application.ai.AiEngine) Fk.arg(br.com.fashionai.application.ai.AiEngine.class), (br.com.fashionai.application.service.MediaService) Fk.arg(br.com.fashionai.application.service.MediaService.class), (br.com.fashionai.application.assets.AssetCatalogService) Fk.arg(br.com.fashionai.application.assets.AssetCatalogService.class), (br.com.fashionai.application.service.ProjectionService) Fk.arg(br.com.fashionai.application.service.ProjectionService.class), (br.com.fashionai.application.service.NotificationService) Fk.arg(br.com.fashionai.application.service.NotificationService.class), (br.com.fashionai.application.ports.JobQueuePort) Fk.arg(br.com.fashionai.application.ports.JobQueuePort.class), (br.com.fashionai.application.service.Model3dService) Fk.arg(br.com.fashionai.application.service.Model3dService.class), (br.com.fashionai.application.imaging.StudioPipeline) Fk.arg(br.com.fashionai.application.imaging.StudioPipeline.class), (br.com.fashionai.application.security.Guard) Fk.arg(br.com.fashionai.application.security.Guard.class), (br.com.fashionai.application.audit.Audit) Fk.arg(br.com.fashionai.application.audit.Audit.class), (org.springframework.context.ApplicationEventPublisher) Fk.arg(org.springframework.context.ApplicationEventPublisher.class), (br.com.fashionai.application.service.BrandLogoService) Fk.arg(br.com.fashionai.application.service.BrandLogoService.class), (br.com.fashionai.domain.repository.BrandProfileRepository) Fk.arg(br.com.fashionai.domain.repository.BrandProfileRepository.class), (br.com.fashionai.application.assets.PieceReferenceCatalog) Fk.arg(br.com.fashionai.application.assets.PieceReferenceCatalog.class), (br.com.fashionai.application.common.OwnMedia) Fk.arg(br.com.fashionai.application.common.OwnMedia.class), (br.com.fashionai.domain.repository.HypeScoreCurrentRepository) Fk.arg(br.com.fashionai.domain.repository.HypeScoreCurrentRepository.class), (br.com.fashionai.application.hype.HypeScoreConfig) Fk.arg(br.com.fashionai.application.hype.HypeScoreConfig.class));
         }
 
         @Override
@@ -4461,8 +4052,8 @@ final class ServiceFakes {
         }
 
         @Override
-        public br.com.fashionai.application.service.WardrobeService.CaptureAnalysis analyzeForCapture(br.com.fashionai.application.security.CurrentUser a0, byte[] a1, java.lang.String a2, boolean a3) {
-            return (br.com.fashionai.application.service.WardrobeService.CaptureAnalysis) Fk.call(this, "analyzeForCapture", br.com.fashionai.application.service.WardrobeService.CaptureAnalysis.class, new Object[]{a0, a1, a2, a3});
+        public br.com.fashionai.application.wardrobe.draft.CaptureAnalysis analyzeForCapture(br.com.fashionai.application.security.CurrentUser a0, byte[] a1, java.lang.String a2, boolean a3) {
+            return (br.com.fashionai.application.wardrobe.draft.CaptureAnalysis) Fk.call(this, "analyzeForCapture", br.com.fashionai.application.wardrobe.draft.CaptureAnalysis.class, new Object[]{a0, a1, a2, a3});
         }
 
         @Override
@@ -4486,22 +4077,22 @@ final class ServiceFakes {
         }
 
         @Override
-        public br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.PieceView> closet(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.WardrobeService.ClosetFilter a2) {
+        public br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.PieceView> closet(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.wardrobe.ClosetFilter a2) {
             return (br.com.fashionai.application.view.Views.Page<br.com.fashionai.application.view.Views.PieceView>) Fk.call(this, "closet", br.com.fashionai.application.view.Views.Page.class, new Object[]{a0, a1, a2});
         }
 
         @Override
-        public java.util.List<br.com.fashionai.application.view.Views.PieceView> createBatch(br.com.fashionai.application.security.CurrentUser a0, java.util.List<br.com.fashionai.application.service.WardrobeService.PieceForm> a1) {
+        public java.util.List<br.com.fashionai.application.view.Views.PieceView> createBatch(br.com.fashionai.application.security.CurrentUser a0, java.util.List<br.com.fashionai.application.wardrobe.PieceForm> a1) {
             return (java.util.List<br.com.fashionai.application.view.Views.PieceView>) Fk.call(this, "createBatch", java.util.List.class, new Object[]{a0, a1});
         }
 
         @Override
-        public br.com.fashionai.application.view.Views.PieceView createFromCatalog(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.WardrobeService.PieceForm a1, br.com.fashionai.application.service.CatalogPick a2) {
+        public br.com.fashionai.application.view.Views.PieceView createFromCatalog(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.wardrobe.PieceForm a1, br.com.fashionai.application.catalog.CatalogPick a2) {
             return (br.com.fashionai.application.view.Views.PieceView) Fk.call(this, "createFromCatalog", br.com.fashionai.application.view.Views.PieceView.class, new Object[]{a0, a1, a2});
         }
 
         @Override
-        public br.com.fashionai.application.view.Views.PieceView create(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.service.WardrobeService.PieceForm a1) {
+        public br.com.fashionai.application.view.Views.PieceView create(br.com.fashionai.application.security.CurrentUser a0, br.com.fashionai.application.wardrobe.PieceForm a1) {
             return (br.com.fashionai.application.view.Views.PieceView) Fk.call(this, "create", br.com.fashionai.application.view.Views.PieceView.class, new Object[]{a0, a1});
         }
 
@@ -4626,7 +4217,7 @@ final class ServiceFakes {
         }
 
         @Override
-        public br.com.fashionai.application.view.Views.PieceView update(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.service.WardrobeService.PieceForm a2) {
+        public br.com.fashionai.application.view.Views.PieceView update(br.com.fashionai.application.security.CurrentUser a0, java.util.UUID a1, br.com.fashionai.application.wardrobe.PieceForm a2) {
             return (br.com.fashionai.application.view.Views.PieceView) Fk.call(this, "update", br.com.fashionai.application.view.Views.PieceView.class, new Object[]{a0, a1, a2});
         }
 

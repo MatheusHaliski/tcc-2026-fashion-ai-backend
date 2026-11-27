@@ -5,7 +5,12 @@
 .n3d-frame {
   position: relative;
   display: grid;
-  grid-template-rows: minmax(0, var(--n3d-palco, 56fr)) minmax(0, var(--n3d-deck, 44fr));
+  /* a faixa de baixo nunca fica menor que a régua de vagas + uma carta inteira + as abas: as cartas não são cortadas */
+  grid-template-rows:
+    minmax(0, var(--n3d-palco, 56fr))
+    minmax(calc(var(--n3d-thumb-h, 62px) + var(--n3d-card-h, 106px) + 90px), var(--n3d-deck, 44fr));
+  /* uma coluna que encolhe até a tela: nada da faixa de baixo empurra o quadro para fora (auditoria 3, celular) */
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
   overflow: hidden;
   border: 1px solid var(--line-soft);
@@ -19,10 +24,19 @@
   min-height: 560px;
 }
 
+/* abaixo de 1024 px a barra de navegação fica por cima do fim da página: o quadro termina acima dela */
+@media (max-width: 1023px) {
+  .n3d-frame.is-retrato {
+    height: calc(100dvh - var(--header-h) - 88px - env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .n3d-frame.is-paisagem {
   width: min(100%, 1280px, calc((100dvh - var(--header-h) - 32px) * 1.6));
   min-width: min(100%, 760px);
   aspect-ratio: 16 / 10;
+  /* quadro estreito (menu lateral aberto): usa a altura livre da tela em vez de encolher o palco */
+  min-height: min(calc(100dvh - var(--header-h) - 64px), 780px);
   margin-inline: auto;
   border-color: transparent;
   border-radius: 20px;
@@ -80,12 +94,14 @@
   position: relative;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-height: 0;
   border-top: 1px solid var(--line-soft);
 }
 
 .n3d-band {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 4px;
   min-height: 0;

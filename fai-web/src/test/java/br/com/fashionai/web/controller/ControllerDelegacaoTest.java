@@ -37,16 +37,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ControllerDelegacaoTest {
     static final List<Class<?>> CONTROLLERS = List.of(
             AdminController.class, br.com.fashionai.web.atelierproject.AtelierProjectController.class,
-            PhysicalStoreController.class, br.com.fashionai.web.passport.GarmentPassportController.class,
+            BrandCatalogProductsController.class, br.com.fashionai.web.passport.GarmentPassportController.class,
             SealHypeOffersController.class, EraStudioController.class, ProfileController.class, SealController.class,
-            AdminRoomAssetController.class, MultiplatformController.class, MeController.class, ShowcaseController.class,
+            MultiplatformController.class, MeController.class, ShowcaseController.class,
             PhotoController.class, NotificationController.class, PreferencesController.class,
-            FlairChallengeController.class, DnaController.class, WardrobeController.class, RoomController.class,
+            FlairChallengeController.class, DnaController.class, WardrobeController.class,
             AuraPieceMediaController.class, CommentController.class, DashboardController.class,
-            AutopilotController.class, FlairController.class, RoomCreatorController.class,
+            AutopilotController.class, FlairController.class,
             FlairCollectionController.class, Avatar3dController.class, TryOnController.class, GuideController.class,
             MomentController.class, BackgroundController.class, TryOnPersonPhotoController.class,
-            AdminPhysicalStoreController.class, AnatomicalTryOnController.class, HypeController.class,
+            FaiStoreController.class, AnatomicalTryOnController.class, HypeController.class,
             HighlightsController.class, AuthController.class, LensController.class, CatalogController.class,
             IssuerReviewController.class, AccountController.class, CouponController.class, DiscoveryController.class,
             ChallengeController.class, MomentAdminController.class, AuraMotionController.class,
@@ -55,7 +55,7 @@ class ControllerDelegacaoTest {
             LookbookController.class, AuraCommerceController.class, SchemeController.class,
             AdminCatalogController.class, AuraPermissionsController.class, AuraHypeDropController.class,
             BrandLogoController.class, ExchangeRateController.class, CommunityTrendController.class,
-            PieceReferenceController.class, SocialController.class, MetamorphoseInventoryController.class,
+            PieceReferenceController.class, LookReferenceController.class, AcervoReferenceController.class, SocialController.class, MetamorphoseInventoryController.class,
             AtelierController.class, br.com.fashionai.web.controller.fit.FitController.class,
             FlairCardModesController.class, DailyLookController.class, SealPromotionController.class,
             MultiPieceController.class, WardrobeStudioController.class);
@@ -82,8 +82,7 @@ class ControllerDelegacaoTest {
      * Endpoints que passaram a ter regra própria antes de delegar (permissão de criador, nível Loft do FLAIR, item que
      * precisa existir): este teste genérico só sabe exercitar repasse puro, então ficam de fora dele.
      */
-    static final Set<String> COM_REGRA = Set.of("CatalogController.textureImage", "FlairAdventureController.preview",
-            "HighlightsController.unapply");
+    static final Set<String> COM_REGRA = Set.of("CatalogController.textureImage", "FlairAdventureController.preview");
 
     static boolean generico(Class<?> type, java.lang.reflect.Method m) {
         String id = type.getSimpleName() + "." + m.getName();
@@ -137,7 +136,7 @@ class ControllerDelegacaoTest {
         if (type == ClientIpResolver.class) return new ClientIpResolver("", "X-Edge-Secret");
         if (type == boolean.class) return false;
         if (type.isInterface()) return Fk.proxy(type);
-        for (Class<?> fake : ServiceFakes.class.getDeclaredClasses()) {
+        for (Class<?> fake : Fk.fakeClasses()) {
             if (fake.getSuperclass() == type) {
                 try {
                     Constructor<?> k = fake.getDeclaredConstructor();

@@ -10,11 +10,15 @@ import { NucleoControls } from "@/components/flair/nucleos/nucleo-controls";
 import { NucleoResourceWindow } from "@/components/flair/nucleos/nucleo-resource-window";
 import type { CardZoom } from "@/components/flair/nucleos/use-card-zoom";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { NucleoSalvo } from "@/components/flair/nucleos/nucleo-salvo";
 import type { BoardEstado } from "@/lib/flair/nucleos/board";
 import type { Comando } from "@/lib/flair/nucleos/controls";
 import type { ItemDaFileira } from "@/lib/flair/nucleos/deck-row";
 import { valorDoEvento } from "@/lib/flair/nucleos/action-fx";
+import { salaoDaVez } from "@/lib/flair/nucleos/detective";
 import { acionamentoDe, type Momento } from "@/lib/flair/nucleos/moments";
+import { desgasteDe, nomeDoRecurso, type Desgaste } from "@/lib/flair/recursos/desgaste";
+import { respostaObrigatoria, vagasQueFaltam } from "@/lib/flair/nucleos/rodadas";
 import type { ResourceTab } from "@/lib/flair/nucleos/selection";
 import type { EfeitoItem, NucleoDefinicao, NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -35,6 +39,8 @@ export interface NucleoDeckBandProps {
   aviso: string | null;
   /** última apresentação que não fechou a partida (LABIRINTO: o espelho não abriu e a pessoa pode mudar o look) */
   tentativa?: NucleoResultado | null;
+  /** a etapa da vez ou o que o jogo revelou ao entrar, em uma linha (fica à vista depois que o cartão fecha) */
+  briefing?: string | null;
   onAba: (index: number) => void;
   onItem: (aba: number, item: number) => void;
   onNaoCabe: (x: ItemDaFileira) => void;
@@ -46,6 +52,18 @@ export interface NucleoDeckBandProps {
   resultado: ReactNode;
 }
 
+/**
+ * O espelho não abriu: a tentativa, quantas peças faltam, de qual família de cor e quanto Reflexo sobrou (cada
+ * apresentação errada gasta; zerado, a partida acaba em derrota).
+ */
+function textoDoEspelho(tx: ReturnType<typeof useNucleoText>, n: number, faltam: number, familia: unknown, gasto: Desgaste | null): string {
+  const base = typeof familia === "string"
+    ? tx.t("flair3d.ui.trigger.ESPELHO.retryFamily", { n, faltam, familia: tx.familiaCor(familia).toLowerCase() })
+    : tx.t("flair3d.ui.trigger.ESPELHO.retry", { n, faltam });
+  const reflexo = gasto ? ` ${tx.t("flair3d.ui.trigger.ESPELHO.reflexo", { recurso: nomeDoRecurso(tx.ou, "LABIRINTO", gasto.recurso), n: gasto.restante })}` : "";
+  return `${base}${reflexo}`;
+}
+
 export function NucleoDeckBand(props: NucleoDeckBandProps) {
   const { definicao, momento, estado, pronto, entregando, erro } = props;
   const tx = useNucleoText();
@@ -54,20 +72,31 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
 
   const acionamento = acionamentoDe(definicao.codigo);
   const espelho = acionamento?.tipo === "ESPELHO";
-  const resposta = acionamento?.tipo === "RESPOSTA";
+  const resposta = respostaObrigatoria(definicao);
+  // a frase da rodada, a do jogo (o emblema do Super-Herói) ou a comum (o título do filme)
+  const doJogo = (chave: string, vars?: Record<string, string>) => tx.ou(`flair3d.nucleo.${definicao.codigo}.resposta.${chave}`, tx.t(`flair3d.ui.trigger.RESPOSTA.${chave}`, vars), vars);
+  const daResposta = (chave: string, vars?: Record<string, string>) => tx.ou(`flair3d.nucleo.${definicao.codigo}.resposta.${definicao.rodada ?? ""}.${chave}`, doJogo(chave, vars), vars);
+  const faltam = vagasQueFaltam(definicao, estado.sel.cartas);
   const abaDaResposta = props.tabs.findIndex((t) => t.tipo === "resposta");
   let rotulo = tx.t(espelho ? "flair3d.ui.trigger.ESPELHO.submit" : "flair3d.ui.submit");
   if (entregando) rotulo = tx.t("flair3d.ui.submitting");
 
   let dica: string | null = null;
   if (props.aviso) dica = props.aviso;
-  else if (resposta && !estado.sel.resposta) dica = tx.t("flair3d.ui.trigger.RESPOSTA.need");
-  else if (resposta && estado.sel.resposta) dica = tx.t("flair3d.ui.trigger.RESPOSTA.done", { titulo: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta}`, estado.sel.resposta) });
-  else if (props.tentativa) {
+  else if (faltam.length && Object.keys(estado.sel.cartas).length) dica = tx.t("flair3d.ui.uniforme.falta", { vagas: faltam.map((v) => tx.ou(`flair3d.ui.tab.${v}`, v).toLowerCase()).join(", ") });
+  else if (resposta && !estado.sel.resposta) dica = [props.briefing, daResposta("need")].filter(Boolean).join(" ");
+  else if (resposta && estado.sel.resposta) dica = [props.briefing, daResposta("done", { titulo: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta}`, estado.sel.resposta) })].filter(Boolean).join(" ");
+  else if (props.briefing) dica = props.briefing;
+  else if (definicao.codigo === "FASHION_DETECTIVE" && definicao.rodada !== "SALOES_DA_GALA") dica = tx.t("flair3d.detetive.ui.look");
+  else if (definicao.codigo === "FASHION_DETECTIVE") {
+    const s = salaoDaVez(props.tentativa);
+    dica = tx.t("flair3d.ui.detetive.hint", { n: s.numero, total: s.total, salao: tx.t(`flair3d.ui.detetive.${s.codigo}.name`), codigo: tx.t(`flair3d.ui.detetive.${s.codigo}.code`), carta: tx.t(`flair3d.ui.detetive.${s.codigo}.clue`) });
+  } else if (props.tentativa) {
     const n = Number(valorDoEvento(props.tentativa, "TENTATIVA") ?? 1);
     const faltam = Number(valorDoEvento(props.tentativa, "FALTAM_PECAS") ?? 0);
-    dica = tx.t("flair3d.ui.trigger.ESPELHO.retry", { n, faltam });
+    dica = textoDoEspelho(tx, n, faltam, valorDoEvento(props.tentativa, "FAMILIA"), desgasteDe(props.tentativa));
   } else if (espelho) dica = tx.t("flair3d.ui.trigger.ESPELHO.hint");
+  else if (props.automatico && abaDaResposta >= 0) dica = tx.t("flair3d.ui.modalidade.hint", { modalidade: tx.ou(`flair3d.nucleo.${definicao.codigo}.opcao.${estado.sel.resposta ?? "FUTEBOL"}`, "") });
   else if (props.automatico) dica = tx.t("flair3d.ui.auto");
 
   const extra = (
@@ -98,9 +127,10 @@ export function NucleoDeckBand(props: NucleoDeckBandProps) {
       />
       <div className="n3d-band-foot">
         {dica && <p className="n3d-hint" role="status" data-testid="nucleo-hint">{dica}</p>}
+        <NucleoSalvo />
         {resposta && !estado.sel.resposta && abaDaResposta >= 0 && (
           <button type="button" className="btn btn-sm" onClick={() => props.onAba(abaDaResposta)}>
-            {tx.t("flair3d.ui.trigger.RESPOSTA.go")}
+            {daResposta("go")}
           </button>
         )}
         {erro && <p className="n3d-error" role="alert">{tx.t("flair3d.ui.submitError", { msg: erro.message })}</p>}

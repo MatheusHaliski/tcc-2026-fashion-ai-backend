@@ -21,11 +21,11 @@ class Flair3dNucleosZonasTest {
     }
 
     @Test
-    void clubeCoracaoConcluiSoComTodasAsZonasNasCoresDoClubeESemPlacar() {
+    void clubeCoracaoConcluiSoComTodasAsZonasNasCoresDoClubeEValeCem() {
         Resultado ok = jogar(new ClubeCoracaoNucleo(), zonas(null, "FRENTE=#2A5FA8", "COSTAS=#FFFFFF", "MANGAS=#2A5FA8", "GOLA=#FFFFFF"));
         assertThat(ok.resultado()).isEqualTo("CONCLUIDO");
-        assertThat(ok.pontos()).isZero();
-        assertThat(ok.estrelas()).isZero();
+        assertThat(ok.pontos()).isEqualTo(100);
+        assertThat(ok.estrelas()).isEqualTo(3);
         Resultado vermelha = jogar(new ClubeCoracaoNucleo(), zonas(null, "FRENTE=#2A5FA8", "COSTAS=#FFFFFF", "MANGAS=#2A5FA8", "GOLA=#C62B28"));
         assertThat(vermelha.resultado()).isEqualTo("INCOMPLETO");
         Resultado faltando = jogar(new ClubeCoracaoNucleo(), zonas(null, "FRENTE=#2A5FA8", "COSTAS=#FFFFFF"));
@@ -39,7 +39,9 @@ class Flair3dNucleosZonasTest {
         assertThat(neon.pontos()).isEqualTo(100);
         assertThat(neon.estrelas()).isEqualTo(3);
         Resultado azul = jogar(new FavoriteSingerNucleo(), zonas(null, "FRENTE=#2A5FA8", "COSTAS=#2A5FA8"));
-        assertThat(azul.pontos()).isEqualTo(25);
+        // peça pela metade: "até 3 cores" fala da peça inteira e não vale com zona sem pintar
+        assertThat(azul.pontos()).isZero();
+        assertThat(azul.eventos()).anyMatch(e -> e.codigo().equals("ZONAS_SEM_PINTAR"));
     }
 
     @Test
@@ -54,8 +56,13 @@ class Flair3dNucleosZonasTest {
     @Test
     void superHeroiRecusaEmblemaProtegido() {
         Resultado armadura = jogar(new SuperHeroiNucleo(),
-                zonas("EMBLEMA_ESTRELA", "PEITO=#B8BCC0/METALICO", "CAPA=#C62B28", "BRACOS=#B8BCC0"));
+                zonas("EMBLEMA_ESTRELA", "PEITO=#B8BCC0/METALICO", "CAPA=#C62B28", "BRACOS=#B8BCC0", "PERNAS=#B8BCC0"));
         assertThat(armadura.pontos()).isEqualTo(100);
+        // sem as pernas o traje não fecha as "até 2 cores": 75, e o resultado diz que faltou pintar
+        Resultado semPernas = jogar(new SuperHeroiNucleo(),
+                zonas("EMBLEMA_ESTRELA", "PEITO=#B8BCC0/METALICO", "CAPA=#C62B28", "BRACOS=#B8BCC0"));
+        assertThat(semPernas.pontos()).isEqualTo(75);
+        assertThat(semPernas.eventos()).anyMatch(e -> e.codigo().equals("ZONAS_SEM_PINTAR"));
         Resultado copia = jogar(new SuperHeroiNucleo(),
                 zonas("EMBLEMA_MORCEGO", "PEITO=#B8BCC0", "BRACOS=#2A5FA8", "PERNAS=#E8C93C"));
         assertThat(copia.pontos()).isZero();

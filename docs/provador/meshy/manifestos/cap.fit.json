@@ -1,0 +1,44 @@
+{
+  "versao": 1,
+  "categoria": "accessory_piece",
+  "subcategoria": "cap",
+  "slot": "head",
+  "attach": "rigid",
+  "osso": "Head",
+  "giroY": 0,
+  "centro": [
+    -0.00071,
+    0.00076,
+    -0.00086
+  ],
+  "caixa": [
+    1.2183,
+    0.8334,
+    1.9047
+  ],
+  "escalaNominal": 0,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 1.1801,
+    "bracosAbertos": false,
+    "aberto": false,
+    "sola": 0
+  },
+  "tamanhos": {
+    "grade": null,
+    "porPasso": {
+      "largura": 0,
+      "comprimento": 0,
+      "manga": 0
+    },
+    "limite": [
+      -3,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "veste"
+}

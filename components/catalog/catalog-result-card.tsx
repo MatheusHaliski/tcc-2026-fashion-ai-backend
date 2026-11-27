@@ -42,7 +42,13 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
   const { user } = useAuth();
   const [fitOpen, setFitOpen] = useState(false);
   const tax = useTaxonomy();
-  const [localVariant, setLocalVariant] = useState<CatalogVariant | null>(original.selectedVariant ?? null);
+  // a escolha local vale só para a resposta em que foi feita: se a busca devolve o mesmo produto em outra variante
+  // (outro SKU, outra cor), a variante antiga não fica ativa por cima da nova (exercício 20)
+  const serverKey = `${original.id}:${original.selectedVariant?.id ?? ""}`;
+  const [local, setLocal] = useState<{ key: string; variant: CatalogVariant | null }>({ key: serverKey, variant: original.selectedVariant ?? null });
+  if (local.key !== serverKey) setLocal({ key: serverKey, variant: original.selectedVariant ?? null });
+  const localVariant = local.key === serverKey ? local.variant : original.selectedVariant ?? null;
+  const setLocalVariant = (next: CatalogVariant) => setLocal({ key: serverKey, variant: next });
   const variant = controlledVariant === undefined ? localVariant : controlledVariant;
   const requestProduct = useMemo(() => variant ? { ...original, selectedVariant: variant } : original, [original, variant]);
   const preview = useCatalogPreview(requestProduct);

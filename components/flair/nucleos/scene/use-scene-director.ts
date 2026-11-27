@@ -1,11 +1,14 @@
 /**
  * Diretor da cena de um jogo: transforma o que a tela manda (posar, desfilar ou caminhar, o resultado da entrega) em
- * sequências. Com "reduzir movimento", cada sequência vira um quadro parado (lib/flair/nucleos/scene/director.ts).
+ * sequências, e toca a abertura de cada salão nos jogos que têm uma. Com "reduzir movimento", cada sequência vira um quadro parado (lib/flair/nucleos/scene/director.ts).
  */
 import { useEffect, useMemo, useRef } from "react";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
+import { assinarFx } from "@/lib/flair/nucleos/fx-events";
 import { Diretor } from "@/lib/flair/nucleos/scene/director";
+import { sequenciaDaCor } from "@/lib/flair/nucleos/scene/sequences-color";
+import { sequenciaDeAbertura } from "@/lib/flair/nucleos/scene/opening";
 import { sequenciaDoResultado } from "@/lib/flair/nucleos/scene/sequences-auto";
 import { sequenciaDaPose, sequenciaDeIda, sequenciaDeVolta } from "@/lib/flair/nucleos/scene/sequences-manual";
 import { agora, type Cena } from "@/components/flair/nucleos/scene/stage-context";
@@ -15,9 +18,11 @@ interface Entrada {
   avatar: AvatarEstado;
   resultado?: NucleoResultado | null;
   reduzido: boolean;
+  /** o salão da vez nos jogos com abertura animada: cada troca toca a abertura */
+  abertura?: string | null;
 }
 
-export function useSceneDirector({ codigo, avatar, resultado, reduzido }: Entrada): Cena {
+export function useSceneDirector({ codigo, avatar, resultado, reduzido, abertura }: Entrada): Cena {
   const diretor = useMemo(() => new Diretor(), [codigo]); // eslint-disable-line react-hooks/exhaustive-deps
   const visto = useRef({ poses: avatar.poses, desfilando: avatar.desfilando, resultado: null as NucleoResultado | null });
 
@@ -45,8 +50,34 @@ export function useSceneDirector({ codigo, avatar, resultado, reduzido }: Entrad
       diretor.limpar();
       return;
     }
+    // a jogada de cena espera a carta: a cena do resultado só toca quando a partida fecha, com o efeito da cor jogada
+    if (atual.status === "EM_ACAO" && codigo !== "DRESS_FIGHTER") return;
+    const jogada = atual.eventos.find((e) => e.codigo === "JOGADA_DE_CENA")?.valor as { acao?: string } | undefined;
+    const daCor = jogada?.acao ? sequenciaDaCor(codigo, `COR_${jogada.acao}`) : null;
+    if (daCor) diretor.tocar(daCor, agora(), reduzido);
     diretor.tocar(sequenciaDoResultado(codigo, atual), agora(), reduzido);
   }, [resultado, codigo, diretor, reduzido]);
 
-  return useMemo(() => ({ codigo, diretor, reduzido }), [codigo, diretor, reduzido]);
+  // abertura do salão: depois do efeito do resultado, que devolve os atores ao lugar quando o salão anterior acaba
+  useEffect(() => {
+    const seq = abertura ? sequenciaDeAbertura(codigo) : null;
+    if (seq) diretor.tocar(seq, agora(), reduzido);
+  }, [abertura, codigo, diretor, reduzido]);
+
+  // efeito de cena da cor da peça: a carta vestida na preparação dispara a sequência do efeito dela neste jogo
+  const efeito = useMemo(() => ({ cor: "#ffffff" }), [codigo]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(
+    () =>
+      assinarFx((evento) => {
+        if (evento.tipo !== "entrada" || evento.nucleo !== codigo || evento.efeitos === false) return;
+        const item = evento.entrada.efeitoDaCor;
+        const seq = item ? sequenciaDaCor(codigo, item.codigo) : null;
+        if (!seq) return;
+        efeito.cor = evento.entrada.corDaPeca ?? "#ffffff";
+        diretor.tocar(seq, agora(), reduzido || evento.reduzido);
+      }),
+    [codigo, diretor, reduzido, efeito],
+  );
+
+  return useMemo(() => ({ codigo, diretor, reduzido, efeito }), [codigo, diretor, reduzido, efeito]);
 }

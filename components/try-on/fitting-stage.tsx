@@ -22,6 +22,7 @@ import { toLook3d, type Sex, type State } from "@/lib/tryon/fitting-room-model";
 import { FittingDetailControls } from "./fitting-detail-controls";
 import { FittingRemoteControls } from "./fitting-remote-controls";
 import { useSmartWheel } from "./use-smart-wheel";
+import { missingZones } from "@/lib/avatar3d/human/default-outfit";
 
 const FittingRoomScene = dynamic(
   () => retryImport(() => import("@/components/three/fitting-room-scene")),
@@ -99,7 +100,7 @@ export function FittingStage({
         </span>
       </div>
 
-      <div className={`fitting-stage-row${avatar && camera?.detail ? " has-panel" : ""}`}>
+      <div className={`fitting-stage-row${camera?.detail ? " has-panel" : ""}`}>
       <div
         ref={stageRef}
         className="fitting-stage"
@@ -110,39 +111,41 @@ export function FittingStage({
         })}
         style={{ ["--fitting-accent" as string]: environment.featured.accent }}
       >
-        {avatar ? (
-          <FittingRoomScene
-            avatar={avatar}
-            sex={sceneSex}
-            build={mannequin.build}
-            skinTone={null}
-            body={body}
-            pieces={look}
-            environment={environment}
-            scene={scene}
-            light={light}
-            view={view}
-            onCanvas={onCanvas}
-            onCamera={setCamera}
-          />
-        ) : (
-          <div
-            className="grid h-full content-center justify-items-center gap-3 p-6 text-center"
-            role="status"
-          >
-            <p>{t("tryOn.avatar_required")}</p>
-            <Link href="/avatar" className="btn btn-sm">
-              {t("mirror.criar_avatar")}
-            </Link>
-          </div>
-        )}
+        {/* sem Avatar 3D entra o manequim de referência (o selo acima diz qual corpo é): a prova nunca fica vazia */}
+        <FittingRoomScene
+          avatar={avatar}
+          sex={sceneSex}
+          build={mannequin.build}
+          skinTone={null}
+          body={body}
+          pieces={look}
+          environment={environment}
+          scene={scene}
+          light={light}
+          view={view}
+          onCanvas={onCanvas}
+          onCamera={setCamera}
+        />
         {wheelHint && <p className="fitting-wheel-hint">{t("tryOn.roda.dica")}</p>}
-        {avatar && camera && <FittingRemoteControls api={camera} />}
+        {camera && <FittingRemoteControls api={camera} />}
       </div>
       {/* câmera de detalhe ao lado do palco (embaixo, no celular): nunca por cima do avatar */}
-      {avatar && camera?.detail && <FittingDetailControls api={camera.detail} />}
+      {camera?.detail && <FittingDetailControls api={camera.detail} />}
       </div>
 
+      {!avatar && (
+        <p className="flex flex-wrap items-center gap-2 px-3 pt-3 type-body-sm text-muted" role="note" data-reference-invite>
+          <span>{t("tryOn.referencia_convite")}</span>
+          <Link href="/avatar" className="btn btn-sm">
+            {t("tryOn.criar_avatar")}
+          </Link>
+        </p>
+      )}
+      {missingZones(look).length > 0 && (
+        <p className="px-3 pt-2 type-caption text-muted" role="note" data-base-outfit-note>
+          {t("tryOn.roupa_base_nota")}
+        </p>
+      )}
       <div className="grid gap-2 p-3">{children}</div>
     </Card>
   );

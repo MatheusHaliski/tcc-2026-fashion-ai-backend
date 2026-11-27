@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.wardrobe.ClosetFilter;
 import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.taxonomy.Taxonomy;
@@ -53,8 +54,8 @@ class WardrobeClosetCaracterizacaoTest {
         }
     }
 
-    static WardrobeService.ClosetFilter f(String color, String q, String sort, int page, int size, String hype) {
-        return new WardrobeService.ClosetFilter(null, color, null, null, null, null, q, sort, page, size, hype, null);
+    static ClosetFilter f(String color, String q, String sort, int page, int size, String hype) {
+        return new ClosetFilter(null, color, null, null, null, null, q, sort, page, size, hype, null);
     }
 
     List<UUID> ids(Views.Page<Views.PieceView> p) {

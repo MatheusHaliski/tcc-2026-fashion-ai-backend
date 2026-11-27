@@ -24,6 +24,16 @@ const base = () => ({ items: [catalog, wardrobe], products: {}, owned: {}, busyO
 const row = (slot: string) => within(screen.getByText(slot, { selector: ".piece-row-kicker" }).closest("li")!);
 const posts = (calls: { method: string; path: string }[], path: string) => calls.filter((c) => c.method === "POST" && c.path === path).length;
 
+describe("FittingItems — peça única", () => {
+  it("vestido no lugar da parte de cima aparece como “Peça única”, não “Parte de cima” (auditoria 10.1, Provador)", () => {
+    loggedAs(undefined, { "GET /api/pieces/w9/model3d": { status: "NONE" } });
+    const vestido: FittingItem = { ...wardrobe, key: "w:w9", slot: "upper_piece", wear: "FULL_BODY", name: "Vestido preto", category: "full_body_piece", subcategory: "dress", pieceId: "w9" };
+    renderApp(<FittingItems {...base()} items={[vestido]} />);
+    expect(screen.getByText("Peça única (cobre cima e baixo)", { selector: ".piece-row-kicker" })).toBeTruthy();
+    expect(screen.getByText("Vestido preto").closest("li")!.textContent).not.toContain("Parte de cima");
+  });
+});
+
 describe("FittingItems — card compacto de peça", () => {
   it("anatomia: miniatura 56, rótulo, uma linha de estado, nome como link, até 3 ações + menu ⋯ e sem legenda miúda", async () => {
     loggedAs(undefined, { "GET /api/pieces/w1/model3d": { status: "COMPLETED", modelUrl: "/media/w1.glb" } });
@@ -199,5 +209,15 @@ describe("FittingItems — card compacto de peça", () => {
     expect(onPickFromStores).toHaveBeenCalledWith("shoes_piece");
     fireEvent.click(shoes.getByRole("button", { name: "Escolher no guarda-roupa" }));
     expect(onPickFromWardrobe).toHaveBeenCalledWith("shoes_piece");
+  });
+
+  it("reauditoria: peça do guarda-roupa sem foto não pede o 3D (era um 422 por peça) e a linha diz que a prévia é só a cor", async () => {
+    const { calls } = loggedAs(undefined, { "GET /api/pieces/w1/model3d": { status: null, featureEnabled: true } });
+    renderApp(<FittingItems {...base()} items={[{ ...wardrobe, imageUrl: "/assets_pecas/02_Parte_inferior/12_saia.png", noPhoto: true }]} />);
+    const bottom = row("Parte de baixo");
+    await waitFor(() => expect(calls.some((call) => call.method === "GET" && call.path === "/api/pieces/w1/model3d")).toBe(true));
+    expect(bottom.getByText(/Prévia só com a cor do cadastro: esta peça está sem foto/)).toBeTruthy();
+    expect(posts(calls, "/api/pieces/w1/model3d")).toBe(0);
+    expect(bottom.queryByText("3D pausado")).toBeNull();
   });
 });

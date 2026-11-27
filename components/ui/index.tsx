@@ -251,7 +251,7 @@ export function Card({ children, className, pad = true }: { children: ReactNode;
 /** Trilha (breadcrumb) acima do título: o último item é a página atual; os outros voltam (botão ou link). */
 export interface TrailItem { label: string; onClick?: () => void; href?: string }
 export function PageHeader({ title, lead, actions, kicker, trail }: { title: string; lead?: string; actions?: ReactNode; kicker?: string;
-  /** navegação derivada (ex.: Meu Quarto › Espelho) */ trail?: TrailItem[] }) {
+  /** navegação derivada (ex.: Guarda-roupa › Espelho) */ trail?: TrailItem[] }) {
   const { t } = useI18n();
   // Rótulos que são só código de requisito ("RF7 · RF31") aparecem apenas no modo apresentação.
   const devRefs = useDevRefs();
@@ -493,7 +493,7 @@ function useIsClient() { return useSyncExternalStore(noSubscribe, () => true, ()
  * Diálogos e painéis vão para o fim do <body> (portal): dentro de um card, a contenção do card (container query,
  * contain, transform, backdrop-filter) virava o "viewport" do position:fixed e o diálogo ficava preso e cortado no card.
  */
-function Overlay({ children }: { children: ReactNode }) {
+export function Overlay({ children }: { children: ReactNode }) {
   return createPortal(children, document.body);
 }
 
@@ -512,7 +512,7 @@ export function Dialog({ open, onClose, title, children, footer, size, role = "d
           <h2 id={titleId} className="type-h2">{title}</h2>
           <button type="button" className="btn btn-ghost btn-icon" aria-label={t("common.fechar")} onClick={onClose}><UiIcon name="close" /></button>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="relative isolate z-0 p-4">{children}</div>
         {footer && <div className="dialog-foot">{footer}</div>}
       </div>
     </div>
@@ -647,7 +647,7 @@ export function useNotice() {
       if (!(e instanceof ApiError)) { push("error", fallback, o); return; }
       if (e.code === "IMAGEM_EM_REVISAO") { push("info", e.message, o); return; }   // foto retida pela moderação: não é erro de quem enviou
       const fields = Object.values(e.fields).filter((v): v is string => typeof v === "string" && v !== e.message);
-      const support = e.correlationId ? [tr("notice.codigo_de_suporte", { id: e.correlationId.slice(0, 8) })] : [];
+      const support = e.correlationId && e.status !== 409 && e.status !== 422 ? [tr("notice.codigo_de_suporte", { id: e.correlationId.slice(0, 8) })] : [];   // regra recusada (409/422) não é falha: sem código
       push("error", e.message, { ...o, details: [...fields, ...(o?.details ?? []), ...support] });
     },
   };

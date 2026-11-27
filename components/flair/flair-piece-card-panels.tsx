@@ -56,6 +56,7 @@ export function useFlairInfoRows(card: FlairCollectionCard): [string, ReactNode]
     [t("flairCard.row.tier"), `${tierName}${card.rare ? ` · ${t("flairCard.rare")}` : ""}`],
     [t("flairCard.row.ovr"), <b key="ovr" className="tabular">{card.ovr}</b>],
     [t("flairCard.row.position"), card.position],
+    [t("flairCard.row.hypeSnapshot"), card.hype?.HYP != null ? t("flairCard.hypeSnapshot", { value: Math.round(card.hype.HYP) }) : null],
     [t("flairCard.statsLabel"), <FlairStatList key="stats" stats={card.stats} />],
     [t("flairCard.row.ability"), card.ability?.name ? <><b>{card.ability.name}</b>{card.ability.text ? ` · ${card.ability.text}` : ""}</> : null],
     [t("flairCard.row.season"), seasonName(t, card.season)],

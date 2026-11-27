@@ -1,0 +1,246 @@
+/* ── ACERVO · esquema 2D dos móveis (components/acervo/esquema-moveis.tsx), mapa do closet e painel financeiro.
+   O esquema usa as cores do móvel (--acv-madeira, --acv-veio) vindas da configuração. */
+.acv-esquema {
+  position: relative;
+  width: 100%;
+  max-height: 62vh;
+}
+
+.acv-esq-movel {
+  position: absolute;
+  bottom: 0;
+  border: 3px solid var(--acv-madeira);
+  border-radius: 3px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--acv-madeira) 22%, var(--acv-cartao)), var(--acv-cartao));
+}
+
+.acv-esq-movel.is-vidro,
+.acv-esq-movel.is-dream {
+  border-style: double;
+  background: color-mix(in srgb, var(--acv-cartao) 70%, transparent);
+  box-shadow: 0 0 0 1px var(--acv-linha), 0 14px 24px -14px var(--acv-lima);
+}
+
+.acv-esq-movel.is-dream {
+  bottom: 6%;
+}
+
+.acv-cel {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid var(--acv-veio);
+}
+
+.acv-cel.is-gaveta {
+  background: var(--acv-madeira);
+}
+
+.acv-cel.is-cabideiro {
+  border-top: 3px solid var(--acv-suave);
+}
+
+.acv-cel.is-porta {
+  background: color-mix(in srgb, var(--acv-madeira) 80%, transparent);
+}
+
+.acv-cel.is-porta.is-vidro {
+  background: color-mix(in srgb, var(--acv-linha) 50%, transparent);
+}
+
+.acv-cel.is-parado {
+  box-shadow: inset 0 0 0 3px var(--acv-alerta);
+}
+
+.acv-cel.is-atual,
+.acv-cel.is-aceso,
+.acv-cel.is-alvo {
+  z-index: 1;
+  background: var(--acv-lima);
+  box-shadow: 0 0 0 2px var(--acv-tinta);
+}
+
+.acv-cel-alvo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.acv-cel-nome {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  right: 4px;
+  overflow: hidden;
+  color: var(--acv-tinta);
+  font-size: var(--text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.acv-cel.is-gaveta:not(.is-atual, .is-aceso, .is-alvo) .acv-cel-nome {
+  color: #FFFFFF;
+}
+
+.acv-cel-pecas {
+  position: absolute;
+  inset: 20px 4px 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-end;
+  gap: 3px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.acv-mini {
+  width: 14px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--acv-tinta);
+  border-radius: 3px;
+  background: var(--acv-cor-peca, var(--acv-suave));
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.acv-mini.is-fantasma {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  border-style: dashed;
+  background: var(--acv-lima);
+  opacity: 0.75;
+}
+
+.acv-mini-mais {
+  color: var(--acv-tinta);
+  font-size: var(--text-caption);
+}
+
+.acv-cel-marcadores {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  gap: 2px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.acv-mapa-ambiente,
+.acv-mapa-legenda {
+  margin: 0;
+  color: var(--acv-suave);
+  font-size: var(--text-caption);
+}
+
+.acv-mapa-legenda {
+  display: flex;
+  justify-content: space-around;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.acv-mapa-pontos {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.acv-ponto {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 1px solid var(--acv-suave);
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.acv-ponto[aria-pressed="true"] {
+  background: var(--acv-lima);
+}
+
+.acv-fin {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+  min-width: 0;
+}
+
+.acv-fin-total,
+.acv-fin-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.acv-fin-numero {
+  font-family: var(--font-editorial);
+  font-size: var(--text-h1);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.acv-fin-numero.is-menor {
+  margin: 0;
+  font-size: var(--text-h2);
+}
+
+.acv-fin-conta {
+  color: var(--acv-suave);
+  font-size: var(--text-body-sm);
+}
+
+.acv-fin-grupos {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: var(--space-2) 0 0;
+  border-top: 1px solid var(--acv-linha);
+  list-style: none;
+}
+
+.acv-fin-grupos li,
+.acv-fin-desejos {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-body-sm);
+}
+
+.acv-fin-desejos {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.acv-fin-valor {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.acv-fin-simulacao {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-2);
+  border: 1px dashed var(--acv-tinta);
+  border-radius: 10px;
+  font-size: var(--text-body-sm);
+}
+
+.acv-fin-simulacao p {
+  margin: 0;
+}

@@ -33,16 +33,47 @@ export interface EntradaFx {
   motivo: string | null;
   aura: boolean;
   som: SomDeEntrada;
+  /** o efeito que a cor da peça dá neste jogo (some com a carta que não tem cor com efeito) */
+  efeitoDaCor: EfeitoItem | null;
+  /** a cor da família na tela, para o pulso de luz */
+  corDaPeca: string | null;
+}
+
+/** Efeito da cor da peça no jogo: "COR_<ação>" (efeito de cena ou ação do detetive) e "ACAO_<ação>" (esporte). */
+const DE_COR = /^(COR|ACAO)_/;
+
+/** Cor na tela de cada família, na ordem do servidor (Flair3dCores.FAMILIAS): preto, verde, amarelo, azul, vermelho, branco. */
+export const COR_DA_FAMILIA = ["#3A3A44", "#2F7A45", "#E8C93C", "#2A5FA8", "#C62B28", "#F3EFE7"];
+
+/** O efeito que a cor da peça dá neste jogo, quando o servidor mandou um. */
+export function efeitoDaCor(itens: EfeitoItem[] | undefined): EfeitoItem | null {
+  return itens?.find((i) => DE_COR.test(i.codigo) && !i.motivo) ?? null;
+}
+
+/** A cor na tela do efeito da cor (o valor do item é a posição da família, de 1 a 6). */
+export function corDoEfeito(item: EfeitoItem | null): string | null {
+  const i = typeof item?.valor === "number" ? Math.round(item.valor) - 1 : -1;
+  return COR_DA_FAMILIA[i] ?? null;
 }
 
 function vale(item: EfeitoItem): boolean {
-  if (item.motivo) return false;
+  if (item.motivo || item.codigo.startsWith("COR_")) return false;
   return typeof item.valor === "number" ? item.valor > 0 : String(item.valor).trim() !== "";
 }
 
 /** O efeito principal da carta neste jogo: o primeiro que vale alguma coisa. */
 export function seloDaCarta(itens: EfeitoItem[] | undefined): EfeitoItem | null {
   return itens?.find(vale) ?? null;
+}
+
+/**
+ * Todos os efeitos da carta neste jogo, na ordem do servidor: os que valem alguma coisa e, no fim, o efeito da cor
+ * (a carta do deck mostrava só o primeiro: auditoria dos jogos, mudança 8).
+ */
+export function selosDaCarta(itens: EfeitoItem[] | undefined): EfeitoItem[] {
+  const cor = efeitoDaCor(itens);
+  const valem = (itens ?? []).filter((i) => vale(i) && i !== cor);
+  return cor ? [...valem, cor] : valem;
 }
 
 /** A carta pontua neste jogo? Sem a resposta dos efeitos, não se afirma nada (null). */
@@ -87,6 +118,8 @@ export function entradaDaCarta(card: FlairCollectionCard, vaga: string, itens: E
     motivo: marca === false ? motivoDaCarta(itens) : null,
     aura: auraHype(card),
     som: marca === false ? "abafado" : materialDoSom(card),
+    efeitoDaCor: efeitoDaCor(itens),
+    corDaPeca: corDoEfeito(efeitoDaCor(itens)),
   };
 }
 

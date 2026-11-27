@@ -2,7 +2,7 @@
 /**
  * Construtor de looks (RF5 criar / RF9 editar): modo manual e com IA (composições, orientação livre que vira arte,
  * ocasião, estilo, estação e humor; arte de fundo gerada ou recomendada), escolha de uma peça por tipo, sementes por
- * ?pieces=, dados do look com foto, revisão (remover peça, PNG), salvar/publicar com pedidos de selo e a janela de sucesso.
+ * ?pieces=, dados do look com foto, revisão, salvar/publicar com pedidos de selo e a janela de sucesso.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
@@ -13,7 +13,7 @@ import { tokenStore } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { SchemeBuilder, SlotBrand, onePerType } from "./scheme-builder";
 
-const seals = vi.hoisted(() => ({ valid: true, requests: [] as unknown[] }));
+const seals = vi.hoisted(() => ({ valid: true, requests: [] as unknown[], search: { loading: false, list: [] } }));
 vi.mock("@/components/look-seal-verification", () => ({ useLookSeals: () => seals, SealSuggestions: () => <p>sugestões de selo</p> }));
 vi.mock("@/components/scheme-card", () => ({ SchemeCard: ({ scheme }: { scheme: { title: string; items: unknown[] } }) => <p>prévia: {scheme.title} ({scheme.items.length})</p> }));
 vi.mock("@/components/hype/look-hype-preview", () => ({ LookHypePreview: () => null, PieceHypeTag: () => null }));
@@ -29,11 +29,13 @@ const BUILDER = { totalPieces: 5, eligiblePieces: 5, hiddenPieces: 2, status: "O
 const err = (status: number, message: string) => new Response(JSON.stringify({ status, code: "ERRO", message }), { status, headers: { "content-type": "application/json" } });
 const setup = (routes: Record<string, unknown> = {}) => loggedAs(undefined, { "GET /api/taxonomy": TAXONOMY, "GET /api/schemes/builder": BUILDER, "GET /api/hype/summaries": { items: {} }, ...routes });
 const next = async () => fireEvent.click((await screen.findAllByRole("button", { name: "Avançar", exact: true })).at(-1)!);
-const pick = (name: string) => fireEvent.click(screen.getByRole("button", { name: new RegExp(name) }));
+const pick = (name: string) => fireEvent.click(screen.getByRole("button", { name, exact: true }));
 /** Select do app é um Dropdown (botão + listbox): abre pelo rótulo do campo e escolhe a opção. */
 const choose = (field: string, option: string) => { fireEvent.click(screen.getByLabelText(field)); fireEvent.click(screen.getByRole("option", { name: option })); };
 const review = () => fireEvent.click(screen.getAllByRole("button", { name: "Revisar e salvar", exact: true }).find((b) => b.classList.contains("btn-primary"))!);
 const step = (name: string) => fireEvent.click(screen.getByRole("button", { name, exact: true }));
+/** a prévia do look no painel lateral (telas largas; no jsdom ele sempre está na página) */
+const aside = () => within(screen.getByRole("complementary", { name: "pré-visualização" }));
 
 beforeEach(() => { seals.valid = true; seals.requests = []; });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); tokenStore.clear(); nav.search = new URLSearchParams(); document.cookie = "fai_rt_h=; max-age=0; path=/"; });
@@ -59,6 +61,55 @@ describe("SchemeBuilder — estados da tela", () => {
 });
 
 describe("SchemeBuilder — modo manual", () => {
+  it("mostra a orientação uma vez ao entrar, sem botão de reabertura", async () => {
+    setup();
+    renderApp(<SchemeBuilder />);
+    const welcome = await screen.findByRole("dialog", { name: "Crie seu look" });
+    expect(screen.queryByRole("button", { name: "Como funciona" })).toBeNull();
+    fireEvent.click(within(welcome).getAllByRole("button", { name: "Fechar", exact: true })[0]);
+    await next();
+    expect(screen.queryByRole("dialog", { name: "Crie seu look" })).toBeNull();
+  });
+
+  it("prévia no painel lateral ao lado de todas as etapas; em tela estreita, no modal que fecha com Escape", async () => {
+    setup();
+    renderApp(<SchemeBuilder />);
+    await screen.findByText("Modo de geração");
+    fireEvent.click(within(await screen.findByRole("dialog", { name: "Crie seu look" })).getAllByRole("button", { name: "Fechar", exact: true })[0]);
+    expect(aside().getByText(/prévia:.*\(0\)/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
+    expect(within(screen.getByRole("dialog")).getByText(/prévia:.*\(0\)/)).toBeTruthy();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await next();
+    pick("Camiseta branca lisa");
+    expect(aside().getByText(/prévia:.*\(1\)/)).toBeTruthy();                 // o painel lateral acompanha a etapa
+    fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
+    expect(within(screen.getByRole("dialog")).getByText(/prévia:.*\(1\)/)).toBeTruthy();
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Fechar" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("pagina peças compactas e mantém a seleção entre páginas e categorias", async () => {
+    const pieces = Array.from({ length: 10 }, (_, index) => ({ ...PIECE, id: `page-${index}`, name: `Peça ${index}` }));
+    setup({ "GET /api/schemes/builder": { ...BUILDER, lists: { upper_piece: pieces, shoes_piece: [SHOE] } } });
+    const { container } = renderApp(<SchemeBuilder />);
+    await next();
+    expect(container.querySelector(".scheme-piece-catalog")?.children).toHaveLength(8);
+    pick("Peça 0");
+    pick("Tênis branco");
+    const pagination = screen.getByRole("navigation", { name: /paginação/i });
+    fireEvent.click(within(pagination).getByRole("button", { name: /Avançar/ }));
+    expect(screen.getByRole("button", { name: "Peça 8", exact: true }).getAttribute("aria-pressed")).toBe("false");
+    pick("Peça 8");
+    expect(screen.getByRole("button", { name: "Peça 8", exact: true }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(within(pagination).getByRole("button", { name: /Voltar/ }));
+    expect(screen.getByRole("button", { name: "Peça 0", exact: true }).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByRole("button", { name: "Tênis branco", exact: true }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(within(pagination).getByRole("button", { name: /Avançar/ }));
+    expect(screen.getByRole("button", { name: "Peça 8", exact: true }).getAttribute("aria-pressed")).toBe("true");
+  });
+
   it("uma peça por tipo: trocar avisa, desmarcar tira; peça única basta; o título nasce dos nomes", async () => {
     setup();
     renderApp(<SchemeBuilder />);
@@ -114,15 +165,14 @@ describe("SchemeBuilder — modo manual", () => {
     expect(uploads).toBe(2);
   });
 
-  it("revisão: remover peça, prévia PNG e publicar com os dados escolhidos e os pedidos de selo", async () => {
+  it("revisão: remover peça e publicar com os dados escolhidos sem pedidos de selo", async () => {
     seals.requests = [{ targetOwnerId: "m1" }, { targetOwnerId: "m2" }];
     const api = setup({
-      "POST /api/schemes/preview": () => new Response("png", { status: 200, headers: { "content-type": "image/png" } }),
       "POST /api/schemes": { scheme: { id: "s9" }, warnings: ["Uma peça está indisponível"] },
       "POST /api/schemes/s9/seal-bonds": (_u: URL, init: RequestInit) => (JSON.parse(String(init.body)).targetOwnerId === "m1" ? undefined : err(400, "Selo recusado")),
     });
-    Object.defineProperty(URL, "createObjectURL", { value: vi.fn(() => "blob:previa"), configurable: true });
-    const { container } = renderApp(<SchemeBuilder />);
+    renderApp(<SchemeBuilder />);
+    fireEvent.click(within(await screen.findByRole("dialog", { name: "Crie seu look" })).getAllByRole("button", { name: "Fechar", exact: true })[0]);
     await next(); pick("Camiseta branca lisa"); pick("Calça jeans reta"); pick("Tênis branco"); await next();
     fireEvent.change(await screen.findByLabelText(/^Título/), { target: { value: "Meu look" } });
     fireEvent.change(screen.getByLabelText("Descrição"), { target: { value: "Para o trabalho" } });
@@ -134,8 +184,8 @@ describe("SchemeBuilder — modo manual", () => {
     expect(await screen.findByText("Peças do look (3)")).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button", { name: "Remover" })[2]);
     expect(screen.getByText("Peças do look (2)")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Pré-visualizar (PNG)" }));
-    expect((await screen.findByRole("img", { name: "pré-visualização do card" })).getAttribute("src")).toBe("blob:previa");
+    expect(screen.queryByRole("button", { name: "Pré-visualizar (PNG)" })).toBeNull();
+    expect(screen.queryByRole("img", { name: "pré-visualização do card" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Publicar", exact: true }));
     expect(await screen.findByText("sucesso s9")).toBeTruthy();
     const body = api.calls.find((c) => c.method === "POST" && c.path === "/api/schemes")!.body as Record<string, unknown>;
@@ -143,32 +193,31 @@ describe("SchemeBuilder — modo manual", () => {
     expect(body).toMatchObject({ title: "Meu look", description: "Para o trabalho", season: "WINTER", mood: "ELEGANT", lookDoDia: true, publish: true, visibility: "PUBLIC", creationMode: "MANUAL", layoutAnatomy: "LISTA_VERTICAL" });
     expect((body.items as unknown[]).length).toBe(2);
     expect(screen.getByText("Uma peça está indisponível")).toBeTruthy();
-    expect(screen.getByText("Selo recusado")).toBeTruthy();
-    expect(screen.getByText("1 pedido de selo enviado para aprovação.")).toBeTruthy();
-    expect(container.querySelector(".card-preview")?.textContent).toContain("prévia: Meu look (2)");
+    expect(api.calls.some((c) => c.path.endsWith("/seal-bonds"))).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Ver prévia do card" }));
+    expect(within(screen.getByRole("dialog")).getByText("prévia: Meu look (2)")).toBeTruthy();
   });
 
-  it("erro na prévia PNG e no salvar viram aviso; selos inválidos voltam para os dados", async () => {
-    setup({ "POST /api/schemes/preview": err(500, "Prévia falhou"), "POST /api/schemes": err(400, "Título repetido") });
+  it("erro ao salvar vira aviso, sem bloquear por consentimento de selo", async () => {
+    setup({ "POST /api/schemes": err(400, "Título repetido") });
     renderApp(<SchemeBuilder />);
     await next(); pick("Camiseta branca lisa"); pick("Calça jeans reta"); await next();
     await screen.findByLabelText(/^Título/);
     review();
-    fireEvent.click(await screen.findByRole("button", { name: "Pré-visualizar (PNG)" }));
-    expect(await screen.findByText("Prévia falhou")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Salvar", exact: true }));
     expect(await screen.findByText("Título repetido")).toBeTruthy();
     seals.valid = false;
     fireEvent.click(screen.getByRole("button", { name: "Salvar", exact: true }));
-    expect(await screen.findByLabelText(/^Título/)).toBeTruthy();   // voltou à etapa de dados
+    expect(screen.getByText("Peças do look (2)")).toBeTruthy();
   });
 
   it("aparência: escolher, desfazer e limpar a arte; voltar da aparência", async () => {
     setup();
     renderApp(<SchemeBuilder />);
-    const undo = () => screen.getByRole("button", { name: "Desfazer" }) as HTMLButtonElement;
-    const clear = () => screen.getByRole("button", { name: "Limpar arte" }) as HTMLButtonElement;
+    const undo = () => aside().getByRole("button", { name: "Desfazer" }) as HTMLButtonElement;
+    const clear = () => aside().getByRole("button", { name: "Limpar arte" }) as HTMLButtonElement;
     await screen.findByText("Modo de geração");
+    fireEvent.click(within(await screen.findByRole("dialog", { name: "Crie seu look" })).getAllByRole("button", { name: "Fechar", exact: true })[0]);
     expect(clear().disabled).toBe(true);
     await next(); pick("Camiseta branca lisa"); pick("Calça jeans reta"); await next();
     await screen.findByLabelText(/^Título/);
@@ -301,13 +350,13 @@ describe("utilitários do construtor", () => {
     expect(ids(["p2", "p4"])).toEqual(["p2"]);
   });
 
-  it("SlotBrand: sem peça não mostra nada; com marca mostra o cadeado; sem marca avisa", () => {
+  it("SlotBrand: sem peça não mostra nada; com marca mostra a marca; sem marca avisa", () => {
     setup();
     const { container } = renderApp(<><SlotBrand piece={null} /><SlotBrand piece={PIECE} /><SlotBrand piece={SHOE} /></>);
     const brands = container.querySelectorAll(".slot-brand");
     expect(brands).toHaveLength(2);
     expect(brands[0].textContent).toContain("Nike");
-    expect(brands[0].querySelector(".lock")).not.toBeNull();
+    expect(brands[0].querySelector(".lock")).toBeNull();
     expect(brands[1].textContent).toBe("sem marca na peça");
   });
 });

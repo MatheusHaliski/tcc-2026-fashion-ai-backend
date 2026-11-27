@@ -7,6 +7,7 @@ import { resolveScene, type SceneContext, type SceneProduct } from "@/lib/scene3
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import type { FittingStudioProfile } from "@/lib/scene3d/fitting-studio";
 import { ACERVO, acervoLook } from "@/lib/tryon/acervo";
+import { meshyPiece } from "@/components/lab/meshy-look";
 import { setFitMode } from "@/lib/avatar3d/human/garment-fit";
 import { gridOf } from "@/lib/tryon/sizes";
 import { DEFAULT_BODY, type BodyParams } from "@/lib/avatar3d/body-spec";
@@ -50,6 +51,7 @@ export const LAB_LOOK: Look3dPiece[] = [
  */
 function labLook(ids: string): Look3dPiece[] | null {
   const list = ids.split(",").filter(Boolean).map((id): Look3dPiece | null => {
+    if (id.startsWith("meshy-")) return meshyPiece(id.slice(6));   // .glb da Meshy servido localmente (meshy-look.ts)
     if (id.startsWith("cor-")) return { id: `lab-${id}`, name: id, slot: "upper_piece", category: "upper_piece", subcategory: "t_shirt", imageUrl: `/lab/cores/camiseta-${id.slice(4)}.webp` };
     // auditoria do pipeline de vestimenta: foto local em /public/lab-audit (fora do git), ex.: audit-01-jacket, audit-07-lower-pants
     if (id.startsWith("audit-")) {

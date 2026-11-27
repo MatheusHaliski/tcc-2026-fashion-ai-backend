@@ -34,11 +34,36 @@ describe("detalhe do desafio — ações por estado", () => {
     fireEvent.click(screen.getByRole("button", { name: "Começar agora" }));
     expect(await screen.findByText("Começou!")).toBeTruthy();
     expect(posted(calls, "/api/challenges/c1/start")).toBeTruthy();
+    // reauditoria: cancelar pede confirmação antes de chamar o servidor
     fireEvent.click(await screen.findByRole("button", { name: "Cancelar" }));
+    expect(posted(calls, "/api/challenges/c1/cancel")).toBeUndefined();
+    fireEvent.click(within(await screen.findByRole("alertdialog", { name: "Cancelar este desafio?" })).getByRole("button", { name: "Cancelar desafio" }));
     expect(await screen.findByText("Não dá para cancelar")).toBeTruthy();
-    // sem participantes listados: mostra a contagem anônima
-    expect(screen.getByText("participantes anônimos")).toBeTruthy();
-    expect(screen.getByText("0")).toBeTruthy();
+    // sem contagem do servidor não aparece "0 participantes anônimos"
+    expect(screen.queryByText("participantes anônimos")).toBeNull();
+    expect(screen.getByText(/Duelo · Aguardando participantes/)).toBeTruthy();
+  });
+
+  it("reauditoria: desafio Solo como o servidor manda — progresso, sem mural, e rascunho sem o botão Cancelar", async () => {
+    const solo = { ...BASE, mode: "SOLO", state: "ATIVO", isCreator: true, daysLeft: 1, endsAt: "2026-11-20T00:00:00Z", startsAt: "2026-11-14T00:00:00Z", me: { status: "ATIVO", value: 1, target: 10, fraction: 0.1, label: "looks" } };
+    const { calls } = show(solo, { "POST /api/challenges/c1/cancel": { ...solo, state: "RASCUNHO" } });
+    expect(await screen.findByText(/Solo · Ativo/, {}, { timeout: 4000 })).toBeTruthy();
+    expect(screen.getByText("1/10 looks")).toBeTruthy();
+    expect(screen.getByText(/· 1 dia restante ·/)).toBeTruthy();
+    expect(screen.getByText("No modo Solo não há mural: recados e reações existem nos modos Equipe e Duelo.")).toBeTruthy();
+    expect(screen.queryByRole("textbox", { name: "recado" })).toBeNull();
+    expect(screen.queryByText("participantes anônimos")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Cancelar desafio" }));
+    expect(await screen.findByText("Desafio cancelado. Ele voltou para os seus rascunhos.")).toBeTruthy();
+    expect(posted(calls, "/api/challenges/c1/cancel")).toBeTruthy();
+  });
+
+  it("reauditoria: rascunho diz que não está em andamento e não oferece Cancelar", async () => {
+    show({ ...BASE, mode: "SOLO", state: "RASCUNHO", isCreator: true });
+    expect(await screen.findByText(/Solo · Rascunho \(não iniciado\)/, {}, { timeout: 4000 })).toBeTruthy();
+    expect(screen.getByText(/é um rascunho e não ocupa uma das suas vagas/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Cancelar" })).toBeNull();
   });
 
   it("pendente e convidado: aceitar com consentimento de foto e recusar", async () => {
@@ -55,12 +80,16 @@ describe("detalhe do desafio — ações por estado", () => {
   it("concluído: abre o card de resultado (url ou imageUrl), sem url não abre, erro avisa; mostra resultado e decoração", async () => {
     const open = vi.fn(); vi.stubGlobal("open", open);
     let n = 0;
-    show({ ...BASE, state: "CONCLUIDO", isCreator: true, startsAt: "2026-10-01T00:00:00Z", endsAt: "2026-10-08T00:00:00Z", decoration: "Vaso dourado", result: { winner: "ana" } },
+    show({ ...BASE, state: "CONCLUIDO", isCreator: true, startsAt: "2026-10-01T00:00:00Z", endsAt: "2026-10-08T00:00:00Z", decoration: "Vaso dourado", result: { concludedAt: "2026-10-08T00:00:00Z", winners: ["ana"], ranking: [{ user: "ana", score: 8.5 }, { user: "bia", score: 6 }] } },
       { "GET /api/challenges/c1/result-card": () => [{ url: "/media/card.png" }, { imageUrl: "/media/img.png" }, {}, fail(500, "Card indisponível")()][n++] });
     const card = await screen.findByRole("button", { name: "Card de resultado" }, { timeout: 4000 });
     expect(screen.getByText(/→/)).toBeTruthy();
-    expect(screen.getByText("Vaso dourado")).toBeTruthy();
-    expect(screen.getByText(/"winner": "ana"/)).toBeTruthy();
+    // a decoração no quarto saiu com o Meu Quarto (15/11/2026): mesmo vinda de um servidor antigo, não aparece
+    expect(screen.queryByText("Vaso dourado")).toBeNull();
+    // resultado em frases, sem o JSON cru
+    expect(screen.getByText("Venceu: @ana.")).toBeTruthy();
+    expect(within(screen.getByRole("list", { name: "Classificação" })).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["1º @ana8.5", "2º @bia6"]);
+    expect(document.body.textContent).not.toMatch(/"winners"|concludedAt/);
     expect(screen.queryByRole("button", { name: "Cancelar" })).toBeNull();
     fireEvent.click(card);
     await waitFor(() => expect(open).toHaveBeenCalledTimes(1));
@@ -138,5 +167,25 @@ describe("detalhe do desafio — ativo", () => {
     await waitFor(() => expect(input().value).toBe(""));
     fireEvent.click(await screen.findByRole("button", { name: "reagir 🔥" }));
     await waitFor(() => expect(posted(calls, "/api/challenges/c1/reactions")!.body).toEqual({ emoji: "🔥" }));
+  });
+});
+
+describe("detalhe do desafio — Solo", () => {
+  it("mostra as peças escolhidas e a entrada enviada", async () => {
+    show({ ...BASE, mode: "SOLO", state: "ATIVO", me: { value: 0, target: 10, fraction: 0, label: "looks só com as 10 peças", pieceIds: ["p1", "p2"] },
+      entries: [{ entryId: "s1", title: "Look azul", mine: true, pieces: [] }] },
+    { "GET /api/me/closet": { items: [{ id: "p1", name: "Saia verde", imageUrl: "/media/saia.png" }, { id: "p2", name: "Bota preta" }], page: 0, size: 100, total: 2, hasMore: false } });
+    const chosen = await screen.findByRole("list", { name: "As 2 peças escolhidas" }, { timeout: 4000 });
+    await waitFor(() => expect(within(chosen).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Saia verde", "Bota preta"]));
+    expect(screen.getByText("Look azul", { selector: "p" })).toBeTruthy();
+  });
+
+  it("10×10: diz o que conta no progresso ao lado do 0/10 e a entrada não ocupa a coluna inteira (auditoria 10.1, Desafios)", async () => {
+    show({ ...BASE, code: "TEN_X_TEN", mode: "SOLO", state: "ATIVO", me: { value: 0, target: 10, fraction: 0, label: "looks só com as 10 peças", pieceIds: [] },
+      entries: [{ entryId: "s1", title: "Look azul", mine: true, pieces: [] }] });
+    expect(await screen.findByText(/Contam os looks novos, criados depois de começar o desafio e só com as 10 peças/, undefined, { timeout: 4000 })).toBeTruthy();
+    const entrada = screen.getByText("Look azul", { selector: "p" }).closest("div")!.parentElement!;
+    expect(entrada.className).not.toContain("grid-cards");
+    expect(entrada.className).toContain("minmax(140px,200px)");
   });
 });

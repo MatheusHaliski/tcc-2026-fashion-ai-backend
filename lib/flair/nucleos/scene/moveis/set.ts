@@ -2,7 +2,7 @@
  * Peças de cenografia: o cenário de três paredes do set de filmagem (tapadeiras com escoras e uma janela de
  * persiana), a luminária de teto, a faixa de parede e a lua do terraço.
  */
-import { caixa, chanfrada, cilindro, esfera, movel, type Em } from "@/lib/flair/nucleos/scene/parts";
+import { caixa, chanfrada, cilindro, comGlb, esfera, movel, type Em } from "@/lib/flair/nucleos/scene/parts";
 import type { Movel, Parte } from "@/lib/flair/nucleos/scene/types";
 
 /** Cenário de três paredes: tapadeira do fundo, duas laterais abertas em leque, escoras atrás e a janela acesa. */
@@ -26,17 +26,18 @@ export function cenarioDeTresParedes(em: Em, pintura: string, madeira: string, l
     ...persiana,
     chanfrada(madeira, [0.7, 0.9, 0.05], [-1.3, 1.9, 0.04]),
     chanfrada(pintura, [largura, 0.12, 0.03], [0, 0.06, 0.05]),
-  ]);
+  ], { pintura, madeira, luz });
 }
 
 /** Luminária de teto comprida; `pos` é a face de baixo. */
 export function luminariaDeTeto(em: Em, corpo: string, luz: string, comprimento = 2.4): Movel {
-  return movel("luminariaDeTeto", em, [
+  const calha = movel("luminariaDeTeto", em, [
     chanfrada(corpo, [0.5, 0.1, comprimento], [0, 0.07, 0]),
     caixa(luz, [0.4, 0.02, comprimento - 0.1], [0, 0.01, 0]),
     cilindro(corpo, 0.012, 0.5, [0, 0.36, -comprimento / 3], undefined, 6),
     cilindro(corpo, 0.012, 0.5, [0, 0.36, comprimento / 3], undefined, 6),
-  ]);
+  ], { corpo, luz });
+  return comGlb(calha, `luminaria-de-teto-${Math.round(comprimento * 10)}`);
 }
 
 /** Faixa comprida presa na parede (a bandeira quadriculada do box); `pos` é o centro. */

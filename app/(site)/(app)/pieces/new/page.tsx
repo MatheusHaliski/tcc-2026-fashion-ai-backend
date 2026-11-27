@@ -1,4 +1,5 @@
 "use client";
+import { usePieceCreationState } from "@/lib/hooks/use-piece-creation-state";
 import { defaultGarmentUrl } from "@/lib/catalog/default-garment";
 import { CreatorWelcome } from "@/components/creator-welcome";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -8,27 +9,30 @@ import { ApiError, api } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
-import { CATEGORY_LABEL, label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
+import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
-import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, Switch, useToast } from "@/components/ui";
+import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/components/ui";
 import { useApi } from "@/lib/hooks/use-api";
-import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
+import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import type { FlairPreview } from "@/components/flair/flair-collection";
-import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
-import { PieceCard } from "@/components/piece-card";
+import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
+import { PieceCreationPreview } from "@/components/pieces/piece-creation-preview";
+import { useWideScreen } from "@/lib/hooks/use-wide-screen";
+import { PiecePhotoShortcut } from "@/components/pieces/piece-photo-shortcut";
 import { CreationSuccess } from "@/components/expanded-card";
 import { PieceArtEditor } from "@/components/piece-art-editor";
 import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
-import { CatalogPhoto } from "@/components/catalog/catalog-photo";
+import { CatalogPickSummary, LensPrefillNote, type CatalogPick } from "@/components/catalog/catalog-pick-summary";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
-import { BrandHintNote, MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
+import { MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
+import { PieceMoreStep } from "@/components/piece-more-step";
 import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
-import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
-import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
-import { ProfileVisibilityNotice } from "@/components/follow-requests";
+import { liveFieldErrors, pieceStepProblem, scrollAfterStep } from "@/lib/pieces/step-guard";
+import { readPiecePrefill, validPieceCategory, type PiecePrefillParams } from "@/lib/pieces/prefill";
+import { PieceReviewStep, savedVisibility } from "@/components/pieces/piece-review-step";
 import { resolveFraming, usePhotoFraming } from "@/lib/photo-framing";
 
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
@@ -37,8 +41,6 @@ const STEPS = PIECE_CREATION_STEPS;
 /** Forma de adicionar (RF4): pela busca catalogada com o formulário, ou fotografando (uma ou várias fotos). */
 type AddMode = "catalog" | "photos";
 const GENERIC_ASSET = "/_derived/pecas_default/generic.svg";
-/** Produto do catálogo escolhido na busca (RF47): a peça é criada por referência a ele. */
-interface CatalogPick { product: CatalogProduct; variant: CatalogVariant | null }
 
 /** Tipos oferecidos pelos chips do criador: o ?category= da URL só vale se for um deles. */
 const CATEGORY_IDS = CATEGORY_CARDS.map((c) => c.id as string);
@@ -57,7 +59,7 @@ function NewPiece() {
 
 /**
  * RF4 + RF47 · Criador de peça numa etapa só para "o que é a peça": a busca catalogada (categoria → tipo → marca → nome,
- * com a foto oficial do produto) e o formulário de dados, na mesma tela, com a prévia do card ao lado. O produto escolhido
+ * com a foto oficial do produto) e o formulário de dados, na mesma tela, com a prévia do card em modal. O produto escolhido
  * preenche o formulário e a peça é criada por referência (POST /api/pieces/from-catalog); sem produto, a peça é salva com os
  * dados do formulário e a ilustração da categoria (POST /api/pieces).
  */
@@ -71,24 +73,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const [photoPick, setPhotoPick] = useState<PhotoPick | null>(null);
   const [savedKeys, setSavedKeys] = useState<string[]>([]);
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
-  // pré-preenchimento (Lens): validado na taxonomia já na primeira renderização quando ela está em cache; senão, o efeito
-  // abaixo completa assim que ela chega
-  const [pre] = useState(() => validPiecePrefill(prefill, tax, CATEGORY_IDS));
-  const [value, setValue] = useState<PieceFormValue>(() => ({ ...EMPTY_PIECE, useDefaultImage: true, category: initial.category ?? "", subcategory: pre.subcategory || (initial.subcategory ?? ""), brandName: initial.brand ?? "",
-    name: pre.name, color: pre.color, material: pre.material, style: pre.style }));
-  // subtipo inicial da busca catalogada (ela lê o `initial` só ao montar: com o subtipo chegando depois, remonta uma vez);
-  // só vale enquanto o formulário continua nele (ao voltar de um produto do catálogo de outro tipo, a busca abre sem subtipo)
-  const [catalogSub, setCatalogSub] = useState(pre.subcategory);
-  const lateApplied = useRef(!!tax);
-  useEffect(() => {
-    if (lateApplied.current || !tax) return;
-    lateApplied.current = true;
-    const late = validPiecePrefill(prefill, tax, CATEGORY_IDS);
-    // só completa o que ainda está vazio (e o subtipo só se o tipo continua o mesmo): nada do que a pessoa já mexeu muda
-    setValue((v) => ({ ...v, subcategory: v.subcategory || (v.category === late.category ? late.subcategory : ""), color: v.color || late.color,
-      material: v.material || late.material, style: v.style.length ? v.style : late.style }));
-    if (late.subcategory) setCatalogSub(late.subcategory);
-  }, [tax]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { value, setValue, pre, catalogSub, autoSex } = usePieceCreationState(initial, prefill, tax, CATEGORY_IDS);
   // arte do card (RF11 v2 + campos do Background Studio): um só config, o mesmo que o detalhe grava depois
   const [background, setBackground] = useState<Record<string, unknown>>({ skin: "atelier" });
   // Total frame: o enquadramento escolhido aqui vai com a arte da peça (background.photoFraming) e vale em todo card dela
@@ -100,10 +85,11 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const saving = useRef(false); const [busy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveProblem, setSaveProblem] = useState<string | null>(null);
-  // Depois de salvar (pedidos de 07/10): "Compartilhar no feed" vem LIGADO — o post é o próprio card, sem descrição;
-  // desligado, nada vai ao feed e a peça fica só no perfil. "Converter para FLAIR" (desligado) cria a cópia em Minhas
-  // cartas FLAIR e não publica nada.
-  const [shareToFeed, setShareToFeed] = useState(true);
+  const [stepProblem, setStepProblem] = useState<string | null>(null);
+  // Depois de salvar: "Compartilhar no feed" vem DESLIGADO (privacidade: a peça é salva como a revisão mostra); ligado,
+  // o post é o próprio card e a peça privada passa a pública (a revisão avisa). "Converter para FLAIR" (desligado) cria
+  // a cópia em Minhas cartas FLAIR e não publica nada.
+  const [shareToFeed, setShareToFeed] = useState(false);
   const [toFlair, setToFlair] = useState(false);
   const flairDraft = JSON.stringify({ category: value.category, subcategory: value.subcategory || null, price: value.price === "" ? null : Number(value.price),
     brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandId: value.brandId || null, catalogProductId: pick?.product.id ?? null,
@@ -136,7 +122,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   function applyPhoto(p: PhotoPick) {
     setPhotoPick(p); setPick(null);
     // marca: só a confirmada pelo servidor preenche o campo; a lida com incerteza vira a nota "Usar {marca}" abaixo do campo
-    setValue((v) => ({ ...v, name: p.value.name, category: p.value.category, subcategory: p.value.subcategory, color: p.value.color || v.color, material: p.value.material || v.material,
+    setValue((v) => ({ ...v, name: p.value.name, category: p.value.category || v.category, subcategory: p.value.category ? p.value.subcategory : v.subcategory, color: p.value.color || v.color, material: p.value.material || v.material,
       sex: p.value.sex || v.sex, style: p.value.style.length ? p.value.style : v.style, occasion: p.value.occasion.length ? p.value.occasion : v.occasion,
       size: v.size || p.value.size, price: v.price || p.value.price, useDefaultImage: false,
       // cada peça da foto tem a própria marca: a confirmada pelo servidor entra; sem ela o campo volta vazio (nada herda da peça anterior)
@@ -218,30 +204,37 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     ? t("catalog.origem_catalogo", { fonte: pick.product.source?.domain && pick.product.source.domain !== "null" ? pick.product.source.domain : t("catalog.fonte_fashionai") })
     : t("catalog.origem_sem_foto");
   const idx = STEPS.indexOf(step);
-  const go = (s: Step) => { setStep(s); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const go = (s: Step, toProblem = false) => { setStep(s); scrollAfterStep(toProblem); };
+  const editValue = (v: PieceFormValue) => { setValue(v); setStepProblem(null); if (Object.keys(fieldErrors).length) setFieldErrors({}); };
+  /** Ir para "2 · Mais detalhes" exige só os campos da etapa 1; ir além exige todos. Falta algo: volta à etapa do campo. */
+  function advance(s: Step) {
+    const missingPhoto = mode === "photos" && !photoPick;
+    const errors = s === "piece" || missingPhoto ? {} : Object.fromEntries(Object.entries(validatePieceForm(value, tax)).filter(([k]) => s !== "more" || PIECE_FIELD_STEP[k] !== "more"));
+    const problem = s === "piece" ? null : missingPhoto ? t("pieces.new.escolha_peca_da_foto") : pieceStepProblem(errors);
+    setStepProblem(problem);
+    if (!problem) return go(s);
+    setFieldErrors(errors);
+    go(PIECE_FIELD_STEP[Object.keys(errors)[0]] === "more" ? "more" : "piece", true);
+  }
   const nav = (
     <div className="mt-4 flex justify-between gap-2">
       <Button onClick={() => go(STEPS[Math.max(0, idx - 1)])} disabled={idx === 0}>{t("common.back")}</Button>
-      {step === "review" ? <Button variant="primary" size="lg" onClick={submit} loading={busy} disabled={!!done}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button> : <Button variant="primary" onClick={() => go(STEPS[idx + 1])}>{t("common.next")}</Button>}
+      {step === "review" ? <Button variant="primary" size="lg" onClick={submit} loading={busy} disabled={!!done}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button> : <Button variant="primary" onClick={() => advance(STEPS[idx + 1])}>{t("common.next")}</Button>}
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
-  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(mode === "catalog" && pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const wide = useWideScreen();
+  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category, subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(mode === "catalog" && pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: step === "review" ? savedVisibility(value.visibility, shareToFeed) : value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   return (
     <>
-      <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} actions={<CreatorWelcome kind="piece" />} />
+      <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} actions={<CreatorWelcome kind="piece" onEntry />} />
       {/* RF54 — veio do "É minha" do FashionAI Lens: o que a leitura viu já está no formulário, para conferir */}
-      {pre.fromLens && (
-        <p className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-thread-soft p-3 type-body-sm" role="note" data-prefill="lens">
-          <b>{t("pieceForm.lens.veio")}</b><span>{t("pieceForm.lens.dica")}</span>
-          {pre.scan && <Link className="underline" href={`/lens/${pre.scan}`}>{t("pieceForm.lens.voltar")}</Link>}
-        </p>
-      )}
+      {pre.fromLens && <LensPrefillNote scan={pre.scan} />}
       <SegmentPicker className="mb-4" label={t("pieces.new.forma_de_adicionar")} value={mode} onChange={setMode}
         options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
-      <PieceCreationSteps value={step} onChange={go} />
-      {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
-      <div className={step === "art" ? "piece-create-layout is-art" : "piece-create-layout"}>
+      <PieceCreationSteps value={step} onChange={advance} />
+      {/* na etapa da arte o editor tem a própria prévia do mesmo card */}
+      <div className={step === "art" ? "piece-create-layout is-art" : wide ? "piece-create-layout has-aside" : "piece-create-layout"}>
         <div className="piece-create-main min-w-0">
           {/* as fotos analisadas ficam montadas entre as etapas (só escondidas): voltar para a próxima peça não perde nada */}
           {mode === "photos" && (
@@ -264,15 +257,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
               {mode === "catalog" && <section className="creator-section" aria-labelledby="piece-catalog-label">
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-catalog-label" className="type-h3">{t("catalog.buscar_no_catalogo")}</h2><Badge tone="thread">{t("catalog.recomendado")}</Badge><span className="type-caption text-muted">{t("catalog.lead_busca")}</span></div>
                 {pick ? (
-                  <div className="catalog-pick" role="status">
-                    <span className="catalog-pick-art" aria-hidden>{pick.product.catalogImage ? <CatalogPhoto framing={photoFraming} image={pick.product.catalogImage} fallbackUrl={officialImg} alt="" /> : <img src={officialImg ?? asset} alt="" />}</span>
-                    <div className="min-w-0">
-                      <p className="type-caption text-muted">{t("catalog.peca_do_catalogo")}</p>
-                      <p className="type-body font-medium truncate">{pick.product.brand?.name} · {pick.product.productName}{pick.variant?.colorName ? ` — ${pick.variant.colorName}` : ""}</p>
-                      <p className="type-caption text-faint">{officialImg ? t("catalog.foto_oficial_nota") : t("catalog.sem_foto_oficial_nota")}</p>
-                    </div>
-                    <Button size="sm" variant="ghost" onClick={clearCatalog}>{t("catalog.remover_referencia")}</Button>
-                  </div>
+                  <CatalogPickSummary pick={pick} image={officialImg} fallback={asset} framing={photoFraming} onClear={clearCatalog} />
                 ) : (
                   <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onClearCategory={() => setValue((v) => ({ ...v, category: "", subcategory: "" }))} onPick={applyCatalog} resultsLayout="matrix" brandGrid
                     onContext={(ctx) => { if (ctx.subcategory !== undefined) setValue((v) => ({ ...v, subcategory: ctx.subcategory ?? "" })); }} />
@@ -282,55 +267,28 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <h2 id="piece-form-label" className="type-h3 mb-2">{t("pieces.new.etapa_dados")}</h2>
                 {mode === "catalog" && pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 {mode === "photos" && photoPick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("pieces.new.preenchido_da_foto", { photo: photoPick.photo, piece: photoPick.piece })}</p>}
-                <PieceFields compact value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors}
-                  afterBrand={mode === "photos" && photoPick?.hint && !value.brandName ? <BrandHintNote hint={photoPick.hint} disabled={false}
-                    onUse={(brandName) => setValue((v) => ({ ...v, brandName, brandId: null, brandLogoUrl: null, brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null }))} /> : null} />
+                <PieceFields withAdditional={false} value={value} onChange={editValue} fieldErrors={liveFieldErrors(fieldErrors, value)} />
               </section>
               {/* RF4 · fotografia opcional: as duas formas de adicionar são separadas pela janela segmentada do topo; aqui só o
                   atalho para a aba Fotografar (uma ou várias fotos, com o guia de fotografia por categoria) */}
-              {mode === "catalog" && <section className="creator-section" aria-labelledby="piece-photo-label">
-                <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
-                <p className="mb-2 type-body-sm text-muted">{t("pieces.new.prefere_fotografar")}</p>
-                <Button size="sm" onClick={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("pieces.new.modo_fotos")}</Button>
-              </section>}
+              {mode === "catalog" && <PiecePhotoShortcut onPhotos={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />}
+              {stepProblem && <p role="alert" className="error-text mt-3" data-step-problem>{stepProblem}</p>}
               {nav}
             </Card>
           )}
-          {step === "more" && <Card><PieceMoreDetails value={value} onChange={setValue} error={null} />{Object.entries(fieldErrors).filter(([k]) => PIECE_FIELD_STEP[k] === "more").map(([k, m]) => <p key={k} role="alert" className="error-text">{m}</p>)}{nav}</Card>}
-          {step === "art" && <Card><PieceArtEditor value={background} onChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} />{nav}</Card>}
+          {step === "more" && <PieceMoreStep value={value} onChange={editValue} onDetails={setValue} fieldErrors={fieldErrors} hint={mode === "photos" ? photoPick?.hint : null} problem={stepProblem} nav={nav} autoSex={autoSex} />}
+          {step === "art" && <Card><PieceArtEditor background={background} onBackgroundChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} previewPlacement={wide ? "inline" : "dialog"} />{nav}</Card>}
           {step === "review" && (
             <Card>
-              <h2 className="type-h3 mb-2">{t("builder.step.review")}</h2>
-              <dl className="c-facts mb-3">
-                {([[t("common.nome"), value.name], [t("common.category"), value.category ? label(value.category) : "—"], [t("common.subcategory"), value.subcategory ? subcategoryLabel(value.subcategory) : "—"], [t("common.color"), value.color ? label(value.color) : "—"], [t("common.brand"), value.brandName || "—"], [t("common.occasion"), value.occasion.map((o) => label(o)).join(", ") || "—"], [t("common.style"), value.style.map((x) => label(x)).join(", ") || "—"], [t("common.price"), value.price || "—"], [t("common.visibility"), label(value.visibility.toLowerCase())], [t("common.forSale"), value.forSale ? t("common.yes") : t("common.no")], [t("pieceForm.selos_da_peca"), value.seals.map((s) => s.split(":")[1] ?? s).join(", ") || "—"], [t("catalog.origem"), origin]] as [string, string][]).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
-              </dl>
-              <section className="after-save" aria-labelledby="after-save-title">
-                <h3 id="after-save-title" className="type-h3">{t("pieces.new.depois_de_salvar")}</h3>
-                <Switch checked={shareToFeed} onChange={setShareToFeed} label={t("pieces.new.opt_share")} hint={t(shareToFeed ? "pieces.new.opt_share_on" : "pieces.new.opt_share_off")} />
-                {shareToFeed && value.visibility === "PRIVATE" && <p role="note" className="after-save-detail type-caption">{t("pieces.new.opt_share_private")}</p>}
-                {shareToFeed && <ProfileVisibilityNotice />}
-                <Switch checked={toFlair} onChange={setToFlair} label={t("pieces.new.opt_flair")} hint={t("pieces.new.opt_flair_hint")} />
-                {toFlair && (
-                  <div className="after-save-detail after-save-flair">
-                    {flairPreview.data ? <>
-                      <FlairGameCard size="sm" flip={false} card={{ id: "preview", originType: "PIECE", originId: "", season: flairPreview.data.season, tier: flairPreview.data.tier, ovr: flairPreview.data.ovr, rare: false,
-                        position: flairPreview.data.position, name: value.name || t("common.peca"), brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, imageUrl: officialImg ?? asset,
-                        hype: null, priceVerified: flairPreview.data.priceVerified, state: "AVAILABLE", tradeable: true, acquiredVia: "GENERATED" }} />
-                      <p className="type-body-sm">{t("pieces.new.opt_flair_preview", { tier: t(`flairCard.tier.${flairPreview.data.tier}`), ovr: flairPreview.data.ovr })}
-                        {flairPreview.data.cappedByUnverifiedPrice && <><br /><span className="type-caption">{t("flairCard.unverified")}</span></>}</p>
-                    </> : <p className="type-caption text-muted">{flairPreview.error ? t("pieces.new.opt_flair_sem_previa") : t("common.loading")}</p>}
-                  </div>
-                )}
-              </section>
-              {saveProblem && <p role="alert" className="error-text mb-2">{saveProblem}</p>}
-              {nav}
+              <PieceReviewStep value={value} origin={origin} image={officialImg ?? asset} shareToFeed={shareToFeed} onShareToFeed={setShareToFeed}
+                toFlair={toFlair} onToFlair={setToFlair} flairPreview={flairPreview}>
+                {saveProblem && <p role="alert" className="error-text mb-2">{saveProblem}</p>}
+                {nav}
+              </PieceReviewStep>
             </Card>
           )}
         </div>
-        {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview piece-create-preview"><p className="label">{step === "review" && shareToFeed ? t("interactions.post_preview") : t("scheme.card")}</p>
-          <PhotoFramingToggle className="mb-3" value={photoFraming} onChange={(next) => setBackground((current) => ({ ...current, photoFraming: next }))} />
-          <PieceCard piece={previewPiece} href="#"
-          extra={step === "review" && shareToFeed && user ? <span className="caption">{t("feed.shared_by", { username: user.username })}</span> : undefined} /></aside>}
+        {step !== "art" && <PieceCreationPreview aside={wide} piece={previewPiece} framing={photoFraming} onFramingChange={(next) => setBackground((current) => ({ ...current, photoFraming: next }))} showPostPreview={step === "review" && shareToFeed} sharedBy={step === "review" && shareToFeed ? user?.username : undefined} />}
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>
       {done && <CreationSuccess kind="piece" id={done} onDone={() => { window.location.href = user ? `/u/${user.username}` : "/closet"; }} />}

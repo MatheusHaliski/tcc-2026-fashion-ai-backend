@@ -68,13 +68,13 @@ describe("SubmitDialog", () => {
     fireEvent.click(screen.getByRole("radio", { name: /No-Buy · \+40/ }));
     fireEvent.click(preview);
     expect(await screen.findByText("82", { selector: "b" })).toBeTruthy();
-    expect(screen.getByText("leitura: dark")).toBeTruthy();
+    expect(screen.getByText("leitura: Dark")).toBeTruthy();   // a chave vira nome, não o código cru
     expect(screen.getByText("Estilos")).toBeTruthy();
     expect(screen.getByText("Forte associação ao tema pelos estilos Ousado.")).toBeTruthy();
     expect(screen.getByText("62")).toBeTruthy();   // hype arredondado
     expect(screen.getByText("Desafio NO_BUY")).toBeTruthy();
     expect(screen.getByText("+60 FAI Points")).toBeTruthy();
-    expect(screen.getByText("Só peças que você já tinha: Wardrobe Bonus.")).toBeTruthy();
+    expect(screen.getByText("Só peças que você já tinha: Bônus de guarda-roupa.")).toBeTruthy();
     expect(screen.getByText("2 peças redescobertas")).toBeTruthy();
     expect(calls.find((c) => c.path.endsWith("/preview"))!.body).toEqual({ schemeId: "l1", challengeId: "c1" });
     fireEvent.click(screen.getByRole("button", { name: "Enviar" }));

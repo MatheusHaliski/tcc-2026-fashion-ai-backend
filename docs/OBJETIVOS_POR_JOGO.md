@@ -83,7 +83,7 @@ Regras de todos os objetivos:
 
 | Objetivo | O que vence | Você faz | Pontos ou regra |
 | --- | --- | --- | --- |
-| Tênis dos Sonhos (49) | Cumprir as 4 regras do pedido "tênis para correr à noite" | Pinta cabedal, sola e cadarço | Sola clara; ao menos 1 zona refletiva; cadarço em cor de contraste; no máximo 3 cores |
+| Tênis dos Sonhos (49) | Cumprir as 4 regras do pedido "tênis para correr à noite" | Pinta cabedal, sola e cadarço | Sola clara; ao menos 1 zona refletiva; cadarço em cor de contraste; no máximo 2 cores (com 3 zonas, "até 3 cores" saía cumprida em qualquer pintura) |
 | Jaqueta da Banda (50) | Cumprir as 4 regras de uma banda de rock inventada | Pinta a jaqueta por zonas | Corpo preto fosco; 1 cor de destaque nas mangas; ferragens metálicas; no máximo 2 cores |
 | Uniforme de E-sports (51) | Cumprir as 4 regras de um time inventado | Pinta a camisa por zonas | As 2 cores do time cobrem quase toda a camisa; gola na cor de destaque; mangas iguais; acabamento fosco |
 | Bolsa Assinatura (52) | Cumprir as 4 regras do pedido "casamento à noite" | Pinta a bolsa por zonas | Bolsa pequena; acabamento brilhante; alça metálica; cor da paleta do pedido |

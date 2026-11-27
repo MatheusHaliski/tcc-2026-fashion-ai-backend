@@ -76,8 +76,12 @@ describe("quadro por porte", () => {
     expect(within(canto("tr")).getByTestId("nucleo-score")).toBeTruthy();
     expect(within(canto("tr")).getByRole("img", { name: "Pontos e estrelas saem depois da entrega" })).toBeTruthy();
     expect(within(canto("bl")).getByTestId("nucleo-cast").textContent).toContain("A modelo da casa");
-    expect(within(canto("br")).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Girar à esquerda", "Girar à direita", "Aproximar", "Afastar", "Posar"]);
+    expect(within(canto("br")).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Câmera: Automática. Trocar de câmera", "Girar à esquerda", "Girar à direita"]);
+    // o começo da partida: a premissa do jogo sobre a régua e o deck, até a pessoa seguir
     const baixo = quadro().querySelector(".n3d-lower")!;
+    expect(Array.from(baixo.children).map((el) => el.className)).toEqual(["n3d-cutscene n3d-premissa", "n3d-ruler", "n3d-band is-prep"]);
+    expect(screen.getByTestId("nucleo-premissa").textContent).toContain("Noite de desfile");
+    fireEvent.click(screen.getByRole("button", { name: "Montar o look" }));
     expect(Array.from(baixo.children).map((el) => el.className)).toEqual(["n3d-ruler", "n3d-band is-prep"]);
   });
 
@@ -156,11 +160,11 @@ describe("estados da carta", () => {
     expect(fileira()[1].querySelector(".n3d-card-inuse")).toBeNull();
   });
 
-  it("tecla I amplia a carta em foco com nome, marca, nível, nota, Hype e efeitos; Esc fecha", async () => {
+  it("tecla Z amplia a carta em foco com nome, marca, nível, nota, Hype e efeitos; Esc fecha", async () => {
     montar();
     await waitFor(() => expect(fileira()[0].querySelector(".n3d-card-fx")).toBeTruthy());
     expect(screen.queryByTestId("nucleo-card-zoom")).toBeNull();
-    fireEvent.keyDown(window, { key: "i" });
+    fireEvent.keyDown(window, { key: "z" });
     const ampliada = screen.getByRole("dialog", { name: "Camisa verde" });
     expect(ampliada.textContent).toContain("Atelier Lumi");
     expect(ampliada.textContent).toContain("Ouro");
@@ -171,7 +175,7 @@ describe("estados da carta", () => {
     expect(fileira()[0].getAttribute("aria-pressed")).toBe("false");
     fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByTestId("nucleo-card-zoom")).toBeNull();
-    fireEvent.keyDown(window, { key: "I" });
+    fireEvent.keyDown(window, { key: "Z" });
     fireEvent.click(screen.getByRole("button", { name: "Fechar a carta" }));
     expect(screen.queryByTestId("nucleo-card-zoom")).toBeNull();
   });
@@ -192,7 +196,7 @@ describe("estados da carta", () => {
 
   it("área de toque: todo botão do quadro usa uma classe com o mínimo de 44 px", () => {
     montar();
-    const classes = ["n3d-icon-btn", "n3d-res", "n3d-slot", "n3d-tab", "n3d-submit", "n3d-objective-line", "btn"];
+    const classes = ["n3d-icon-btn", "n3d-camera-btn", "n3d-res", "n3d-slot", "n3d-tab", "n3d-submit", "n3d-objective-line", "btn"];
     const fora = Array.from(quadro().querySelectorAll("button, a")).filter((el) => !classes.some((c) => el.classList.contains(c)));
     expect(fora.map((el) => el.outerHTML)).toEqual([]);
   });

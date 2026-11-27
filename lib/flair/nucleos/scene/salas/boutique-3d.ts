@@ -8,6 +8,7 @@ import { arara, balcao, cabineProvador, espelho, vitrine } from "@/lib/flair/nuc
 import { tapeteRedondo } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { luminariaDeTeto } from "@/lib/flair/nucleos/scene/moveis/set";
 import type { Sala } from "@/lib/flair/nucleos/scene/types";
+import { prateleiraDeBolsas } from "@/lib/flair/nucleos/scene/moveis/cenarios";
 
 export const SALA_BOUTIQUE_3D: Sala = {
   codigo: "BOUTIQUE_3D",
@@ -29,7 +30,12 @@ export const SALA_BOUTIQUE_3D: Sala = {
   },
   zonas: {
     avatar: { x: [-1.2, 1.2], z: [-1.2, 1.2], marca: "tapete", altura: 0.02 },
-    personagens: [{ x: [1.2, 2.4], z: [-1.6, 0] }],
+    personagens: [
+      { x: [1.2, 2.4], z: [-1.6, 0] },
+      // a vendedora ao lado do balcão e a outra cliente diante da arara
+      { x: [2.2, 2.8], z: [-2.8, -1.8] },
+      { x: [-2.9, -2.1], z: [-2, -0.6] },
+    ],
     decoracao: [
       { x: [-4, 4], z: [-5, -2.4] },
       { x: [-4, -1.5], z: [-5, 2] },
@@ -46,8 +52,14 @@ export const SALA_BOUTIQUE_3D: Sala = {
     poltrona({ pos: [3.0, 0, 0.9], giro: -70 }, "estofado", "metalPreto"),
     luminariaDeTeto({ pos: [-1.6, 2.9, -1.5] }, "metalPreto", "luz", 2.2),
     luminariaDeTeto({ pos: [1.6, 2.9, -1.5] }, "metalPreto", "luz", 2.2),
+    // a segunda revisão dos cenários: a prateleira de bolsas e sapatos
+    prateleiraDeBolsas({ pos: [3.75, 0, -3.6], giro: -90 }, "madeira", "estofado", "metalPreto", 1.4),
   ],
-  figurantes: [],
+  // a loja tem mais gente além da cliente do pedido: a vendedora acompanha a prova e outra cliente olha a arara
+  figurantes: [
+    { papel: "VENDEDORA", tipo: "manequim", pos: [2.5, 0, -2.3], cor: "#2A2A30", giro: -47 },
+    { papel: "CLIENTE_DA_LOJA", tipo: "manequim", pos: [-2.5, 0, -1.3], cor: "#B9556F", giro: -90 },
+  ],
   luzes: {
     principal: { cor: "#FFF3DE", intensidade: 1.8, pos: [2.6, 3.8, 3.4] },
     recorte: { cor: "#FFE2C2", intensidade: 1.4, pos: [-2.5, 3.1, -3.5] },

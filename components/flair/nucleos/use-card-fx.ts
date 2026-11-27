@@ -46,7 +46,7 @@ export function useCardFx(opts: CardFxOptions): EntradaNaTela | null {
     const entrada = entradaDaCarta(card, ultima.vaga, o.itens(card.id));
     contador.current += 1;
     setAtual({ entrada, card, chave: contador.current });
-    emitirFx({ tipo: "entrada", nucleo: o.nucleo, entrada, reduzido: o.reduzido });
+    emitirFx({ tipo: "entrada", nucleo: o.nucleo, entrada, reduzido: o.reduzido, efeitos: o.prefs.efeitos });
     tocarFx(entrada.som, o.prefs.som);
   }, [opts.vestidas]);
 

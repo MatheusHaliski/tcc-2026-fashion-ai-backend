@@ -265,7 +265,7 @@ public final class LocalAdvisors {
             changes.add(new FieldChange("visibility", current.get("visibility"), "PRIVATE", Msg.t("localAdvisors.voce_pediu_para_restringir_a")));
         }
         if (text.matches(".*(titulo|nome|renomear|title).*") || changes.stream().anyMatch(c -> c.field().equals("style"))) {
-            String proposed = LocalSchemeComposer.title(sty, occ, season);
+            String proposed = LocalLookWording.title(sty, occ, season);
             if (!proposed.equals(current.get("title"))) {
                 changes.add(new FieldChange("title", current.get("title"), proposed, Msg.t("localAdvisors.titulo_coerente_com_o_novo")));
             }

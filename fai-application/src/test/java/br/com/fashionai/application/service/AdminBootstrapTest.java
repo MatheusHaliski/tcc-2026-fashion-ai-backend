@@ -1,5 +1,13 @@
 package br.com.fashionai.application.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
+import br.com.fashionai.application.admin.AdminBootstrap;
 import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.identity.PasswordHasherPort;
 import br.com.fashionai.domain.model.User;
@@ -7,12 +15,6 @@ import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.repository.UserPreferencesRepository;
 import br.com.fashionai.domain.repository.UserRepository;
-import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

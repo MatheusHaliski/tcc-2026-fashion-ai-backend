@@ -92,11 +92,13 @@ describe("adicionar peça (RF4/RF47) — etapa única Peça, foto opcional", () 
     const pick = (id: string, option: string) => { fireEvent.click(document.getElementById(id)!); fireEvent.click(screen.getByRole("option", { name: option })); };
     pick("subcategory", "Camiseta");
     pick("color", "Branco");
+    const next = () => fireEvent.click(screen.getAllByRole("button").find((b) => /Próximo|Avançar|Next/i.test(b.textContent ?? ""))!);
+    next();                                                 // "2 · Mais detalhes": material, preço, ocasião e estilo
     pick("material", "Algodão");
     fireEvent.change(document.getElementById("price") as HTMLInputElement, { target: { value: "50" } });
     fireEvent.click(screen.getByRole("button", { name: "Casual" }));
     fireEvent.click(screen.getByRole("button", { name: "Básico" }));
-    for (let i = 0; i < 3; i++) fireEvent.click(screen.getAllByRole("button").find((b) => /Próximo|Avançar|Next/i.test(b.textContent ?? ""))!);
+    for (let i = 0; i < 2; i++) next();
     expect(await screen.findByText(/Ilustração da categoria/)).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button").find((b) => /Salvar/.test(b.textContent ?? ""))!);
     await act(async () => { await new Promise((r) => setTimeout(r, 50)); });

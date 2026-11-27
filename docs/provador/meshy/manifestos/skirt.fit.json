@@ -1,0 +1,47 @@
+{
+  "versao": 1,
+  "categoria": "lower_piece",
+  "subcategoria": "skirt",
+  "slot": "lower",
+  "attach": "wrap",
+  "osso": "Hips",
+  "giroY": 0,
+  "centro": [
+    -0.00047,
+    0.00936,
+    -0.00005
+  ],
+  "caixa": [
+    1.9023,
+    1.8484,
+    1.206
+  ],
+  "escalaNominal": 0,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 0,
+    "bracosAbertos": false,
+    "aberto": false,
+    "sola": 0,
+    "aceite": {
+      "espinho": 0.32
+    }
+  },
+  "tamanhos": {
+    "grade": "numeric",
+    "porPasso": {
+      "largura": 0.022,
+      "comprimento": 0.012,
+      "manga": 0
+    },
+    "limite": [
+      -3,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "veste"
+}

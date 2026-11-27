@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useLayoutEffect, useState } from "react";
 import * as THREE from "three";
-import { api, mediaUrl } from "@/lib/api/client";
-import { loadTexture, type Look3dPiece } from "@/components/three/common";
+import type { Look3dPiece } from "@/components/three/common";
 import type { HumanParts } from "@/components/three/human-avatar";
 import { applyIdle, setArmOut } from "@/lib/avatar3d/human/pose";
 import {
@@ -10,11 +9,10 @@ import {
   type GarmentKind, type GarmentSpec,
   HAS_COLLAR_BAND, type PhotoInfo,
 } from "@/lib/avatar3d/human/garments";
-import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/avatar3d/human/default-outfit";
-import { isBundledGarmentPhoto } from "@/lib/tryon/reference-photo";
+import { DEFAULT_PIECES, ZONES, withDefaultOutfit, withRegisteredColor, zonesCovered } from "@/lib/avatar3d/human/default-outfit";
 import { specFor } from "@/lib/avatar3d/human/garment-fit";
 import { publishPhotoStates, useGarmentPhotoRetries } from "@/lib/tryon/garment-status";
-import { garmentPhotoKey, garmentPhotoUrls, isIsolatedCatalogPhoto } from "@/lib/tryon/garment-photo-source";
+import { garmentPhotoKey } from "@/lib/tryon/garment-photo-source";
 import type { PhotoState } from "@/lib/tryon/garment-asset";
 import { buildGarment, softBodyOf } from "@/lib/avatar3d/human/dress";
 import { SOLE_LIFT } from "@/lib/avatar3d/human/shoes";
@@ -24,7 +22,10 @@ import { finishMeshes, shoePartMeshes } from "@/components/three/outfit-finishes
 import { lazyFrame, wearGlb } from "@/components/three/outfit-glb";
 import { useGarmentGlbs } from "@/components/three/use-garment-glbs";
 import type { GlbSource } from "@/lib/avatar3d/human/glb-garment";
-import { prepareGarmentPhoto, prepareOutfitPhoto, type OutfitPhotoPart } from "@/lib/avatar3d/human/garment-photo";
+import { outfitPhoto, photoPart, photoUrls, type Img } from "@/components/three/outfit-photo";
+import { accessoryItems, bodyLift, wearMeshy, type MeshyItem } from "@/components/three/outfit-meshy";
+
+export { photoPart, photoUrls };
 
 /*
  * Provador / vitrines 3D — as peças do look vestidas no corpo humano do avatar (lib/avatar3d/human/garments.ts): cada
@@ -44,17 +45,10 @@ export function outfitOf(pieces: Look3dPiece[]): OutfitItem[] {
   // molde da subcategoria ajustado pela classe de caimento e comprimentos declarados (lib/avatar3d/human/garment-fit.ts);
   // com casaco/jaqueta por cima, a camiseta padrão por baixo vira só a base escura
   const hasOuter = pieces.some((p) => ["jacket", "coat"].includes(kindOf(p) ?? ""));
-  for (const raw of withDefaultOutfit(pieces)) { const p = hasOuter && raw.id === DEFAULT_PIECES.upper.id ? { ...raw, imageUrl: null, colorHex: "#202020" } : raw; const spec = specFor(p); if (spec) items.push({ key: p.id, spec, piece: p }); }
+  for (const raw of withDefaultOutfit(pieces.map(withRegisteredColor))) { const p = hasOuter && raw.id === DEFAULT_PIECES.upper.id ? { ...raw, imageUrl: null, colorHex: "#202020" } : raw; const spec = specFor(p); if (spec) items.push({ key: p.id, spec, piece: p }); }
   return items.sort((a, b) => a.spec.layer - b.spec.layer);
 }
 
-/** Garment category remains explicit throughout person/other-outfit isolation. */
-export function photoPart(kind: GarmentKind): OutfitPhotoPart {
-  if (kind === "dress" || kind === "jumpsuit" || kind === "romper") return "full";
-  if (kind === "shoes" || kind === "boots") return "feet";
-  if (["pants", "shorts", "bermuda", "culottes", "leggings", "skirt"].includes(kind)) return "lower";
-  return "upper";
-}
 
 /**
  * Decote pela foto: a profundidade (fração da altura da peça) vira h pela altura do molde (gola − barra); só aprofunda —
@@ -67,10 +61,9 @@ export function withPhotoNeckline(sp: GarmentSpec, info: PhotoInfo | null): Garm
   return { ...sp, vneck: Math.min(0.4, depth) };
 }
 
-type Img = CanvasImageSource & { width: number; height: number };
 
 /** Veste o corpo com as peças (síncrono). Devolve as malhas criadas e se as três zonas ficaram cobertas. */
-function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Img | null>, glbs: Record<string, GlbSource | null> = {}): { meshes: THREE.SkinnedMesh[]; dressed: boolean } {
+function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Img | null>, glbs: Record<string, GlbSource | null> = {}, extras: MeshyItem[] = []): { meshes: THREE.SkinnedMesh[]; dressed: boolean } {
   const { human, pose, composed, asset } = parts;
   setArmOut(human, pose, armOutFor(items.map((i) => i.spec)));   // saia rodada e camadas grossas: braço mais aberto
   applyIdle(human, pose, 0, 0);                                    // pose de exibição, sem o movimento, para projetar a foto
@@ -142,6 +135,8 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   };
 
   for (const it of items) wear(it);
+  // acessórios com .glb da Meshy (chapéu, óculos, bolsa…): presos ao osso, por cima da roupa; sem .glb não aparecem
+  for (const it of extras) wearMeshy(parts, it, glbs[it.key], frame, meshes);
   // molde que falhou: a zona recebe a peça padrão (sem foto ainda — a cor do tecido cobre)
   for (const z of ZONES) {
     if (zonesCovered(built).has(z)) continue;
@@ -149,44 +144,9 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     if (spec) wear({ key: p.id, spec, piece: p });
   }
   // sola do calçado: o corpo sobe o que a sola desce
-  human.root.position.y = built.some((k) => k === "shoes" || k === "boots") ? SOLE_LIFT - floorY : 0;
+  human.root.position.y = bodyLift(meshes, built.some((k) => k === "shoes" || k === "boots"), SOLE_LIFT, floorY);
   const covered = zonesCovered(built);
   return { meshes, dressed: ZONES.every((z) => covered.has(z)) };
-}
-
-export const photoUrls = garmentPhotoUrls;
-// Reusing an item in another look must not rerun segmentation. Failures remain retryable.
-const isolatedPhotos = new Map<string, { pending: Promise<Img | null>; createdAt: number }>();
-function outfitPhoto(i: OutfitItem, retry = 0): Promise<Img | null> {
-  const key = garmentPhotoKey(photoPart(i.spec.kind), i.piece, retry);
-  const cached = isolatedPhotos.get(key);
-  if (cached && Date.now() - cached.createdAt < 5 * 60_000) return cached.pending;
-  const pending = (async () => {
-    for (const url of photoUrls(i.piece, retry)) {
-      let temporary: string | null = null;
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20_000);
-      try {
-        const resolved = url.startsWith("/api/catalog/products/") ? (temporary = await api.blobUrl(url, { signal: controller.signal })) : mediaUrl(url);
-        if (controller.signal.aborted) continue;
-        const texture = resolved ? await loadTexture(resolved) : null;
-        const image = texture?.image as Img | undefined;
-        if (!image || controller.signal.aborted) continue;
-        // Trust only the exact bundled source that actually loaded; remote images still require isolation.
-        // This exact authenticated endpoint refuses raw photographs when isolation
-        // is unavailable. Do not segment its verified pixels a second time.
-        const isolated = isIsolatedCatalogPhoto(i.piece, url, retry);
-        const prepared = isBundledGarmentPhoto(url) || isolated ? prepareGarmentPhoto(image) : await prepareOutfitPhoto(image, photoPart(i.spec.kind));
-        if (prepared) return prepared;
-      } catch { /* Try the processed alternative, without projecting an unchecked image. */ }
-      finally { clearTimeout(timeout); if (temporary) URL.revokeObjectURL(temporary); }
-    }
-    return null;
-  })();
-  isolatedPhotos.set(key, { pending, createdAt: Date.now() });
-  if (isolatedPhotos.size > 64) isolatedPhotos.delete(isolatedPhotos.keys().next().value!);
-  void pending.then(image => { if (!image && isolatedPhotos.get(key)?.pending === pending) isolatedPhotos.delete(key); });
-  return pending;
 }
 
 export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look3dPiece[] }) {
@@ -200,7 +160,8 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
   const outfitKey = JSON.stringify(items.map(i => i.piece));
   const images = Object.fromEntries(items.map(i => [i.key, loaded[keyOf(i)] ?? null]));
   const settled = items.every(i => Object.hasOwn(loaded, keyOf(i)));
-  const glbs = useGarmentGlbs(items); const glbKey = items.filter((i) => glbs[i.key]).map((i) => i.key).join();
+  const extras = accessoryItems(pieces), withGlb = [...items, ...extras];
+  const glbs = useGarmentGlbs(withGlb); const glbKey = withGlb.filter((i) => glbs[i.key]).map((i) => i.key).join();
   useEffect(() => {
     const photos: Record<string, PhotoState> = {};
     for (const i of items) {
@@ -226,7 +187,7 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
   // antes da pintura: o corpo nunca é desenhado sem as peças (sem foto ainda, na cor do tecido)
   useLayoutEffect(() => {
     const root = parts.human.root;
-    const { meshes, dressed } = dress(parts, items, images, glbs);
+    const { meshes, dressed } = dress(parts, items, images, glbs, extras);
     root.userData.dressed = dressed; root.visible = dressed;
     root.userData.outfitReady = settled;
     root.userData.garments = meshes.map((m) => m.name);

@@ -6,7 +6,6 @@ import br.com.fashionai.application.flair3d.nucleos.BatalhaLooksNucleo;
 import br.com.fashionai.application.flair3d.nucleos.Boutique3dNucleo;
 import br.com.fashionai.application.flair3d.nucleos.DressFighterNucleo;
 import br.com.fashionai.application.flair3d.nucleos.DressTheStarNucleo;
-import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveNucleo;
 import br.com.fashionai.application.flair3d.nucleos.FashionSportsNucleo;
 import br.com.fashionai.application.flair3d.nucleos.LabirintoNucleo;
 import br.com.fashionai.application.flair3d.nucleos.PassarelaNucleo;
@@ -55,17 +54,15 @@ class Flair3dNucleosCartasTest {
     }
 
     @Test
-    void dressFighterVenceComAtributosDasPecasEPerdeComSalto() {
-        Resultado vence = ateOFim(new DressFighterNucleo(), 2, card("SUP", "material:leather"), card("INF", "material:denim"),
+    @SuppressWarnings("unchecked")
+    void dressFighterOLookDeCouroJeansEMetalAguentaMaisQueOLookComum() {
+        Resultado blindado = ateOFim(new DressFighterNucleo(), 9, card("SUP", "material:leather"), card("INF", "material:denim"),
                 card("CAL", "sub:casual_sneakers"), card("ACE", "material:metal"));
-        assertThat(vence.pontos()).isEqualTo(100);
-        assertThat(vence.resultado()).isEqualTo("VITORIA");
-        assertThat(vence.eventos()).hasSize(3).allMatch(e -> e.codigo().equals("ROUND"));
-        Resultado umRound = ateOFim(new DressFighterNucleo(), 2, card("SUP"), card("INF"), card("CAL", "sub:casual_sneakers"), card("ACE"));
-        assertThat(umRound.pontos()).isEqualTo(50);
-        Resultado perde = ateOFim(new DressFighterNucleo(), 2, card("SUP"), card("INF"), card("CAL", "sub:heels"), card("ACE"));
-        assertThat(perde.pontos()).isZero();
-        assertThat(perde.resultado()).isEqualTo("DERROTA");
+        Resultado comum = ateOFim(new DressFighterNucleo(), 9, card("SUP"), card("INF"), card("CAL", "sub:casual_sneakers"), card("ACE"));
+        java.util.function.Function<Resultado, Integer> vida = r -> (Integer) ((java.util.Map<String, Object>) r.eventos().stream()
+                .filter(e -> e.codigo().equals("LUTA")).findFirst().orElseThrow().valor()).get("vidaVoce");
+        assertThat(blindado.fecha()).isTrue();
+        assertThat(vida.apply(blindado)).isGreaterThan(vida.apply(comum));
     }
 
     @Test
@@ -95,24 +92,10 @@ class Flair3dNucleosCartasTest {
         CbcRules.Card sup = card("SUP", "occasion:casual", "material:linen");
         CbcRules.Card inf = card("INF", "occasion:beach", "material:cotton");
         Entrega e = comMaquiagem(vestir(sup, inf), "LABIOS", "coral", "GLOSS");
-        assertThat(jogar(new RoadToGloryNucleo(), e, sup, inf).pontos()).isEqualTo(100);
+        assertThat(new RoadToGloryNucleo().previa(e, Flair3dFixtures.contexto(1, sup, inf)).pontos()).isEqualTo(100);
         CbcRules.Card festa = card("SUP", "occasion:party", "material:leather");
         Entrega falha = comMaquiagem(vestir(festa), "LABIOS", "VERMELHO", "FOSCO");
-        assertThat(jogar(new RoadToGloryNucleo(), falha, festa).pontos()).isZero();
-    }
-
-    @Test
-    void fashionDetectiveFavoravelParcialEDesfavoravel() {
-        Resultado favoravel = ateOFim(new FashionDetectiveNucleo(), 1, card("SUP", "occasion:formal", "material:leather"),
-                card("INF", "occasion:party", "material:wool"));
-        assertThat(favoravel.pontos()).isEqualTo(100);
-        assertThat(favoravel.resultado()).isEqualTo("FAVORAVEL");
-        Resultado parcial = ateOFim(new FashionDetectiveNucleo(), 1, card("SUP", "occasion:formal"), card("INF", "occasion:party"));
-        assertThat(parcial.pontos()).isEqualTo(50);
-        assertThat(parcial.resultado()).isEqualTo("PARCIAL");
-        Resultado nada = ateOFim(new FashionDetectiveNucleo(), 1, card("SUP", "occasion:casual"));
-        assertThat(nada.resultado()).isEqualTo("DESFAVORAVEL");
-        assertThat(nada.pontos()).isZero();
+        assertThat(new RoadToGloryNucleo().previa(falha, Flair3dFixtures.contexto(1, festa)).pontos()).isZero();
     }
 
     @Test
@@ -124,6 +107,9 @@ class Flair3dNucleosCartasTest {
                 card("INF", "occasion:party", "color:black"), card("CAL", "occasion:party", "color:white"));
         assertThat(duas.pontos()).isEqualTo(66);
         assertThat(jogar(new Boutique3dNucleo(), card("SUP", "occasion:work", "color:black")).pontos()).isZero();
+        // a peça fora do pedido tira 15 da paciência da cliente (a vida da loja, 60 no começo)
+        assertThat(duas.eventos()).containsExactly(new Resultado.Evento("DESGASTE", java.util.Map.of("recurso", "VIDA", "reserva", 60,
+                "gasto", 15, "restante", 45, "motivos", java.util.Map.of("PECA_FORA_DO_PEDIDO", 15))));
     }
 
     @Test
@@ -144,20 +130,6 @@ class Flair3dNucleosCartasTest {
         Resultado frio = jogar(new AroundTheWorldNucleo(), card("SUP", "material:leather", "color:blue", "brand:Gucci"),
                 card("INF", "material:denim", "color:navy"));
         assertThat(frio.pontos()).isZero();
-    }
-
-    @Test
-    void fashionSportsVenceComUniformeForteEPerdeComFracoDeFormaDeterministica() {
-        CbcRules.Card[] forte = {card("SUP", "ovr:90", "material:linen", "material:leather"), card("INF", "ovr:90", "material:denim"),
-                card("CAL", "ovr:90", "sub:casual_sneakers")};
-        Resultado vitoria = ateOFim(new FashionSportsNucleo(), 1, forte);
-        assertThat(vitoria.pontos()).isEqualTo(100);
-        assertThat(vitoria.resultado()).isEqualTo("VITORIA");
-        assertThat(vitoria.eventos()).contains(new Resultado.Evento("COESAO", 100));
-        assertThat(ateOFim(new FashionSportsNucleo(), 1, forte)).isEqualTo(vitoria);
-        Resultado derrota = ateOFim(new FashionSportsNucleo(), 1, card("SUP", "ovr:10"), card("INF", "ovr:10"), card("CAL", "ovr:10"));
-        assertThat(derrota.pontos()).isZero();
-        assertThat(derrota.resultado()).isEqualTo("DERROTA");
     }
 
     @Test

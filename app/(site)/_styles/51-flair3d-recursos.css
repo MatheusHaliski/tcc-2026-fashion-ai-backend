@@ -1,0 +1,155 @@
+/* ── FLAIR 3D · regra peça-recurso na tela (components/flair/nucleos/recursos) ───────────────────────────────────
+   A roda de atributos do look fica na faixa lateral esquerda, entre os cantos do HUD, sem passar na frente da zona
+   da roupa. O texto da troca ("+20 Agilidade") sobe da faixa e some em 1,4 s; o brilho nasce atrás do avatar na cor
+   do atributo que subiu. Com "reduzir movimento" ou efeitos desligados (.is-calm), nada pisca nem se move. */
+.n3d-roda {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+}
+
+.n3d-roda-quadro {
+  position: absolute;
+  top: 34%;
+  left: 8px;
+  width: min(112px, calc(var(--n3d-zona-x, 30%) - 16px));
+  margin: 0;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgb(10 10 14 / 55%);
+  color: #fff;
+}
+
+.n3d-roda-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.n3d-roda-grade {
+  fill: none;
+  stroke: rgb(255 255 255 / 18%);
+  stroke-width: 0.6;
+}
+
+.n3d-roda-neutro {
+  fill: none;
+  stroke: rgb(255 255 255 / 45%);
+  stroke-dasharray: 2 2;
+  stroke-width: 0.6;
+}
+
+.n3d-roda-look {
+  fill: rgb(224 176 77 / 35%);
+  stroke: #e0b04d;
+  stroke-width: 1.4;
+  transition: all 400ms ease-out;
+}
+
+.n3d-roda-eixo {
+  fill: rgb(255 255 255 / 80%);
+  font-weight: 700;
+}
+
+.n3d-roda-eixo.is-up {
+  fill: var(--n3d-roda-cor, #fff);
+  animation: n3d-roda-pisca 700ms ease-out 1;
+}
+
+.n3d-roda-eixo.is-down {
+  fill: rgb(255 255 255 / 40%);
+}
+
+.n3d-roda-titulo {
+  font-size: var(--text-caption);
+  line-height: 1.2;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.n3d-roda-mudanca {
+  position: absolute;
+  top: calc(34% - 28px);
+  left: 8px;
+  max-width: calc(var(--n3d-zona-x, 30%) - 12px);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgb(10 10 14 / 70%);
+  color: #fff;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  animation: n3d-roda-sobe 1400ms ease-out both;
+}
+
+.n3d-roda-acoes {
+  position: absolute;
+  top: calc(34% + 136px);
+  left: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: calc(var(--n3d-zona-x, 30%) - 12px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.n3d-roda-acao {
+  padding: 1px 8px;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 999px;
+  background: rgb(10 10 14 / 60%);
+  color: #fff;
+  font-size: var(--text-caption);
+}
+
+.n3d-roda-acao.is-new {
+  border-color: #e0b04d;
+  animation: n3d-roda-pisca 700ms ease-out 1;
+}
+
+/* brilho atrás do avatar, na cor do atributo que subiu (atrás da zona da roupa, nunca na frente) */
+.n3d-roda-brilho {
+  position: absolute;
+  z-index: -1;
+  inset: 10% 20% 0;
+  background: radial-gradient(ellipse at 50% 60%, var(--n3d-roda-cor, #fff), transparent 65%);
+  opacity: 0;
+  animation: n3d-roda-brilha 900ms ease-out both;
+}
+
+.n3d-roda.is-calm .n3d-roda-look {
+  transition: none;
+}
+
+.n3d-roda.is-calm .n3d-roda-eixo.is-up,
+.n3d-roda.is-calm .n3d-roda-acao.is-new,
+.n3d-roda.is-calm .n3d-roda-mudanca {
+  animation: none;
+}
+
+.n3d-roda.is-calm .n3d-roda-brilho {
+  opacity: 0.25;
+  animation: none;
+}
+
+@keyframes n3d-roda-sobe {
+  0% { opacity: 0; transform: translateY(8px); }
+  15% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+
+@keyframes n3d-roda-pisca {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+@keyframes n3d-roda-brilha {
+  0% { opacity: 0; }
+  30% { opacity: 0.55; }
+  100% { opacity: 0; }
+}

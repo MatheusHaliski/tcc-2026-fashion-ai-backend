@@ -1,5 +1,39 @@
 # Exercício 18 — Peça Assinatura do perfil e histórico
 
+> **Implementado em 26/11/2026.** Recurso novo, separado da assinatura de marca e do estilo de celebridade.
+> - **Schema (V123, idempotente):** `uq_wardrobe_owner_piece` UNIQUE `(user_id, id)` em `wardrobe_items`;
+>   `user_signature_pieces` (uma linha por pessoa, `version`, FK composta `fk_usp_owned_piece` → o banco só aceita peça
+>   do mesmo dono); `signature_piece_history` (uma linha por mudança, `fk_sph_piece` SET NULL). Além do SQL didático,
+>   as tabelas têm os índices `idx_usp_owner_piece`, `idx_usp_piece`, `idx_sph_user_changed` e `idx_sph_piece`. SQL
+>   manual do Railway em [`sql/railway/18-peca-assinatura.sql`](sql/railway/18-peca-assinatura.sql).
+> - **API:** `GET`/`PUT`/`DELETE /api/me/signature-piece` (corpo `{"pieceId", "expectedVersion"}`; a pessoa vem sempre
+>   da sessão), `GET /api/me/signature-piece/history?page=&size=` (só o dono) e
+>   `GET /api/profiles/{idOuUsername}/signature-piece` (pública, com as regras de visibilidade). O controller só delega
+>   ao `SignaturePieceService`.
+> - **Regras:** só peça própria (a de outra pessoa responde 404, sem revelar que existe) e não arquivada (400
+>   `ASSINATURA_PECA_INDISPONIVEL`); repetir a mesma escolha não grava nada; cada mudança efetiva vira uma linha do
+>   histórico (a remoção fica com peça e retrato nulos); revisão diferente da lida ou dois inserts simultâneos voltam
+>   409 `ASSINATURA_ALTERADA`. Excluir a peça remove a escolha na mesma transação (evento `PieceDeleted`).
+> - **Visibilidade:** quem visita só recebe a peça se o perfil e a peça forem visíveis para essa pessoa, com moderação
+>   aprovada e sem bloqueio; caso contrário a resposta é `{"signaturePiece": null}`, igual à de quem não escolheu. A
+>   leitura leva só nome, categoria, subcategoria, cor, marca e a imagem do card — nunca notas, preço, local de compra
+>   ou a foto original. O retrato do histórico não guarda imagem.
+> - **Tela:** bloco "Peça Assinatura" no perfil (`signature-piece-block.tsx`), com "Escolher/Trocar" e "Histórico"
+>   para o dono; o mesmo seletor (`signature-piece-picker.tsx`) na edição do perfil, com o aviso de quem vai ver a peça
+>   antes de gravar; histórico paginado com estado vazio e erro com "tentar de novo" (`signature-piece-history.tsx`).
+> - **Diferenças em relação ao texto abaixo:** o histórico é só do dono (não há leitura pública dele) e abre a partir
+>   do perfil, porque o app não tem um "álbum" de peças; a peça que é arquivada sem evento (transferência por
+>   passaporte, encerramento da conta) continua gravada na escolha, mas deixa de aparecer para todos e pode ser trocada
+>   normalmente — o app nunca apaga a linha de `wardrobe_items`, então o RESTRICT da FK composta não é acionado.
+> - **Não feito:** lock pessimista por usuário (a concorrência é tratada pela revisão `@Version` + `expectedVersion` e
+>   pela chave primária); a API não foi subida contra um MySQL real nesta entrega (o schema foi provado com o Flyway
+>   e os testes do serviço usam repositório em memória).
+> - Testes: `SignaturePieceServiceTest` (própria, alheia, arquivada, privada, só seguidores, bloqueio, moderação,
+>   troca idempotente, concorrência, exclusão da peça, histórico com `pieceId` nulo, sem dados privados),
+>   `signature-piece.test.tsx`, `MigrationIdempotencyTest`. No MySQL 8 local: peça de terceiro → 1452 pela FK composta
+>   (INSERT e UPDATE); segunda escolha da mesma pessoa → 1062; apagar ou mudar o dono da peça em uso → 1451; apagar a
+>   peça do histórico → `piece_id` nulo com o retrato mantido; apagar a conta leva escolha e histórico em cascata.
+
 **Situação na revisão `9f5512a77`:** Proposta: não foi localizada relação de Peça Assinatura pessoal; não confundir com assinatura de marca/estilo.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

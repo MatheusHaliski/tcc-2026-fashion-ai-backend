@@ -13,6 +13,8 @@ public record Resultado(int pontos, int estrelas, String resultado, List<RegraRe
     public static final String ABERTA = "ABERTA";
     public static final String EM_ACAO = "EM_ACAO";
     public static final String ENTREGUE = "ENTREGUE";
+    /** Código do resultado de uma prévia com nota (a nota de agora, ainda sem desfecho); "PREVIA" é a prévia só de atributos. */
+    public static final String EM_PREPARO = "EM_PREPARO";
 
     public Resultado {
         pontos = Math.max(0, Math.min(100, pontos));

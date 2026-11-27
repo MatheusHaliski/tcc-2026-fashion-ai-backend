@@ -4,7 +4,8 @@ import { NUCLEO_CODIGOS } from "@/lib/flair/nucleos/types";
 import { estourosDoOrcamento, figurantesDaCena, orcamentoDaSala, partesDaSala } from "@/lib/flair/nucleos/scene/budget";
 import { partesDoFigurante } from "@/lib/flair/nucleos/scene/figurantes";
 import { partesNoLugar, triangulosDaParte } from "@/lib/flair/nucleos/scene/parts";
-import { SALAS } from "@/lib/flair/nucleos/scene/registry";
+import { SALAS, VARIANTES, salaDe } from "@/lib/flair/nucleos/scene/registry";
+import { avataresDaSala } from "@/lib/flair/nucleos/avatares";
 import { cascaDaSala } from "@/lib/flair/nucleos/scene/shell";
 import { ORCAMENTO } from "@/lib/flair/nucleos/scene/types";
 import { cobreRoupa, limiteDaCamera, movelNaZona, partesQueCobremRoupa, personagemNaZona, zonaContem, zonaInvadeRoupa } from "@/lib/flair/nucleos/scene/zones";
@@ -132,6 +133,47 @@ describe("salas", () => {
   });
 });
 
+describe("salas que mudam dentro do jogo", () => {
+  const variantes = Object.entries(VARIANTES).flatMap(([codigo, salas]) => Object.entries(salas ?? {}).map(([v, sala]) => ({ codigo: codigo as (typeof NUCLEO_CODIGOS)[number], v, sala })));
+
+  it("salaDe devolve a sala da variante e, sem variante conhecida, a do registro", () => {
+    expect(salaDe("FASHION_DETECTIVE", "CAMARIM")).not.toBe(SALAS.FASHION_DETECTIVE);
+    expect(salaDe("FASHION_DETECTIVE", "ENTRADA_DA_GALA")).toBe(SALAS.FASHION_DETECTIVE);
+    expect(salaDe("FASHION_DETECTIVE", "PORAO")).toBe(SALAS.FASHION_DETECTIVE);
+    expect(salaDe("PASSARELA", "CAMARIM")).toBe(SALAS.PASSARELA);
+    expect(salaDe("FASHION_SPORTS", "FUTEBOL")).toBe(SALAS.FASHION_SPORTS);
+    expect(salaDe("FASHION_SPORTS", "VOLEI").moveis.some((m) => m.tipo === "trave")).toBe(false);
+    expect(salaDe("FASHION_SPORTS", null).moveis.filter((m) => m.tipo === "trave")).toHaveLength(2);
+    expect(Object.keys(VARIANTES.FASHION_SPORTS ?? {})).toEqual(["FUTEBOL", "BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"]);
+    expect(Object.keys(VARIANTES.FASHION_DETECTIVE ?? {})).toEqual(["ENTRADA_DA_GALA", "SALAO_PRINCIPAL", "CAMARIM", "CLUBE_UNDERGROUND", "ATELIE", "ARQUIVO"]);
+  });
+
+  it("cada variante segue as regras das salas: zonas, materiais com uso e textura, orçamento e objetos com id", () => {
+    expect(variantes.length).toBeGreaterThan(5);
+    for (const { codigo, v, sala } of variantes) {
+      const nome = `${codigo}/${v}`;
+      const base = SALAS[codigo];
+      expect(sala.codigo).toBe(codigo);
+      expect(sala.zonas).toEqual(base.zonas);
+      expect(sala.moveis.some((m) => m.zona === "avatar"), nome).toBe(true);
+      for (const m of sala.moveis) {
+        expect(movelNaZona(sala, m), `${nome}: ${m.tipo} em ${m.pos}`).toBe(true);
+        if (m.zona !== "avatar") expect(partesQueCobremRoupa(m, limiteDaCamera(sala)), `${nome}: ${m.tipo}`).toBe(0);
+      }
+      const usados = new Set(partesDaSala(sala).map((p) => p.mat));
+      for (const id of usados) expect(sala.materiais[id], `${nome}: material ${id}`).toBeDefined();
+      for (const id of Object.keys(sala.materiais)) expect(usados.has(id), `${nome}: ${id} sem uso`).toBe(true);
+      expect(sala.materiais[sala.casca.piso].px).toBeGreaterThan(0);
+      expect(estourosDoOrcamento(orcamentoDaSala(sala, NUCLEOS[codigo].personagens)), nome).toEqual([]);
+      // os objetos que a animação procura pelo id continuam na sala
+      expect(sala.placar).toEqual(base.placar);
+      const ids = (s: typeof sala) => s.moveis.map((m) => m.id).filter(Boolean).sort();
+      expect(ids(sala), nome).toEqual(ids(base));
+      expect(sala.luzes.proprias.map((l) => l.id)).toEqual(base.luzes.proprias.map((l) => l.id));
+    }
+  });
+});
+
 describe("orçamento", () => {
   it("conta de triângulos por forma", () => {
     const partes = partesNoLugar(SALAS.PASSARELA.moveis[0]);
@@ -154,3 +196,46 @@ describe("orçamento", () => {
     expect(estourosDoOrcamento({ triangulos: 60001, materiais: 13, texturaPx: 2048, luzesProprias: 4 })).toEqual(["triangulos", "materiais", "textura", "luzes"]);
   });
 });
+
+/** Reauditoria: as seis quadras só mudavam a cor do piso e todas diziam "4 colegas · 5 adversários". */
+describe("Fashion Sports — cada quadra é reconhecível e tem o elenco da modalidade", () => {
+  const tipos = (v: string) => new Set(salaDe("FASHION_SPORTS", v).moveis.map((m) => m.tipo));
+  const elenco = (v: string, papel: string) => figurantesDaCena(salaDe("FASHION_SPORTS", v), NUCLEOS.FASHION_SPORTS.personagens).filter((p) => p.papel === papel).length;
+
+  it("rede no vôlei e no tênis, tabela no basquete, raias na corrida e pista no skate; só o futebol tem traves e círculo central", () => {
+    expect(tipos("VOLEI").has("redeDeJogo")).toBe(true);
+    expect(tipos("TENIS").has("redeDeJogo")).toBe(true);
+    expect(tipos("BASQUETE").has("tabelaDeBasquete")).toBe(true);
+    expect(tipos("CORRIDA").has("raias")).toBe(true);
+    expect(tipos("SKATE").has("pistaDeSkate")).toBe(true);
+    for (const v of ["BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"]) {
+      expect(tipos(v).has("linhasDaQuadra"), v).toBe(false);
+      expect(tipos(v).has("trave"), v).toBe(false);
+    }
+    // a rede fica entre o time da pessoa e o adversário, não na linha de fundo
+    const rede = salaDe("FASHION_SPORTS", "VOLEI").moveis.find((m) => m.tipo === "redeDeJogo")!;
+    expect(rede.partes.every((p) => p.pos[2] > -4 && p.pos[2] < -3)).toBe(true);
+  });
+
+  it("corrida e skate não têm bola: o objeto das sequências é o bastão e o skate", () => {
+    const objeto = (v: string) => salaDe("FASHION_SPORTS", v).moveis.find((m) => m.id === "bola")!.tipo;
+    expect(objeto("CORRIDA")).toBe("bastao");
+    expect(objeto("SKATE")).toBe("skate");
+    expect(objeto("TENIS")).toBe("bola");
+  });
+
+  it("colegas e adversários de acordo com a modalidade, na cena e no painel", () => {
+    expect([elenco("FUTEBOL", "COLEGA"), elenco("FUTEBOL", "ADVERSARIO")]).toEqual([4, 5]);
+    expect([elenco("BASQUETE", "COLEGA"), elenco("BASQUETE", "ADVERSARIO")]).toEqual([2, 3]);
+    expect([elenco("VOLEI", "COLEGA"), elenco("VOLEI", "ADVERSARIO")]).toEqual([1, 2]);
+    expect([elenco("TENIS", "COLEGA"), elenco("TENIS", "ADVERSARIO")]).toEqual([0, 1]);
+    const base = { solo: [{ tipo: "MODELO_CASA" as const, papel: "PROTAGONISTA", quantidade: 1 }, { tipo: "FIGURANTE" as const, papel: "COLEGA", quantidade: 4 }], online: null };
+    const painel = avataresDaSala(base, salaDe("FASHION_SPORTS", "TENIS").personagens);
+    expect(painel.solo.filter((a) => a.tipo === "FIGURANTE")).toEqual([{ tipo: "FIGURANTE", papel: "ADVERSARIO", quantidade: 1 }]);
+    expect(avataresDaSala(base, salaDe("FASHION_SPORTS", "FUTEBOL").personagens)).toBe(base);
+    for (const v of ["BASQUETE", "VOLEI", "TENIS", "CORRIDA", "SKATE"]) {
+      for (const p of salaDe("FASHION_SPORTS", v).personagens ?? []) expect(personagemNaZona(salaDe("FASHION_SPORTS", v), p), `${v}: ${p.papel} em ${p.pos}`).toBe(true);
+    }
+  });
+});
+

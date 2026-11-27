@@ -10,7 +10,7 @@
  */
 export type GuideDemo =
   | "games" | "cbc" | "calendar" | "challenge" | "feed" | "schemeSeal" | "seal" | "copilot" | "autopilot" | "explore" | "hype"
-  | "brandVisitor" | "brandOperator" | "points" | "shop" | "pointsEarn" | "highlights" | "flairMatch" | "flairCards" | "flairDecks" | "flairShops" | "flairWallet" | "flairQuests";
+  | "brandVisitor" | "brandOperator" | "points" | "pointsEarn" | "highlights" | "flairMatch" | "flairCards" | "flairDecks" | "flairShops" | "flairWallet" | "flairQuests";
 
 export interface GuideDef {
   key: string;
@@ -30,8 +30,11 @@ export const GUIDES: Record<string, GuideDef> = Object.fromEntries([
   g("games.hub", "games", 3, false, 2),
   g("flair.matches", "flairMatch", 3, true, 1, "matches"),
   g("flair.cbc", "cbc", 3, true, 1, "cbc"),
-  // FLAIR 3D reaproveita o exemplo animado do CBC (R4): mesma mecânica de vaga + carta
-  g("flair.games", "cbc", 3, true, 1, "games"),
+  // FLAIR 3D (os 15 núcleos) reaproveita o exemplo animado do CBC (R4): mesma mecânica de vaga + carta
+  g("flair.games", "cbc", 3, true, 2, "games"),
+  // elencos e MAKE UP também montam com vaga + carta: o mesmo exemplo animado do CBC
+  g("flair.squads", "cbc", 3, true, 1, "squads"),
+  g("flair.makeup", "cbc", 3, true, 1, "makeup"),
   g("moments.calendar", "calendar", 3, true, 1, "moments"),
   g("challenges.progress", "challenge", 3, true, 1, "challenges"),
   g("flair.cards", "flairCards", 3, true, 1, "cards"),
@@ -52,7 +55,6 @@ export const GUIDES: Record<string, GuideDef> = Object.fromEntries([
   g("points.balance", "points", 2, false, 1, "balance"),
   g("points.earn", "pointsEarn", 3, true, 1, "earn"),
   g("points.statement", "points", 2, false, 1, "statement"),
-  g("shop.room", "shop", 3, true, 1, "store"),
   g("highlights.score", "highlights", 3),
 ].map((d) => [d.key, d]));
 

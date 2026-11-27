@@ -1,0 +1,47 @@
+{
+  "versao": 1,
+  "categoria": "upper_piece",
+  "subcategoria": "parka",
+  "slot": "upper",
+  "attach": "wrap",
+  "osso": "Spine2",
+  "giroY": 0,
+  "centro": [
+    0.00018,
+    -0.00051,
+    0.00266
+  ],
+  "caixa": [
+    1.0881,
+    1.9023,
+    0.6877
+  ],
+  "escalaNominal": 0,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 0,
+    "bracosAbertos": false,
+    "aberto": false,
+    "sola": 0,
+    "aceite": {
+      "espinho": 0.3
+    }
+  },
+  "tamanhos": {
+    "grade": "letter",
+    "porPasso": {
+      "largura": 0.03,
+      "comprimento": 0.015,
+      "manga": 0.015
+    },
+    "limite": [
+      -3,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "veste"
+}

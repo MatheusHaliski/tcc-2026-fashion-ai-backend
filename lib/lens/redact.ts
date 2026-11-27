@@ -107,6 +107,8 @@ export async function redactFaces(file: Blob, opts: { finder?: FaceFinder; timeo
     canvas.width = Math.max(1, Math.round(decoded.width * scale)); canvas.height = Math.max(1, Math.round(decoded.height * scale));
     const ctx = canvas.getContext("2d");
     if (!ctx) return { blob: file, faces: -1, width: decoded.width, height: decoded.height };
+    // PNG de fundo transparente: o JPEG não tem transparência e gravaria o fundo PRETO; a foto vai sobre branco
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(decoded.img, 0, 0, canvas.width, canvas.height);
 
     let faces = 0;

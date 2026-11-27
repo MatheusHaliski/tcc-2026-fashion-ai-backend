@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { boardInicial, boardReducer } from "@/lib/flair/nucleos/board";
 import { abasVisiveis, abaVisivelAtual, itensDaFileira, vagasDaRegua } from "@/lib/flair/nucleos/deck-row";
@@ -124,5 +126,40 @@ describe("fileira do deck e régua de vagas", () => {
     expect(s).toMatchObject({ vaga: null, aba: 3 });
     expect(boardReducer(boardInicial(), { type: "vaga", id: "XXX", tabs: TABS }).vaga).toBeNull();
     expect(boardReducer({ ...boardInicial(), vaga: "SUP" }, { type: "aba", index: 3 }).vaga).toBeNull();
+  });
+});
+
+/**
+ * Regressão da auditoria (1440×900 com o menu lateral): o quadro deitado ficava baixo, a faixa de baixo não comportava
+ * a régua de vagas + uma carta inteira e as cartas do deck apareciam cortadas. A folha de estilo garante essa altura.
+ */
+describe("quadro — a faixa do deck comporta uma carta inteira", () => {
+  const css = readFileSync(join(process.cwd(), "app/(site)/_styles/33-flair3d-quadro.css"), "utf8");
+  const regra = (seletor: string) => css.slice(css.indexOf(`${seletor} {`), css.indexOf("}", css.indexOf(`${seletor} {`)));
+
+  it("a linha de baixo do quadro tem altura mínima de miniatura + carta + abas", () => {
+    expect(regra(".n3d-frame")).toMatch(/minmax\(calc\(var\(--n3d-thumb-h, 62px\) \+ var\(--n3d-card-h, 106px\) \+ 90px\), var\(--n3d-deck, 44fr\)\)/);
+  });
+
+  it("o quadro deitado usa a altura livre da tela quando a largura é pouca", () => {
+    expect(regra(".n3d-frame.is-paisagem")).toMatch(/min-height: min\(calc\(100dvh - var\(--header-h\) - 64px\), 780px\)/);
+  });
+
+  it("em todo porte a altura mínima cabe na parte de baixo de uma tela comum", () => {
+    for (const [porte, alturaDoQuadro] of [["celular", 844 - 56], ["tablet", 1024 - 56], ["computador", 780]] as const) {
+      const t = TAMANHOS[porte];
+      const minimo = t.miniatura[1] + t.carta[1] + 90;
+      expect(minimo).toBeLessThanOrEqual(alturaDoQuadro * 0.5);
+    }
+  });
+});
+
+/** Regressão da auditoria: "Atributos na horizontal" cortava os números no card estreito (só POP, ENG, TEN e meio VEL). */
+describe("painel de Hype — atributos na horizontal", () => {
+  it("quebra em mais linhas em vez de esconder atributos atrás de rolagem", () => {
+    const css = readFileSync(join(process.cwd(), "app/(site)/_styles/24-metamorfoses-layouts.css"), "utf8");
+    const linha = css.split("\n").find((l) => l.startsWith('.fashion-hype-matrix[data-layout="static-horizontal"] {'))!;
+    expect(linha).toContain("flex-wrap: wrap");
+    expect(linha).not.toContain("overflow-x");
   });
 });

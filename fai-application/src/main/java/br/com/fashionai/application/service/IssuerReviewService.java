@@ -1,37 +1,5 @@
 package br.com.fashionai.application.service;
 
-import br.com.fashionai.application.audit.Audit;
-import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.common.InputSanitizer;
-import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.application.events.SideEffectRunner;
-import br.com.fashionai.application.ports.EmailSenderPort;
-import br.com.fashionai.application.ports.MediaStoragePort;
-import br.com.fashionai.application.security.CurrentUser;
-import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.service.IssuerVerificationPolicy.Auto;
-import br.com.fashionai.application.service.IssuerVerificationPolicy.Check;
-import br.com.fashionai.application.view.Views;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.CelebrityProfile;
-import br.com.fashionai.domain.model.ReviewableProfile;
-import br.com.fashionai.domain.model.User;
-import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.ApprovalStatus;
-import br.com.fashionai.domain.model.enums.NotificationType;
-import br.com.fashionai.domain.model.enums.ProfileType;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.CelebrityProfileRepository;
-import br.com.fashionai.domain.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +16,31 @@ import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.events.SideEffectRunner;
+import br.com.fashionai.application.ports.EmailSenderPort;
+import br.com.fashionai.application.ports.MediaStoragePort;
+import br.com.fashionai.application.seal.IssuerVerificationPolicy;
+import br.com.fashionai.application.seal.IssuerVerificationPolicy.Auto;
+import br.com.fashionai.application.seal.IssuerVerificationPolicy.Check;
+import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.security.Guard;
+import br.com.fashionai.application.view.Views;
+import br.com.fashionai.domain.model.*;
+import br.com.fashionai.domain.model.enums.*;
+import br.com.fashionai.domain.repository.BrandProfileRepository;
+import br.com.fashionai.domain.repository.CelebrityProfileRepository;
+import br.com.fashionai.domain.repository.UserRepository;
 
 /**
  * RF1.CA07–CA09 — verificação de perfis de marca e de celebridade, conforme a política

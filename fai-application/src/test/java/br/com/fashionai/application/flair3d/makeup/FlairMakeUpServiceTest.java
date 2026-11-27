@@ -60,6 +60,14 @@ class FlairMakeUpServiceTest {
     }
 
     @Test
+    void aEntregaExplicaPorQueAsRegrasDeRoupaNaoPontuaram() {
+        Entrega soMaquiagem = new Entrega(null, null, Map.of("LABIOS", new Entrega.Maquiagem("NUDE", "FOSCO")), null);
+        Map<String, Object> r = service.entregar(ana, "ENTREVISTA", soMaquiagem);
+        assertThat(r).containsEntry("pontos", 50).containsEntry("estrelas", 0);
+        assertThat(r.get("eventos")).isEqualTo(java.util.List.of(new br.com.fashionai.application.flair3d.Resultado.Evento("SEM_PECAS", 0)));
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void repetirOBriefSoPagaAsEstrelasNovasESobeDeNivel() {
         Map<String, Object> uma = service.entregar(ana, "ENSAIO_VERAO", verao("FOSCO"));

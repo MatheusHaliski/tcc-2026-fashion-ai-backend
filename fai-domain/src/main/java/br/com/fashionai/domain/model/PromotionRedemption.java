@@ -56,4 +56,24 @@ public class PromotionRedemption extends AuditableEntity {
 
     @Column(name = "expires_at")
     private Instant expiresAt;
+
+    /** Exercício 14 — canal da oferta copiado na emissão: mudar o canal da oferta depois não muda este cupom. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "canal_cupom_id")
+    private CanalCupom canalCupom;
+
+    /** Código do canal na hora da emissão (LOJA_FISICA, ECOMMERCE, AMBOS); nulo = cupom antigo, canal não informado. */
+    @Column(name = "canal_codigo_snapshot", length = 40)
+    private String canalCodigoSnapshot;
+
+    /** Exercício 15 — compra mínima e moeda contratadas na hora da emissão; nulos = sem registro (cupom antigo ou oferta sem mínimo). */
+    @Column(name = "min_purchase_snapshot", precision = 10, scale = 2)
+    private java.math.BigDecimal minPurchaseSnapshot;
+
+    @Column(name = "min_purchase_currency_snapshot", length = 3, columnDefinition = "char(3)")
+    private String minPurchaseCurrencySnapshot;
+
+    /** Circuito Aura (fase 1) — faixa de Hype do card na hora da emissão; nulo = oferta sem exigência (ou cupom antigo). */
+    @Column(name = "hype_level_snapshot", length = 20)
+    private String hypeLevelSnapshot;
 }

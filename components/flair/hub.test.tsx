@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FlairHub } from "@/components/flair/hub";
 import { DemoPlayer } from "@/components/flair/demo-player";
-import { availability, HUB_MODES, hubMode, LEGACY_TABS, readSelected, writeSelected } from "@/lib/flair/hub";
+import { availability, HUB_MODES, hubMode, LEGACY_TABS, readSelected, writeSelected, type HubModeId } from "@/lib/flair/hub";
 import { GUIDES } from "@/lib/guides/registry";
 import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor } from "@/test-utils/render";
 
@@ -22,7 +22,7 @@ const ROUTES = {
   "GET /api/flair/decks": [{ schemeId: "s1", title: "Look", cards: [], combos: [], brandMultiplier: 1, seasonBonus: 0, power: 100, avg: {}, abilities: [] }],
   "GET /api/me/flair/cards": { season: "SPRING", counts: { ESPECIAL: 0, OURO: 1, PRATA: 0, BRONZE: 0 }, total: 1, cards: [] },
   "GET /api/flair/challenges": { now: [{ id: "c1" }], upcoming: [], always: [{ id: "c2" }, { id: "c3" }], memories: [], groups: [], season: "SPRING" },
-  "GET /api/flair/games/summary": { total: 5, playable: 3, byTier: { ESTREIA: 3, STUDIO: 1, LOFT: 1 } },
+  "GET /api/flair/3d/nucleos": { nucleos: Array.from({ length: 15 }, (_, i) => ({ codigo: `N${i + 1}`, numero: i + 1, recursos: [], acoes: [] })) },
   "GET /api/moments": { now: "2026-10-10T12:00:00Z", active: [], upcoming: [], featured: null },
   "GET /api/me/challenges": { active: [{ id: "ch1" }], invites: [] },
   "GET /api/flair/combinations": [],
@@ -45,12 +45,14 @@ describe("modelo da central", () => {
       expect(m.demo.seconds).toBeGreaterThanOrEqual(10); expect(m.demo.seconds).toBeLessThanOrEqual(20);
     }
     expect(hubMode("cbc").group).toBe("play");
-    // FLAIR 3D entra no grupo Jogar logo depois dos Desafios de Montagem e antes dos Momentos (R5)
+    // grupo Jogar na ordem da estrutura (docs/flair/ESTRUTURA_FLAIR.md): CBC (desafios e elencos), FLAIR 3D e MAKE UP,
+    // logo antes dos Momentos
     const ids = HUB_MODES.map((m) => m.id);
-    expect(ids.indexOf("games")).toBe(ids.indexOf("cbc") + 1);
-    expect(ids.indexOf("moments")).toBe(ids.indexOf("games") + 1);
-    expect(hubMode("games")).toMatchObject({ group: "play", href: "/flair/jogos", guide: "flair.games" });
-    expect(hubMode("games").demo.recorded).toBe(false);
+    expect(ids.slice(ids.indexOf("cbc"), ids.indexOf("moments"))).toEqual(["cbc", "squads", "games", "makeup"]);
+    expect(hubMode("squads")).toMatchObject({ group: "play", href: "/flair/elencos", guide: "flair.squads" });
+    expect(hubMode("games")).toMatchObject({ group: "play", href: "/flair/3d", guide: "flair.games" });
+    expect(hubMode("makeup")).toMatchObject({ group: "play", href: "/flair/make-up", guide: "flair.makeup" });
+    expect(["squads", "games", "makeup"].every((id) => hubMode(id as HubModeId).demo.recorded === false)).toBe(true);
     expect(Object.values(LEGACY_TABS).every((l) => l.href.startsWith("/flair/"))).toBe(true);
   });
   it("disponibilidade: sem decks o modo de partidas vira destravar; desafios abertos contam; sem missões fica indisponível", () => {
@@ -62,6 +64,8 @@ describe("modelo da central", () => {
     expect(availability("games", { games: { total: 100, playable: 0 } })).toMatchObject({ available: true, action: "open" });
     expect(availability("games", { games: { total: 0, playable: 0 } })).toMatchObject({ available: false, status: { key: "flair.hub.status.games_none" } });
     expect(availability("games", {})).toMatchObject({ available: true, status: null });
+    expect(availability("squads", {})).toMatchObject({ available: true, action: "play", status: null });
+    expect(availability("makeup", {})).toMatchObject({ available: true, action: "play", status: null });
     expect(availability("quests", { quests: { done: 0, total: 0 } }).available).toBe(false);
     expect(availability("challenges", { challenges: { active: 1, invites: 0 } }).action).toBe("continue");
     expect(availability("wallet", {}).available).toBe(true);
@@ -83,12 +87,14 @@ describe("FlairHub", () => {
     expect(screen.getByRole("tabpanel").textContent).toContain("Complete o mini mapa");
     expect(push).not.toHaveBeenCalled();
     expect(readSelected(ME.user.id)).toBe("cbc");
-    // o modo FLAIR 3D aparece logo depois, com a situação vinda de /api/flair/games/summary
-    const tabs = screen.getAllByRole("tab").map((x) => x.textContent ?? "");
-    expect(tabs.findIndex((x) => x.includes("FLAIR 3D"))).toBe(tabs.findIndex((x) => x.includes("Desafios de Montagem")) + 1);
-    fireEvent.click(screen.getByRole("tab", { name: /FLAIR 3D/ }));
-    await waitFor(() => expect(screen.getByText("3 de 5 jogos liberados")).toBeTruthy());
-    expect(screen.getByRole("tabpanel").textContent).toContain("5 jogos FLAIR 3D");
+    // depois dos desafios vêm os Elencos, o FLAIR 3D (os 15 núcleos, situação de /api/flair/3d/nucleos) e o MAKE UP
+    const tabs = screen.getAllByRole("tab");
+    const at = (re: RegExp) => tabs.findIndex((x) => re.test(x.textContent ?? ""));
+    const first = at(/Desafios de Montagem/);
+    expect([at(/Elencos/), at(/FLAIR 3D(?! MAKE UP)/), at(/FLAIR 3D MAKE UP/)]).toEqual([first + 1, first + 2, first + 3]);
+    fireEvent.click(tabs[at(/FLAIR 3D(?! MAKE UP)/)]);
+    await waitFor(() => expect(screen.getByText("15 de 15 jogos liberados")).toBeTruthy());
+    expect(screen.getByRole("tabpanel").textContent).toContain("15 jogos FLAIR 3D");
     fireEvent.click(cbc);
     cleanup();
     renderApp(<FlairHub />);

@@ -33,7 +33,30 @@
 .n3d-hud-br {
   right: 8px;
   bottom: 8px;
+  align-items: flex-end;
   justify-content: flex-end;
+}
+
+/* celular: a câmera mostra só o ícone e o elenco só quem joga, para não entrar na zona da roupa (auditoria 3) */
+.n3d-frame.is-celular .n3d-camera-nome,
+.n3d-frame.is-celular .n3d-cast.is-compact .n3d-cast-note,
+.n3d-frame.is-celular .n3d-cast.is-compact .n3d-cast-list {
+  display: none;
+}
+
+/* celular: câmera e controles de câmera numa coluna estreita colada à borda direita, sem cobrir as pernas da avatar
+   no meio da cena (auditoria dos jogos, DF-7) */
+.n3d-frame.is-celular .n3d-hud-br,
+.n3d-frame.is-celular .n3d-pad.is-camera {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.n3d-frame.is-celular .n3d-camera-btn {
+  justify-content: center;
+  width: var(--touch);
+  padding: 0;
+  background: #0006;
 }
 
 .n3d-frame.is-paisagem .n3d-hud-tl {
@@ -146,6 +169,19 @@
   font-size: var(--text-body, 1rem);
 }
 
+/* jogos de zonas: as latas de tinta que a pintura gastou (vermelho ao passar do orçamento) */
+.n3d-score-tinta {
+  margin: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: #000a;
+  font-size: var(--text-small, 0.8125rem);
+}
+
+.n3d-score-tinta[data-passou] {
+  color: #ff8a8a;
+}
+
 .n3d-score-stars .n3d-star {
   color: #fff6;
 }
@@ -183,4 +219,19 @@
 
 .n3d-cast.is-compact .btn {
   min-height: var(--touch);
+}
+
+/* seletor de câmera: diz a câmera em uso e troca para a próxima do jogo */
+.n3d-camera-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--touch);
+  padding: 0 12px;
+  border: 1px solid #fff4;
+  border-radius: 999px;
+  background: #000a;
+  color: #fff;
+  font-size: var(--text-caption);
+  white-space: nowrap;
 }

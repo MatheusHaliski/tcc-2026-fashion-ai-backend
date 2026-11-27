@@ -49,14 +49,15 @@ describe("ordem do menu nas Configurações (RF23)", () => {
     expect(await screen.findByText("Ordem padrão restaurada.")).toBeTruthy();
   });
 
-  it("Meu Quarto em primeiro no Guarda-roupa sem mudar de grupo, pelas setas e arrastando", async () => {
+  // o Meu Quarto saiu do menu (e do app, 15/11/2026): o terceiro item do Guarda-roupa é o Espelho
+  it("Espelho em primeiro no Guarda-roupa sem mudar de grupo, pelas setas e arrastando", async () => {
     loggedAs(undefined, { "PUT /api/me/preferences": {} });
     renderApp(<NavOrderEditor />);
     const wardrobe = () => within(screen.getByRole("list", { name: "Guarda-roupa" })).getAllByRole("listitem").map((li) => li.textContent?.replace(/^\d+\./, ""));
-    expect(wardrobe().slice(0, 3)).toEqual(["Minhas peças", "Adicionar peça", "Meu Quarto"]);
-    fireEvent.click(screen.getByRole("button", { name: "Subir Meu Quarto" }));
-    fireEvent.click(screen.getByRole("button", { name: "Subir Meu Quarto" }));
-    expect(wardrobe().slice(0, 3)).toEqual(["Meu Quarto", "Minhas peças", "Adicionar peça"]);
+    expect(wardrobe().slice(0, 3)).toEqual(["Minhas peças", "Adicionar peça", "Espelho"]);
+    fireEvent.click(screen.getByRole("button", { name: "Subir Espelho" }));
+    fireEvent.click(screen.getByRole("button", { name: "Subir Espelho" }));
+    expect(wardrobe().slice(0, 3)).toEqual(["Espelho", "Minhas peças", "Adicionar peça"]);
     expect(getNavOrder()?.groups[1]).toBe("nav.group.wardrobe");                     // o grupo não saiu do lugar
 
     // arrastar o último item (Meu Avatar 3D) para o topo do grupo
@@ -65,7 +66,7 @@ describe("ordem do menu nas Configurações (RF23)", () => {
     fireEvent.dragOver(items[0]);
     fireEvent.drop(items[0]);
     expect(wardrobe()[0]).toBe("Meu Avatar 3D");
-    expect(wardrobe()[1]).toBe("Meu Quarto");
+    expect(wardrobe()[1]).toBe("Espelho");
     // soltar num item de outro grupo não faz nada
     const discover = within(screen.getByRole("list", { name: "Descobrir" })).getAllByRole("listitem");
     fireEvent.dragStart(within(screen.getByRole("list", { name: "Guarda-roupa" })).getAllByRole("listitem")[0], { dataTransfer: { effectAllowed: "" } });

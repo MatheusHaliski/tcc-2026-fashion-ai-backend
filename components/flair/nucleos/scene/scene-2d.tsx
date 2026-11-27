@@ -8,7 +8,7 @@ import type { Look3dPiece } from "@/components/three/common";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import type { AvatarEstado } from "@/lib/flair/nucleos/board";
 import { figurantesDaCena } from "@/lib/flair/nucleos/scene/budget";
-import { SALAS } from "@/lib/flair/nucleos/scene/registry";
+import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 import { placarDaCena } from "@/lib/flair/nucleos/scene/sequences-auto";
 import type { NucleoConfig, NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -17,6 +17,7 @@ interface Props {
   avatar: AvatarEstado;
   pecas: Look3dPiece[];
   resultado?: NucleoResultado | null;
+  variante?: string | null;
 }
 
 const MAX_SILHUETAS = 9;
@@ -33,9 +34,9 @@ export function QuadroParado({ config, resultado }: { config: NucleoConfig; resu
   );
 }
 
-export function Cena2D({ config, avatar, pecas, resultado }: Props) {
+export function Cena2D({ config, avatar, pecas, resultado, variante }: Props) {
   const tx = useNucleoText();
-  const sala = SALAS[config.codigo];
+  const sala = salaDe(config.codigo, variante);
   const figurantes = figurantesDaCena(sala, config.personagens);
   const papeis = Array.from(new Set(config.personagens.map((p) => p.papel)));
   const piso = sala.materiais[sala.casca.piso].cor;

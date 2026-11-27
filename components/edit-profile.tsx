@@ -1,4 +1,7 @@
 "use client";
+import { LookTypePreference } from "@/components/look-type-preference";
+import { InstitutionalReferenceField } from "@/components/institutional-reference-field";
+import { SignaturePiecePicker } from "@/components/signature-piece-picker";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
@@ -73,6 +76,11 @@ export function EditProfileForm({ onDone }: { onDone?: () => void }) {
         {f.links.length < 5 && <button type="button" className="justify-self-start type-body text-muted hover:underline" onClick={() => setF({ ...f, links: [...f.links, { title: "", url: "" }] })}>{t("editProfile.adicionar_links")}</button>}
       </div>)}
       {!brand && row(t("editProfile.genero"), <div role="radiogroup" aria-label={t("editProfile.genero_do_manequim")} className="flex gap-2 pt-1">{(["FEMININO", "MASCULINO"] as const).map((s) => <button key={s} type="button" role="radio" aria-checked={f.sex === s} className={`chip inline-flex items-center gap-1.5 ${f.sex === s ? "is-active" : ""}`} onClick={() => setF({ ...f, sex: s })}><MannequinGlyph sex={s} />{s === "FEMININO" ? t("editProfile.mulher") : t("editProfile.homem")}</button>)}<span className="self-center type-caption text-faint">{t("editProfile.define_o_manequim")}</span></div>)}
+      {/* marca: categoria principal (ex. 09); celebridade: área artística principal (ex. 10). Salvam direto no perfil institucional. */}
+      {(me.user.profileType === "MARCA" || me.user.profileType === "CELEBRIDADE") && row(t("institutionalReference.titulo"), <InstitutionalReferenceField kind={me.user.profileType} userId={me.user.id} />)}
+      {/* exercício 18 · Peça Assinatura: grava na hora, separada do "Salvar" do perfil */}
+      {me.user.profileType === "PESSOAL" && row(t("signaturePiece.titulo"), <SignaturePiecePicker />)}
+      <LookTypePreference />
       <div className="mt-4 flex justify-end gap-2">{onDone && <Button onClick={onDone}>{t("common.cancel")}</Button>}<Button variant="primary" loading={busy} onClick={save} disabled={free?.available === false || f.displayName.trim().length < 2}>{t("common.save")}</Button></div>
     </div>
   );

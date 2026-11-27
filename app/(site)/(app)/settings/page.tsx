@@ -4,13 +4,15 @@ import Link from "next/link";
 import { api, ApiError, mediaUrl } from "@/lib/api/client";
 import type { Me, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
+import { SessionsCard } from "@/components/settings/sessions-card";
+import { ExportsList, type ExportRow } from "@/components/settings/exports-list";
 import { useI18n } from "@/lib/i18n/i18n";
 import { fromServerLanguage } from "@/lib/i18n/state";
 import { CURRENCIES, isCurrency } from "@/lib/i18n/money";
 import { CHROME_BACKGROUNDS, CONTAINER_PRESETS, chromeTile, useTheme } from "@/lib/theme/theme";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
-import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useNotice } from "@/components/ui";
+import { Avatar, Button, Card, Dialog, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useNotice, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
 import { NavOrderEditor } from "@/components/nav-order-editor";
@@ -19,11 +21,14 @@ import { NavOrderEditor } from "@/components/nav-order-editor";
 const currencyName = (intl: string, c: string) => { try { return `${new Intl.DisplayNames(intl, { type: "currency" }).of(c) ?? c} (${c})`; } catch { return c; } };
 
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
+const TABS: Tab[] = ["account", "appearance", "privacy", "data", "sessions"];
 interface Prefs { auraImpersonation?: boolean; auraHype?: boolean; theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
-interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
+interface Consent { purpose: string; granted: boolean; title?: string; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
-  const { t, locale, setLocale, locales, rich, intl, currency, currencyPref, setCurrency } = useI18n(); const { me, refreshMe, signOut } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const notice = useNotice();
+  const { t, locale, setLocale, locales, rich, intl, currency, currencyPref, setCurrency, fmtDateTime } = useI18n(); const { me, refreshMe, signOut } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const notice = useNotice();
+  // consentimento: o próprio interruptor mostra a mudança; o aviso vem em toast, sem janela a cada troca
+  const toast = useToast();
   const [info, setInfo] = useState<{ title: string; paragraphs: ReactNode[] } | null>(null);
   const [impersonationBusy, setImpersonationBusy] = useState(false);
   const auraPermissions = useApi<{ currentTier: string; auras: Record<string, { allowed: boolean; requiredTier: string }> }>((signal) => api.get("/api/me/aura-permissions", { signal }), [me?.user.id]);
@@ -35,10 +40,11 @@ function Settings() {
   const [auraLocal, setAuraLocal] = useState(false);
   const [logoutBusy, setLogoutBusy] = useState(false);
   const [tab, setTab] = useState<Tab>("account");
+  // ?tab=sessions (link da notificação de novo acesso) abre direto na aba; lido depois de montar, sem divergir do servidor
+  useEffect(() => { const pedida = new URLSearchParams(window.location.search).get("tab"); if (pedida && TABS.includes(pedida as Tab)) setTab(pedida as Tab); }, []);
   const server = useApi<Prefs>((signal) => api.get("/api/me/preferences", { signal }), []);
   const consents = useApi<Consent[]>((signal) => api.get("/api/me/consents", { signal }), [], { enabled: tab === "privacy" });
-  const sessions = useApi<{ sessionId: string; device?: string; ip?: string; createdAt?: string; lastUsedAt?: string; current?: boolean }[]>((signal) => api.get("/api/auth/sessions", { signal }), [], { enabled: tab === "sessions" });
-  const exports = useApi<{ id: string; status: string; requestedAt?: string; expiresAt?: string }[]>((signal) => api.get("/api/me/exports", { signal }), [], { enabled: tab === "data" });
+  const exports = useApi<ExportRow[]>((signal) => api.get("/api/me/exports", { signal }), [], { enabled: tab === "data" });
   const [profile, setProfile] = useState({ displayName: "", bio: "", country: "" }); const [username, setUsername] = useState("");
   const [sensitive, setSensitive] = useState({ password: "", email: "", phone: "", birthDate: "", twoFactorEnabled: false });
   const [del, setDel] = useState<{ open: boolean; password: string }>({ open: false, password: "" }); const [emailCode, setEmailCode] = useState("");
@@ -141,9 +147,6 @@ function Settings() {
             <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Field label={t("settings.currency")} id="currency"><Select id="currency" value={currencyPref ?? "AUTO"} onChange={(e) => setCurrency(isCurrency(e.target.value) ? e.target.value : null)}><option value="AUTO">{t("settings.currency_auto", { currency })}</option>{CURRENCIES.map((c) => <option key={c} value={c}>{currencyName(intl, c)}</option>)}</Select></Field></div>{infoButton(t("settings.currency"), [t("settingsHelp.currency")])}</div>
             <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Switch checked={theme.highContrast} onChange={(v) => { updateTheme({ highContrast: v }); savePrefs({ highContrast: v }); }} label={t("settings.contrast")} /></div>{infoButton(t("settings.contrast"), [t("settingsHelp.contrast")])}</div>
             <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Switch checked={theme.reduceMotion} onChange={(v) => { updateTheme({ reduceMotion: v }); savePrefs({ reduceMotion: v }); }} label={t("settings.reduceMotion")} /></div>{infoButton(t("settings.reduceMotion"), [t("settingsHelp.reduceMotion")])}</div>
-            {/* DET-D04 — som de tecido (desligado por padrão) e háptico (ligado) no Meu Quarto */}
-            <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Switch checked={!!server.data?.soundEnabled} onChange={(v) => { server.setData({ ...server.data!, soundEnabled: v }); savePrefs({ soundEnabled: v }); }} label={t("settings.som_do_quarto")} hint={t("settings.som_do_quarto_dica")} /></div>{infoButton(t("settings.som_do_quarto"), [t("settingsHelp.sound")])}</div>
-            <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Switch checked={server.data?.hapticsEnabled !== false} onChange={(v) => { server.setData({ ...server.data!, hapticsEnabled: v }); savePrefs({ hapticsEnabled: v }); }} label={t("settings.haptico")} hint={t("settings.haptico_dica")} /></div>{infoButton(t("settings.haptico"), [t("settingsHelp.haptics")])}</div>
             <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Field label={t("settings.sistema_de_tamanhos")} id="sizeSystem"><Select id="sizeSystem" value={(server.data?.sizeSystem as string) ?? "BR"} onChange={(e) => savePrefs({ sizeSystem: e.target.value })}>{["BR", "US", "EU", "UK"].map((s) => <option key={s}>{s}</option>)}</Select></Field></div>{infoButton(t("settings.sistema_de_tamanhos"), [t("settingsHelp.sizeSystem")])}</div>
             <div className="flex items-start gap-3"><div className="min-w-0 flex-1"><Field label={t("settings.unidades")} id="unitSystem"><Select id="unitSystem" value={(server.data?.unitSystem as string) ?? "CM"} onChange={(e) => savePrefs({ unitSystem: e.target.value })}>{["CM", "IN"].map((s) => <option key={s}>{s}</option>)}</Select></Field></div>{infoButton(t("settings.unidades"), [t("settingsHelp.unitSystem")])}</div>
           </Card>
@@ -188,8 +191,8 @@ function Settings() {
             {consents.loading && <Skeleton className="h-32" />}
             {consents.error && <p role="alert" className="type-body-sm text-critical">{t("settingsHelp.consentsError")}</p>}
             <ul className="divide-y divide-line-soft">{(consents.data ?? []).map((c) => {
-              const name = (c.label ?? c.purpose.replace(/_/g, " ")).toLocaleUpperCase(locale);
-              return <li key={c.purpose} className="flex items-center gap-3 py-2"><div className="min-w-0 flex-1"><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); if (!v && c.purpose === "RETAIL_DEMAND_ANALYTICS") await api.delete("/api/me/retail-demand/contributions"); } catch (e) { notice.fromError(e); } }} label={name} /></div>{infoButton(name, [c.description ?? t("settingsHelp.consentMissing"), t("settingsHelp.consentChoice")])}</li>;
+              const name = c.title ?? c.label ?? c.purpose.replace(/_/g, " ").toLocaleLowerCase(locale);   // o servidor manda o nome da finalidade em `title`
+              return <li key={c.purpose} className="flex items-center gap-3 py-2"><div className="min-w-0 flex-1"><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); toast.success(t(v ? "settings.consentimento_ligado" : "settings.consentimento_desligado", { name })); if (!v && c.purpose === "RETAIL_DEMAND_ANALYTICS") await api.delete("/api/me/retail-demand/contributions"); } catch (e) { toast.fromError(e); } }} label={name} /></div>{infoButton(name, [c.description ?? t("settingsHelp.consentMissing"), t("settingsHelp.consentChoice")])}</li>;
             })}</ul>
           </Card>
         </div>
@@ -201,7 +204,7 @@ function Settings() {
             <p className="type-body text-muted mb-1">{t("settings.geramos_um_pacote_com_todos")}</p>
             <p className="type-caption text-muted mb-3">{t("hypePrivacy.export_hint")}</p>
             <Button variant="primary" onClick={() => call(() => api.post("/api/me/exports"), t("settings.exportacao_solicitada")).then(exports.reload)}>{t("settings.export")}</Button>
-            <ul className="fai-list mt-3">{(exports.data ?? []).map((x) => <li key={x.id} className="flex items-center justify-between py-2 type-body-sm"><span>{x.status} · {x.requestedAt?.slice(0, 10)}</span>{x.status === "READY" && <a className="btn btn-sm" href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080"}/api/me/exports/${x.id}/file`} onClick={async (e) => { e.preventDefault(); const u = await api.blobUrl(`/api/me/exports/${x.id}/file`); window.open(u); }}>{t("settings.baixar")}</a>}</li>)}</ul>
+            <ExportsList rows={exports.data ?? []} />
           </Card>
           <Card>
             {heading(t("settings.deleteAccount"), "delete")}
@@ -210,14 +213,7 @@ function Settings() {
           </Card>
         </div>
       )}
-      {tab === "sessions" && (
-        <Card>
-          {heading(t("settings.sessions"), "sessions")}
-          {sessions.loading && <Skeleton className="h-32" />}
-          <ul className="fai-list">{(sessions.data ?? []).map((s) => <li key={s.sessionId} className="flex items-center justify-between gap-3 py-2 type-body-sm"><span>{s.device ?? t("settings.dispositivo")} · {s.ip ?? ""} · {s.lastUsedAt?.slice(0, 16) ?? s.createdAt?.slice(0, 16)}{s.current && <b>{t("settings.esta_sessao")}</b>}</span>{!s.current && <Button size="sm" onClick={() => call(() => api.delete(`/api/auth/sessions/${s.sessionId}`), t("settings.sessao_encerrada")).then(sessions.reload)}>{t("settings.encerrar")}</Button>}</li>)}</ul>
-          <Button className="mt-3" variant="danger" loading={logoutBusy} onClick={logoutAll}>{t("settings.logoutAll")}</Button>
-        </Card>
-      )}
+      {tab === "sessions" && <SessionsCard heading={heading(t("settings.sessions"), "sessions")} call={call} logoutAll={logoutAll} logoutBusy={logoutBusy} />}
       <Dialog open={!!info} onClose={() => setInfo(null)} title={info?.title ?? ""} footer={<Button onClick={() => setInfo(null)}>{t("common.close")}</Button>}>
         <div className="grid gap-3">{info?.paragraphs.map((paragraph, i) => <p key={i} className="type-body-sm">{paragraph}</p>)}</div>
       </Dialog>

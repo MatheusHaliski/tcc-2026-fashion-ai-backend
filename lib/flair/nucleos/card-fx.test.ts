@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { auraHype, cartasVestidas, COR_DO_NIVEL, entradaDaCarta, ENTRADA_MS, materialDoSom, pontua, seloDaCarta } from "@/lib/flair/nucleos/card-fx";
+import { auraHype, cartasVestidas, COR_DA_FAMILIA, COR_DO_NIVEL, corDoEfeito, efeitoDaCor, entradaDaCarta, ENTRADA_MS, materialDoSom, pontua, seloDaCarta } from "@/lib/flair/nucleos/card-fx";
 import { FX_PREFS_CHAVE, FX_PREFS_PADRAO, lerFxPrefs, salvarFxPrefs, tocarFx } from "@/lib/flair/nucleos/fx-sound";
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 
@@ -29,7 +29,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe("efeito de entrada", () => {
   it("carta que pontua: clarão na cor do nível, o selo do efeito e o som do material", () => {
     const fx = entradaDaCarta(card(), "SUP", [{ codigo: "MARCA_BR", valor: 10 }]);
-    expect(fx).toEqual({ cardId: "c1", vaga: "SUP", tier: "OURO", cor: "#E0B04D", pontua: true, selo: { codigo: "MARCA_BR", valor: 10 }, motivo: null, aura: false, som: "tecido" });
+    expect(fx).toEqual({ cardId: "c1", vaga: "SUP", tier: "OURO", cor: "#E0B04D", pontua: true, selo: { codigo: "MARCA_BR", valor: 10 }, motivo: null, aura: false, som: "tecido", efeitoDaCor: null, corDaPeca: null });
     expect(COR_DO_NIVEL).toEqual({ BRONZE: "#B07A52", PRATA: "#9DA3AA", OURO: "#E0B04D", ESPECIAL: "#7B4FD6" });
     expect(ENTRADA_MS).toBeLessThanOrEqual(1000);
   });
@@ -98,4 +98,20 @@ describe("som e preferências", () => {
     expect(tocarFx("especial", true)).toBe(true);
     expect(criados).toEqual(["ruido", "ruido", "nota", "nota", "nota", "nota", "nota"]);
   });
+
+describe("efeito da cor da peça", () => {
+  it("o item COR_ ou ACAO_ do servidor vira o efeito da cor, com a cor da família; ele não conta como pontuação", () => {
+    const itens = [{ codigo: "MARCA_BR", valor: 10 }, { codigo: "COR_FLASHES", valor: 4 }];
+    expect(efeitoDaCor(itens)).toEqual({ codigo: "COR_FLASHES", valor: 4 });
+    expect(corDoEfeito(efeitoDaCor(itens))).toBe("#2A5FA8");
+    expect(efeitoDaCor([{ codigo: "ACAO_CHUTE", valor: 2 }])?.codigo).toBe("ACAO_CHUTE");
+    expect(efeitoDaCor([{ codigo: "MARCA_BR", valor: 10 }])).toBeNull();
+    expect(efeitoDaCor(undefined)).toBeNull();
+    expect(corDoEfeito({ codigo: "COR_X", valor: 9 })).toBeNull();
+    expect(COR_DA_FAMILIA).toHaveLength(6);
+    // só a cor não faz a carta pontuar, e o selo continua sendo o efeito de regra
+    expect(pontua([{ codigo: "MARCA_NAO_BR", valor: 0, motivo: true }, { codigo: "COR_BRISA", valor: 2 }])).toBe(false);
+    expect(seloDaCarta(itens)).toEqual({ codigo: "MARCA_BR", valor: 10 });
+  });
+});
 });

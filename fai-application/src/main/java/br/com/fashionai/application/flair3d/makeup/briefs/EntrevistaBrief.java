@@ -3,14 +3,18 @@ package br.com.fashionai.application.flair3d.makeup.briefs;
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Contexto;
 import br.com.fashionai.application.flair3d.Definicao.Regra;
+import br.com.fashionai.application.flair3d.Efeito;
 import br.com.fashionai.application.flair3d.Entrega;
 import br.com.fashionai.application.flair3d.Flair3dBeleza;
 import br.com.fashionai.application.flair3d.Flair3dPecas;
-import br.com.fashionai.application.flair3d.Resultado;
+import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
+import br.com.fashionai.application.flair3d.Resultado;
 import br.com.fashionai.application.flair3d.makeup.FlairMakeUpBrief;
+import br.com.fashionai.application.flair3d.makeup.FlairMakeUpPecas;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,11 +53,25 @@ public class EntrevistaBrief implements FlairMakeUpBrief {
     @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
         Map<String, CbcRules.Card> v = contexto.vestidas(entrega);
-        return Resultado.somando(List.of(
+        List<RegraResultado> regras = List.of(
                 RegraResultado.de("OCASIAO", Flair3dPecas.todas(v.values(), c -> Flair3dPecas.temOcasiao(c, OCASIOES)), POR_REGRA),
                 RegraResultado.de("CALCADO_FECHADO", Flair3dPecas.subcategoria(v.get("CAL"), FECHADOS), POR_REGRA),
                 RegraResultado.de("LABIOS_NUDE_OU_ROSA", Flair3dBeleza.familia(entrega, Flair3dBeleza.LABIOS, "NUDE", "ROSA"), POR_REGRA),
-                RegraResultado.de("ACABAMENTO_FOSCO", Flair3dBeleza.acabamento(entrega, Flair3dBeleza.LABIOS, "FOSCO"), POR_REGRA)),
-                List.of());
+                RegraResultado.de("ACABAMENTO_FOSCO", Flair3dBeleza.acabamento(entrega, Flair3dBeleza.LABIOS, "FOSCO"), POR_REGRA));
+        List<Evento> eventos = new ArrayList<>(FlairMakeUpPecas.semPecas(v));
+        eventos.addAll(FlairMakeUpPecas.fora(v, FlairMakeUpPecas.FORA_DA_OCASIAO, c -> Flair3dPecas.temOcasiao(c, OCASIOES)));
+        return Resultado.somando(regras, eventos).comCartas(FlairMakeUpPecas.rateio(v, regras));
+    }
+
+    @Override
+    public List<Efeito> efeitos(CbcRules.Card carta) {
+        List<Efeito> out = new ArrayList<>();
+        if (Flair3dPecas.temOcasiao(carta, OCASIOES)) {
+            out.add(new Efeito("OCASIAO", POR_REGRA));
+        }
+        if ("CAL".equals(carta.position()) && Flair3dPecas.subcategoria(carta, FECHADOS)) {
+            out.add(new Efeito("CALCADO_FECHADO", POR_REGRA));
+        }
+        return out;
     }
 }

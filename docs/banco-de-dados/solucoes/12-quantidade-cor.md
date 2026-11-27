@@ -1,5 +1,7 @@
 # Exercício 12 — Política do selo: quantidade mínima por cor
 
+> **Implementado em 26/11/2026.** A política estruturada já existia. Entregue o que faltava: `count` fracionado (2,5) é recusado com 400 `POLITICA_INVALIDA` em vez de truncado; o avaliador conta peças distintas (a mesma peça repetida não dobra); a prévia de selos devolve `pieceIds` e a tela mostra quantas peças contaram para a regra. Sem mudança de schema (a V117 ficou sem uso). Testes: `SealPolicyQuantidadeCorTest`, `SealPolicyPreviewParityTest`, `components/seal-policy-quantidade-cor.test.tsx`. Não entregue: a prévia não lista, selo a selo, o motivo de um look não atender (só a mensagem geral do servidor).
+
 **Situação na revisão `9f5512a77`:** Estrutura rules/count/color já existe e é validada; usar a política estruturada, não texto livre.
 
 As linhas abaixo são da revisão de referência; siga também o nome do método/atributo. Arquivos marcados **NOVO** são propostas de implementação, não entregas já aplicadas. Pré-requisitos e convenções: [guia geral](../RESOLUCAO_20_EXERCICIOS.md).

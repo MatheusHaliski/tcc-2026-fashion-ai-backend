@@ -23,7 +23,7 @@ describe('Atelier project UI contracts', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(5);
     expect(screen.queryByTestId('legacy-atelier')).toBeNull();
   });
-  it.each(['metamorphoses', 'timeline', 'trends', 'room'])('preserves the existing %s deep link', async tab => {
+  it.each(['metamorphoses', 'timeline', 'trends', 'rewards'])('preserves the existing %s deep link', async tab => {
     nav.search = new URLSearchParams({ tab });
     const { calls } = loggedAs(ME);
     renderApp(<AtelierWorkspace/>);

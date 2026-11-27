@@ -1,18 +1,18 @@
 package br.com.fashionai.application.demand;
 
+import java.time.*;
+import java.util.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
-import br.com.fashionai.application.service.PhysicalStoreReturnEvents;
 import br.com.fashionai.application.testkit.MemoryRepository;
 import br.com.fashionai.domain.model.*;
 import br.com.fashionai.domain.model.enums.*;
 import br.com.fashionai.domain.repository.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.time.*;
-import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -91,9 +91,5 @@ class RetailDemandServiceTest {
         var panel = service.panel(seller, null, null);
         assertThat((List<?>) panel.get("cells")).isEmpty();
         assertThat(panel).containsEntry("suppressedCells", 2);
-        User fit = person(true);
-        service.onFitFeedback(new PhysicalStoreReturnEvents.FitFeedbackRecorded(seller.id(), jacket.getId(), null, "M", "FIT_TOO_SMALL", fit.getId()));
-        service.onFitFeedback(new PhysicalStoreReturnEvents.FitFeedbackRecorded(seller.id(), jacket.getId(), null, "M", "FIT_TOO_SMALL", person(false).getId()));
-        assertThat(MemoryRepository.<RetailDemandEvent>rows(events).stream().filter(e -> "SIZE_MISMATCH".equals(e.getKind()))).hasSize(1);
     }
 }

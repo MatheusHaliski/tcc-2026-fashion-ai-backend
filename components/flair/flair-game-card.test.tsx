@@ -55,6 +55,7 @@ describe("FlairGameCard · a carta FLAIR com a anatomia do card comum", () => {
     const rows = Array.from(document.querySelectorAll(".pc-info > div")).map((r) => [r.querySelector("dt")?.textContent, r.querySelector("dd")?.textContent]);
     expect(rows).toEqual([
       ["Marca", "NSNorte Sport"], ["Categoria", "Tênis casual"], ["Nível", "Ouro · rara"], ["Nota", "82"], ["Posição", "CAL"],
+      ["Hype da carta", "68 (o do dia em que a carta foi criada; o da peça continua mudando)"],
       ["Atributos de jogo", "72EDGE60RANGE51CLOUT88GLOW40ART95SYNC"], ["Habilidade", "Passo leve · +2 de sintonia"], ["Temporada", "Verão"],
       ["Preço", "R$\u00a0399,00 · confirmado no catálogo"],
     ]);

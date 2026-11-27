@@ -20,7 +20,7 @@ export const SUPER_HEROI: NucleoConfig = {
   vagas: [],
   zonas: ["PEITO", "CAPA", "BRACOS", "PERNAS"],
   areas: [],
-  opcoes: ["EMBLEMA_ESTRELA", "EMBLEMA_RAIO", "EMBLEMA_ASA", "EMBLEMA_MORCEGO", "EMBLEMA_ESCUDO_S"],
+  opcoes: ["EMBLEMA_ESTRELA", "EMBLEMA_RAIO", "EMBLEMA_ASA"],
   acoes: acoesDe({ cartas: false, desfile: false }),
   regras: ["PEITO_METALICO", "ATE_2_CORES", "CAPA", "SEM_EMBLEMA_PROTEGIDO"],
   deck: SEM_DECK,

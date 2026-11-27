@@ -139,7 +139,7 @@ describe("BrandFlairTab — loja", () => {
     fireEvent.change(screen.getByLabelText(/Cupom \(título\)/), { target: { value: "R$ 40 off" } });
     choose("Desconto", "R$ fixo");
     fireEvent.change(screen.getByLabelText("Valor (R$)"), { target: { value: "40" } });
-    fireEvent.change(screen.getByLabelText("Compra mínima (R$)"), { target: { value: "200" } });
+    fireEvent.change(screen.getByLabelText("Compra mínima"), { target: { value: "200" } });
     fireEvent.change(screen.getByLabelText("Validade (dias, 7–120)"), { target: { value: "20" } });
     fireEvent.change(screen.getByLabelText("Estoque de cupons"), { target: { value: "" } });
     fireEvent.change(screen.getByLabelText("Cor"), { target: { value: "#ff0000" } });
@@ -149,8 +149,8 @@ describe("BrandFlairTab — loja", () => {
     expect(await screen.findByText("Combinação salva.")).toBeTruthy();
     expect(calls.find((c) => c.method === "POST" && c.path === "/api/flair/brand/combinations")?.body).toEqual({
       name: "Duelo Azul", description: "Ganhe 3 duelos", gameType: "DUELO_PATROCINADO", requiredCategories: ["upper_piece"], requiredStyles: ["casual"], requiredOccasions: ["trabalho"],
-      minBrandPieces: 2, minDeckPower: null, minRarity: "LIMITED", minWins: 4, couponTitle: "R$ 40 off", discountPercent: null, discountAmount: 40, minPurchase: 200, validDays: 20, stock: null,
-      active: false, accentColor: "#ff0000", storeUrl: "https://azul.example",
+      minBrandPieces: 2, minDeckPower: null, minRarity: "LIMITED", minWins: 4, couponTitle: "R$ 40 off", discountPercent: null, discountAmount: 40, minPurchase: "200", minPurchaseCurrency: "BRL", minHypeLevel: null, validDays: 20, stock: null,
+      active: false, accentColor: "#ff0000", storeUrl: "https://azul.example", canalCupomId: null,
     });
   });
 
@@ -162,11 +162,11 @@ describe("BrandFlairTab — loja", () => {
     let dialog = await screen.findByRole("dialog", { name: "Editar combinação FLAIR" });
     expect((screen.getByLabelText(/Nome do jogo/) as HTMLInputElement).value).toBe("Combo c2");
     expect((screen.getByLabelText("Valor (R$)") as HTMLInputElement).value).toBe("30");
-    expect((screen.getByLabelText("Compra mínima (R$)") as HTMLInputElement).value).toBe("150");
+    expect((screen.getByLabelText("Compra mínima") as HTMLInputElement).value).toBe("150");
     expect((screen.getByLabelText("Vitórias na semana com peça da marca") as HTMLInputElement).value).toBe("3");
     fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }));
     expect(await screen.findByText("Nome repetido")).toBeTruthy();
-    expect(calls.find((c) => c.method === "PUT")?.body).toMatchObject({ discountPercent: null, discountAmount: 30, minPurchase: 150, stock: null, active: false, storeUrl: null, description: null });
+    expect(calls.find((c) => c.method === "PUT")?.body).toMatchObject({ discountPercent: null, discountAmount: 30, minPurchase: "150", minPurchaseCurrency: null, stock: null, active: false, storeUrl: null, description: null });
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     // percentual, estoque definido e sem compra mínima

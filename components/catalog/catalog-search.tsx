@@ -293,7 +293,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   ].filter(Boolean);
 
   const acervoTitle = resultsLayout !== "matrix" && acervo ? (params.q ? t("catalog.todas_com", { total: acervo.total, q: params.q })
-    : params.brand ? t("catalog.todas_de", { total: acervo.total, marca: params.brand }) : t("catalog.todas", { total: acervo.total })) : acervo && (acervo.brandKnown === false ? t("catalog.marca_fora_do_acervo", { marca: ranWith?.brand ?? "" })
+    : params.brand ? t("catalog.todas_de", { total: acervo.total, marca: params.brand }) : t("catalog.todas", { total: acervo.total })) : acervo && (acervo.brandKnown === false && ranWith?.brand ? t("catalog.marca_fora_do_acervo", { marca: ranWith.brand })
     : selectionLabels.length ? t("catalog.selecao_total", { total: acervo.total, filters: selectionLabels.join(" · ") })
     : t("catalog.todas", { total: acervo.total }));
 
@@ -419,7 +419,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
           <Button size="sm" onClick={stores.reload}>{t("common.retry")}</Button>
         </p>
       )}
-      {brandGrid && (
+      {brandGrid && (stores.loading || storeList.length > 0 || !!brand.trim()) && (
         <section className="catalog-brand-grid" aria-labelledby="cs-stores" aria-busy={stores.loading}>
           <p id="cs-stores" className="label catalog-brand-heading">{t("catalog.marcas_do_catalogo", { n: storeList.length })}</p>
           <p className="type-caption text-muted" role="status">{!stores.loading && stores.data ? t("catalog.grade_total", { count: brandGridTotal, category: category ? CATEGORY_LABEL[category] ?? label(category) : t("tryOn.tudo") }) : "\u00a0"}</p>
@@ -432,7 +432,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
             ) : <p className="type-caption text-muted">{brand.trim() ? t("catalog.nenhuma_marca_com", { q: brand.trim() }) : t("tryOn.sem_lojas")}</p>}
           </div>
         </section>
-      )}
+      )}{brandGrid && !stores.loading && !stores.error && storeList.length === 0 && !brand.trim() && <p className="type-caption text-muted" data-testid="catalogo-sem-lojas">{t("tryOn.sem_lojas")}</p>}
       <div className="catalog-search-fields grid gap-3 sm:grid-cols-2">
         <Field label={t("catalog.q_marca")} id="cs-brand" hint={brand && res && !res.intent.brandKnown ? t("catalog.marca_desconhecida") : undefined}>
           <BrandAutocomplete id="cs-brand" value={brand} onChange={(name, b) => { setBrand(name); setBrandRef(b); }} />

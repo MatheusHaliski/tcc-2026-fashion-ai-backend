@@ -1,25 +1,50 @@
 /**
  * Depois do encaixe (align.ts), a peça vira roupa do avatar:
  *
- * 1. colisão: o vértice que entra no corpo (ou fica mais perto que a folga) sai pela normal da pele; o deslocamento é
- *    suavizado pela malha da peça para não abrir bicos;
+ * 1. colisão: a parte mais estreita que o corpo alarga (width.ts) e o pano que ficou dentro do corpo sai só em z
+ *    (depth.ts); o que sobra dentro (ou mais perto que a folga) sai pela normal da pele, com o deslocamento suavizado
+ *    pela malha da peça para não abrir bicos;
  * 2. pesos: cada vértice herda os 4 pesos de skinning da pele mais próxima (só das regiões que a peça veste), e os pesos
  *    são suavizados pela malha — a manga acompanha o braço e o tronco acompanha a coluna, sem rasgar na axila;
  * 3. repouso: a posição posada volta para a pose de repouso pela inversa da mistura das matrizes dos ossos, e a malha é
  *    presa ao MESMO esqueleto e bindMatrix do corpo (como o molde): anda, senta e levanta o braço com o avatar.
  */
 import * as THREE from "three";
+import { INNER_GAP, pressOut } from "./depth";
 import type { BodyFrame, Groups } from "./frame";
+import { widen } from "./width";
+
+/** Abaixo disso (m) o vértice não é candidato a espinho: dispensa a segunda busca, com a cabeça. */
+const LIMIT_FAR_CHECK = 0.15;
 
 export interface WrapMetrics {
   /** fração dos vértices dentro do corpo na pose de exibição, depois da colisão */
   inside: number;
-  /** quanto a colisão esticou as arestas (percentil 95 da razão de comprimento) */
+  /** quanto o ajuste esticou as arestas vistas de frente (percentil 95 da razão de comprimento em x e y) */
   stretch: number;
   /** maior deslocamento da colisão (m) */
   pushed: number;
   /** maior distância de um vértice até a pele (m): espinho, peça fora do lugar */
   far: number;
+}
+
+/**
+ * Avesso da peça: vértices cuja normal aponta para o corpo. A Meshy modela o lado de dentro (forro do blazer); a
+ * colisão levava o direito e o avesso para a mesma distância da pele e o forro atravessava o pano da frente.
+ */
+function innerFaces(p: Float32Array, index: ArrayLike<number>, f: BodyFrame, groups: Groups): Uint8Array {
+  const n = p.length / 3, nrm = new Float32Array(p.length), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  for (let t = 0; t < index.length; t += 3) {
+    a.fromArray(p, index[t] * 3); b.fromArray(p, index[t + 1] * 3).sub(a); c.fromArray(p, index[t + 2] * 3).sub(a); b.cross(c);
+    for (const v of [index[t], index[t + 1], index[t + 2]]) { nrm[v * 3] += b.x; nrm[v * 3 + 1] += b.y; nrm[v * 3 + 2] += b.z; }
+  }
+  const inner = new Uint8Array(n);
+  for (let v = 0; v < n; v++) {
+    const s = f.near(p[v * 3], p[v * 3 + 1], p[v * 3 + 2], groups); if (s < 0) continue;
+    const len = Math.hypot(nrm[v * 3], nrm[v * 3 + 1], nrm[v * 3 + 2]) || 1;
+    if ((nrm[v * 3] * f.nrm[s * 3] + nrm[v * 3 + 1] * f.nrm[s * 3 + 1] + nrm[v * 3 + 2] * f.nrm[s * 3 + 2]) / len < -0.3) inner[v] = 1;
+  }
+  return inner;
 }
 
 /** `posed`: a peça ajustada na pose de exibição (depois da colisão); `rest`: a mesma na pose de repouso. */
@@ -55,15 +80,17 @@ function signedDistance(f: BodyFrame, x: number, y: number, z: number, groups: G
  * Empurra para fora da pele o que ficou dentro ou perto demais; devolve o maior deslocamento. A suavização só espalha o
  * empurrão para os vizinhos (evita bico): cada vértice sai pelo menos o que precisa, nunca menos.
  */
-function collide(p: Float32Array, f: BodyFrame, groups: Groups, clearance: number, adj: number[][]): number {
+function collide(p: Float32Array, f: BodyFrame, groups: Groups, clearance: number, adj: number[][], inner?: Uint8Array): number {
   let maxPush = 0;
   for (let it = 0; it < 5; it++) {
     const need = new Float32Array(p.length); let any = false;
     for (let v = 0; v < p.length / 3; v++) {
       const { d, v: s } = signedDistance(f, p[v * 3], p[v * 3 + 1], p[v * 3 + 2], groups);
-      if (!(d < clearance)) continue;
+      // o avesso da peça (inner) para um pouco antes do direito: os dois na mesma casca piscam um por cima do outro
+      const gap = inner?.[v] ? Math.max(0.002, clearance - INNER_GAP) : clearance;
+      if (!(d < gap)) continue;
       // no máximo 3 cm por passada: um vértice longe da pele certa (barra, punho) não vira bico atravessando a cena
-      any = true; const k = Math.min(0.03, clearance - d); for (let a = 0; a < 3; a++) need[v * 3 + a] = k * f.nrm[s * 3 + a];
+      any = true; const k = Math.min(0.03, gap - d); for (let a = 0; a < 3; a++) need[v * 3 + a] = k * f.nrm[s * 3 + a];
     }
     if (!any) break;
     const push = need.slice(); smooth(push, 3, adj, 2);
@@ -121,11 +148,16 @@ function unskin(p: Float32Array, f: BodyFrame, skinIndex: Uint16Array, skinWeigh
   return rest;
 }
 
+/**
+ * Esticamento das arestas (percentil 95 da razão de comprimento) visto de FRENTE: só x e y. Tirar o pano de dentro do
+ * corpo em z (depth.ts) dá à peça rasa da Meshy o volume do corpo — estica na profundidade, sem mudar a frente, que é
+ * o que a foto mostra. O que deforma a peça à vista é alargar, girar e espalhar para os lados.
+ */
 function edgeStretch(before: Float32Array, after: Float32Array, index: ArrayLike<number>): number {
   const r: number[] = [];
-  const len = (p: Float32Array, a: number, b: number) => Math.hypot(p[a * 3] - p[b * 3], p[a * 3 + 1] - p[b * 3 + 1], p[a * 3 + 2] - p[b * 3 + 2]);
+  const len = (p: Float32Array, a: number, b: number) => Math.hypot(p[a * 3] - p[b * 3], p[a * 3 + 1] - p[b * 3 + 1]);
   for (let t = 0; t < index.length; t += 3) for (const [a, b] of [[index[t], index[t + 1]], [index[t + 1], index[t + 2]]]) {
-    const l0 = len(before, a, b); if (l0 > 1e-6) r.push(len(after, a, b) / l0);
+    const l0 = len(before, a, b); if (l0 > 1e-3) r.push(len(after, a, b) / l0);
   }
   r.sort((a, b) => a - b); return r.length ? r[Math.floor(0.95 * (r.length - 1))] : 1;
 }
@@ -150,18 +182,41 @@ function expand<T extends Float32Array | Uint16Array>(values: T, map: Uint32Arra
   return out;
 }
 
-export function wrapGarment(posedIn: Float32Array, partIn: Int8Array, indexIn: ArrayLike<number>, f: BodyFrame, groups: Groups, clearance: number): Wrapped {
+export function wrapGarment(posedIn: Float32Array, partIn: Int8Array, indexIn: ArrayLike<number>, f: BodyFrame, groups: Groups, clearance: number, ownSleeves = false): Wrapped {
   const w = weld(posedIn, indexIn); const posed = w.pos, index = w.index;
   const part = new Int8Array(posed.length / 3); for (let v = 0; v < w.map.length; v++) part[w.map[v]] = partIn[v];
   const n = posed.length / 3; const adj = neighbours(index, n); const before = posed.slice();
-  const pushed = collide(posed, f, groups, clearance, adj);
+  // a peça mais estreita que o corpo alarga (width.ts) e o pano que ficou dentro do corpo sai só em z (depth.ts);
+  // a colisão pela normal fica com o resto (laterais, axila)
+  const inner = innerFaces(posed, index, f, groups);
+  const moved = Math.max(widen(posed, part, f, groups, clearance, ownSleeves), pressOut(posed, part, index, f, groups, clearance, inner));
+  const pushed = Math.max(moved, collide(posed, f, groups, clearance, adj, inner));
   let inside = 0, far = 0;
+  // espinho: distância até a pele mais próxima, CABEÇA incluída — o capuz caído nas costas fica perto da cabeça e da
+  // nuca, não do tronco (sem ela, todo moletom com capuz da Meshy seria recusado como espinho)
+  // e PERNAS incluídas: a barra do casaco comprido (parka) fica perto da coxa, não do tronco
+  const reach = [...new Set([...groups, 0, 3])];
   for (let v = 0; v < n; v++) {
     const { d } = signedDistance(f, posed[v * 3], posed[v * 3 + 1], posed[v * 3 + 2], groups);
-    if (d < 0) inside++; if (Number.isFinite(d)) far = Math.max(far, d);
+    if (d < 0) inside++;
+    if (!Number.isFinite(d) || d <= LIMIT_FAR_CHECK) { if (Number.isFinite(d)) far = Math.max(far, d); continue; }
+    const head = signedDistance(f, posed[v * 3], posed[v * 3 + 1], posed[v * 3 + 2], reach).d;
+    far = Math.max(far, Number.isFinite(head) ? Math.min(d, Math.abs(head)) : d);
   }
   const { skinIndex, skinWeight } = transferWeights(posed, part, f, groups, adj, f.bone.length);
   const rest = unskin(posed, f, skinIndex, skinWeight);
   return { rest: expand(rest, w.map, 3), posed: expand(posed, w.map, 3), skinIndex: expand(skinIndex, w.map, 4), skinWeight: expand(skinWeight, w.map, 4),
     metrics: { inside: inside / n, stretch: edgeStretch(before, posed, index), pushed, far } };
+}
+
+/**
+ * Acessório flexível (colar, cachecol da Meshy): só colisão pela normal e pesos da pele mais próxima — sem alargar
+ * nem dar volume (a peça não é um tubo em volta do corpo). Encosta na pele com a folga e segue o tronco na pose.
+ */
+export function conformGarment(posedIn: Float32Array, indexIn: ArrayLike<number>, f: BodyFrame, groups: Groups, clearance: number) {
+  const w = weld(posedIn, indexIn); const posed = w.pos, n = posed.length / 3; const adj = neighbours(w.index, n);
+  const pushed = collide(posed, f, groups, clearance, adj);
+  const { skinIndex, skinWeight } = transferWeights(posed, new Int8Array(n), f, groups, adj, f.bone.length);
+  const rest = unskin(posed, f, skinIndex, skinWeight);
+  return { rest: expand(rest, w.map, 3), posed: expand(posed, w.map, 3), skinIndex: expand(skinIndex, w.map, 4), skinWeight: expand(skinWeight, w.map, 4), pushed };
 }

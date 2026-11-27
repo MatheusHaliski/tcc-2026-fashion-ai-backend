@@ -22,6 +22,8 @@ export interface Passo {
   repete?: number;
   /** leva o ator até este lugar durante o passo (e ele fica lá) */
   mover?: Partial<Lugar>;
+  /** de onde o ator parte neste passo, quando não é de onde ele está (a entrada em cena) */
+  de?: Partial<Lugar>;
   /** segura o auge do clipe depois que ele acaba (porta aberta, luz acesa) */
   mantem?: boolean;
 }
@@ -50,6 +52,13 @@ export function quadroParado(s: Sequencia): Sequencia {
     if (!clipDe(p.clip).ciclo) ultimo.set(p.ator, { ator: p.ator, clip: p.clip, inicio: 0, mantem: p.mantem });
   }
   return { id: s.id, passos: [...ultimo.values()] };
+}
+
+/** O clipe que um ator faz agora, quando começou e se o passo é de grupo ("fig:PLATEIA:*": todos do papel). */
+export interface ClipeDoAtor {
+  clip: string;
+  desde: number;
+  grupo: boolean;
 }
 
 interface Tocando {
@@ -112,6 +121,24 @@ export class Diretor {
     return out;
   }
 
+  /**
+   * O clipe que o ator faz agora (o passo começado mais recente que ainda dura, ou mantido depois do fim), ou null:
+   * as pessoas de cena traduzem o clipe num movimento do corpo humano (lib/flair/nucleos/gente/reacoes.ts).
+   */
+  clipeDoAtor(ator: string, agora: number): ClipeDoAtor | null {
+    let achado: ClipeDoAtor | null = null;
+    for (const t of this.fila) {
+      for (const p of t.seq.passos) {
+        if (!passoDoAtor(p, ator)) continue;
+        const desde = t.inicio + p.inicio;
+        const local = agora - desde;
+        if (local < 0 || (local > duracaoDoPasso(p) && !p.mantem)) continue;
+        if (!achado || desde >= achado.desde) achado = { clip: p.clip, desde, grupo: p.ator.endsWith(":*") };
+      }
+    }
+    return achado;
+  }
+
   /** Onde o ator está agora, partindo de `origem` (o lugar dele na sala). */
   lugar(ator: string, agora: number, origem: Lugar): Lugar {
     let atual: Lugar = { ...origem, ...this.lugares.get(ator) };
@@ -120,6 +147,7 @@ export class Diretor {
       for (const p of passos) {
         const local = agora - t.inicio - p.inicio;
         if (local <= 0) continue;
+        if (p.de) atual = { ...atual, ...p.de };
         const alvo: Lugar = { ...atual, ...p.mover };
         const k = Math.min(1, local / duracaoDoPasso(p));
         const kGiro = suave(k);

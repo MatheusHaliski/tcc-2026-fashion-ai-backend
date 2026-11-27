@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.wardrobe.ClosetFilter;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.hype.HypeScoreConfig;
@@ -65,12 +66,12 @@ class WardrobeServiceClosetTest {
         world.piecesOf(world.me).forEach(w -> w.setModerationStatus(ModerationStatus.APPROVED));
     }
 
-    static WardrobeService.ClosetFilter filter(String category, String color, String season, String occasion, String style,
+    static ClosetFilter filter(String category, String color, String season, String occasion, String style,
                                                String state, String q, String sort, int page, int size, String hype, String seal) {
-        return new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hype, seal);
+        return new ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hype, seal);
     }
 
-    static WardrobeService.ClosetFilter sort(String sort) {
+    static ClosetFilter sort(String sort) {
         return filter(null, null, null, null, null, null, null, sort, 0, 0, null, null);
     }
 
@@ -254,6 +255,19 @@ class WardrobeServiceClosetTest {
         // look arquivado não vale
         look.setStatus(SchemeStatus.ARCHIVED);
         assertThat(service.schemeVisible(bia, look)).isFalse();
+    }
+
+    /** Reauditoria: a peça excluída continuava abrindo para o dono em /pieces/{id}, com as ações todas. */
+    @Test
+    void pecaExcluidaNaoAbreMaisParaODono() {
+        WardrobeItem w = world.piece(world.me, "jeans");
+        w.setAvailabilityStatus(AvailabilityStatus.ARCHIVED);
+        assertThatThrownBy(() -> service.detail(ana, w.getId(), null)).isInstanceOf(ApiException.class)
+                .satisfies(e -> assertThat(((ApiException) e).status()).isEqualTo(404));
+        // a partir de um look dele que ainda a mostra, abre só o retrato guardado
+        Scheme look = world.looksOf(world.me).get(0);
+        Map<String, Object> retrato = service.detail(ana, w.getId(), look.getId());
+        assertThat(retrato).containsEntry("notAvailableAnymore", true).doesNotContainKey("piece");
     }
 
     @Test

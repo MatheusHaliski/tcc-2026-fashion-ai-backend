@@ -22,10 +22,27 @@ import java.util.Optional;
 
 /** Os 15 núcleos do FLAIR 3D, por número (o conjunto de estratégias que o {@link Flair3dNucleoService} escolhe pelo código). */
 public final class Flair3dNucleos {
-    public static final List<Flair3dNucleo> TODOS = List.of(new PassarelaNucleo(), new DressFighterNucleo(), new DressTheStarNucleo(),
-            new PersonagemFilmeNucleo(), new RoadToGloryNucleo(), new FashionDetectiveNucleo(), new Boutique3dNucleo(),
-            new ClubeCoracaoNucleo(), new FavoriteSingerNucleo(), new LabirintoNucleo(), new PilotoFavoritoNucleo(),
-            new AroundTheWorldNucleo(), new SuperHeroiNucleo(), new FashionSportsNucleo(), new BatalhaLooksNucleo());
+    /**
+     * Passarela, Dress the Star, Boutique e Around the World terminam com a jogada de cena ({@link Flair3dJogadaDeCena});
+     * os doze jogos de ação jogável, com a execução no percurso ({@link Flair3dExecucao}); os quatro de zonas pintam com
+     * orçamento de tinta ({@link Flair3dTinta}). Dress Fighter, Fashion Detective e Fashion Sports têm a habilidade dentro
+     * do próprio motor.
+     */
+    public static final List<Flair3dNucleo> TODOS = List.of(exec(new Flair3dJogadaDeCena(new PassarelaNucleo())), new DressFighterNucleo(),
+            exec(new Flair3dJogadaDeCena(new DressTheStarNucleo())), exec(new PersonagemFilmeNucleo()), exec(new RoadToGloryNucleo()),
+            new FashionDetectiveNucleo(), exec(new Flair3dJogadaDeCena(new Boutique3dNucleo())), tinta(new ClubeCoracaoNucleo()),
+            tinta(new FavoriteSingerNucleo()), exec(new LabirintoNucleo()), tinta(new PilotoFavoritoNucleo()),
+            exec(new Flair3dJogadaDeCena(new AroundTheWorldNucleo())), tinta(new SuperHeroiNucleo()), new FashionSportsNucleo(),
+            exec(new BatalhaLooksNucleo()));
+
+    private static Flair3dNucleo exec(Flair3dNucleo jogo) {
+        return new Flair3dExecucao(jogo);
+    }
+
+    /** Jogo de zonas: a tinta com orçamento e, depois da peça pronta, a execução no percurso. */
+    private static Flair3dNucleo tinta(Flair3dNucleo jogo) {
+        return exec(new Flair3dTinta(jogo));
+    }
 
     private Flair3dNucleos() {
     }

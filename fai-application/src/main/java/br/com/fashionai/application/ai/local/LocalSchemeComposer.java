@@ -1,6 +1,5 @@
 package br.com.fashionai.application.ai.local;
 
-import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.domain.model.WardrobeItem;
@@ -132,8 +131,8 @@ public final class LocalSchemeComposer {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         List<String> seals = seals(pieces, sty, occ, total);
         String mood = mood(sty, occ);
-        String title = title(sty, occ, season);
-        String rationale = Msg.t("localSchemeComposer.combinacao_de_pecas_do_seu", pieces.size(), (occ.isEmpty() ? Msg.t("localSchemeComposer.ocasiao_livre") : Msg.t("localSchemeComposer.ocasiao", String.join("/", occ))), (sty.isEmpty() ? "" : " e estilo " + String.join("/", sty)));
+        String title = LocalLookWording.title(sty, occ, season);
+        String rationale = LocalLookWording.rationale(pieces, occ, sty);
         return new Composition(title, picks, occ, sty, season, mood, seals, total, score, rationale);
     }
 
@@ -293,23 +292,6 @@ public final class LocalSchemeComposer {
             return "SOPHISTICATED";
         }
         return "COMFORTABLE";
-    }
-
-    static String title(List<String> styles, List<String> occasions, String season) {
-        String s = styles.isEmpty() ? "Essencial" : cap(styles.get(0).replace('_', ' '));
-        String o = occasions.isEmpty() ? Msg.t("localSchemeComposer.dia_a_dia") : occasions.get(0).replace('_', ' ');
-        String se = season == null ? "" : switch (season.toUpperCase(Locale.ROOT)) {
-            case "SUMMER" -> Msg.t("localSchemeComposer.de_verao");
-            case "WINTER" -> " de inverno";
-            case "AUTUMN" -> " de outono";
-            case "SPRING" -> " de primavera";
-            default -> "";
-        };
-        return "Look " + s + " para " + o + se;
-    }
-
-    private static String cap(String s) {
-        return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private static List<WardrobeItem> top(Map<String, List<WardrobeItem>> byCat, String cat) {

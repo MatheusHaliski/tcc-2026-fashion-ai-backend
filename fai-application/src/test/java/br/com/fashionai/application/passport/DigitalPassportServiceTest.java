@@ -87,6 +87,24 @@ class DigitalPassportServiceTest {
         assertThat(service.sheet(actor(ana), piece.getId())).containsEntry("access", "OWNER");
     }
 
+    @SuppressWarnings("unchecked")
+    @Test void tamanhoDoCadastroEncontraALinhaDaGradeSemLinhaAMais() {
+        piece.setCatalogProductId(null);
+        piece.setSizeLabel("m");
+        var rows = (List<Map<String, Object>>) sizes.forPiece(piece).get("sizes");
+        assertThat(rows).extracting(r -> r.get("label")).containsExactly("PP", "P", "M", "G", "GG", "XG");
+        assertThat(rows.get(2)).containsEntry("ownerDeclared", true);
+        piece.setSizeLabel("l");
+        assertThat((List<Map<String, Object>>) sizes.forPiece(piece).get("sizes")).filteredOn(r -> Boolean.TRUE.equals(r.get("ownerDeclared")))
+                .extracting(r -> r.get("label")).containsExactly("G");
+        piece.setCategory("lower_piece"); piece.setSubcategory("jeans"); piece.setSizeLabel("br_40");
+        var jeans = (List<Map<String, Object>>) sizes.forPiece(piece).get("sizes");
+        assertThat(jeans).hasSize(9).filteredOn(r -> Boolean.TRUE.equals(r.get("ownerDeclared"))).extracting(r -> r.get("label")).containsExactly("40");
+        piece.setSizeLabel("m");   // calça cadastrada em letra: a linha da peça vem em maiúscula, fora da numeração
+        var letra = (List<Map<String, Object>>) sizes.forPiece(piece).get("sizes");
+        assertThat(letra).hasSize(10).last().satisfies(r -> assertThat(r).containsEntry("label", "M").containsEntry("source", "OWNER").containsEntry("ownerDeclared", true));
+    }
+
     @Test void sizesDistinguishCommercialAvailabilityMeasurementProvenanceAndVisualApproximation() {
         PhysicalStoreListing listing = new PhysicalStoreListing(); listing.setProduct(product); listing.setSellerUserId(UUID.randomUUID()); listing.setPricePoints(1); listing.setActive(true); listings.save(listing);
         PhysicalStoreVariant m = new PhysicalStoreVariant(); m.setListingId(listing.getId()); m.setVariantKey("|m"); m.setSizeLabel("M"); m.setStockQuantity(2); variants.save(m);
@@ -109,5 +127,25 @@ class DigitalPassportServiceTest {
         assertThat(representation).containsEntry("kind", "SHOWCASE_GLB").containsEntry("approvedForTryOn", false).containsEntry("quarantine", "IN_REVIEW").containsEntry("sizeVariants", "RELATIVE_VISUAL_APPROXIMATION");
         assertThat(options).containsEntry("fitClaim", "NONE").containsEntry("avatarMeasurementsChanged", false).containsEntry("visualApproximationNote", "SIZES_ON_3D_ARE_RELATIVE_VISUAL_APPROXIMATIONS");
         assertThat(sizes.forProduct(product.getId())).containsEntry("grid", "letter");
+    }
+
+    /** RF tamanhos #6: medida de tabela sem fonte autorizada vem como "outro método", nunca como oficial. */
+    @Test void measurementsFromAnUnauthorizedChartAreOtherMethodNotOfficial() {
+        ProductSizeChart chart = new ProductSizeChart();
+        chart.setProductId(product.getId());
+        chart.setRevision(1);
+        chart.setReviewerId(UUID.randomUUID());
+        chart.setChartJson("{\"type\":\"GARMENT_MEASUREMENT\",\"family\":\"TSHIRT\",\"market\":\"BR\",\"sourceName\":\"Medida da vendedora\","
+                + "\"sourceAuthorized\":false,\"options\":[{\"label\":\"M\",\"order\":1,"
+                + "\"measurements\":[{\"region\":\"CHEST\",\"protocol\":\"GARMENT_FLAT_WIDTH_V1\",\"min\":50,\"max\":51}]}]}");
+        charts.save(chart);
+        var rows = (List<Map<String, Object>>) sizes.forPiece(piece).get("sizes");
+        Map<String, Object> rowM = rows.stream().filter(r -> "M".equals(r.get("label"))).findFirst().orElseThrow();
+        var measurement = ((List<Map<String, Object>>) rowM.get("measurements")).getFirst();
+        assertThat(measurement)
+                .containsEntry("provenance", "OTHER_METHOD")
+                .containsEntry("sourceName", "Medida da vendedora")
+                .containsEntry("unit", "cm")
+                .containsEntry("chartRevision", 1);
     }
 }

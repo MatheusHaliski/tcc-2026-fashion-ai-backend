@@ -6,7 +6,10 @@ import { concreto, laca, led, luz, metalPintado, veludo } from "@/lib/flair/nucl
 import { cadeira } from "@/lib/flair/nucleos/scene/moveis/assentos";
 import { passarelaEmY, pontoDePose } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { painelLed, trilhoSpots } from "@/lib/flair/nucleos/scene/moveis/palco";
+import { noLugar } from "@/lib/flair/nucleos/scene/parts";
 import type { Movel, Sala } from "@/lib/flair/nucleos/scene/types";
+import type { NucleoPersonagem } from "@/lib/flair/nucleos/types";
+import { mesaDosJurados } from "@/lib/flair/nucleos/scene/moveis/cenarios";
 
 /** Altura da passarela e distância entre os dois pontos de pose (o adversário fica em x = BATALHA_VAO). */
 export const BATALHA_ALTURA = 0.25;
@@ -21,6 +24,17 @@ export const BATALHA_MEIA_LUA: [number, number, number][] = [40, 55, 70, 85, 100
     return [CENTRO + RAIO * Math.sin(a), RAIO * Math.cos(a), lado * graus + 180];
   }),
 );
+
+/** A mesa dos jurados, ao lado da passarela, e os três jurados sentados nas cadeiras dela, de frente para os looks. */
+const MESA = { pos: [-5, 0, 1.5] as [number, number, number], giro: 90 };
+const JURADOS: NucleoPersonagem[] = [-0.8, 0, 0.8].map((x, i) => ({
+  papel: "JURADO",
+  tipo: "silhueta",
+  pos: noLugar([x, 0, -0.5], MESA.pos, MESA.giro),
+  cor: ["#7A2E4A", "#2E3A55", "#5A4636"][i],
+  giro: MESA.giro,
+  postura: "sentada",
+}));
 
 const cadeiras: Movel[] = BATALHA_MEIA_LUA.map(([x, z, giro]) => cadeira({ pos: [x, 0, z], giro, zona: "personagens" }, "estofado", "metal"));
 
@@ -45,6 +59,7 @@ export const SALA_BATALHA_LOOKS: Sala = {
       { x: [-4, -1.6], z: [-1.5, 4] },
       { x: [3.4, 5.6], z: [-1.5, 4] },
       { x: [1.2, 2.4], z: [-0.6, 0.6] },
+      { x: [-6, -5], z: [0.4, 2.6] },
     ],
     decoracao: [
       { x: [-6, 6], z: [-7, -6] },
@@ -59,8 +74,10 @@ export const SALA_BATALHA_LOOKS: Sala = {
     painelLed({ pos: [CENTRO, 0, -6.85] }, "led", "metal", 4.4, 2.2, 1.2),
     trilhoSpots({ pos: [CENTRO, 4.7, -1.5] }, "metal", "luz", 6, 5),
     ...cadeiras,
+    // a segunda revisão dos cenários: a mesa dos jurados ao lado da passarela
+    mesaDosJurados(MESA, "laca", "estofado", "led", 2.4),
   ],
-  figurantes: [],
+  figurantes: JURADOS,
   luzes: {
     principal: { cor: "#EAF1FF", intensidade: 2.3, pos: [3.1, 5.2, 3.4] },
     recorte: { cor: "#4F8BFF", intensidade: 2, pos: [-2.5, 4.4, -4.5] },

@@ -79,8 +79,10 @@ public class SizeOptionsService {
             }
             charts.findByProductId(product.getId()).ifPresent(chart -> applyChart(chart, rows, approximations));
         }
-        if (piece != null && piece.getSizeLabel() != null && !piece.getSizeLabel().isBlank()) {
-            Map<String, Object> row = rows.computeIfAbsent(piece.getSizeLabel(), label -> row(label, "OWNER", "UNKNOWN"));
+        String own = piece == null ? null : SizeGrids.labelOf(piece.getSizeLabel());
+        if (own != null) {
+            // o código do cadastro ("m") encontra a linha da grade ("M") em vez de virar uma linha a mais
+            Map<String, Object> row = rows.computeIfAbsent(own, label -> row(label, "OWNER", "UNKNOWN"));
             row.put("ownerDeclared", true);
             if (!row.containsKey("representation")) row.put("representation", approximations ? "VISUAL_APPROXIMATION" : "NONE");
         }

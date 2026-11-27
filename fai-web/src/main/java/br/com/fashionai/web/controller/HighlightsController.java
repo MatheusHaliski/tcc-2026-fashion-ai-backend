@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @Tag(name = "RF34/RF35 — Destaques, Inventory Score, FAI Points e conquistas")
@@ -81,40 +80,6 @@ public class HighlightsController {
     @Operation(summary = "RF35.CA01 — Saldo, nível e extrato de FAI Points")
     public Map<String, Object> account(CurrentUser user) {
         return points.account(user);
-    }
-
-    @GetMapping("/api/points/shop")
-    @Operation(summary = "RF35.CA03 — Loja de acabamentos e decorações")
-    public List<Map<String, Object>> shop(CurrentUser user) {
-        return points.shop(user);
-    }
-
-    public record ModuleRequest(String moduleId) {
-    }
-
-    @PostMapping("/api/points/shop/{sku}/try-on")
-    @Operation(summary = "RF35.CA03 — Experimentar item no módulo antes de comprar")
-    public Map<String, Object> tryOn(CurrentUser user, @PathVariable String sku, @RequestBody(required = false) ModuleRequest body) {
-        return points.tryOn(user, sku, body == null ? null : body.moduleId());
-    }
-
-    @PostMapping("/api/points/shop/{sku}/purchase")
-    @Operation(summary = "RF35.CA04 — Comprar com FAI Points")
-    public Map<String, Object> buy(CurrentUser user, @PathVariable String sku,
-                                   @RequestHeader(name = "Idempotency-Key", required = false) String requestKey) {
-        return points.buy(user, sku, requestKey);
-    }
-
-    @PostMapping("/api/me/room-inventory/{inventoryId}/apply")
-    @Operation(summary = "RF35.CA05 — Aplicar item comprado a um módulo do quarto")
-    public Map<String, Object> apply(CurrentUser user, @PathVariable UUID inventoryId, @RequestBody ModuleRequest body) {
-        return points.apply(user, inventoryId, body.moduleId());
-    }
-
-    @DeleteMapping("/api/me/room-inventory/{inventoryId}/apply")
-    @Operation(summary = "RF35.CA05 — Retirar do quarto um item aplicado (continua no inventário)")
-    public Map<String, Object> unapply(CurrentUser user, @PathVariable UUID inventoryId) {
-        return points.unapply(user, inventoryId);
     }
 
     @GetMapping("/api/me/achievements")

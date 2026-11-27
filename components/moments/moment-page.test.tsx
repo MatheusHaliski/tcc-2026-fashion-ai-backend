@@ -136,7 +136,7 @@ describe("MomentPage — conteúdo", () => {
     expect(screen.getByText("Calendário oficial")).toBeTruthy();
     expect(screen.getByRole("link", { name: "https://ex.com/f" })).toBeTruthy();
     expect(screen.getAllByText("+15").length).toBe(2);   // look (10 × 1,5) e o desafio
-    expect(screen.getByText("Wardrobe Bonus · só peças que você já tem")).toBeTruthy();
+    expect(screen.getByText("Bônus de guarda-roupa · só peças que você já tem")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Look" }).getAttribute("href")).toBe("/schemes/sc1");
     expect(screen.getByText(/@bia/)).toBeTruthy();
     expect(screen.getByText("· look enviado")).toBeTruthy();

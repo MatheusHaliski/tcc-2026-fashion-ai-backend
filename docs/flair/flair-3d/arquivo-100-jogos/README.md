@@ -1,6 +1,10 @@
 # FLAIR 3D — 100 ideias de jogos FLAIR (pesquisa de design)
 
-> **Arquivo.** O FLAIR 3D foi reduzido a cinco jogos, um por capítulo (1, 31, 43, 70 e 96). As fichas abaixo guardam o estudo original dos 100; os dados dos outros 95 ficam em `scripts/flair-games/data/arquivo/` e não entram na migração.
+> **Arquivo.** Desde 08/11/2026 o FLAIR 3D são os 15 núcleos de `../JOGOS.md`; os cinco capítulos que restaram deste
+> estudo (1, 31, 43, 70 e 96) ficaram no app como **Cidade de Vidro** (`/flair/jogos`) até 15/11/2026, quando saíram
+> com o gerador e os dados de `scripts/flair-games/` (estão no histórico do git; ver `../../ENDPOINTS_FLAIR.md`). O
+> catálogo gerado dos cinco ficou aqui, em `catalogo.gen.md`.
+> Antes disso, o FLAIR 3D tinha sido reduzido a cinco jogos, um por capítulo (1, 31, 43, 70 e 96). As fichas abaixo guardam o estudo original dos 100; os dados dos outros 95 ficam em `scripts/flair-games/data/arquivo/` e não entram na migração.
 
 > Pedido de 05/11/2026. O **Meu Quarto** deixa de ser uma área própria do app e passa a ser um **componente** do jogo
 > **FLAIR 3D**, continuação da franquia FashionAI. Este estudo levanta 100 ideias de jogos FLAIR para o FLAIR

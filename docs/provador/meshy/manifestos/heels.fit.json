@@ -1,0 +1,45 @@
+{
+  "versao": 1,
+  "categoria": "shoes_piece",
+  "subcategoria": "heels",
+  "slot": "feet",
+  "attach": "rigid",
+  "osso": "Foot",
+  "giroY": 1.5708,
+  "centro": [
+    0.00016,
+    -0.0017,
+    -0.00026
+  ],
+  "caixa": [
+    0.7133,
+    0.772,
+    1.9017
+  ],
+  "escalaNominal": 0,
+  "dicas": {
+    "par": false,
+    "corteX": 0,
+    "abertura": 0,
+    "bracosAbertos": false,
+    "aberto": true,
+    "sola": 0.012
+  },
+  "tamanhos": {
+    "grade": "shoes",
+    "porPasso": {
+      "largura": 0.012,
+      "comprimento": 0.027,
+      "manga": 0
+    },
+    "limite": [
+      -4,
+      4
+    ],
+    "convencao": "RELATIVE_VISUAL_APPROXIMATION",
+    "alegacaoDeCaimento": "NONE",
+    "medidasDoAvatarAlteradas": false
+  },
+  "estado": "ajuste_manual",
+  "motivo": "o pé do avatar é plano: o salto fica sob o calcanhar sem a pose de ponta de pé"
+}

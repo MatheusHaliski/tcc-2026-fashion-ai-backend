@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.wardrobe.ClosetFilter;
 import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -127,7 +128,7 @@ class LookbookClosetHypePrivacyTest {
     }
 
     private List<String> names(CurrentUser viewer, String sort, String hypeLevel) {
-        WardrobeService.ClosetFilter f = new WardrobeService.ClosetFilter(null, null, null, null, null, null, null, sort, 0, 30, hypeLevel);
+        ClosetFilter f = new ClosetFilter(null, null, null, null, null, null, null, sort, 0, 30, hypeLevel, null);
         Views.Page<Views.PieceView> page = wardrobe.closet(viewer, anaId, f);
         assertThat(page.total()).isEqualTo(page.items().size());
         return new ArrayList<>(page.items().stream().map(Views.PieceView::name).toList());

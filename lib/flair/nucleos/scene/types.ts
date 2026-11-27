@@ -89,6 +89,8 @@ export interface Zona {
 export interface ZonaAvatar extends Zona {
   marca: "tablado" | "tapete" | "marca" | "passarela";
   altura: number;
+  /** andar livre só dentro da zona, mesmo no piso (o círculo da luta de rua: não se sai para o meio do público) */
+  cercada?: boolean;
 }
 
 export interface Movel {
@@ -106,11 +108,16 @@ export interface Movel {
    * manifesto e carrega; sem ele (ou sem WebGL), valem as partes procedurais
    */
   glb?: GlbRef;
+  /**
+   * papéis de cor do móvel (ex.: `{ estofado: "veludo", metal: "latao" }`): o objeto GLB do motor Blender nomeia os
+   * materiais `sala:<papel>` e cada um é pintado com o material da sala que o móvel procedural usava
+   */
+  papeis?: Record<string, string>;
 }
 
 export interface GlbRef {
   slug: string;
-  /** escala fixa; sem ela, o objeto é ajustado à altura do móvel procedural e apoiado no piso */
+  /** escala fixa; sem ela, o objeto é ajustado à altura do móvel procedural e encaixado na caixa dele */
   escala?: number;
   /** giro extra em y (graus), para modelos que vêm virados */
   giro?: number;
@@ -145,6 +152,8 @@ export interface Sala {
   moveis: Movel[];
   /** figurantes só de cenário (torcida, convidados), além dos personagens do arquivo do núcleo */
   figurantes: NucleoPersonagem[];
+  /** elenco próprio da sala (as modalidades do Fashion Sports): quando existe, entra no lugar dos personagens do núcleo */
+  personagens?: NucleoPersonagem[];
   luzes: {
     principal: Luz;
     recorte: Luz;

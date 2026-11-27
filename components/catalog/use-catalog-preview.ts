@@ -8,6 +8,8 @@ import { forgetPreview, preview } from "@/lib/catalog/preview-queue";
 
 export { hasUsableCatalogPreview };
 
+const unframeable = (error: unknown) => error instanceof ApiError && error.code === "CATEGORY_FRAME_UNAVAILABLE";
+
 /**
  * Prévia enquadrada de um cartão do catálogo: usa a do banco ou a gravada no navegador; senão pede quando o cartão
  * aparece na tela (fila de `lib/catalog/preview-queue`). Regras em `preview-rules`, cache persistente em `preview-store`.
@@ -49,7 +51,9 @@ export function useCatalogPreview(product: CatalogProduct) {
   function prepare(): CatalogProduct | Promise<CatalogProduct> {
     const current = framed?.identity === identity ? { ...product, ...previewFields(framed.product) } : product;
     if (hasCachedPreview(current) || !hasPreviewSource(product)) return current;
-    return preview(product, false, () => true, true).then(prepared => ({ ...product, ...previewFields(prepared) }));
+    const framing = preview(product, false, () => true, true).then(prepared => ({ ...product, ...previewFields(prepared) }));
+    // Com modelo 3D publicado, o provador veste o .glb: a foto que não enquadra só fica sem prévia, não bloqueia a escolha.
+    return product.model3dUrl ? framing.catch((error) => { if (unframeable(error)) return current; throw error; }) : framing;
   }
   return { ref, prepare, product: framed?.identity === identity && framed.product !== product ? { ...product, ...previewFields(framed.product) } : product, pending, failed, retry: () => { forgetPreview(product); setRetry(current => ({ identity, count: current?.identity === identity ? current.count + 1 : 1 })); } };
 }

@@ -1,0 +1,25 @@
+{
+ "produto": "High Rise Bootcut Jean",
+ "marca": "Abercrombie & Fitch",
+ "url_oficial": "https://www.abercrombie.com/shop/us/p/high-rise-bootcut-jean-61265349",
+ "subcategoria": "jeans",
+ "tamanho": "38",
+ "sexo": "FEMININO",
+ "tecido": {
+  "tipo": "denim",
+  "cor": "#4a6a93",
+  "gramatura": 340
+ },
+ "fechamento": "botao_ziper",
+ "bolsos": [
+  "faca",
+  "traseiro"
+ ],
+ "passantes": true,
+ "medidas_marca": {
+  "barra": 46
+ },
+ "observacao": "bootcut: a barra abre (46 cm) depois do joelho. Cor não conferida na foto (lavagem média escolhida).",
+ "caimento": "regular",
+ "ribana": false
+}

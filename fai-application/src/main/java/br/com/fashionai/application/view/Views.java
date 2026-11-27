@@ -20,6 +20,7 @@ import java.util.UUID;
 
 import static br.com.fashionai.application.view.PieceReferenceViews.estadoConservacao;
 import static br.com.fashionai.application.view.PieceReferenceViews.tipoLavagem;
+import static br.com.fashionai.application.view.PieceReferenceViews.tipoLook;
 
 /** Visões expostas pela API (o frontend nunca recebe entidade JPA nem campo cifrado cru). */
 public final class Views {
@@ -63,7 +64,8 @@ public final class Views {
                             String mannequinImageUrl, String mannequinImageFace, String brandSource, String studioFeedUrl,
                             boolean aiGeneratedImage, boolean forDonation,
                             String variation, Map<String, List<String>> attributes, ReferenceOptionView estadoConservacao,
-                            ReferenceOptionView tipoLavagem, ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica) {
+                            ReferenceOptionView tipoLavagem, ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica,
+                            ReferenceOptionView origem, ReferenceOptionView corte, UUID catalogProductId, UUID catalogVariantId) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -117,7 +119,8 @@ public final class Views {
                 // campo próprio na view e não se repetem aqui
                 w.getVariationCode(), TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS),
                 estadoConservacao(w.getEstadoConservacao()), tipoLavagem(w.getTipoLavagem()),
-                PieceReferenceViews.colecao(w.getColecao()), PieceReferenceViews.intensidadeTermica(w.getIntensidadeTermica()));
+                PieceReferenceViews.colecao(w.getColecao()), PieceReferenceViews.intensidadeTermica(w.getIntensidadeTermica()),
+                PieceReferenceViews.origem(w.getOrigem()), PieceReferenceViews.corte(w.getCorte()), w.getCatalogProductId(), w.getCatalogVariantId());
     }
 
     /**
@@ -210,10 +213,6 @@ public final class Views {
     /** Opção de catálogo, sem timestamps/autoria internos da entidade JPA. */
     public record ReferenceOptionView(UUID id, String codigo, String nome) { }
 
-    public static TipoLookView tipoLook(br.com.fashionai.domain.model.TipoLook tipo) {
-        return tipo == null ? null : new TipoLookView(tipo.getId(), tipo.getCodigo(), tipo.getNome());
-    }
-
     public record SchemeView(UUID id, UserCard owner, String title, String description, String creationMode,
                              String origin, List<String> style, List<String> occasion, String season, String mood,
                              String visibility, String status, String displayMode, boolean disponivel,
@@ -225,7 +224,7 @@ public final class Views {
                              UUID remixedFromId, boolean revalidationPending, Counters counters, ViewerState viewer,
                              Instant publishedAt, Instant createdAt, Instant updatedAt,
                              List<Map<String, Object>> sealBadges, String mannequinImageUrl, String mannequinImageFace, TipoLookView tipoLook,
-                             ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica) {
+                             ReferenceOptionView colecao, ReferenceOptionView intensidadeTermica, ReferenceOptionView nivelTermico) {
     }
 
     public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions) {
@@ -254,7 +253,7 @@ public final class Views {
                 s.getRemixCount(), s.getViewCount(), s.getSaveCount(), reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt(),
                 sealBadges == null ? List.of() : sealBadges, s.getMannequinImageUrl(), s.getMannequinImageFace(), tipoLook(s.getTipoLook()),
-                PieceReferenceViews.colecao(s.getColecao()), PieceReferenceViews.intensidadeTermica(s.getIntensidadeTermica()));
+                PieceReferenceViews.colecao(s.getColecao()), PieceReferenceViews.intensidadeTermica(s.getIntensidadeTermica()), PieceReferenceViews.nivelTermico(s.getNivelTermico()));
     }
 
     public record PhotoView(UUID id, String origin, UUID sourceEntityId, String url, String thumbnailUrl,

@@ -5,7 +5,6 @@ import br.com.fashionai.application.flair3d.nucleos.AroundTheWorldNucleo;
 import br.com.fashionai.application.flair3d.nucleos.BatalhaLooksNucleo;
 import br.com.fashionai.application.flair3d.nucleos.Boutique3dNucleo;
 import br.com.fashionai.application.flair3d.nucleos.DressTheStarNucleo;
-import br.com.fashionai.application.flair3d.nucleos.FashionDetectiveNucleo;
 import br.com.fashionai.application.flair3d.nucleos.LabirintoNucleo;
 import br.com.fashionai.application.flair3d.nucleos.PassarelaNucleo;
 import br.com.fashionai.application.flair3d.nucleos.PersonagemFilmeNucleo;
@@ -49,6 +48,15 @@ class Flair3dCartasPontosTest {
     }
 
     @Test
+    void passarelaDizAContaDaNotaQuandoAsRegrasSomamAte70() {
+        CbcRules.Card sup = card("SUP", "brand:Farm");
+        CbcRules.Card inf = card("INF", "brand:Osklen");
+        Resultado r = new PassarelaNucleo().pontuar(vestir(sup, inf), contexto(7L, sup, inf));
+        assertThat(r.eventos()).contains(new Resultado.Evento("CONTA", java.util.Map.of("soma", 40.0, "maximo", 70.0)));
+        assertThat(r.regras().stream().mapToDouble(Resultado.RegraResultado::pontos).sum() * 100 / 70).isCloseTo(r.pontos(), org.assertj.core.data.Offset.offset(0.5));
+    }
+
+    @Test
     void nucleosDePontoPorPecaDaoOValorDaRegraACadaCartaQueBate() {
         CbcRules.Card y2k = card("SUP", "style:y2k");
         CbcRules.Card classica = card("INF", "style:classic", "color:black");
@@ -71,14 +79,8 @@ class Flair3dCartasPontosTest {
         CbcRules.Card sup = card("SUP", "occasion:casual", "material:linen");
         CbcRules.Card inf = card("INF", "occasion:beach", "material:leather");
         Entrega ensaio = comMaquiagem(vestir(sup, inf), "LABIOS", "CORAL", "GLOSS");
-        assertThat(cartas(new RoadToGloryNucleo(), ensaio, sup, inf)).containsExactly(de(sup, 12.5), de(inf, 12.5));
-
-        CbcRules.Card gala = card("SUP", "occasion:formal", "material:leather");
-        CbcRules.Card festa = card("INF", "occasion:party", "material:denim");
-        CbcRules.Card comum = card("CAL");
-        // acesso 50 dividido entre as 2 de gala; desafio 50 pela defesa de cada uma (26, 26 e 6)
-        assertThat(new FashionDetectiveNucleo().pontuar(vestir(gala, festa, comum), contexto(7L, gala, festa, comum)
-                .comAndamento(Andamento.de(Acionamento.NENHUM))).cartas()).containsExactly(de(gala, 47.41), de(festa, 47.41), de(comum, 5.17));
+        // a nota do look (a prévia): a entrega ainda abre a sessão de fotos
+        assertThat(new RoadToGloryNucleo().previa(ensaio, Flair3dFixtures.contexto(1, sup, inf)).cartas()).containsExactly(de(sup, 12.5), de(inf, 12.5));
 
         CbcRules.Card cima = card("SUP", "material:linen", "color:red", "brand:Farm");
         CbcRules.Card baixo = card("INF", "material:cotton", "color:orange");

@@ -1,5 +1,6 @@
 "use client";
 
+import { pieceThumbSources } from "@/lib/catalog/default-garment";
 import Link from "next/link";
 import { Card, cn } from "@/components/ui";
 import { PieceImage, useImageBatch } from "@/components/piece-image";
@@ -22,7 +23,7 @@ export function WardrobeBrowser({
   pieces, needsReview, items, slotNames, onRemove, onTryOnEntry,
 }: WardrobeBrowserProps) {
   const { t } = useI18n();
-  const batchReady = useImageBatch(FITTING_SLOTS.flatMap((slot) => (pieces?.[slot] ?? []).map((e) => [e.piece.thumbnailUrl, e.piece.imageUrl])));
+  const batchReady = useImageBatch(FITTING_SLOTS.flatMap((slot) => (pieces?.[slot] ?? []).map((e) => pieceThumbSources(e.piece))));
   const wardrobeCount = FITTING_SLOTS.reduce((count, slot) => count + (pieces?.[slot]?.length ?? 0), 0);
 
   return (
@@ -64,7 +65,7 @@ export function WardrobeBrowser({
                     onClick={() => worn ? onRemove(slot) : onTryOnEntry(entry)}
                     className={cn("tryon-rack-item", worn && "is-worn")}
                   >
-                    <PieceImage sources={[entry.piece.thumbnailUrl, entry.piece.imageUrl]} className="aspect-square w-full" priority={index < 4} hold={!batchReady} />
+                    <PieceImage sources={pieceThumbSources(entry.piece)} className="aspect-square w-full" priority={index < 4} hold={!batchReady} />
                     <span className="block truncate type-caption">{entry.piece.name}</span>
                     {worn && <span className="tryon-worn-flag">{t("tryOn.vestida")}</span>}
                   </button>
