@@ -78,7 +78,7 @@ class Flair3dFaseDeUsoTest {
     @Test
     void osJogosDeCartasContinuamComTresMarcasESemLanceOusado() {
         assertThat(Flair3dFaseDeUso.marcasDo("PASSARELA")).isEqualTo(Flair3dExecucao.MARCAS);
-        assertThat(Flair3dFaseDeUso.riscoDe("PASSARELA", SEGUROS, 1000, partida(7))).isNull();
+        assertThat(Flair3dFaseDeUso.riscoDe("PASSARELA", SEGUROS, 1000, partida(7), null)).isNull();
     }
 
     @Test
@@ -127,9 +127,15 @@ class Flair3dFaseDeUsoTest {
     private static Resultado fechar(Flair3dNucleo jogo, Contexto ctx, Map<String, Object> pedido, int ousadas) {
         List<String> botoes = (List<String>) pedido.get("botoes");
         List<String> ousados = (List<String>) pedido.get("ousados");
+        Map<String, Object> chave = (Map<String, Object>) pedido.get("chave");
+        int marcaChave = (int) chave.get("marca");
+        String certa = (String) chave.get("certa");
+        String errada = certa.equals(botoes.get(marcaChave)) ? ousados.get(marcaChave) : botoes.get(marcaChave);
         List<Toque> toques = new ArrayList<>();
         for (int i = 0; i < botoes.size(); i++) {
-            toques.add(new Toque(i, i < ousadas ? ousados.get(i) : botoes.get(i), 300));
+            // no momento-chave, quem ousa em tudo erra a leitura (pit stop com o pneu errado); quem dosa acerta
+            String noChave = ousadas == botoes.size() ? errada : certa;
+            toques.add(new Toque(i, i == marcaChave ? noChave : i < ousadas ? ousados.get(i) : botoes.get(i), 300));
         }
         Acionamento ac = new Acionamento(null, null, null, new Execucao(toques));
         return jogo.pontuar(capacete(), ctx.comAndamento(ctx.andamento().com(ac)));
