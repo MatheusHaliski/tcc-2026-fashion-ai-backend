@@ -78,11 +78,12 @@ describe("quadro por porte", () => {
     expect(within(canto("bl")).getByTestId("nucleo-cast").textContent).toContain("A modelo da casa");
     expect(within(canto("br")).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Câmera: Automática. Trocar de câmera", "Girar à esquerda", "Girar à direita"]);
     // o começo da partida: a premissa do jogo sobre a régua e o deck, até a pessoa seguir
+    // a Aura na partida (rodada 8g) fica entre a apresentação e a régua, só na preparação
     const baixo = quadro().querySelector(".n3d-lower")!;
-    expect(Array.from(baixo.children).map((el) => el.className)).toEqual(["n3d-cutscene n3d-premissa", "n3d-ruler", "n3d-band is-prep"]);
+    expect(Array.from(baixo.children).map((el) => el.className)).toEqual(["n3d-cutscene n3d-premissa", "n3d-aura", "n3d-ruler", "n3d-band is-prep"]);
     expect(screen.getByTestId("nucleo-premissa").textContent).toContain("Noite de desfile");
     fireEvent.click(screen.getByRole("button", { name: "Montar o look" }));
-    expect(Array.from(baixo.children).map((el) => el.className)).toEqual(["n3d-ruler", "n3d-band is-prep"]);
+    expect(Array.from(baixo.children).map((el) => el.className)).toEqual(["n3d-aura", "n3d-ruler", "n3d-band is-prep"]);
   });
 
   it("\"Entregar\" é o botão principal, no canto direito da linha das abas; uma fileira só de cartas", async () => {

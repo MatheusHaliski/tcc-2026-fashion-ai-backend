@@ -1,0 +1,221 @@
+/* ── FLAIR 3D · demonstração jogável do Fashion Detective (components/flair/detetive/demo): HUD mínimo de console
+   (objetivo numa linha, vida no canto de baixo à esquerda, arma e munição no canto de baixo à direita, retícula,
+   prompt do botão), flash vermelho ao levar golpe, botões de toque, pausa e fim. */
+.dmo-hud {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.dmo-hud button,
+.dmo-hud a,
+.dmo-hud .n3d-analogico {
+  pointer-events: auto;
+}
+
+.dmo-topo {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dmo-objetivo {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--text-body);
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 80%);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dmo-vida {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dmo-vida-barra {
+  display: block;
+  width: min(40vw, 220px);
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 55%);
+}
+
+.dmo-vida-barra span {
+  display: block;
+  height: 100%;
+  background: #7be3a0;
+  transition: width 0.25s ease-out;
+}
+
+.dmo-vida-barra span.is-media {
+  background: #f2c230;
+}
+
+.dmo-vida-barra span.is-baixa {
+  background: #e5484d;
+}
+
+.dmo-vida b {
+  font-size: var(--text-body);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 80%);
+}
+
+.dmo-arma {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  padding: 6px 14px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 50%);
+  color: #fff;
+  font-size: var(--text-h3);
+  font-weight: 700;
+}
+
+.dmo-reticula {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: #fff;
+  filter: drop-shadow(0 0 3px rgb(0 0 0 / 90%));
+  transform: translate(-50%, -50%);
+}
+
+.dmo-reticula.is-travada {
+  color: #ff4d52;
+}
+
+.dmo-prompt {
+  position: absolute;
+  bottom: 72px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 60%);
+  font-size: var(--text-body);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.dmo-flash {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 90px 24px rgb(229 72 77 / 75%);
+  opacity: 0;
+  animation: dmo-flash 0.5s ease-out;
+}
+
+@keyframes dmo-flash {
+  from {
+    opacity: 1;
+  }
+}
+
+.dmo-toque {
+  position: absolute;
+  right: 12px;
+  bottom: 72px;
+  display: none;
+  grid-template-columns: repeat(3, 52px);
+  gap: 8px;
+}
+
+.dmo-toque-btn {
+  width: 52px;
+  height: 52px;
+  border: 2px solid rgb(255 255 255 / 35%);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 45%);
+  color: #fff;
+  font-size: var(--text-h3);
+  font-weight: 700;
+}
+
+.dmo-toque-btn.is-ativo {
+  border-color: #ff4d52;
+  background: rgb(255 77 82 / 30%);
+}
+
+@media (pointer: coarse) {
+  .dmo-toque {
+    display: grid;
+  }
+}
+
+.dmo-pausa,
+.dmo-fim {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgb(8 9 12 / 72%);
+}
+
+.dmo-pausa h2,
+.dmo-fim h2 {
+  margin: 0 0 6px;
+  font-size: var(--text-h2);
+}
+
+.dmo-pausa .btn,
+.dmo-fim .btn {
+  min-width: 200px;
+}
+
+.dmo-pausa-nota {
+  max-width: 320px;
+  margin: 8px 16px 0;
+  font-size: var(--text-caption);
+  text-align: center;
+  opacity: 0.75;
+}
+
+.dmo-fim.is-pega h2 {
+  color: #ff8a8e;
+}
+
+.dmo-fim.is-resolvido h2 {
+  color: #7be3a0;
+}
+
+.dmo-sem-webgl {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  transform: translate(-50%, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dmo-flash {
+    animation-duration: 0.01s;
+  }
+}

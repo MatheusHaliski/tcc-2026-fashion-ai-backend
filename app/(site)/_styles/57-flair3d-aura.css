@@ -1,0 +1,29 @@
+/* Aura na partida (components/flair/nucleos/nucleo-aura.tsx e nucleo-result-aura.tsx, rodada 8g): a plateia que reage
+   à faixa de Hype, as famílias de Aura vestidas e o trunfo do Hype de uso único. */
+.n3d-aura {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  font-size: var(--text-caption);
+}
+
+.n3d-aura p {
+  margin: 4px 0;
+}
+
+.n3d-aura-familias,
+.n3d-aura-resultado {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.n3d-aura-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.n3d-aura-trunfo.is-chamado {
+  font-weight: 700;
+}

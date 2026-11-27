@@ -161,7 +161,7 @@ final class BatalhaLooksRodadas {
                 Map<String, CbcRules.Card> descansadas = descansadas(look);
                 List<String> cansadas = look.pecas().keySet().stream().filter(v -> !descansadas.containsKey(v)).toList();
                 BatalhaLooksPlacar.DaPessoa voce = BatalhaLooksPlacar.daPessoa(desafio, look.pecas(), descansadas, contexto.andamento().usos(),
-                        look.etapa());
+                        look.etapa(), contexto);
                 Map<String, Object> adversario = adversarioNaTela(contexto, look.etapa(), desafio);
                 Map<String, Object> placar = new LinkedHashMap<>();
                 placar.put("rodada", look.etapa());
@@ -172,11 +172,13 @@ final class BatalhaLooksRodadas {
                 placar.put("cansadas", voce.cansadas());
                 placar.put("familia", adversario.get("familia"));
                 placar.put("look", adversario.get("look"));
+                placar.put("aura", voce.aura().evento().valor());
                 List<Evento> eventos = new ArrayList<>();
                 if (!cansadas.isEmpty()) {
                     eventos.add(new Evento(CARTAS_CANSADAS, Map.of("quantas", cansadas.size(), "vagas", cansadas)));
                 }
                 eventos.add(new Evento("RODADA_DA_BATALHA", placar));
+                eventos.add(voce.aura().evento());
                 return new Avaliacao(true, voce.nota().total(), voce.regras(), eventos);
             }
 
@@ -210,7 +212,7 @@ final class BatalhaLooksRodadas {
                 soma.put("adversario", somaDoAdversario(passos));
                 out.add(new Evento("SOMA_DA_BATALHA", soma));
                 if (soma(passos) == somaDoAdversario(passos)) {
-                    out.add(new Evento("VOTO_DA_PLATEIA", venceu(passos) ? "VOCE" : "ADVERSARIO"));
+                    out.add(BatalhaLooksVoto.evento(venceu(passos), contexto));
                 }
                 return out;
             }

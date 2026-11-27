@@ -68,6 +68,8 @@ export interface NucleoStageProps {
   semente?: number;
   /** o que a pessoa já pintou em cada zona (modos do Ateliê) */
   zonas?: Record<string, ZonaEscolha>;
+  /** a resposta da preparação que veste (o emblema do herói) */
+  emblema?: string | null;
   maquiagem?: Record<string, MaquiagemEscolha>;
   prefs: FxPrefs;
   onPref: (campo: keyof FxPrefs) => void;
@@ -104,7 +106,7 @@ export function NucleoStage(props: NucleoStageProps) {
     <div className="n3d-stage" data-testid="nucleo-stage">
       <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} anterior={props.tentativa} variante={variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
-        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem}
+        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} emblema={props.emblema} maquiagem={props.maquiagem}
         andarLivre={andaAgora(definicao.codigo, definicao.acoes, momento, props.entreLances)}
         agilidade={props.recursos?.look.atributos.AGILIDADE} desfileAtivo={desfileNaAcao} />
       {desfileNaAcao && props.onFimDesfile && <DesfileHud codigo={definicao.codigo} onFim={props.onFimDesfile} resultado={props.resultado} onExecucao={props.onExecucao} reduzido={reduzido} />}

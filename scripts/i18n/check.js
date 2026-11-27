@@ -37,6 +37,7 @@ const looksPortuguese = (s) => /[ãõç]|\b(você|voce|não|nao|peça|peças|sen
 // ---------- frontend ----------
 const cat = {}; for (const l of ["pt-BR", "en", "es"]) cat[l] = JSON.parse(fs.readFileSync(path.join(FE, `${l}.json`), "utf8"));
 const pt = cat["pt-BR"]; let sameFe = 0;
+for (const m of require("./referenced").missingReferencedKeys(ROOT, pt)) errors.push(`fe:pt-BR: chave usada e ausente do catálogo — ${m}`);
 for (const l of ["en", "es"]) {
   for (const k of Object.keys(pt)) if (!(k in cat[l])) errors.push(`fe:${l}: falta ${k}`);
   for (const k of Object.keys(cat[l])) if (!(k in pt)) errors.push(`fe:${l}: órfã ${k}`);

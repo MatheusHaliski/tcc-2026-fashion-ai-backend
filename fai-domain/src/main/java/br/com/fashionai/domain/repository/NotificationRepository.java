@@ -29,4 +29,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     List<Notification> findByRecipientIdAndReadFalse(UUID recipientId);
 
     List<Notification> findByCreatedAtBefore(Instant cutoff);
+
+    /** Antispam dos convites (ex.: FLAIR_INVITE): a mesma pessoa já avisou esta outra há pouco? */
+    boolean existsByRecipientIdAndActorIdAndResourceTypeAndCreatedAtAfter(UUID recipientId, UUID actorId, String resourceType, Instant after);
 }

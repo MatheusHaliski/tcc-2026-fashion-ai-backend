@@ -39,6 +39,7 @@ import type { Sala } from "@/lib/flair/nucleos/scene/types";
 import { limiteDaCamera } from "@/lib/flair/nucleos/scene/zones";
 import type { MaquiagemEscolha, NucleoConfig, NucleoResultado, V3, ZonaEscolha } from "@/lib/flair/nucleos/types";
 import { maquiagemNoRosto } from "@/lib/flair/make-up/rosto-maquiado";
+import { uniformeDasZonas } from "@/lib/flair/nucleos/uniforme/desenho";
 
 export interface NucleoScene3DProps {
   config: NucleoConfig;
@@ -58,6 +59,8 @@ export interface NucleoScene3DProps {
   zonasDaPeca?: string[];
   zonas?: Record<string, ZonaEscolha>;
   maquiagem?: Record<string, MaquiagemEscolha>;
+  /** a resposta da preparação que veste (o emblema do herói) */
+  emblema?: string | null;
   andarLivre?: boolean;
   agilidade?: number;
   desfileAtivo?: boolean;
@@ -81,7 +84,7 @@ export function enquadramento(zoom: number, sala?: Sala): { dist: number; alvo: 
   return { dist, alvo: [0, altura + (sala?.zonas.avatar.altura ?? 0), 0] };
 }
 
-export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, camera, momento = "PREPARO", andarLivre = false, agilidade, desfileAtivo = false, jogadorDeFora, anterior }: NucleoScene3DProps) {
+export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile, rotulo, protagonista, resultado, variante, semente, zonasDaPeca, zonas, maquiagem, emblema, camera, momento = "PREPARO", andarLivre = false, agilidade, desfileAtivo = false, jogadorDeFora, anterior }: NucleoScene3DProps) {
   const batalha = useBatalhaEmCena(config.codigo, resultado, anterior);
   const proprio = useRef<Jogador>({ pos: NA_MARCA, andando: false });
   const jogador = jogadorDeFora ?? proprio;
@@ -90,6 +93,7 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
     jogador.current = { pos: (momento === "ACAO" && desfileAtivo && INICIO_DO_DESFILE[config.codigo]) || NA_MARCA, andando: false };
   }, [momento, desfileAtivo, config.codigo, jogador]);
   const rosto = useMemo(() => maquiagemNoRosto(maquiagem), [maquiagem]);
+  const uniforme = useMemo(() => ({ codigo: config.codigo, itens: uniformeDasZonas(config.codigo, zonas, emblema, semente), emUso: variante === SALA_DE_USO }), [config.codigo, zonas, emblema, semente, variante]);
   const manequim = config.personagens.find((p) => p.papel === "MANEQUIM");
   const sala = salaDe(config.codigo, variante);
   // a abertura toca no começo da partida (e a cada salão da gala); quem volta a uma partida já na ação não a revê
@@ -115,7 +119,7 @@ export default function NucleoScene3D({ config, avatar, pecas, reduzido, desfile
           limite={() => corposCheiosDaCena(config.codigo, qualidade.current)} sombraAte={() => AJUSTES[qualidade.current].sombraDeFiguranteAte} />
         <LuzDeEfeito altura={sala.zonas.avatar.altura} />
         {manequim && zonasDaPeca && zonas && variante !== SALA_DE_USO && <PecaPintada pos={manequim.pos} zonas={zonasDaPeca} escolhas={zonas} />}
-        <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} maquiagem={rosto} jogador={jogador} />
+        <NucleoAvatar estado={avatar} pecas={pecas} reduzido={reduzido} desfile={desfile} protagonista={protagonista} altura={sala.zonas.avatar.altura} maquiagem={rosto} jogador={jogador} uniforme={uniforme} />
         <Andarilho sala={sala} jogador={jogador} agilidade={agilidade} livre={andarLivre} />
         <DesfileJogavel codigo={config.codigo} sala={sala} jogador={jogador} ativo={desfileAtivo} />
         {config.codigo === "DRESS_FIGHTER" && <DistanciaDaLuta jogador={jogador} />}
