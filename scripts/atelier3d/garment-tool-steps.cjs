@@ -128,6 +128,35 @@ async function print(h, page) {
   return { patterns: 4, decals: 1, imageTile: 1 };
 }
 
+async function shape(h, page) {
+  await h.tab("Modelagem");
+  await h.part("Corpo");
+  await h.press("Parte selecionada");
+  await h.view("Lado esquerdo");
+  await h.shot("16-forma-base-lateral");
+  await h.view("Frente");
+  await h.slider(/Comprimento da barra/, 25);
+  await h.shot("17-forma-barra-alongada");
+  await h.slider(/Profundidade do decote/, 30);
+  await h.slider(/Largura e folga/, 12);
+  await h.shot("18-forma-decote-folga");
+  await h.press("Esculpir com pincel");
+  await h.slider(/Raio do pincel/, 0.18);
+  await h.slider(/^Força/, 0.5);
+  for (let i = 0; i < 2; i++) await h.drag([[0.36, 0.5], [0.4, 0.55], [0.36, 0.6]]);
+  await h.press("Inflar");
+  await h.drag([[0.5, 0.62], [0.52, 0.66]]);
+  await h.press("Parar de esculpir");
+  await h.view("Perspectiva");
+  await h.shot("19-forma-esculpida-simetria");
+  await h.press("Desfazer");
+  await h.shot("20-forma-desfazer-inflar");
+  await h.press("Peça inteira");
+  await h.view("Frente");
+  await h.full("21-painel-modelagem");
+  return { fit: 3, sculptStrokes: 4 };
+}
+
 exports.run = async function run({ page, out, state }) {
   const h = helpers(page, out);
   await page.getByLabel("Salvar automaticamente").uncheck();
@@ -136,7 +165,7 @@ exports.run = async function run({ page, out, state }) {
   await h.shot("00-camiseta-base");
   const results = {};
   const only = (process.env.STEPS || "material,paint,print,shape,extras,export").split(",");
-  const all = { material, paint, print };
+  const all = { material, paint, print, shape };
   for (const [name, step] of Object.entries(all)) if (only.includes(name)) results[name] = await step(h, page, state);
   fs.writeFileSync(path.join(out, "last-document.json"), JSON.stringify(state.saves.at(-1)?.document ?? null).slice(0, 2000));
   return results;
