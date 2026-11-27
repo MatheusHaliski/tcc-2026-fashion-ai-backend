@@ -6,6 +6,7 @@ import { engineGarmentGlb, photoReliefGlb } from "@/test-utils/garment-fixture";
 import { EMPTY_DOCUMENT, loadGlb, type SceneDocument } from "@/lib/atelier3d/document";
 import { listParts } from "@/lib/atelier3d/garment-parts";
 import { setDecalImageLoader } from "@/lib/atelier3d/decal-meshes";
+import { listDecals } from "@/lib/atelier3d/decals";
 import { SceneInspector } from "./scene-inspector";
 
 vi.mock("@/lib/atelier3d/decal-image", () => ({
@@ -68,6 +69,17 @@ describe("painel da peça com GLB próprio", () => {
     await waitFor(() => expect(last().decals![key("estampa_0")].rotation).toBeCloseTo(Math.PI / 4));
     fireEvent.change(screen.getByLabelText("Cor do desenho"), { target: { value: "#ff8800" } });
     await waitFor(() => expect(last().decals![key("estampa_0")].color).toBe("#ff8800"));
+  });
+
+  it("cliques seguidos antes de redesenhar acumulam (três passos de 1 cm, não um)", async () => {
+    const { last, key, onChange, loaded } = await open();
+    const start = listDecals(loaded, EMPTY_DOCUMENT)[0].edit.position[1];
+    const up = screen.getByRole("button", { name: "Subir" });
+    fireEvent.click(up);
+    fireEvent.click(up);
+    fireEvent.click(up);
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(3));
+    expect(last().decals![key("estampa_0")].position[1] - start).toBeCloseTo(0.03, 2);
   });
 
   it("quem só vê não edita; relevo da foto não mostra o painel e avisa", async () => {

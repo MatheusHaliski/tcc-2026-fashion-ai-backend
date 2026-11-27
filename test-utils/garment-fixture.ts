@@ -23,9 +23,11 @@ function at(geometry: THREE.BufferGeometry, x: number, y: number, z: number, lab
   return labelled(geometry, label);
 }
 
-function pieces(): THREE.BufferGeometry[] {
+/** `openFront`: corpo aberto no meio da frente (±0,1 rad, ~2,5 cm de cada lado), como jaqueta de zíper ou cardigã. */
+function pieces(openFront: boolean): THREE.BufferGeometry[] {
+  const gap = openFront ? 0.1 : 0;
   const body = mergeGeometries([
-    at(new THREE.CylinderGeometry(0.25, 0.25, 0.7, 24, 14, true), 0, 0.65, 0),
+    at(new THREE.CylinderGeometry(0.25, 0.25, 0.7, 24, 14, true, gap, Math.PI * 2 - gap * 2), 0, 0.65, 0),
     at(new THREE.CylinderGeometry(0.06, 0.06, 0.5, 8, 6, true).rotateZ(Math.PI / 2), 0.5, 0.9, 0, 0.3),
     at(new THREE.CylinderGeometry(0.06, 0.06, 0.5, 8, 6, true).rotateZ(Math.PI / 2), -0.5, 0.9, 0, 0.3),
   ]);
@@ -39,8 +41,8 @@ function pieces(): THREE.BufferGeometry[] {
   ];
 }
 
-export async function engineGarmentGlb(): Promise<ArrayBuffer> {
-  const geometry = mergeGeometries(pieces(), true);
+export async function engineGarmentGlb({ openFront = false } = {}): Promise<ArrayBuffer> {
+  const geometry = mergeGeometries(pieces(openFront), true);
   geometry.computeVertexNormals();
   const materials = ROLES.map((name) => {
     const material = new THREE.MeshStandardMaterial({ color: name === "corpo" ? "#203040" : "#c0c0c0", vertexColors: true });

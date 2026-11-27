@@ -124,6 +124,22 @@ describe("desenhos e logos (decalques)", () => {
     expect(asset.gltf.scene.getObjectByName("logo-d1")).toBeUndefined();
   });
 
+  it("peça aberta na frente: logo novo vai ao peito esquerdo, na frente, e mover não o joga nas costas pela abertura", async () => {
+    const asset = await loadGlb(await engineGarmentGlb({ openFront: true }));
+    const placed = defaultPlacement(asset, "n0", 1)!;
+    expect(placed.position[2]).toBeGreaterThan(0.2);
+    expect(placed.position[0]).toBeCloseTo(0.09, 2);
+    expect(placed.size).toBeCloseTo(0.09);
+    let edit = placed, steps = 0;
+    for (let next = moveDecal(asset, edit, -0.01, 0); next && steps < 20; next = moveDecal(asset, edit, -0.01, 0)) {
+      expect(next.position[2]).toBeGreaterThan(0.2);
+      edit = next;
+      steps++;
+    }
+    expect(steps).toBeGreaterThan(3);
+    expect(steps).toBeLessThan(20);
+  });
+
   it("trocar a estampa do arquivo esconde a original e o documento sobrevive a JSON (salvar/reabrir)", async () => {
     const asset = await loadGlb(garment);
     const entry = listDecals(asset, EMPTY_DOCUMENT)[0];

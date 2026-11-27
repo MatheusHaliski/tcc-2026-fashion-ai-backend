@@ -119,26 +119,45 @@ function clothBounds(asset: LoadedAsset, node: string): THREE.Box3 {
   return box;
 }
 
-/** Logo novo: no peito, de frente (+Z é a frente no GLB do motor), com 30% da largura da peça. */
+const CLOSURES: string[] = ["dentes", "cadarco", "botao", "faixa_vista"];
+/** Peça aberta na frente (zíper, botões, faixa da frente): o centro do peito é a abertura, não tecido. */
+function hasFrontClosure(asset: LoadedAsset, node: string): boolean {
+  return listParts(asset).some((part) => part.node === node && !!part.role && CLOSURES.includes(part.role));
+}
+/** Logo no peito esquerdo de quem veste: a 9 cm do meio (o GLB do motor está em metros; +X é a esquerda de quem veste). */
+const LEFT_CHEST = 0.09;
+/** Um passo do decalque não pode afundar mais que isto: seria o raio passando pela abertura e caindo nas costas. */
+const MAX_SINK = 0.05;
+
+/**
+ * Logo novo: de frente (+Z é a frente no GLB do motor). Peça fechada: no meio do peito, com 30% da largura (até 20 cm).
+ * Peça aberta (zíper, botões): no peito esquerdo, com até 9 cm — no meio o raio atravessaria a abertura e o logo
+ * iria parar no avesso das costas. Só vale ponto da metade da frente.
+ */
 export function defaultPlacement(asset: LoadedAsset, node: string, aspect: number): DecalEdit | null {
   const box = clothBounds(asset, node);
   if (box.isEmpty()) return null;
   const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
-  const reach = size.length() + 1;
-  for (const height of [0.68, 0.5, 0.35]) {
-    const hit = surfacePoint(asset, node, new THREE.Vector3(center.x, box.min.y + size.y * height, box.max.z + reach), new THREE.Vector3(0, 0, -1));
-    if (hit) return { node, position: hit.point, normal: [0, 0, 1], size: THREE.MathUtils.clamp(size.x * 0.3, DECAL_SIZE.min, DECAL_SIZE.max), aspect, rotation: 0, visible: true };
-  }
+  const open = hasFrontClosure(asset, node), reach = size.length() + 1;
+  const width = THREE.MathUtils.clamp(Math.min(size.x * 0.3, open ? LEFT_CHEST : 0.2), DECAL_SIZE.min, DECAL_SIZE.max);
+  const offsets = open ? [Math.min(LEFT_CHEST, size.x * 0.2), -Math.min(LEFT_CHEST, size.x * 0.2)] : [0, Math.min(LEFT_CHEST, size.x * 0.2)];
+  for (const offset of offsets)
+    for (const height of [0.68, 0.5, 0.35]) {
+      const from = new THREE.Vector3(center.x + offset, box.min.y + size.y * height, box.max.z + reach);
+      const hit = surfacePoint(asset, node, from, new THREE.Vector3(0, 0, -1));
+      if (hit && hit.point[2] > center.z) return { node, position: hit.point, normal: [0, 0, 1], size: width, aspect, rotation: 0, visible: true };
+    }
   return null;
 }
 
-/** Desliza o decalque sobre o tecido: desloca no plano do decalque e reprojeta; null se sair da peça. */
+/** Desliza o decalque sobre o tecido: desloca no plano do decalque e reprojeta; null se sair da peça ou cair numa abertura. */
 export function moveDecal(asset: LoadedAsset, edit: DecalEdit, dx: number, dy: number): DecalEdit | null {
   const { x, y, z } = decalBasis(edit.normal, 0);
   const target = new THREE.Vector3(...edit.position).addScaledVector(x, dx).addScaledVector(y, dy);
   const reach = clothBounds(asset, edit.node).getSize(new THREE.Vector3()).length() + 1;
   const hit = surfacePoint(asset, edit.node, target.clone().addScaledVector(z, reach), z.clone().negate());
-  return hit ? { ...edit, position: hit.point } : null;
+  if (!hit || new THREE.Vector3(...hit.point).sub(target).dot(z) < -MAX_SINK) return null;
+  return { ...edit, position: hit.point };
 }
 
 /** Posição do decalque nos eixos da peça (horizontal, vertical), para os campos do painel. */

@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Field, Input, Select } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/i18n";
 import type { LoadedAsset, SceneDocument } from "@/lib/atelier3d/document";
-import { DECAL_SIZE, defaultPlacement, listDecals, moveDecal, nextDecalKey, removeDecal, upsertDecal, type DecalEdit, type DecalEntry } from "@/lib/atelier3d/decals";
+import { DECAL_SIZE, defaultPlacement, listDecals, moveDecal, nextDecalKey, printDecal, removeDecal, upsertDecal, type DecalEdit, type DecalEntry } from "@/lib/atelier3d/decals";
 import { readDecalImage } from "@/lib/atelier3d/decal-image";
 import { listParts } from "@/lib/atelier3d/garment-parts";
 import { partLabel } from "./node-label";
@@ -33,10 +33,19 @@ export function DecalPanel({ asset, document: doc, node, editable, onChange }: P
     const part = entry.kind === "print" ? listParts(asset).find((p) => p.key === entry.key) : undefined;
     return part ? partLabel(part, t) : t("atelier3d.decal.logo", { n: entry.key.replace(/\D/g, "") });
   };
-  function attempt(work: () => SceneDocument | Promise<SceneDocument>, select?: string) {
+  // cliques seguidos (mover 1 cm três vezes) chegam antes de o editor redesenhar: cada edição parte da anterior
+  const latest = useRef(doc);
+  latest.current = doc;
+  const editOf = (base: SceneDocument, key: string) => base.decals?.[key] ?? printDecal(asset, key);
+  function attempt(work: (base: () => SceneDocument) => SceneDocument | Promise<SceneDocument>, select?: string) {
     if (!editable) return;
+    // a edição seguinte já parte desta, mesmo antes de o editor redesenhar
+    const commit = (next: SceneDocument) => (latest.current = next);
     Promise.resolve()
-      .then(work)
+      .then(() => {
+        const result = work(() => latest.current);
+        return result instanceof Promise ? result.then(commit) : commit(result);
+      })
       .then((next) => {
         onChange(next);
         if (select) setChosen(select);
@@ -47,27 +56,41 @@ export function DecalPanel({ asset, document: doc, node, editable, onChange }: P
         setError(KNOWN.includes(code) ? code : "ATELIER_DECAL_VALUE");
       });
   }
-  const edit = (value: DecalEdit) => attempt(() => upsertDecal(doc, current!.key, value));
+  /** Altera campos do desenho em edição a partir do valor mais recente (não do que estava na tela no clique). */
+  function edit(change: Partial<DecalEdit>) {
+    const key = current!.key;
+    attempt((base) => {
+      const value = editOf(base(), key);
+      if (!value) throw Error("ATELIER_DECAL_VALUE");
+      return upsertDecal(base(), key, { ...value, ...change });
+    });
+  }
   function move(dx: number, dy: number) {
-    attempt(() => {
-      const moved = moveDecal(asset, current!.edit, dx, dy);
+    const key = current!.key;
+    attempt((base) => {
+      const value = editOf(base(), key);
+      const moved = value && moveDecal(asset, value, dx, dy);
       if (!moved) throw Error("ATELIER_DECAL_PLACEMENT");
-      return upsertDecal(doc, current!.key, moved);
+      return upsertDecal(base(), key, moved);
     });
   }
   function addLogo(file: File) {
-    const key = nextDecalKey(doc);
-    attempt(async () => {
+    attempt(async (base) => {
       const image = await readDecalImage(file);
       const placed = defaultPlacement(asset, node, image.aspect);
       if (!placed) throw Error("ATELIER_DECAL_PLACEMENT");
-      return upsertDecal(doc, key, { ...placed, image: image.dataUrl });
-    }, key);
+      const key = nextDecalKey(base());
+      setChosen(key);
+      return upsertDecal(base(), key, { ...placed, image: image.dataUrl });
+    });
   }
   function replaceImage(file: File) {
-    attempt(async () => {
+    const key = current!.key;
+    attempt(async (base) => {
       const image = await readDecalImage(file);
-      return upsertDecal(doc, current!.key, { ...current!.edit, image: image.dataUrl, aspect: image.aspect });
+      const value = editOf(base(), key);
+      if (!value) throw Error("ATELIER_DECAL_VALUE");
+      return upsertDecal(base(), key, { ...value, image: image.dataUrl, aspect: image.aspect });
     });
   }
   return (
@@ -89,27 +112,27 @@ export function DecalPanel({ asset, document: doc, node, editable, onChange }: P
             <Input id="decal-size" type="number" min={DECAL_SIZE.min * 100} max={DECAL_SIZE.max * 100} step={0.5} value={+(current.edit.size * 100).toFixed(1)}
               onChange={(e) => {
                 const size = e.target.valueAsNumber / 100;
-                if (size >= DECAL_SIZE.min && size <= DECAL_SIZE.max) edit({ ...current.edit, size });
+                if (size >= DECAL_SIZE.min && size <= DECAL_SIZE.max) edit({ size });
               }} />
           </Field>
           <Field id="decal-rotation" label={t("atelier3d.decal.rotation")}>
             <Input id="decal-rotation" type="number" min={-180} max={180} step={5} value={Math.round((current.edit.rotation * 180) / Math.PI)}
-              onChange={(e) => Number.isFinite(e.target.valueAsNumber) && edit({ ...current.edit, rotation: (e.target.valueAsNumber * Math.PI) / 180 })} />
+              onChange={(e) => Number.isFinite(e.target.valueAsNumber) && edit({ rotation: (e.target.valueAsNumber * Math.PI) / 180 })} />
           </Field>
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2">
-              <input type="color" aria-label={t("atelier3d.decal.color")} value={current.edit.color ?? "#ffffff"} onChange={(e) => edit({ ...current.edit, color: e.target.value })} />
+              <input type="color" aria-label={t("atelier3d.decal.color")} value={current.edit.color ?? "#ffffff"} onChange={(e) => edit({ color: e.target.value })} />
               {t("atelier3d.decal.color")}
             </label>
-            <button type="button" className="btn btn-sm" disabled={!current.edit.color} onClick={() => edit({ ...current.edit, color: null })}>{t("atelier3d.decal.originalColors")}</button>
+            <button type="button" className="btn btn-sm" disabled={!current.edit.color} onClick={() => edit({ color: null })}>{t("atelier3d.decal.originalColors")}</button>
           </div>
           <label className={styles.check}>
-            <input type="checkbox" checked={!current.edit.visible} onChange={(e) => edit({ ...current.edit, visible: !e.target.checked })} />
+            <input type="checkbox" checked={!current.edit.visible} onChange={(e) => edit({ visible: !e.target.checked })} />
             {t("atelier3d.decal.hidden")}
           </label>
           <ImageButton id="decal-replace" label={t("atelier3d.decal.replace")} onFile={replaceImage} />
           {current.edited && (
-            <button type="button" className="btn btn-sm" onClick={() => attempt(() => removeDecal(doc, current.key))}>
+            <button type="button" className="btn btn-sm" onClick={() => attempt((base) => removeDecal(base(), current.key))}>
               {t(current.kind === "logo" ? "atelier3d.decal.remove" : "atelier3d.decal.restore")}
             </button>
           )}
