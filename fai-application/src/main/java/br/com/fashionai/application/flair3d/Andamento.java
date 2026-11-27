@@ -14,10 +14,11 @@ import java.util.UUID;
  * (nula nas partidas antigas: vale o objetivo mais simples do jogo). {@code rascunho} é o look que a pessoa estava montando
  * antes de entregar ({@link Flair3dRascunho}); a entrega seguinte o descarta. {@code usos} são as peças usadas como
  * recurso na partida inteira ({@link br.com.fashionai.application.flair3d.recurso.Flair3dRecursoUso}): passam de uma
- * entrega para a outra, e a partida antiga, sem o campo, lê como nenhum uso.
+ * entrega para a outra, e a partida antiga, sem o campo, lê como nenhum uso. {@code hype} é o trunfo do Hype, chamado
+ * uma vez por partida ({@link br.com.fashionai.application.flair3d.aura.Flair3dAuraTrunfo}); nulo enquanto não foi.
  */
 public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores, String rodada, Entrega rascunho,
-                        List<UsoDeRecurso> usos) {
+                        List<UsoDeRecurso> usos, TrunfoDeHype hype) {
     /** Primeira entrega, sem acionamento. */
     public static final Andamento INICIO = new Andamento(1, List.of());
 
@@ -45,6 +46,18 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
         public UsoDeRecurso(UUID carta, String recurso, int quantidade, String pedido) {
             this(carta, recurso, quantidade, pedido, 0, 0);
         }
+    }
+
+    /**
+     * O Hype de uma carta do deck chamado como trunfo (uso único por partida): a carta, o pedido (idempotência) e a
+     * etapa em que foi chamado (quantas entregas a partida já fechou). Só lê o Hype: nada é gasto nem gravado nele.
+     */
+    public record TrunfoDeHype(UUID carta, String pedido, int etapa) {
+    }
+
+    public Andamento(int tentativas, List<Acionamento> acionamentos, List<Etapa> anteriores, String rodada, Entrega rascunho,
+                     List<UsoDeRecurso> usos) {
+        this(tentativas, acionamentos, anteriores, rodada, rascunho, usos, null);
     }
 
     public Andamento {
@@ -76,12 +89,12 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
 
     /** O mesmo andamento, na rodada dada. */
     public Andamento comRodada(String nova) {
-        return new Andamento(tentativas, acionamentos, anteriores, nova, rascunho, usos);
+        return new Andamento(tentativas, acionamentos, anteriores, nova, rascunho, usos, hype);
     }
 
     /** O mesmo andamento, com o look em montagem guardado (nulo apaga). */
     public Andamento comRascunho(Entrega novo) {
-        return new Andamento(tentativas, acionamentos, anteriores, rodada, novo, usos);
+        return new Andamento(tentativas, acionamentos, anteriores, rodada, novo, usos, hype);
     }
 
     /** O andamento gravado na partida; partida nova ainda não tem tentativa. */
@@ -96,14 +109,19 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
     }
 
     public Andamento proximaTentativa() {
-        return new Andamento(tentativas + 1, List.of(), anteriores, rodada, null, usos);
+        return new Andamento(tentativas + 1, List.of(), anteriores, rodada, null, usos, hype);
     }
 
     /** O mesmo andamento com mais uma peça usada como recurso. */
     public Andamento comUso(UsoDeRecurso uso) {
         List<UsoDeRecurso> out = new ArrayList<>(usos);
         out.add(uso);
-        return new Andamento(tentativas, acionamentos, anteriores, rodada, rascunho, out);
+        return new Andamento(tentativas, acionamentos, anteriores, rodada, rascunho, out, hype);
+    }
+
+    /** O mesmo andamento com o trunfo do Hype chamado. */
+    public Andamento comHype(TrunfoDeHype trunfo) {
+        return new Andamento(tentativas, acionamentos, anteriores, rodada, rascunho, usos, trunfo);
     }
 
     /** A próxima entrega, guardando a que veio antes (nula na primeira) como etapa já jogada. */
@@ -113,13 +131,13 @@ public record Andamento(int tentativas, List<Acionamento> acionamentos, List<Eta
         }
         List<Etapa> out = new ArrayList<>(anteriores);
         out.add(new Etapa(anterior.cartas(), acionamentos, anterior.resposta()));
-        return new Andamento(tentativas + 1, List.of(), out, rodada, null, usos);
+        return new Andamento(tentativas + 1, List.of(), out, rodada, null, usos, hype);
     }
 
     public Andamento com(Acionamento novo) {
         List<Acionamento> out = new ArrayList<>(acionamentos);
         out.add(novo);
-        return new Andamento(tentativas, out, anteriores, rodada, null, usos);
+        return new Andamento(tentativas, out, anteriores, rodada, null, usos, hype);
     }
 
     /** Todas as cartas usadas nos acionamentos e nas etapas anteriores. */

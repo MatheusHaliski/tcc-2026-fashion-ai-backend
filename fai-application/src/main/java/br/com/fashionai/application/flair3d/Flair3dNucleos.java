@@ -1,5 +1,6 @@
 package br.com.fashionai.application.flair3d;
 
+import br.com.fashionai.application.flair3d.aura.Flair3dAuraNaPartida;
 import br.com.fashionai.application.flair3d.nucleos.AroundTheWorldNucleo;
 import br.com.fashionai.application.flair3d.nucleos.BatalhaLooksNucleo;
 import br.com.fashionai.application.flair3d.nucleos.Boutique3dNucleo;
@@ -26,14 +27,19 @@ public final class Flair3dNucleos {
      * Passarela, Dress the Star, Boutique e Around the World terminam com a jogada de cena ({@link Flair3dJogadaDeCena});
      * os doze jogos de ação jogável, com a execução no percurso ({@link Flair3dExecucao}); os quatro de zonas pintam com
      * orçamento de tinta ({@link Flair3dTinta}). Dress Fighter, Fashion Detective e Fashion Sports têm a habilidade dentro
-     * do próprio motor.
+     * do próprio motor. Passarela, Dress the Star, Personagem de Filme e Boutique fecham o look com a Aura na partida
+     * ({@link Flair3dAuraNaPartida}: a plateia pela faixa de Hype e o trunfo); a Batalha a lê dentro de cada rodada.
      */
-    public static final List<Flair3dNucleo> TODOS = List.of(exec(new Flair3dJogadaDeCena(new PassarelaNucleo())), new DressFighterNucleo(),
-            exec(new Flair3dJogadaDeCena(new DressTheStarNucleo())), exec(new PersonagemFilmeNucleo()), exec(new RoadToGloryNucleo()),
-            new FashionDetectiveNucleo(), exec(new Flair3dJogadaDeCena(new Boutique3dNucleo())), tinta(new ClubeCoracaoNucleo()),
+    public static final List<Flair3dNucleo> TODOS = List.of(exec(aura(new Flair3dJogadaDeCena(new PassarelaNucleo()))), new DressFighterNucleo(),
+            exec(aura(new Flair3dJogadaDeCena(new DressTheStarNucleo()))), exec(aura(new PersonagemFilmeNucleo())), exec(new RoadToGloryNucleo()),
+            new FashionDetectiveNucleo(), exec(aura(new Flair3dJogadaDeCena(new Boutique3dNucleo()))), tinta(new ClubeCoracaoNucleo()),
             tinta(new FavoriteSingerNucleo()), exec(new LabirintoNucleo()), tinta(new PilotoFavoritoNucleo()),
             exec(new Flair3dJogadaDeCena(new AroundTheWorldNucleo())), tinta(new SuperHeroiNucleo()), new FashionSportsNucleo(),
             exec(new BatalhaLooksNucleo()));
+
+    private static Flair3dNucleo aura(Flair3dNucleo jogo) {
+        return new Flair3dAuraNaPartida(jogo);
+    }
 
     private static Flair3dNucleo exec(Flair3dNucleo jogo) {
         return new Flair3dExecucao(jogo);

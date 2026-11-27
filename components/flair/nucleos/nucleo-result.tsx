@@ -6,10 +6,11 @@
 import type { ReactNode } from "react";
 import { cn } from "@/components/ui";
 import { BatalhaPlacar } from "@/components/flair/nucleos/batalha-placar";
+import { NucleoResultAura } from "@/components/flair/nucleos/nucleo-result-aura";
 import { NucleoResultCampanha } from "@/components/flair/nucleos/nucleo-result-campanha";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { desfechoDe } from "@/lib/flair/nucleos/narrativa";
-import type { NucleoResultado } from "@/lib/flair/nucleos/types";
+import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
 
 export interface CartaNoResultado {
   cardId: string;
@@ -81,6 +82,7 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
         ))}
       </ul>
       {codigo === "BATALHA_LOOKS" && <BatalhaPlacar resultado={resultado} />}
+      <NucleoResultAura codigo={codigo as NucleoCodigo} resultado={resultado} />
       {conta && !semPlacar && <p className="n3d-hint" data-testid="nucleo-result-conta">{tx.evento(conta)}</p>}
       {etapas > 1 && !semPlacar && <p className="n3d-hint" data-testid="nucleo-result-media">{tx.t("flair3d.ui.result.media", { n: etapas })}</p>}
       {dicas.length > 0 && (

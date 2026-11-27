@@ -69,7 +69,7 @@
     "title": "Cadeira da plateia",
     "category": "scene",
     "triangles": 872,
-    "bytes": 45576,
+    "bytes": 45228,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -78,7 +78,7 @@
       0.953,
       0.465
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 484,
     "movel": "cadeira"
   },
@@ -87,7 +87,7 @@
     "title": "Cadeira de diretor",
     "category": "scene",
     "triangles": 808,
-    "bytes": 52824,
+    "bytes": 52476,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -96,7 +96,7 @@
       1.032,
       0.5
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 568,
     "movel": "cadeiraDiretor"
   },
@@ -105,7 +105,7 @@
     "title": "Cadeira alta de maquiagem",
     "category": "scene",
     "triangles": 1532,
-    "bytes": 76492,
+    "bytes": 76468,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -114,7 +114,7 @@
       1.232,
       0.521
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 850,
     "movel": "cadeiraDeCamarim"
   },
@@ -123,7 +123,7 @@
     "title": "Penteadeira de camarim",
     "category": "scene",
     "triangles": 1100,
-    "bytes": 66724,
+    "bytes": 66552,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -132,7 +132,7 @@
       1.082,
       0.513
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 602,
     "movel": "penteadeira"
   },
@@ -141,7 +141,7 @@
     "title": "Luminária de braço articulado",
     "category": "scene",
     "triangles": 616,
-    "bytes": 34740,
+    "bytes": 34576,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -150,7 +150,7 @@
       0.722,
       0.439
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "luminaria"
   },
   {
@@ -158,7 +158,7 @@
     "title": "Câmera de cinema no tripé",
     "category": "scene",
     "triangles": 1916,
-    "bytes": 99012,
+    "bytes": 98676,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -167,7 +167,7 @@
       1.709,
       1.028
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1082,
     "movel": "cameraTripe"
   },
@@ -176,7 +176,7 @@
     "title": "Canhão de luz no pedestal",
     "category": "scene",
     "triangles": 1996,
-    "bytes": 105352,
+    "bytes": 105016,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -185,7 +185,7 @@
       1.825,
       0.699
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1110,
     "movel": "canhaoLuz"
   },
@@ -203,7 +203,7 @@
       4.12,
       0.22
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 684,
     "movel": "poste"
   },
@@ -212,7 +212,7 @@
     "title": "Caixote de madeira ripado",
     "category": "scene",
     "triangles": 1948,
-    "bytes": 102288,
+    "bytes": 101968,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -221,7 +221,7 @@
       0.719,
       0.754
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 938,
     "movel": "caixote"
   },
@@ -239,7 +239,7 @@
       0.884,
       0.604
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 594,
     "movel": "tambor"
   },
@@ -248,7 +248,7 @@
     "title": "Trave de futebol de 5 com rede",
     "category": "scene",
     "triangles": 616,
-    "bytes": 68460,
+    "bytes": 68472,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -257,7 +257,7 @@
       2.04,
       0.96
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "trave"
   },
   {
@@ -265,7 +265,7 @@
     "title": "Skate de rua",
     "category": "scene",
     "triangles": 1344,
-    "bytes": 55668,
+    "bytes": 55500,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -274,7 +274,7 @@
       0.131,
       0.808
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 632,
     "movel": "skate"
   },
@@ -283,7 +283,7 @@
     "title": "Pilha de 2 pneus do box",
     "category": "scene",
     "triangles": 1488,
-    "bytes": 69688,
+    "bytes": 69560,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -292,7 +292,7 @@
       0.4,
       0.845
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 748,
     "movel": "pilhaDePneus"
   },
@@ -301,7 +301,7 @@
     "title": "Pilha de 3 pneus do box",
     "category": "scene",
     "triangles": 2232,
-    "bytes": 101572,
+    "bytes": 101444,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -310,7 +310,7 @@
       0.6,
       0.96
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1122,
     "movel": "pilhaDePneus"
   },
@@ -319,7 +319,7 @@
     "title": "Pilha de 4 pneus do box",
     "category": "scene",
     "triangles": 2976,
-    "bytes": 133488,
+    "bytes": 133376,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -328,7 +328,7 @@
       0.8,
       0.96
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1496,
     "movel": "pilhaDePneus"
   },
@@ -337,7 +337,7 @@
     "title": "Bancada de ateliê de 2.0 m",
     "category": "scene",
     "triangles": 1180,
-    "bytes": 84420,
+    "bytes": 83940,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -346,7 +346,7 @@
       1.02,
       0.8
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 642,
     "movel": "bancada"
   },
@@ -355,7 +355,7 @@
     "title": "Bancada de ateliê de 2.2 m",
     "category": "scene",
     "triangles": 1180,
-    "bytes": 84448,
+    "bytes": 83968,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -364,7 +364,7 @@
       1.02,
       0.8
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 642,
     "movel": "bancada"
   },
@@ -373,7 +373,7 @@
     "title": "Bancada de ateliê de 2.4 m",
     "category": "scene",
     "triangles": 1180,
-    "bytes": 84480,
+    "bytes": 84000,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -382,7 +382,7 @@
       1.02,
       0.8
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 642,
     "movel": "bancada"
   },
@@ -391,7 +391,7 @@
     "title": "Rolos de tecido: dois em pé e um deitado",
     "category": "scene",
     "triangles": 964,
-    "bytes": 47508,
+    "bytes": 47180,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -400,7 +400,7 @@
       1.554,
       0.75
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 558,
     "movel": "rolosDeTecido"
   },
@@ -409,7 +409,7 @@
     "title": "Lustre de latão de 0.6 m de raio",
     "category": "scene",
     "triangles": 2392,
-    "bytes": 162652,
+    "bytes": 162452,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -418,7 +418,7 @@
       1.327,
       1.244
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1456,
     "movel": "lustre"
   },
@@ -427,7 +427,7 @@
     "title": "Lustre de latão de 0.75 m de raio",
     "category": "scene",
     "triangles": 2392,
-    "bytes": 162560,
+    "bytes": 162360,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -436,7 +436,7 @@
       1.327,
       1.544
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1456,
     "movel": "lustre"
   },
@@ -445,7 +445,7 @@
     "title": "Luminária de teto de 2.2 m",
     "category": "scene",
     "triangles": 476,
-    "bytes": 36500,
+    "bytes": 36512,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -454,7 +454,7 @@
       0.61,
       2.2
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "luminariaDeTeto"
   },
   {
@@ -462,7 +462,7 @@
     "title": "Luminária de teto de 2.4 m",
     "category": "scene",
     "triangles": 488,
-    "bytes": 37980,
+    "bytes": 37992,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -471,7 +471,7 @@
       0.61,
       2.4
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "luminariaDeTeto"
   },
   {
@@ -479,7 +479,7 @@
     "title": "Luminária de teto de 2.6 m",
     "category": "scene",
     "triangles": 500,
-    "bytes": 39484,
+    "bytes": 39500,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -488,7 +488,7 @@
       0.61,
       2.6
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "luminariaDeTeto"
   },
   {
@@ -496,7 +496,7 @@
     "title": "Luminária de teto de 3.0 m",
     "category": "scene",
     "triangles": 512,
-    "bytes": 40872,
+    "bytes": 40884,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -505,7 +505,7 @@
       0.61,
       3.0
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "luminariaDeTeto"
   },
   {
@@ -513,7 +513,7 @@
     "title": "Trilho de 5 spots em treliça de 6 m",
     "category": "scene",
     "triangles": 1760,
-    "bytes": 104132,
+    "bytes": 104104,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -522,7 +522,7 @@
       0.373,
       6.262
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1100,
     "movel": "trilhoSpots"
   },
@@ -531,7 +531,7 @@
     "title": "Trilho de 6 spots em treliça de 9 m",
     "category": "scene",
     "triangles": 2144,
-    "bytes": 129040,
+    "bytes": 129004,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -540,7 +540,7 @@
       0.373,
       9.262
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1352,
     "movel": "trilhoSpots"
   },
@@ -549,7 +549,7 @@
     "title": "Arara de roupas de 1.4 m com 6 peças",
     "category": "scene",
     "triangles": 1792,
-    "bytes": 133916,
+    "bytes": 133164,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -558,7 +558,7 @@
       1.626,
       0.5
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 940,
     "movel": "arara"
   },
@@ -567,7 +567,7 @@
     "title": "Arara de roupas de 1.5 m com 7 peças",
     "category": "scene",
     "triangles": 2012,
-    "bytes": 148816,
+    "bytes": 148064,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -576,7 +576,7 @@
       1.626,
       0.5
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1046,
     "movel": "arara"
   },
@@ -585,7 +585,7 @@
     "title": "Arara de roupas de 1.6 m com 5 peças",
     "category": "scene",
     "triangles": 1572,
-    "bytes": 118696,
+    "bytes": 117944,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -594,7 +594,7 @@
       1.626,
       0.5
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 834,
     "movel": "arara"
   },
@@ -603,7 +603,7 @@
     "title": "Arara de roupas de 1.6 m com 6 peças",
     "category": "scene",
     "triangles": 1792,
-    "bytes": 133924,
+    "bytes": 133172,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -612,7 +612,7 @@
       1.626,
       0.5
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 940,
     "movel": "arara"
   },
@@ -621,7 +621,7 @@
     "title": "Arara de roupas de 1.6 m com 7 peças",
     "category": "scene",
     "triangles": 2012,
-    "bytes": 148996,
+    "bytes": 148244,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -630,7 +630,7 @@
       1.626,
       0.5
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1046,
     "movel": "arara"
   },
@@ -639,7 +639,7 @@
     "title": "Espelho de 0.7 × 1.9 m com moldura",
     "category": "scene",
     "triangles": 1192,
-    "bytes": 53080,
+    "bytes": 52912,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -648,7 +648,7 @@
       2.08,
       0.079
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 536,
     "movel": "espelho"
   },
@@ -657,7 +657,7 @@
     "title": "Espelho de 1.3 × 2.8 m com moldura",
     "category": "scene",
     "triangles": 1192,
-    "bytes": 53068,
+    "bytes": 52896,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -666,7 +666,7 @@
       2.98,
       0.079
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 536,
     "movel": "espelho"
   },
@@ -675,7 +675,7 @@
     "title": "Espelho de 1.8 × 2.4 m com moldura",
     "category": "scene",
     "triangles": 2816,
-    "bytes": 132944,
+    "bytes": 132776,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -684,7 +684,7 @@
       2.58,
       0.138
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1544,
     "movel": "espelho"
   },
@@ -693,7 +693,7 @@
     "title": "Banco estofado de 1.3 m",
     "category": "scene",
     "triangles": 1148,
-    "bytes": 68916,
+    "bytes": 68596,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -702,7 +702,7 @@
       0.478,
       0.45
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 678,
     "movel": "bancoEstofado"
   },
@@ -711,7 +711,7 @@
     "title": "Banco estofado de 1.6 m",
     "category": "scene",
     "triangles": 1244,
-    "bytes": 74172,
+    "bytes": 73852,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -720,7 +720,7 @@
       0.478,
       0.45
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 718,
     "movel": "bancoEstofado"
   },
@@ -729,7 +729,7 @@
     "title": "Armário de gavetas com tampo",
     "category": "scene",
     "triangles": 668,
-    "bytes": 45408,
+    "bytes": 45080,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -738,7 +738,7 @@
       0.997,
       0.55
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "armarioFerramentas"
   },
   {
@@ -746,7 +746,7 @@
     "title": "Corpo humano leve das pessoas de cena",
     "category": "gente",
     "triangles": 1072,
-    "bytes": 68768,
+    "bytes": 68772,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -755,7 +755,7 @@
       1.795,
       0.299
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 590
   },
   {
@@ -763,7 +763,7 @@
     "title": "Mesa dos jurados com placas de LED",
     "category": "scene",
     "triangles": 1452,
-    "bytes": 74540,
+    "bytes": 74372,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -772,7 +772,7 @@
       0.99,
       1.125
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 894,
     "movel": "mesaDosJurados"
   },
@@ -781,7 +781,7 @@
     "title": "Balcão de loja com vitrine",
     "category": "scene",
     "triangles": 648,
-    "bytes": 38248,
+    "bytes": 38080,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -790,7 +790,7 @@
       1.15,
       0.68
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "balcao"
   },
   {
@@ -798,7 +798,7 @@
     "title": "Prateleira de bolsas e sapatos",
     "category": "scene",
     "triangles": 2272,
-    "bytes": 96096,
+    "bytes": 95924,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -807,7 +807,7 @@
       1.87,
       0.4
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1082,
     "movel": "prateleiraDeBolsas"
   },
@@ -816,7 +816,7 @@
     "title": "Carro de corrida no box",
     "category": "scene",
     "triangles": 2412,
-    "bytes": 96460,
+    "bytes": 96136,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -825,7 +825,7 @@
       0.857,
       1.63
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1174,
     "movel": "carroDeCorrida"
   },
@@ -834,7 +834,7 @@
     "title": "Capacete de piloto no suporte",
     "category": "scene",
     "triangles": 980,
-    "bytes": 39772,
+    "bytes": 39604,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -843,7 +843,7 @@
       1.36,
       0.36
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 460,
     "movel": "capaceteNoSuporte"
   },
@@ -852,7 +852,7 @@
     "title": "Espelho de parede com moldura dourada",
     "category": "scene",
     "triangles": 536,
-    "bytes": 25928,
+    "bytes": 25760,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -861,7 +861,7 @@
       2.23,
       0.084
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "espelhoDeParede"
   },
   {
@@ -869,7 +869,7 @@
     "title": "Pedestais de latão com cordão de veludo",
     "category": "scene",
     "triangles": 1548,
-    "bytes": 85488,
+    "bytes": 85156,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -878,7 +878,7 @@
       1.0,
       0.28
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 954,
     "movel": "pedestaisComCordao"
   },
@@ -896,7 +896,7 @@
       1.438,
       0.46
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "monitorDeVideo"
   },
   {
@@ -913,7 +913,7 @@
       2.351,
       1.091
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 816,
     "movel": "bancoReservas"
   },
@@ -922,7 +922,7 @@
     "title": "Tabela de basquete com aro e rede",
     "category": "scene",
     "triangles": 832,
-    "bytes": 53100,
+    "bytes": 53092,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -931,7 +931,7 @@
       3.875,
       1.73
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 498,
     "movel": "tabelaDeBasquete"
   },
@@ -940,7 +940,7 @@
     "title": "Prédio de 1.8 m por 3.2 m com janelas",
     "category": "scene",
     "triangles": 476,
-    "bytes": 19884,
+    "bytes": 19876,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -949,7 +949,7 @@
       3.7,
       1.28
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "predio"
   },
   {
@@ -957,7 +957,7 @@
     "title": "Prédio de 1.5 m por 2.4 m com janelas",
     "category": "scene",
     "triangles": 392,
-    "bytes": 19016,
+    "bytes": 19008,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -966,7 +966,7 @@
       2.9,
       1.28
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "predio"
   },
   {
@@ -974,7 +974,7 @@
     "title": "Prédio de 2.0 m por 3.4 m com janelas",
     "category": "scene",
     "triangles": 524,
-    "bytes": 20044,
+    "bytes": 20036,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -983,7 +983,7 @@
       3.9,
       1.28
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "predio"
   },
   {
@@ -991,7 +991,7 @@
     "title": "Prédio de 1.7 m por 2.7 m com janelas",
     "category": "scene",
     "triangles": 392,
-    "bytes": 19140,
+    "bytes": 19132,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -1000,7 +1000,7 @@
       3.2,
       1.28
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "predio"
   },
   {
@@ -1008,7 +1008,7 @@
     "title": "Fachada com vitrine de 2.2 m e toldo",
     "category": "scene",
     "triangles": 952,
-    "bytes": 40608,
+    "bytes": 40436,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -1017,7 +1017,7 @@
       2.816,
       1.35
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 436,
     "movel": "fachadaVitrine"
   },
@@ -1026,7 +1026,7 @@
     "title": "Fachada com vitrine de 2.6 m e toldo",
     "category": "scene",
     "triangles": 952,
-    "bytes": 40664,
+    "bytes": 40492,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -1035,7 +1035,7 @@
       2.816,
       1.35
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 436,
     "movel": "fachadaVitrine"
   },
@@ -1044,7 +1044,7 @@
     "title": "Fachada com vitrine de 2.8 m e toldo",
     "category": "scene",
     "triangles": 952,
-    "bytes": 40608,
+    "bytes": 40432,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -1053,7 +1053,7 @@
       2.816,
       1.35
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 436,
     "movel": "fachadaVitrine"
   },
@@ -1062,7 +1062,7 @@
     "title": "Fachada com vitrine de 3.0 m e toldo",
     "category": "scene",
     "triangles": 952,
-    "bytes": 41384,
+    "bytes": 41212,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -1071,7 +1071,7 @@
       2.816,
       1.35
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 436,
     "movel": "fachadaVitrine"
   },
@@ -1080,7 +1080,7 @@
     "title": "Palco de show com treliça e caixas de som",
     "category": "scene",
     "triangles": 1216,
-    "bytes": 86504,
+    "bytes": 86184,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -1089,7 +1089,7 @@
       3.35,
       2.22
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 960,
     "movel": "palcoPequeno"
   },
@@ -1098,7 +1098,7 @@
     "title": "Cenário de três paredes do set de filmagem",
     "category": "scene",
     "triangles": 396,
-    "bytes": 34988,
+    "bytes": 34824,
     "author": "FashionAI",
     "source": "scripts/blender3d/receitas",
     "license": "Própria",
@@ -1107,7 +1107,7 @@
       3.239,
       3.638
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "movel": "cenarioDeTresParedes"
   },
   {
@@ -1124,7 +1124,7 @@
       1.7,
       2.525
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1108,
     "movel": "arquibancada"
   },
@@ -1142,8 +1142,89 @@
       1.7,
       2.525
     ],
-    "hash": "424385f923d0a6af",
+    "hash": "0fcbae53727a634c",
     "leve": 1324,
     "movel": "arquibancada"
+  },
+  {
+    "slug": "caixa-d-agua",
+    "title": "Caixa d'água de terraço",
+    "category": "scene",
+    "triangles": 1416,
+    "bytes": 77140,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      1.7,
+      3.075,
+      1.914
+    ],
+    "hash": "0fcbae53727a634c",
+    "leve": 820,
+    "movel": "caixaDAgua",
+    "games": [
+      "SUPER_HEROI"
+    ]
+  },
+  {
+    "slug": "antena",
+    "title": "Antena de telhado estaiada",
+    "category": "scene",
+    "triangles": 500,
+    "bytes": 47488,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      1.455,
+      3.2,
+      1.574
+    ],
+    "hash": "0fcbae53727a634c",
+    "movel": "antena",
+    "games": [
+      "SUPER_HEROI"
+    ]
+  },
+  {
+    "slug": "caixa-de-retorno",
+    "title": "Caixa de retorno de palco",
+    "category": "scene",
+    "triangles": 576,
+    "bytes": 27700,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      0.81,
+      0.487,
+      0.558
+    ],
+    "hash": "0fcbae53727a634c",
+    "movel": "caixaDeRetorno",
+    "games": [
+      "FAVORITE_SINGER"
+    ]
+  },
+  {
+    "slug": "bandeira-do-clube",
+    "title": "Bandeira do clube no mastro",
+    "category": "scene",
+    "triangles": 420,
+    "bytes": 38684,
+    "author": "FashionAI",
+    "source": "scripts/blender3d/receitas",
+    "license": "Própria",
+    "size": [
+      1.504,
+      3.634,
+      0.24
+    ],
+    "hash": "0fcbae53727a634c",
+    "movel": "bandeiraDoClube",
+    "games": [
+      "CLUBE_CORACAO"
+    ]
   }
 ]
