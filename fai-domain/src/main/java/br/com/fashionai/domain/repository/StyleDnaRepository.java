@@ -19,6 +19,9 @@ import java.util.UUID;
 public interface StyleDnaRepository extends JpaRepository<StyleDna, UUID> {
     Optional<StyleDna> findByUserId(UUID userId);
 
+    /** O DNA de estilo de uma página de pessoas (filtro de estilo na busca de adversários). */
+    List<StyleDna> findByUserIdIn(Collection<UUID> userIds);
+
     /** DET-K06 — pessoas distintas com o mesmo arquétipo que usaram cada subcategoria num Look do Dia desde a data. */
     @Query("select wi.subcategory, count(distinct dl.user.id) from DailyLook dl, SchemeItem si, StyleDna d join si.wardrobeItem wi "
             + "where si.scheme = dl.scheme and d.user = dl.user and d.archetype = :archetype and dl.lookDate >= :since "

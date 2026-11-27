@@ -41,7 +41,7 @@ final class Fk {
 
     /** Todas as classes de dublê: {@link ServiceFakes} e {@link ServiceFakesLoja}. */
     static Class<?>[] fakeClasses() {
-        return java.util.stream.Stream.of(ServiceFakes.class, ServiceFakesLoja.class)
+        return java.util.stream.Stream.of(ServiceFakes.class, ServiceFakesLoja.class, ServiceFakesFlair.class)
                 .flatMap(holder -> java.util.Arrays.stream(holder.getDeclaredClasses())).toArray(Class<?>[]::new);
     }
 

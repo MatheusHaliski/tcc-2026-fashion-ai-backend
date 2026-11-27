@@ -21,9 +21,10 @@ O que vale para todos os jogos e não se repete abaixo:
   foto ou cena.
 - A roupa é o foco: nenhum painel, personagem ou efeito cobre a faixa central do palco.
 - O servidor é a única fonte da nota. A prévia nunca gasta o sorteio: a partida inteira é recalculada da semente.
-- **Fora desta entrega em todos os jogos:** partida online com outras pessoas (sala, fila, convite, voto da plateia de
-  verdade). O desenho descreve essas variações, mas a base só abre partida solo (`BASE_NUCLEOS.md`, "Os avatares de
-  cada partida"). Onde o jogo pede adversário ou plateia, entra um figurante com nota tirada da semente.
+- **Multiplayer (27/11/2026, `MULTIPLAYER.md`):** convite por busca na rede FAI (nunca tag), sala com a mesma semente
+  nos 15 jogos e no MAKE UP e sala por turnos julgada no servidor na Batalha de Looks, no Dress Fighter e no Fashion
+  Sports. Ainda fora: tempo real, fila, cooperativo (Detective/Super-Herói) e voto da plateia de verdade. No single
+  player, onde o jogo pede adversário ou plateia, continua o figurante com nota tirada da semente.
 - **Fluidez do 3D:** não medida. O ambiente de desenvolvimento não tem placa de vídeo.
 - **Modelo cinza na ação (auditoria 3):** conferido de novo em quadros a cada 0,35 s do Dress Fighter, da entrega ao
   resultado, sem placa de vídeo: a modelo fica vestida o tempo todo. O corpo humano só aparece com as três zonas

@@ -1,0 +1,152 @@
+/* Multiplayer do FLAIR 3D (components/flair/multi/*), parte 1: busca de adversários na rede FAI, escolha de pessoas,
+   caixa de convites, entrada "Jogar contra alguém" e a faixa da sala na tela do jogo. A sala fica em
+   60-flair3d-multi-sala.css. */
+.fm-busca {
+  display: grid;
+  gap: 10px;
+}
+
+.fm-busca-campo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fm-busca-campo > .input,
+.fm-busca-campo > input {
+  flex: 1;
+}
+
+.fm-busca-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fm-filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px 12px;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+
+.fm-lista,
+.fm-caixa-grupo ul,
+.fm-turnos {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fm-item,
+.fm-sala-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.fm-item-texto,
+.fm-sala-link {
+  flex: 1;
+  min-width: 0;
+}
+
+.fm-item-nome,
+.fm-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.fm-ativo {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--thread);
+}
+
+.fm-deck-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--thread);
+}
+
+.fm-status {
+  color: var(--muted);
+}
+
+.fm-vazio {
+  padding: 12px 0;
+}
+
+.fm-convidar,
+.fm-sala,
+.fm-sala-turnos {
+  display: grid;
+  gap: 12px;
+}
+
+.fm-caixa {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0 16px;
+  padding: 16px;
+}
+
+.fm-caixa-topo,
+.fm-entrada,
+.fm-faixa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fm-entrada {
+  margin: 8px 0;
+}
+
+.fm-faixa {
+  justify-content: flex-start;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  font-size: var(--text-caption);
+}
+
+.fm-acoes,
+.fm-res-acoes {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fm-escolher {
+  display: grid;
+  gap: 6px;
+}
+
+.fm-escolhidas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.fm-escolhida {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

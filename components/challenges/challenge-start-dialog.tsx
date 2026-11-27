@@ -1,9 +1,11 @@
 "use client";
 import { challengeLabel } from "@/components/challenges/challenge-detail-parts";
 import { useState } from "react";
-import { Button, Chip, Dialog, Field, Input } from "@/components/ui";
+import { Button, Chip, Dialog } from "@/components/ui";
+import { EscolherAdversario } from "@/components/flair/multi/escolher-adversario";
 import { FaiIcon } from "@/components/fai-icon";
 import { PiecePicker } from "@/components/pieces/piece-picker";
+import type { Adversario } from "@/lib/flair/multi/types";
 import { useI18n } from "@/lib/i18n/i18n";
 
 export const MODE_ICON: Record<string, string> = { SOLO: "ACT-44", EQUIPE: "ACT-45", DUELO: "ACT-46", GRUPO: "ACT-45" };
@@ -19,7 +21,7 @@ export interface ChallengeStart {
 }
 
 /**
- * Janela "Começar" de um desafio: modo, convidados e, quando a regra pede (10×10, Temporada cápsula), a escolha das
+ * Janela "Começar" de um desafio: modo, convidados (busca na rede FAI) e, quando a regra pede (10×10, Temporada cápsula), a escolha das
  * peças. "Começar" só liga com o número exato de peças — o pedido nunca sai sem elas.
  */
 export function ChallengeStartDialog({ template, onClose, onStart }: {
@@ -29,7 +31,8 @@ export function ChallengeStartDialog({ template, onClose, onStart }: {
 }) {
   const { t } = useI18n();
   const [mode, setMode] = useState(template.modes[0]);
-  const [invitees, setInvitees] = useState("");
+  // convidados pela busca na rede FAI (nunca por texto digitado); a API continua recebendo ids
+  const [invitees, setInvitees] = useState<Adversario[]>([]);
   const [pieceIds, setPieceIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const needed = CHALLENGE_PIECE_COUNT[template.code] ?? 0;
@@ -41,7 +44,7 @@ export function ChallengeStartDialog({ template, onClose, onStart }: {
         code: template.code,
         mode,
         params: needed ? { piece_ids: pieceIds } : {},
-        invitees: invitees.split(",").map((s) => s.trim()).filter(Boolean),
+        invitees: invitees.map((a) => a.id),
       });
     } finally {
       setBusy(false);
@@ -58,9 +61,7 @@ export function ChallengeStartDialog({ template, onClose, onStart }: {
         ))}
       </div>
       {mode !== "SOLO" && (
-        <Field label={t("challenges.convidar_usernames_ou_ids_virgula")} id="inv">
-          <Input id="inv" value={invitees} onChange={(e) => setInvitees(e.target.value)} />
-        </Field>
+        <EscolherAdversario label={t("challenges.convidar_da_rede")} escolhidas={invitees} onChange={setInvitees} multiplo />
       )}
       {needed > 0 && <PiecePicker value={pieceIds} onChange={setPieceIds} total={needed} label={t("challenges.escolha_pecas", { total: needed })} />}
       {needed > 0 && !ready && <p className="type-caption text-muted mt-2" role="note">{t("challenges.faltam_pecas", { missing: needed - pieceIds.length })}</p>}

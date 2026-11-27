@@ -1,9 +1,13 @@
 "use client";
-/** Lista dos 15 núcleos (/flair/3d): número, nome, recursos e o link do jogo. Sem a API, a lista sai do registro local. */
+/**
+ * Lista dos 15 núcleos (/flair/3d): número, nome, recursos e o link do jogo, abaixo da caixa do multiplayer (convites e
+ * salas). Sem a API, a lista sai do registro local.
+ */
 import Link from "next/link";
 import { Badge, PageHeader, UiIcon } from "@/components/ui";
 import { useApi } from "@/lib/hooks/use-api";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
+import { CaixaMulti } from "@/components/flair/multi/caixa-multi";
 import { listarNucleos } from "@/lib/flair/nucleos/api";
 import { NUCLEO_LISTA, rotaDoNucleo } from "@/lib/flair/nucleos/registry";
 import type { NucleoResumo } from "@/lib/flair/nucleos/types";
@@ -20,6 +24,7 @@ export function NucleoList() {
         <Link href="/flair" className="btn btn-sm"><UiIcon name="chevronLeft" size={18} />{tx.t("flair.hub.back")}</Link>
         <PageHeader title={tx.t("flair3d.ui.title")} lead={tx.t("flair3d.ui.lead")} />
       </div>
+      <CaixaMulti />
       <ol className="n3d-list" data-testid="nucleo-list">
         {nucleos.map((n) => (
           <li key={n.codigo}>
