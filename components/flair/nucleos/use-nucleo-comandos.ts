@@ -19,6 +19,7 @@ import { DESFILE_JOGAVEL } from "@/lib/flair/nucleos/movimento/desfile";
 import { emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { execucaoPendente } from "@/lib/flair/nucleos/movimento/execucao-pendente";
 import { useEixoDeAndar } from "@/components/flair/nucleos/use-eixo-de-andar";
+import { perfilDoJogo } from "@/lib/flair/nucleos/controle/perfil-console";
 
 interface Opcoes {
   codigo: NucleoCodigo;
@@ -42,7 +43,9 @@ export function useNucleoComandos({ codigo, acoes, momento, tabs, pausado, ativo
   // nos jogos de andar livre, na preparação WASD e o analógico levam a personagem pela sala
   // na ação do desfile jogável a pessoa desfila até a ponta; na luta, circula pelo ringue entre os lances
   const desfile = momento === "ACAO" && DESFILE_JOGAVEL.has(codigo);
-  const andar = andaAgora(codigo, acoes, momento, entreLances) && ativo && !pausado && !cena?.tocando;
+  // no perfil console a fase de uso tem controle próprio (setas, E, F, X): o legado não anda nem aperta a deixa
+  const doConsole = desfile && perfilDoJogo(codigo) === "console";
+  const andar = andaAgora(codigo, acoes, momento, entreLances) && ativo && !pausado && !cena?.tocando && !doConsole;
   useEixoDeAndar(andar);
   const onComando = (c: Comando) => {
     // a cutscene acaba com qualquer comando de jogo, que vale também (nenhum toque se perde); ○ e Start só pulam
@@ -55,6 +58,7 @@ export function useNucleoComandos({ codigo, acoes, momento, tabs, pausado, ativo
     if (pausado && c.acao === "TIRAR") return dispatch({ type: "comando", comando: { acao: "VER_OBJETIVO" }, tabs });
     // no desfile, os quatro botões vão à deixa da execução; sem deixa pendente, só □ (a pose final) vai à cena
     const botao = c.acao === "POSAR" ? "DESFILAR" : c.acao;
+    if (doConsole && (botao === "DESFILAR" || botao === "VESTIR" || botao === "TIRAR" || botao === "TROCAR_ABA")) return;
     if (desfile && (botao === "DESFILAR" || (execucaoPendente() && (botao === "VESTIR" || botao === "TIRAR" || botao === "TROCAR_ABA")))) {
       return emitirFx({ tipo: "desfile-botao", nucleo: codigo, botao });
     }

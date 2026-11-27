@@ -75,7 +75,8 @@ describe("desfile jogável", () => {
     expect(hud.textContent).toContain("Volta de classificação: 0 de 5");
     expect(hud.textContent).toContain("Combustível: 50");
     // a cena é a do lugar de uso (a pista), não a do ateliê: quem publica as marcas é a cena 3D, aqui simulada
-    const teclas = [{ key: "i", code: "KeyI" }, { key: "f", code: "KeyF" }, { key: " ", code: "Space" }, { key: "f", code: "KeyF" }, { key: " ", code: "Space" }];
+    // perfil console: F é o lance ousado e E o seguro (o botão de cada um é o que o servidor sorteou)
+    const teclas = [{ key: "f", code: "KeyF" }, { key: "e", code: "KeyE" }, { key: "e", code: "KeyE" }, { key: "e", code: "KeyE" }, { key: "e", code: "KeyE" }];
     // o relógio da deixa: cada toque vem 300 ms depois de ela abrir (antes de 150 ms seria antecipar)
     let relogio = 1000;
     vi.spyOn(performance, "now").mockImplementation(() => relogio);
@@ -83,15 +84,16 @@ describe("desfile jogável", () => {
       act(() => emitirFx({ tipo: "desfile", nucleo: "PILOTO_FAVORITO", alcancadas: i + 1, total: 5, naPonta: i === 4 }));
       expect(hud.dataset.deixa).toBe(pedido.botoes[i]);
       if (i === 0) {
-        const lances = screen.getByTestId("deixa-de-uso");
+        const lances = screen.getByTestId("deixa-curta");
         expect(lances.textContent).toContain("poupar");
-        expect(lances.textContent).toContain("acelerar −12");
+        expect(lances.textContent).toContain("acelerar");
         expect(hud.textContent).toContain("✕ para poupar ou △ para acelerar (vale mais, gasta 12)");
         expect(screen.getByTestId("prazo-da-fase")).toBeTruthy();
       }
       relogio += 300;
       fireEvent.keyDown(window, teclas[i]);
-      // o primeiro toque foi o lance ousado (△): gastou 12 do combustível na hora
+      fireEvent.keyUp(window, teclas[i]);
+      // o primeiro toque foi o lance ousado (F): gastou 12 do combustível na hora
       if (i === 0) expect(hud.textContent).toContain("Combustível: 38");
     }
     expect(eventos.flatMap((e) => (e.tipo === "desfile-nota" ? [e.nota] : []))).toEqual(["OUSADO", "PERFEITO", "PERFEITO", "PERFEITO", "PERFEITO"]);

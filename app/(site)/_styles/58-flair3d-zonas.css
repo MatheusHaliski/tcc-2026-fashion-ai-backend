@@ -111,3 +111,44 @@
     animation: none;
   }
 }
+
+/* Perfil console (fase-de-uso-console.tsx): a deixa em poucas palavras com as teclas e a dica da roda de cartas. */
+.n3d-desfile[data-console] {
+  max-width: min(360px, calc(100% - 240px));
+}
+
+.n3d-curta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: var(--text-body);
+  font-weight: 600;
+  animation: n3d-chave-entra 200ms ease-out;
+}
+
+.n3d-curta em {
+  flex: 1 1 100%;
+  font-style: normal;
+  color: #f3d58a;
+}
+
+.n3d-curta kbd,
+.n3d-console-dica kbd {
+  padding: 1px 6px;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 6px;
+  font-size: var(--text-caption);
+}
+
+.n3d-console-dica {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: var(--text-caption);
+  opacity: 0.85;
+}
+
+.n3d-console-dica b {
+  color: #f3d58a;
+}

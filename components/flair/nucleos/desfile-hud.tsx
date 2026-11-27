@@ -13,6 +13,8 @@ import { DeixaDeUso, PrazoDaFase, lancesDoJogo } from "@/components/flair/nucleo
 import { DeixaDaChave, MaoDeUso, textoDaChave } from "@/components/flair/nucleos/fase-de-uso-mao";
 import { useExecucaoDoDesfile } from "@/components/flair/nucleos/use-execucao-do-desfile";
 import { useMaoDeUso } from "@/components/flair/nucleos/use-mao-de-uso";
+import { ConsoleDaFaseDeUso, DeixaCurta } from "@/components/flair/nucleos/fase-de-uso-console";
+import { usaConsoleNaFase } from "@/components/flair/nucleos/use-console-da-fase-de-uso";
 import { assinarFx, emitirFx } from "@/lib/flair/nucleos/fx-events";
 import { GLIFO, notaDe, pedidoDe, restanteDepois, type Toque } from "@/lib/flair/nucleos/movimento/execucao";
 import { nomeDoRecurso } from "@/lib/flair/recursos/desgaste";
@@ -54,24 +56,30 @@ export function DesfileHud({ codigo, onFim, resultado, onExecucao, reduzido = fa
     : pedido
       ? tx.t(esperando ? "flair3d.execucao.enviando" : risco ? "flair3d.uso.marcas" : "flair3d.desfile.marcas", { alcancadas: p.alcancadas, total, fase })
       : tx.t(p.naPonta ? "flair3d.desfile.ponta" : emUso ? "flair3d.uso.fim" : "flair3d.desfile.marcas", { alcancadas: p.alcancadas, total, acao: gesto, fase });
+  // perfil console (jogos de zonas): HUD mínimo na cena; o texto longo fica para o leitor de tela
+  const console_ = usaConsoleNaFase(codigo) && emUso;
   const janela = { "--n3d-janela": `${deixa?.janelaMs ?? 0}ms` } as CSSProperties;
   return (
-    <div className="n3d-desfile" data-testid="desfile-hud" data-ponta={p.naPonta || undefined} data-deixa={deixa?.botao} data-uso={emUso ? "" : undefined}>
-      {deixa?.chave && <DeixaDaChave deixa={deixa} />}
-      {deixa && risco && !deixa.chave && <DeixaDeUso codigo={codigo} deixa={deixa} custo={risco.custo} />}
+    <div className="n3d-desfile" data-testid="desfile-hud" data-ponta={p.naPonta || undefined} data-deixa={deixa?.botao} data-uso={emUso ? "" : undefined} data-console={console_ || undefined}>
+      {console_ && <DeixaCurta codigo={codigo} deixa={deixa} />}
+      {!console_ && deixa?.chave && <DeixaDaChave deixa={deixa} />}
+      {!console_ && deixa && risco && !deixa.chave && <DeixaDeUso codigo={codigo} deixa={deixa} custo={risco.custo} />}
       {deixa && !risco && <span key={deixa.marca} className="n3d-deixa" style={janela} aria-hidden>{GLIFO[deixa.botao]}</span>}
-      <p role="status">{texto}</p>
+      <p role="status" className={console_ ? "sr-only" : undefined}>{texto}</p>
       {pedido && (
         <span className="n3d-execucao" data-testid="execucao-notas">
-          {notas.map((n, i) => <i key={i} data-nota={n}>{tx.t(`flair3d.execucao.nota.${n}`)}</i>)}
+          {notas.map((n, i) => <i key={i} data-nota={n} title={tx.t(`flair3d.execucao.nota.${n}`)}>{console_ ? "●" : tx.t(`flair3d.execucao.nota.${n}`)}</i>)}
           {!esperando && onExecucao && (
-            <button type="button" className="n3d-desfile-seguir" onClick={() => onExecucao([])}>{tx.t("flair3d.execucao.seguir")}</button>
+            <button type="button" className="n3d-desfile-seguir" onClick={() => onExecucao([])} title={tx.t("flair3d.execucao.seguir")}>{tx.t(console_ ? "flair3d.uso.console.seguir" : "flair3d.execucao.seguir")}</button>
           )}
           <b>{tx.t("flair3d.execucao.recurso", { recurso: nomeDoRecurso(tx.ou, codigo, pedido.recurso), n: restanteDepois(pedido, notas, ousadias) })}</b>
           <PrazoDaFase prazo={prazo} parado={esperando} />
         </span>
       )}
-      {lances && !esperando && (
+      {console_ && (
+        <ConsoleDaFaseDeUso codigo={codigo} ativo={!esperando} deixa={deixa} cartas={mao.cartas} armada={mao.armada} disponivel={(c) => mao.disponivel(c, notas.length)} armar={mao.armar} />
+      )}
+      {!console_ && lances && !esperando && (
         <MaoDeUso cartas={mao.cartas} lances={lances} armada={mao.armada} usos={mao.usos} marca={notas.length} disponivel={mao.disponivel} armar={mao.armar} />
       )}
       {!pedido && p.naPonta && (

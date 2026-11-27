@@ -25,7 +25,14 @@ import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 export type PerfilDeControles = "legado" | "console";
 
 /** Qual perfil cada jogo usa; quem não está aqui fica no legado (lib/flair/nucleos/controls.ts). */
-export const PERFIL_POR_JOGO: Partial<Record<NucleoCodigo, PerfilDeControles>> = { FASHION_DETECTIVE: "console" };
+export const PERFIL_POR_JOGO: Partial<Record<NucleoCodigo, PerfilDeControles>> = {
+  FASHION_DETECTIVE: "console",
+  // rodada zonas: a fase de uso dos quatro jogos de zonas (components/flair/nucleos/use-console-da-fase-de-uso.ts)
+  CLUBE_CORACAO: "console",
+  FAVORITE_SINGER: "console",
+  PILOTO_FAVORITO: "console",
+  SUPER_HEROI: "console",
+};
 
 export function perfilDoJogo(codigo: NucleoCodigo): PerfilDeControles {
   return PERFIL_POR_JOGO[codigo] ?? "legado";
