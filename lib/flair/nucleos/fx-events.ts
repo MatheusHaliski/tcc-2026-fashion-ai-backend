@@ -8,6 +8,8 @@ import type { PassoAcao } from "@/lib/flair/nucleos/action-fx";
 import type { AcionamentoTipo, Momento } from "@/lib/flair/nucleos/moments";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 import type { Cutscene } from "@/lib/flair/cinema/types";
+import type { NotaDoToque } from "@/lib/flair/nucleos/movimento/execucao";
+import type { ChaveDoPedido } from "@/lib/flair/nucleos/movimento/lances-de-uso";
 
 export type FxEvento =
   /** a partida mudou de momento (deck, preparação, ação, resultado) */
@@ -30,7 +32,9 @@ export type FxEvento =
   /** um dos quatro botões na ação do desfile (✕ ○ □ △): a resposta à deixa da execução ou, sem deixa, □ faz a pose final */
   | { tipo: "desfile-botao"; nucleo: NucleoCodigo; botao: "VESTIR" | "TIRAR" | "DESFILAR" | "TROCAR_ABA" }
   /** a nota de uma marca da execução, dada na hora (a do servidor vem depois): a cena pinta a marca e a personagem faz o gesto */
-  | { tipo: "desfile-nota"; nucleo: NucleoCodigo; marca: number; nota: "PERFEITO" | "BOM" | "ERROU" | "OUSADO" };
+  | { tipo: "desfile-nota"; nucleo: NucleoCodigo; marca: number; nota: NotaDoToque; /** a carta jogada na marca (jogos de zonas) */ carta?: { id: string; lance: string; efeito: string; faixa: string } }
+  /** rodada zonas: o momento-chave abriu (a cena mostra a condição) ou fechou (certa: a escolha valeu) */
+  | { tipo: "uso-chave"; nucleo: NucleoCodigo; chave: ChaveDoPedido; certa: boolean | null };
 
 export type FxAssinante = (evento: FxEvento) => void;
 

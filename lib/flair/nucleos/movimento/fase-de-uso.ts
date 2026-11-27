@@ -52,8 +52,24 @@ export const FASES_DE_USO: Partial<Record<NucleoCodigo, FaseDeUso>> = {
     alvo: "DRONE",
     marcas: [[-2.8, -1.2], [2.4, -2.0], [-0.6, -3.9], [2.9, -5.2], [-1.6, -6.4]],
     gesto: { seguro: "ESQUIVA", ousado: "SOCO", erro: "RECUO" },
+    publico: "MORADORES",
   },
 };
+
+/** As faixas de Hype em que a torcida comemora a carta (Circuito Aura: só leitura). */
+const FAIXAS_QUE_EMPOLGAM = ["HOT", "TRENDING", "VIRAL"];
+
+/**
+ * Como a cena reage a cada nota da fase de uso: o gesto da personagem e o de quem assiste. O momento-chave certo e o
+ * lance ousado são comemorados (com flash); a carta de Hype alto empolga a torcida mesmo no lance seguro; o erro é
+ * lamentado; o erro segurado pelo escudo ganha aplauso.
+ */
+export function reacaoAoLance(nota: string, faixa?: string): { gesto: "SEGURO" | "OUSADO" | "ERRO"; publico: "F_APLAUSO" | "F_COMEMORA" | "F_LAMENTA"; flash: boolean } {
+  if (nota === "ERROU") return { gesto: "ERRO", publico: "F_LAMENTA", flash: false };
+  const forte = nota === "OUSADO" || nota === "CHAVE";
+  const empolga = forte || (!!faixa && FAIXAS_QUE_EMPOLGAM.includes(faixa));
+  return { gesto: forte ? "OUSADO" : "SEGURO", publico: empolga ? "F_COMEMORA" : "F_APLAUSO", flash: nota === "CHAVE" };
+}
 
 export function faseDeUsoDe(codigo: NucleoCodigo): FaseDeUso | null {
   return FASES_DE_USO[codigo] ?? null;

@@ -1,14 +1,17 @@
 package br.com.fashionai.application.flair3d;
 
+import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Acionamento.Execucao;
-import br.com.fashionai.application.flair3d.Acionamento.Toque;
 import br.com.fashionai.application.flair3d.Flair3dExecucao.Nota;
 import br.com.fashionai.application.flair3d.Flair3dExecucao.Pedido;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
 
 /**
  * A fase de uso dos jogos de zonas (reauditoria de 25/11/2026: "a fase de uso é andar 0,5 m e posar"): a estreia em
@@ -17,8 +20,11 @@ import java.util.Set;
  * marca, uma decisão: o lance seguro (o botão pedido, a janela inteira, pouco ponto) ou o lance ousado (outro botão,
  * janela curta, {@value #OUSADO} pontos), que gasta {@value #CUSTO} do recurso-vida do jogo mesmo quando sai errado. O
  * recurso é o que sobrou da tinta ({@link Flair3dTinta}): quem pintou caro tem menos fôlego para ousar. Recurso zerado
- * fecha a partida como {@link Flair3dExecucao#ESGOTADO}. O servidor sorteia os botões da semente e dá a nota; os tempos
- * vêm do navegador. Puro.
+ * fecha a partida como {@link Flair3dExecucao#ESGOTADO}. Desde a rodada zonas (27/11/2026) a fase tem o lance do gênero
+ * ({@link Flair3dMomentoChave}: pênalti, virada da música, pit stop, ameaça), cartas do guarda-roupa como ação
+ * ({@link Flair3dCartaDeUso}: a cor aciona o lance, a faixa de Hype é a torcida, a Especial é a Metamorfose com recarga)
+ * e a dificuldade que sobe com a rodada. O servidor sorteia os botões da semente e dá a nota
+ * ({@link Flair3dFaseDeUsoNota}); os tempos vêm do navegador. Puro.
  */
 public final class Flair3dFaseDeUso {
     public static final int MARCAS = 5;
@@ -33,15 +39,42 @@ public final class Flair3dFaseDeUso {
     /** O prazo da fase inteira, da primeira marca à última: o que não foi tocado até lá conta como erro. */
     public static final int PRAZO_MS = 25_000;
     public static final String NOTA_OUSADO = "OUSADO";
+    /** Quanto a janela fecha a cada rodada depois da primeira e a cada marca da fase, em pontos percentuais. */
+    public static final int FECHA_POR_RODADA_PCT = 12;
+    public static final int FECHA_POR_MARCA_PCT = 4;
+    public static final int PRAZO_POR_RODADA_MS = 3_000;
     static final Set<String> JOGOS = Set.of("CLUBE_CORACAO", "FAVORITE_SINGER", "PILOTO_FAVORITO", "SUPER_HEROI");
 
     private Flair3dFaseDeUso() {
     }
 
-    /** O risco de cada marca: o botão do lance ousado, quanto ele gasta, a janela dele e o prazo da fase. */
-    public record Risco(List<String> ousados, int custo, int janelaMs, int prazoMs) {
+    /**
+     * O risco de cada marca: o botão do lance ousado, quanto ele gasta, a janela dele (a da primeira marca) e o prazo da
+     * fase; desde a rodada zonas, também a janela de cada marca (seguro e ousado, que fecham com a marca e com a rodada),
+     * o momento-chave do jogo, as famílias de cor das zonas pintadas (a carta da cor do uniforme), o nível da rodada e o
+     * jogo (o nome do lance que a cor da carta aciona).
+     */
+    public record Risco(List<String> ousados, int custo, int janelaMs, int prazoMs, List<Integer> janelas, List<Integer> janelasOusadas,
+                        Flair3dMomentoChave chave, Set<String> uniforme, int nivel, String jogo) {
         public Risco {
             ousados = List.copyOf(ousados);
+            janelas = janelas == null ? List.of() : List.copyOf(janelas);
+            janelasOusadas = janelasOusadas == null ? List.of() : List.copyOf(janelasOusadas);
+            uniforme = uniforme == null ? Set.of() : Set.copyOf(uniforme);
+        }
+
+        /** O risco de antes da rodada zonas: a mesma janela em todas as marcas, sem momento-chave nem cartas. */
+        public Risco(List<String> ousados, int custo, int janelaMs, int prazoMs) {
+            this(ousados, custo, janelaMs, prazoMs, null, null, null, null, 0, null);
+        }
+
+        /** A janela do lance seguro na marca (sem lista, a do pedido). */
+        int janelaSegura(int marca, int doPedido) {
+            return marca < janelas.size() ? janelas.get(marca) : doPedido;
+        }
+
+        int janelaOusada(int marca) {
+            return marca < janelasOusadas.size() ? janelasOusadas.get(marca) : janelaMs;
         }
 
         void paraTela(Map<String, Object> m) {
@@ -49,6 +82,15 @@ public final class Flair3dFaseDeUso {
             m.put("custo", custo);
             m.put("janelaOusadaMs", janelaMs);
             m.put("prazoMs", prazoMs);
+            m.put("janelas", janelas);
+            m.put("janelasOusadas", janelasOusadas);
+            m.put("nivel", nivel);
+            m.put("cartasMax", Flair3dCartaDeUso.MAXIMO);
+            m.put("recarga", Flair3dCartaDeUso.RECARGA);
+            m.put("uniforme", uniforme.stream().sorted().toList());
+            if (chave != null) {
+                chave.paraTela(m);
+            }
         }
     }
 
@@ -63,9 +105,11 @@ public final class Flair3dFaseDeUso {
 
     /**
      * O risco do jogo, ou nulo fora da fase de uso: em cada marca, o botão ousado é um dos três que não são o pedido
-     * (da semente).
+     * (da semente). A dificuldade sobe com a rodada (a janela fecha {@value #FECHA_POR_RODADA_PCT}% e o prazo encurta
+     * {@value #PRAZO_POR_RODADA_MS} ms por rodada depois da primeira) e dentro da fase (cada marca fecha a janela mais
+     * {@value #FECHA_POR_MARCA_PCT}%).
      */
-    static Risco riscoDe(String jogo, List<String> botoes, int janelaMs, Contexto contexto) {
+    static Risco riscoDe(String jogo, List<String> botoes, int janelaMs, Contexto contexto, Entrega entrega) {
         if (!tem(jogo)) {
             return null;
         }
@@ -75,43 +119,48 @@ public final class Flair3dFaseDeUso {
             List<String> outros = Flair3dExecucao.BOTOES.stream().filter(b -> !b.equals(pedido)).toList();
             ousados.add(contexto.sortear("ousado-" + i, outros));
         }
-        return new Risco(ousados, CUSTO, janelaMs * JANELA_OUSADA_PCT / 100, PRAZO_MS);
+        int nivel = nivelDaRodada(jogo, contexto.rodada());
+        List<Integer> janelas = new ArrayList<>();
+        List<Integer> curtas = new ArrayList<>();
+        for (int i = 0; i < botoes.size(); i++) {
+            int pct = 100 - FECHA_POR_RODADA_PCT * nivel - FECHA_POR_MARCA_PCT * i;
+            janelas.add(janelaMs * pct / 100);
+            curtas.add(janelaMs * pct / 100 * JANELA_OUSADA_PCT / 100);
+        }
+        Flair3dMomentoChave chave = Flair3dMomentoChave.de(jogo, botoes, ousados, contexto);
+        return new Risco(ousados, CUSTO, curtas.get(0), PRAZO_MS - PRAZO_POR_RODADA_MS * nivel, janelas, curtas, chave, uniforme(entrega), nivel, jogo);
     }
 
-    /**
-     * A nota da fase de uso, pelo primeiro toque de cada marca: o botão ousado gasta o custo e vale {@value #OUSADO}
-     * dentro da janela curta; o botão pedido vale perfeito ou bom; o resto é erro, que tira pontos e drena o recurso.
-     */
-    static Nota avaliar(Pedido pedido, Execucao feita) {
-        Risco risco = pedido.risco();
-        List<String> marcas = new ArrayList<>();
-        int pontos = 0;
-        int restante = pedido.reserva();
-        for (int i = 0; i < pedido.botoes().size(); i++) {
-            int marca = i;
-            Toque t = feita.toques().stream().filter(x -> x != null && x.marca() == marca).findFirst().orElse(null);
-            boolean ousou = t != null && risco.ousados().get(i).equals(t.botao());
-            if (ousou) {
-                restante -= risco.custo();
-            }
-            String nota = ousou ? ousado(risco, t) : Flair3dExecucao.nota(pedido, t, i);
-            marcas.add(nota);
-            switch (nota) {
-                case NOTA_OUSADO -> pontos += OUSADO;
-                case "PERFEITO" -> pontos += SEGURO_PERFEITO;
-                case "BOM" -> pontos += SEGURO_BOM;
-                default -> {
-                    pontos -= Flair3dExecucao.ERRO;
-                    restante -= pedido.dreno();
-                }
+    /** A posição da rodada no jogo (0 a mais simples): a dificuldade da fase. */
+    static int nivelDaRodada(String jogo, String rodada) {
+        if (rodada == null) {
+            return 0;
+        }
+        List<Definicao.Rodada> rodadas = Flair3dNucleos.porCodigo(jogo).map(n -> n.definicao().rodadas()).orElse(List.of());
+        for (int i = 0; i < rodadas.size(); i++) {
+            if (rodadas.get(i).codigo().equals(rodada)) {
+                return Math.min(2, i);
             }
         }
-        int teto = Flair3dExecucao.TETO;
-        return new Nota(marcas, Math.max(-teto, Math.min(teto, pontos)), Math.max(0, restante));
+        return 0;
     }
 
-    private static String ousado(Risco risco, Toque t) {
-        boolean aTempo = t.ms() >= Flair3dExecucao.REACAO_MINIMA_MS && t.ms() <= risco.janelaMs();
-        return aTempo ? NOTA_OUSADO : "ERROU";
+    /** As famílias de cor das zonas pintadas. */
+    static Set<String> uniforme(Entrega entrega) {
+        Set<String> out = new TreeSet<>();
+        if (entrega != null) {
+            entrega.zonas().values().stream().map(Flair3dZonas::familia).filter(Objects::nonNull).forEach(out::add);
+        }
+        return out;
+    }
+
+    /** A nota da fase de uso sem cartas jogadas. */
+    static Nota avaliar(Pedido pedido, Execucao feita) {
+        return Flair3dFaseDeUsoNota.avaliar(pedido, feita, Map.of());
+    }
+
+    /** A nota da fase de uso com as cartas da pessoa que os toques jogaram ({@link Flair3dFaseDeUsoNota}). */
+    static Nota avaliar(Pedido pedido, Execucao feita, Map<UUID, CbcRules.Card> cartas) {
+        return Flair3dFaseDeUsoNota.avaliar(pedido, feita, cartas);
     }
 }
