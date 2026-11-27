@@ -40,14 +40,16 @@ public class Flair3dSalaTurnos {
     private final Flair3dSalaAcesso acesso;
     private final Flair3dSalaAvisos avisos;
     private final Flair3dSalaPlacar placar;
+    private final Flair3dSalaVista vista;
 
     public Flair3dSalaTurnos(Flair3dSalaRepository salas, Flair3dCartas cartas, Flair3dSalaAcesso acesso, Flair3dSalaAvisos avisos,
-                             Flair3dSalaPlacar placar) {
+                             Flair3dSalaPlacar placar, Flair3dSalaVista vista) {
         this.salas = salas;
         this.cartas = cartas;
         this.acesso = acesso;
         this.avisos = avisos;
         this.placar = placar;
+        this.vista = vista;
     }
 
     /** O deck do lado de quem pede, conferido pelas regras do jogo; só antes do primeiro lance (409 depois). */
@@ -67,7 +69,7 @@ public class Flair3dSalaTurnos {
         } else {
             s.setDeckParaJson(Json.write(ids));
         }
-        return placar.andamento(salas.save(s), user.id());
+        return completa(salas.save(s), user.id());
     }
 
     @Transactional
@@ -105,7 +107,12 @@ public class Flair3dSalaTurnos {
         } else if (t.lances(!souDe).size() < vez) {
             avisos.vez(s, s.outro(user.id()));
         }
-        return placar.andamento(salas.save(s), user.id());
+        return completa(salas.save(s), user.id());
+    }
+
+    /** A sala inteira depois do lance ou do deck: a tela troca a sala de uma vez, sem esperar o próximo polling. */
+    private Map<String, Object> completa(Flair3dSala s, UUID quem) {
+        return vista.completa(s, quem, placar.andamento(s, quem));
     }
 
     private Flair3dSala emJogo(CurrentUser user, UUID salaId) {

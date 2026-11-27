@@ -50,17 +50,22 @@ describe("DuelPanel", () => {
     expect(screen.getByRole("link", { name: "Criar look" }).getAttribute("href")).toBe("/schemes/new");
   });
 
-  it("duela com o @ informado, mostra o resultado no diálogo e fecha", async () => {
+  it("duela com a pessoa escolhida na busca da rede FAI (sem tag digitada), mostra o resultado e fecha", async () => {
     const onPlayed = vi.fn();
-    const { calls } = loggedAs(ME, { "GET /api/flair/decks": DECKS, "POST /api/flair/duels": DUEL });
+    const bia = { id: "u-bia", username: "bia", nome: "Bia", nivel: "ROOKIE", nivelLabel: "Rookie", pontos: 0, ativo: true, relacao: "MUTUOS", status: "DISPONIVEL", convidavel: true };
+    const { calls } = loggedAs(ME, { "GET /api/flair/decks": DECKS, "POST /api/flair/duels": DUEL, "GET /api/flair/3d/adversarios": { resultados: [bia], niveis: [] } });
     renderApp(<DuelPanel onPlayed={onPlayed} skin="CHAMPION" />);
     const duelar = await screen.findByRole("button", { name: "Duelar" });
     await waitFor(() => expect(screen.getByLabelText("Seu deck (look)").textContent).toContain("Deck Noite · poder 300"));
     expect((duelar as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText("Oponente (@usuário)"), { target: { value: "  bia " } });
+    expect(screen.queryByPlaceholderText("@paris_lea")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Buscar na rede FAI" }));
+    const busca = await screen.findByRole("dialog", { name: "Buscar na rede FAI" });
+    fireEvent.click(await within(busca).findByRole("button", { name: "Escolher @bia" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Buscar na rede FAI" })).toBeNull());
     fireEvent.click(duelar);
     const dialog = await screen.findByRole("dialog", { name: "Duelo 1×1 · @bia" });
-    expect(calls.find((c) => c.path === "/api/flair/duels")?.body).toEqual({ schemeId: "d1", opponent: "bia" });
+    expect(calls.find((c) => c.path === "/api/flair/duels")?.body).toEqual({ schemeId: "d1", opponentId: "u-bia" });
     expect(within(dialog).getByText("Vitória")).toBeTruthy();
     expect(within(dialog).getByText("2 × 1")).toBeTruthy();
     expect(within(dialog).getByText("+40 coins")).toBeTruthy();

@@ -8,7 +8,8 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useAction, useApi } from "@/lib/hooks/use-api";
 import type { FlairCollection } from "@/components/flair/flair-collection";
-import { abrirPartida, acionarPartida, buscarNucleo, entregarPartida } from "@/lib/flair/nucleos/api";
+import { acionarPartida, buscarNucleo, entregarPartida } from "@/lib/flair/nucleos/api";
+import { abridorDaPartida } from "@/lib/flair/multi/abertura";
 import { mesclarDefinicao } from "@/lib/flair/nucleos/registry";
 import { definicaoDaRodada, temRodadas } from "@/lib/flair/nucleos/rodadas";
 import { toEntrega, type Selecao } from "@/lib/flair/nucleos/selection";
@@ -17,7 +18,9 @@ import type { AvatarTipo, NucleoCodigo, NucleoPartida, NucleoResultado, NucleoRe
 
 export type { AcionamentoDaPessoa };
 
-export function useNucleoMatch(codigo: NucleoCodigo) {
+/** `salaId`: a sala multiplayer com a mesma semente (?sala=); a partida abre por ela. */
+export function useNucleoMatch(codigo: NucleoCodigo, salaId: string | null = null) {
+  const abrirPartida = useMemo(() => abridorDaPartida(codigo, salaId), [codigo, salaId]);
   const def = useApi((signal) => buscarNucleo(codigo, signal), [codigo]);
   /** a rodada escolhida antes de entrar (jogo sem rodadas para escolher: null, vale o objetivo da definição) */
   const [rodada, setRodada] = useState<string | null>(null);
@@ -36,7 +39,7 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
   const abertura = useRef<{ chave: string; promessa: Promise<NucleoPartida> } | null>(null);
 
   const abrir = useAction(async (escolhido: string[]) => {
-    const p = await abrirPartida(codigo, escolhido, null, rodada);
+    const p = await abrirPartida(escolhido, null, rodada);
     setPartida(p);
     setDeck(escolhido);
     return p;
@@ -49,7 +52,7 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
       const modelo = aceitaModelo && avatar === "MODELO_CASA" ? avatar : null;
       const chave = `${modelo ?? ""}:${rodada ?? ""}`;
       if (abertura.current?.chave === chave) return abertura.current.promessa;
-      const promessa = abrirPartida(codigo, [], modelo, rodada).then((p) => {
+      const promessa = abrirPartida([], modelo, rodada).then((p) => {
         setPartida(p);
         return p;
       });
@@ -59,7 +62,7 @@ export function useNucleoMatch(codigo: NucleoCodigo) {
       });
       return promessa;
     },
-    [semDeck, partida, aceitaModelo, codigo, rodada],
+    [semDeck, partida, aceitaModelo, abrirPartida, rodada],
   );
 
   const entrega = useAction(async (sel: Selecao, avatar: AvatarTipo) => {

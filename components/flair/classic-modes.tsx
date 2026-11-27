@@ -9,6 +9,8 @@ import type { UserCard } from "@/lib/api/types";
 import { Avatar, Badge, Button, Dialog, EmptyState, Field, Input, Select, Skeleton, useToast } from "@/components/ui";
 import { DeckSummary, FlairCardView, STAT_META, type FlairDeck, type FlairRound } from "@/components/flair/flair-card";
 import { tr, useI18n } from "@/lib/i18n/i18n";
+import { EscolherAdversario } from "@/components/flair/multi/escolher-adversario";
+import type { Adversario } from "@/lib/flair/multi/types";
 
 /**
  * Modos clássicos do FLAIR (RF37): Duelo 1×1 e treino com a Casa, Batalha de ocasião do dia e Equipes 3×3 com liga.
@@ -82,17 +84,18 @@ function DeckSelect({ decks, value, onChange }: { decks: FlairDeck[]; value: str
 export function DuelPanel({ onPlayed, skin }: { onPlayed?: () => void; skin?: string | null }) {
   const { t } = useI18n();
   const { decks, deckId, setDeckId, busy, run } = useClassic(onPlayed);
-  const [opponent, setOpponent] = useState(""); const [duel, setDuel] = useState<DuelResult | null>(null);
-  const playDuel = (opp: string) => run("duel", () => api.post<DuelResult>("/api/flair/duels", { schemeId: deckId, opponent: opp }), (r) => setDuel(r));
+  // o adversário sai da busca na rede FAI (nunca da tag digitada): o pedido leva o id da pessoa (opponentId)
+  const [rival, setRival] = useState<Adversario[]>([]); const [duel, setDuel] = useState<DuelResult | null>(null);
+  const playDuel = (alvo: { opponentId: string } | { opponent: string }) => run("duel", () => api.post<DuelResult>("/api/flair/duels", { schemeId: deckId, ...alvo }), (r) => setDuel(r));
   if (decks.loading) return <Skeleton className="h-40" />;
   return (
     <div className="grid gap-3">
       {(decks.data?.length ?? 0) === 0 ? <EmptyState title={t("flair.voce_ainda_nao_tem_decks")} hint={t("flair.crie_um_esquema_com_pecas")} action={<Link href="/schemes/new" className="btn btn-sm">{t("common.criar_esquema")}</Link>} /> : <>
         <DeckSelect decks={decks.data ?? []} value={deckId} onChange={setDeckId} />
-        <Field label={t("flair.oponente_usuario")} id="opp"><Input id="opp" placeholder="@paris_lea" value={opponent} onChange={(e) => setOpponent(e.target.value)} /></Field>
+        <EscolherAdversario label={t("flair.oponente_da_rede")} escolhidas={rival} onChange={setRival} />
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" loading={busy === "duel"} disabled={!deckId || !opponent.trim()} onClick={() => playDuel(opponent.trim())}>{t("flair.duelar")}</Button>
-          <Button loading={busy === "duel"} disabled={!deckId} onClick={() => playDuel("CASA")}>{t("flair.treinar_com_a_casa")}</Button>
+          <Button variant="primary" loading={busy === "duel"} disabled={!deckId || !rival[0]} onClick={() => rival[0] && playDuel({ opponentId: rival[0].id })}>{t("flair.duelar")}</Button>
+          <Button loading={busy === "duel"} disabled={!deckId} onClick={() => playDuel({ opponent: "CASA" })}>{t("flair.treinar_com_a_casa")}</Button>
         </div>
         <p className="type-caption text-faint">{t("flair.recompensa_do_sistema_vitoria_40")}</p>
       </>}
