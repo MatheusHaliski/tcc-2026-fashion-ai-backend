@@ -10171,6 +10171,8 @@
   "flair3d.ui.batalha.soma": "Suma",
   "flair3d.ui.batalha.execucao": "Desfile final (ejecución)",
   "flair3d.ui.batalha.fecho": "El desfile final suma o resta puntos a tu total, y es el total con él lo que decide la batalla. La victoria vale al menos 1 estrella; la derrota, ninguna.",
+  "flair3d.ui.aura.resumo": "Aura: público +{pontos}",
+  "flair3d.ui.aura.resumoTrunfo": "Aura +{pontos} · comodín +{trunfo}",
   "flair3d.ui.aura.titulo": "Aura en la partida",
   "flair3d.ui.aura.plateia.padrao": "El público",
   "flair3d.ui.aura.plateia.PASSARELA": "El público del desfile",

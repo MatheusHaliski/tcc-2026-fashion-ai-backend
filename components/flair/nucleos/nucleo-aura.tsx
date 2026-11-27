@@ -3,7 +3,8 @@
  * A Aura na partida, na preparação (rodada 8g): a plateia (ou o júri, ou os fãs) que reage à faixa de Hype do look, o
  * que cada família de Aura vestida faz (Splash, Electro, Comum, Metamorfose) e o trunfo do Hype, chamado uma vez por
  * partida com uma carta do deck. A conta é a do servidor (o AURA_NA_PARTIDA da prévia); antes da primeira prévia, a
- * mesma regra lida dos selos (lib/flair/nucleos/aura-na-partida.ts). O jogo só lê o Hype: nada aqui o muda.
+ * mesma regra lida dos selos (lib/flair/nucleos/aura-na-partida.ts). O jogo só lê o Hype: nada aqui o muda. Fechado,
+ * mostra só o resumo curto ("Aura +6 · trunfo +4"); o resto abre como painel.
  */
 import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
@@ -36,8 +37,11 @@ export function NucleoAura({ codigo, vestidas, cartas, aura, previa, partida }: 
   const candidatas = cartas.filter((c) => (aura(c.id)?.trunfo ?? 0) > 0);
   const familias = [leitura.splash && "SPLASH", leitura.electroMs > 0 && "ELECTRO", leitura.comum && "COMMON", leitura.metamorfose && "METAMORPHOSE"].filter(Boolean) as string[];
   return (
-    <section className="n3d-aura" aria-label={tx.t("flair3d.ui.aura.titulo")} data-testid="nucleo-aura">
-      <h3 className="type-label">{tx.t("flair3d.ui.aura.titulo")}</h3>
+    // HUD mínimo de console (auditoria de 27/11): fechado, só o resumo de até 6 palavras; o detalhe abre como painel
+    <details className="n3d-aura" aria-label={tx.t("flair3d.ui.aura.titulo")} data-testid="nucleo-aura">
+      <summary className="type-label" data-testid="nucleo-aura-resumo">
+        {tx.t(chamado ? "flair3d.ui.aura.resumoTrunfo" : "flair3d.ui.aura.resumo", { pontos: leitura.plateia, trunfo: chamado?.bonus ?? 0 })}
+      </summary>
       <p data-testid="nucleo-aura-plateia">
         {tx.t("flair3d.ui.aura.reage", { quem, faixa: tx.t(`hype.level.${leitura.faixa}`), pontos: leitura.plateia })}
       </p>
@@ -68,6 +72,6 @@ export function NucleoAura({ codigo, vestidas, cartas, aura, previa, partida }: 
         </div>
       )}
       <p className="n3d-hint">{tx.t("flair3d.ui.aura.leitura")}</p>
-    </section>
+    </details>
   );
 }
