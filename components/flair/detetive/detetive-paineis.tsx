@@ -42,7 +42,7 @@ function Caso({ r, camera, onRever }: CasoProps) {
       <dl>
         <div><dt>{tx.t("flair3d.detetive.tela.vida")}</dt><dd>{tx.t("flair3d.detetive.ui.vida", { n: r.vida })}</dd></div>
         <div><dt>{tx.t("flair3d.detetive.ui.tempo")}</dt><dd className="tabular">{relogio(r.tempo)}</dd></div>
-        <div><dt>{tx.t("flair3d.detetive.ui.mapa")}</dt><dd>{tx.t("flair3d.detetive.ui.pistas", { n: r.pistas.length, total: r.totalDePistas })}</dd></div>
+        <div><dt>{tx.t("flair3d.detetive.tela.aba.pistas")}</dt><dd>{tx.t("flair3d.detetive.ui.pistas", { n: r.pistas.length, total: r.totalDePistas })}</dd></div>
       </dl>
       {r.escondido && <p className="dtv-escondido">{tx.t("flair3d.detetive.ui.escondido")}</p>}
       {r.doLook && <p className="dtv-look" data-testid="detetive-look">{tx.t("flair3d.detetive.ui.doLook", { vida: r.doLook.vidaMaxima, cone: r.doLook.alcance, passo: r.doLook.segundosPorPasso })}</p>}
