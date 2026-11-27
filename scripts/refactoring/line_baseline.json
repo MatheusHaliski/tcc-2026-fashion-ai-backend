@@ -188,22 +188,6 @@
    "max": 1018,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/FabricFrame.java": {
-   "max": 581,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/ProductRuleFrame.java": {
-   "max": 757,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/ProductSegmenter.java": {
-   "max": 253,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/SemanticCropper.java": {
-   "max": 296,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/copilot/CopilotLexicon.java": {
    "max": 317,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -584,42 +568,6 @@
    "max": 269,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "lib/avatar3d/human/eyes.ts": {
-   "max": 259,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garment-fit.ts": {
-   "max": 257,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garment-photo.ts": {
-   "max": 428,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garment-trims.ts": {
-   "max": 257,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garments.test.ts": {
-   "max": 475,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garments.ts": {
-   "max": 1205,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/hair-geometry.ts": {
-   "max": 408,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/hair-strands.ts": {
-   "max": 714,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/three-human.ts": {
-   "max": 333,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "lib/avatar3d/image-stats.ts": {
    "max": 284,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -726,26 +674,6 @@
   },
   "scripts/cloud/photo_sets_vertex.py": {
    "max": 269,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/estados_ts.py": {
-   "max": 337,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/gerar.py": {
-   "max": 1430,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/modelo.py": {
-   "max": 1061,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/tsmodelo.py": {
-   "max": 313,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/unidades.py": {
-   "max": 565,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/docs/taxonomia_entidades.py": {

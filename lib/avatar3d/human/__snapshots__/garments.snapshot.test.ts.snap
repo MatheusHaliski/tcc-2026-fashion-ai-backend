@@ -1,0 +1,276 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`caracterização — geometria das peças (FEMININO) > acabamentos: barra, punho, carcela, capuz 1`] = `
+{
+  "crop-": "a8143c1691665f405007a7bb43ae069cbaadae480ae65e9281181bb98111117a",
+  "hoodie-": "1a82204842ed47da443c79a1d328e6458411632d221d59c8111a4c8381ab68e9",
+  "longsleeve-": "bd370b7ac59b57a85ec5f3dce67d6b8280432f885b1b589e1951d2c2ae6e8a19",
+  "shirt-": "1d0b910c4baf0d3b1d81a6f5bfeb3501db7c6655b79ea358d14266d745bf0c71",
+  "shirt-0.16": "31c85c33e1dd17540c64c5c96407f6bf723764f2ab6efe2003477048ffbe57c5",
+  "sweater-": "8c4789c93a43b08ebef2bf5e86e262202a0b0b5b7ec6b84800cf9b8e7a07bfb4",
+  "tank-": "9c9e44661cb01a51f0ab83c61f120944e48c7d277c0ef9539b1c72a8c47d8ea2",
+  "tee-": "417e929ddb61878f9ddea196710fafe664be1500ee7fa0d4dcfbae6a99ff76f0",
+}
+`;
+
+exports[`caracterização — geometria das peças (FEMININO) > bodyParam, cobertura e molde de cada tipo sozinho 1`] = `
+{
+  "bermuda": "3daaab32cce5399fbefc799db9b722cff0ba146f702627bc3add24a36ffa5cd0",
+  "boots": "43f7c43ee8893254858a496f88af3f7ac82bd240379e8784e210fae15573c343",
+  "coat": "9d997614a69390b9a4e34924c8538583e86e0d1e01bfa8dc78292be2929f52ea",
+  "crop": "74e25f4aacdac64eb27fd79e6d592fee75cbb5e884af9fabe21665dbe33b65b0",
+  "culottes": "9131d35e2bea504c2c4e61e84dcc82db0b5483c5b60a2c53d370657bbf832bb3",
+  "dress": "9fee39d6d5a960096cc82ebb447b06745b8892160d1a62dc84aead11d562b630",
+  "hoodie": "729a354c8d142914eabf9b078fc20ab132280c29ead70f6493c8b061bbf8ac4f",
+  "jacket": "ea4b22ef64385a0f4689466dfa7966fd5171ad52e3ccb975ec92b1ad6cd19038",
+  "jumpsuit": "e25f53f326c7f3d150ce9b45daa8478762605a96e28fb5f0598ec9a540286186",
+  "leggings": "87f787bfd69675dcbb734baaaf83adff9abf226fc02996df73d1cf534ccf0eb9",
+  "longsleeve": "c4b6f614c1cb2dfb78ce995fbf9927b536b753003c09b035a8f9f269503a2922",
+  "pants": "9559bbb0e0dd65aa02d3d0c849142e91f5e05045cf0ce38ab65df509fb544fc5",
+  "param": "f8fc12dbd282ad0e300a3699b1cb02afde6dcd0cb1f4fd0f599cb938931bdfd4",
+  "romper": "3d5fd65e48cfec333917e52fc6719f3d1b029cd2f1b6e85f442206011bde4c99",
+  "shirt": "19db723ea721841efc1e092b7f253a23801c83b9ef5844ad569e4f7f0c753ccc",
+  "shoes": "adc325efd99f900bb9bf8852da99e42e1590f27664c3874cd6a7b765ef749ce5",
+  "shorts": "cd18dac336a31becaa2f93c6fdd6d87fcd224617d44a677b4d331832ca076ba6",
+  "skirt": "12758e618f72615e93e16240def4ff7ff0c05acf7d95e6ed0fa356387b5f53bc",
+  "sweater": "c96123018d3f776b3beff8f8fabd5bcf18d69d6ec1bbfbc334a0eb1c94bba656",
+  "tank": "cd06b5e736870a81e185b36a11b2491a3a586a3c02da132db9c60502e8d53f8c",
+  "tee": "9cecfc8cc19d293c0d5d5c7e6826344ef2f35c1c76c7d1995bf673c9aa53e8f9",
+  "vest": "68aa127a2a9d23c934401494cf256e61edf64b6b165685cc0d9eeb3b2cdb5fe4",
+}
+`;
+
+exports[`caracterização — geometria das peças (FEMININO) > pilhas de camadas: underLayer, molde de fora, gola e tubos 1`] = `
+{
+  "culottes+tank+vest": "a18e802b22c8ae5f96269ea44fc29f7cd039da084058ffb312534c403a4122d1",
+  "gola-crop": "81159611098171fbcbcb97b7eb140aa5983f1074c6195941d60a2b38620f21cc",
+  "gola-dress": "70f4930459b5a9044c8d652eb30b6fe76c5b80739f2c4b7b13c6b84c3505d4b7",
+  "gola-jumpsuit": "441143a459f4f0d4bdf9b9782a338eda55690e8f146a5825f7e0fdc40fe6753d",
+  "gola-longsleeve": "280fe2cae8cc85abe37a4c3c0e2285912c31f14de99ae7a69d827e0c93897b98",
+  "gola-romper": "441143a459f4f0d4bdf9b9782a338eda55690e8f146a5825f7e0fdc40fe6753d",
+  "gola-shirt": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+  "gola-sweater": "acd7baab3f91fdb9454746b76fc575752fe26ad6cd4107772415d7d25b25fde8",
+  "gola-tank": "7d6f55de63393f2343d74c8d768e66823256cddfd4d7250516379c554b1b49d1",
+  "gola-tee": "280fe2cae8cc85abe37a4c3c0e2285912c31f14de99ae7a69d827e0c93897b98",
+  "leggings+dress": "0085d15f1070a67b376753d99bda5e79301cb63eb4d477750312534bd3121f84",
+  "pants+sweater+coat": "da0ad308d66c8b6d3de5f6ba7e70d500bb54e24dd53efd438bd2f29622c54e2d",
+  "pants+tee+jacket": "abab42fe0b60cc9ca4634b3034f23c9c59d82e3ef3ed586f1ea2dc7a0ef4570c",
+  "shorts+hoodie": "283a350d6b63d412efa01ffd8881faa02414551f9369a1ae4939a8ec1fbeba71",
+  "skirt+shirt": "78b8f13668c334664b8d83dfcfb4f8131d25cefee96c6c0ed811cb341dfdf879",
+}
+`;
+
+exports[`caracterização — geometria das peças (FEMININO) > posedPositions e malha texturizada sem foto, parada e em movimento 1`] = `
+{
+  "boots@0": "dc103d7693b803ce7c0ee7e257f1adec86d576c4a4ae85c92e8e4f0295ecac90",
+  "boots@2.5": "dc103d7693b803ce7c0ee7e257f1adec86d576c4a4ae85c92e8e4f0295ecac90",
+  "dress@0": "9b5b84b180270061b2cedae434c976957b9cacb6d33344ce2699dc3ab18af119",
+  "dress@2.5": "9b5b84b180270061b2cedae434c976957b9cacb6d33344ce2699dc3ab18af119",
+  "jacket@0": "a32bfb565c3818a62a951e304c663ec3bb27c1a329d62be929e80629cd6c2321",
+  "jacket@2.5": "a32bfb565c3818a62a951e304c663ec3bb27c1a329d62be929e80629cd6c2321",
+  "pants@0": "c39b9ab49fcf117d21f6072380954ff66f57e59c22e929b2b9b42dda8b5c1974",
+  "pants@2.5": "c39b9ab49fcf117d21f6072380954ff66f57e59c22e929b2b9b42dda8b5c1974",
+  "shoes@0": "368b466e8861f0882aafec8dbff502e914fb9f33f1020c195a1a6d54b8b2ca11",
+  "shoes@2.5": "368b466e8861f0882aafec8dbff502e914fb9f33f1020c195a1a6d54b8b2ca11",
+  "skirt@0": "e420f61786ac400b9bcc19f82c47f7cd2dd5346a44786cd5f631e0797975a585",
+  "skirt@2.5": "e420f61786ac400b9bcc19f82c47f7cd2dd5346a44786cd5f631e0797975a585",
+  "tee@0": "5394e6f86235e00f9e294a0e7b1fd75a8639f5d41620d80e8ca86cf5137f9d3b",
+  "tee@2.5": "81c073e3155fb803a9792dc590c8ff075df4c2e7918e5fff19f9ce30f32f08fe",
+}
+`;
+
+exports[`caracterização — geometria das peças (FEMININO) > tamanho e caimento por região (sizeExtra, sizeStepsAt, sizeRelief) e moldes de specFor 1`] = `
+{
+  "0-t_shirt": "b1e7ad1a079cb666916d5ca975cc8c6bdff713d25682bd994ad3e38a060f544d",
+  "1-t_shirt": "75aaf10964a6eda4ba47cd1256ed359663409a39b84468cc00504dec2bdc7fcb",
+  "10-hoodie": "83ab5b7b3a93226008b3b8c40d6861028441cd26f0426f9cae55cf91e8c30853",
+  "11-blazer": "033245c4c1de34c5791ee4f7776c0b265d55fc53cccbbfa387055059c7cc47bd",
+  "12-coat": "841dbd020583c4ca502f7a434b0b8605a9e4684b8aba6395ca371b5d56d81ce8",
+  "13-crop_top": "e13b7a5dc16348bae376d4679d5749b2820d39e479196e4bc4f49ba31ea3f749",
+  "14-tank_top": "e091f22cd424ba070e28123021bcf501d62b9c9bd1981dfb830bff94ecd657e6",
+  "15-t_shirt": "eea49b494bb86a4c9a40180bfb90f46e1dcd53b68fb5ae161c0e4548e38bab5e",
+  "16-jeans": "2b927d16d9a7355b5042ce0f6d18efecaddda779eee5faef86e9e8530882edad",
+  "17-jeans": "9b1f5a83d983ae2ef7e05ed49789ef9fdc13eb32c2ec01abb0789458615250ed",
+  "18-jeans": "f8bbb3eb71910f622dff9d6c78e63e86cf3c2cead39c96ee622c925ea888ccf4",
+  "19-jeans": "687da59b068ce124bfc49851aff15326a5736e298a7ff0353ed8463548ab6cbe",
+  "2-t_shirt": "83e85705ea09eb91a25f0c240cd0dd916965f8538b0918037da1d9a62e413761",
+  "20-cargo_pants": "8a0ae0d92fc8ab6201a7401ffbcec1ad9f52a1c199d8ff288047520ddb6f1774",
+  "21-sweatpants": "570151892a0c77bd615d8f0be1d345c793bdcc4001d5e91e783ac1cb112795a4",
+  "22-jeans": "bc9b421cd9ead75127a36da5d46c31a9bbda2a85b8082757e5b232567b367323",
+  "23-tailored_pants": "7b5876a99c76de4a59512b212bc36a647f3b4b2a2ea54c4ab3e24bfe95a185f1",
+  "24-skirt": "af9cc630fd4dde5430f08e3c99de77bac30dfea2b21f74045654a5e5790fb33f",
+  "25-skort": "8b8a3f807b4f31c51ac814f8f0664419f4645856f5c5f89fd2d49ee762aa7297",
+  "26-skirt": "041d15c830a30d562d06b0ce3f6dbce55f0753e5f42d41b119db735f2d27c8dd",
+  "27-shorts": "05e12d3557c7e7a4967b38c4e327916a8ad43d0d92ff413090378023bb4945a1",
+  "28-denim_shorts": "1cc91094bb27a9dff15b4706763508d63f1b296217f7264b5290ff6b928ba567",
+  "29-bermuda_shorts": "50bd055b60319dbefc3c67b799737ff317d9013f7f139a0f9f6ea3d82a442182",
+  "3-t_shirt": "d25d2fa9e30fe4fcec4be8429a33f304a44ab060bc1f5028837ebb421605417f",
+  "30-leggings": "79c0e7761478f4ed2053f5a9e6ba4c56ebfc441843e494b9e6e933dcb5130ba8",
+  "31-culottes": "eaa070802483f3acf2a02b1c62d6900eca29dcfc4dedd90c5a0eb3a657930b61",
+  "32-dress": "7f43a436bcde5982d2c6bcc27eacb7a2c3d14dbb36d1df183fba551ad505c126",
+  "33-jumpsuit": "a97927561212fd35a4a213b696429f26d18695a5bfed3f63c18bf3f342f5f379",
+  "34-overalls": "d275b1a4091691a8c6960caca722b8fd45c9f552d1eea9f208264bf25ad825fe",
+  "35-romper": "a5fc7c885e982f7e11dbb0b311262b8e543178834073e153ecd49f7051dcae2d",
+  "36-ankle_boots": "821f7d9933bc7cc626686b119782813898ae27f883ec0cfda6c89c182b3f592a",
+  "37-long_boots": "7a7b3c65446a2f1d3a7ef58675508e6a33b15abf69379d030f45f19493480c41",
+  "38-casual_sneakers": "429ee2ad4a9f39ed28095920ebb3c2ee3c64c8b46dbfefaaadad4a4361f360bf",
+  "4-t_shirt": "d8bf0ecaff7cb8a08c85ab0bf4f52aba44cb957be1462023e5ca932ef9644538",
+  "40-calca cargo": "027f7de1d9fa3ab4262dd56ba4a814ae1bb058566c0f1e2e824feb0213c12062",
+  "41-vestido longo": "415736945e33a630dcfeb22814197bcb8a3d0a2be3c8e7bdf074ebe6d641987f",
+  "5-shirt": "c30b1f8c89f33813155cd61ca743cbb05ec443b51f8610fc8d682e2ca370dcff",
+  "6-shirt": "3cdd5b52bdd7e3fa0ae00c736b56a216181a2668eeed71e1290b21761999a930",
+  "7-polo_shirt": "ae6825743ca8176577696a4a61ab888d7b95c5bb409cb39911406e6847cecd90",
+  "8-blouse": "5635c2f115bef87dbed4435a1c310f642d455cfe2458bbaf3e066d466edf34a3",
+  "9-sweater": "259b580c6734b885b5c6a00209e48fadc61d8e4cef6b7a9a12a477f6bda7afa7",
+}
+`;
+
+exports[`caracterização — geometria das peças (MASCULINO) > acabamentos: barra, punho, carcela, capuz 1`] = `
+{
+  "crop-": "25902cb10b4a9c64d0de4e80e4cf77eeb8967ebcd9fb1a91544fdc8f4a80778d",
+  "hoodie-": "4d15bac5f875f86d3017fffc5a667b6d9e8c1bc7a317476f23e74f0eda601294",
+  "longsleeve-": "efbde1af54cfced178640ecde909a6d9f56f7a976de0d177788e29067be0dcc4",
+  "shirt-": "fed2ffe805f5a76c16856736bad06ec35f9223f95baff39d5d252ab7bad920cf",
+  "shirt-0.16": "30d9c1b9898afe915d70ac31f7023ed0931d11e904ee48d62a4937854ba938e2",
+  "sweater-": "05af02660b9621d562c8ea233c7f6c0f9fe63f1ba73e56b19c38e30c5409e2ea",
+  "tank-": "9c9e44661cb01a51f0ab83c61f120944e48c7d277c0ef9539b1c72a8c47d8ea2",
+  "tee-": "de46ae463a303825734744717b866de43eebbf05f299fc4ab5eb6be8121da340",
+}
+`;
+
+exports[`caracterização — geometria das peças (MASCULINO) > bodyParam, cobertura e molde de cada tipo sozinho 1`] = `
+{
+  "bermuda": "8b82adb5b8502f80e19208ae4da67d18ae3edb770904edee657717ff792451f4",
+  "boots": "b4b0520cd902828bbb1514f6d495e148942e98f48fe355d7bda8b44adb97ad80",
+  "coat": "b9175010be4d73b50a0980c788bd300c58d151b9bdb828e1d95f772fbed79f1c",
+  "crop": "69381bee4b014463fcf3fcebb98723641fb8abda74dca826ec274aad25e29eec",
+  "culottes": "ed294cef7c8807c7302990971481d3980154b28632ebacdf5a1e2a804d814f21",
+  "dress": "e7471708e6b42efc0ed31a7720b1d1242ad9770a11768523f6d831b03815fc03",
+  "hoodie": "9970664e6e2ed3e7118b1ef9e5c0f5e3d961b37aa4abd4bae3314517446af95a",
+  "jacket": "1faa02a86006c5419cf8fca6a9896a8f6676052681331bcf1265cb101d7f3282",
+  "jumpsuit": "c5bf074afad7c40219e3c60ffdd9d19dd76ba570b9290cdbf3cc3f96aedb8f70",
+  "leggings": "2878bd4fe60683d9cb19fd058013f0f763d33a7f8e2471121be098ba322e1530",
+  "longsleeve": "d8e97f68c0e065c1a3995ab18bee8a7cda65e139f93bdf12835bea696e16c524",
+  "pants": "1a16c7485295e931c3a69cffab9353669825d81abb354df97a28b594a01567c6",
+  "param": "1288c4cc73c4acbe92fe465af23521de1147f8c15aedf38e6df009418ee4785b",
+  "romper": "f8b7e8953adcaee14644fe5bcc7233d530518c40e61ec3f66b1c163df28c707d",
+  "shirt": "39bd4b1c9498bc7ad86009693c5476b21317c9a8acf60c91ab1956f99e450d2c",
+  "shoes": "7abec22d7e679bf3e3e711d0602514b85ec27299dab584a5223e820a57f31b98",
+  "shorts": "99a963c9f82e26cdb82496a4841627da1e4d1fcebb0be419c4883aa73ea76a09",
+  "skirt": "b16e4270f3c1296968f4cb7a390deae8c87dda53c000b01b75b73425de5c0cad",
+  "sweater": "5d6b369d3a39a8e0f7c5d8d07ad3009da73f7c5584d830605d6c8c26702bff66",
+  "tank": "8b80b8822e6a3cdfeabbf73be89ade53904112589ba7f0d00d1006bc95cf1b1d",
+  "tee": "64cec31d7783cd5530b5dddc4710056f38d87ec7cc98b49d4bbd6a90b9958bb9",
+  "vest": "86017b611631fb8171d87e08ea4c17740bfcde6880d1ac7242e05a1711b9dc38",
+}
+`;
+
+exports[`caracterização — geometria das peças (MASCULINO) > pilhas de camadas: underLayer, molde de fora, gola e tubos 1`] = `
+{
+  "culottes+tank+vest": "2665db8fa3a708da14f8daabfe13ba31c1418fafbba105723eeb606be51c010f",
+  "gola-crop": "d936e79bb388a4d9f0b239d935d1fdd95c5aec9e79155af991ccb359d066aa78",
+  "gola-dress": "4efd66de62ff2b36b4f33d8176ee01aeebd97c309aa60559e26bda39b7b5d685",
+  "gola-jumpsuit": "40fc801035f3909db45d6f331589d73467f0646bd5e04904dc49f61b5e80deae",
+  "gola-longsleeve": "508d747e3afdd9715127b0a5478b09717fa4b27f8c36974cc563b7929b0577d5",
+  "gola-romper": "40fc801035f3909db45d6f331589d73467f0646bd5e04904dc49f61b5e80deae",
+  "gola-shirt": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+  "gola-sweater": "6ec30f82307104e3ddf1a08c71f79bd20748b268f50f37d2cb475520921c460f",
+  "gola-tank": "885cc82cf0c50027335e1c192f33b96f74156e4ce04139845dc2a205f43c0449",
+  "gola-tee": "508d747e3afdd9715127b0a5478b09717fa4b27f8c36974cc563b7929b0577d5",
+  "leggings+dress": "cda0601723b96210b42f7fee7c6fe7f054a468f78057f2afe8566e0c7e432036",
+  "pants+sweater+coat": "3f9f9b2de8af8317e33a8ad911a8e029eafb91fe95587d20850fc0f7d6e19290",
+  "pants+tee+jacket": "fa9de8981c34d4725bb97509513f6136816ac76be43b485abbb53c46b3e9ebb7",
+  "shorts+hoodie": "4cb81b59526a0e0610e239daba3e7294c9a263406f684cb90a3a1060a53ad076",
+  "skirt+shirt": "061a9bb73660490f9ec6fdc96d98dd43ba9fc0fc862613719dfa362a6ca19029",
+}
+`;
+
+exports[`caracterização — geometria das peças (MASCULINO) > posedPositions e malha texturizada sem foto, parada e em movimento 1`] = `
+{
+  "boots@0": "75fba9fe859bc19ff0853b4d6b1d568fb0b6aa42399b94d2c16adf6cfb917024",
+  "boots@2.5": "75fba9fe859bc19ff0853b4d6b1d568fb0b6aa42399b94d2c16adf6cfb917024",
+  "dress@0": "02c41dec20e1023690d30dd7dcae41b73abcebd9b8a952d71b21da596649fb8e",
+  "dress@2.5": "02c41dec20e1023690d30dd7dcae41b73abcebd9b8a952d71b21da596649fb8e",
+  "jacket@0": "44e75b027efecab1e0ce5be81bcc6efc36b8619e7372b99999c117df567e7138",
+  "jacket@2.5": "44e75b027efecab1e0ce5be81bcc6efc36b8619e7372b99999c117df567e7138",
+  "pants@0": "e22af86f815b3f1c9f9932c8307b500debc24bca404abcd68bd40a90a56e72c3",
+  "pants@2.5": "e22af86f815b3f1c9f9932c8307b500debc24bca404abcd68bd40a90a56e72c3",
+  "shoes@0": "2e4d0819141df2f353b40f99068c5ce996bfebffc62c27f275f2708b17853a1b",
+  "shoes@2.5": "2e4d0819141df2f353b40f99068c5ce996bfebffc62c27f275f2708b17853a1b",
+  "skirt@0": "39cfddf5a66414a6d49d5c99c91160db3b81f06754f225de302a908254c271fd",
+  "skirt@2.5": "39cfddf5a66414a6d49d5c99c91160db3b81f06754f225de302a908254c271fd",
+  "tee@0": "7e7993960c031770b1048aa00eb9a5a57ecea5e288c3421bb059a2606d3333b2",
+  "tee@2.5": "cd46652d0b337f5537fbce0e5edc0c3270d8f1c5c5c1a1f1b733f73fa609fbf3",
+}
+`;
+
+exports[`caracterização — geometria das peças (MASCULINO) > tamanho e caimento por região (sizeExtra, sizeStepsAt, sizeRelief) e moldes de specFor 1`] = `
+{
+  "0-t_shirt": "faa81975036c4cb37ed0e35c3eb58b3cc6587c155dcbab143bac662ba978f187",
+  "1-t_shirt": "da472ef5ccf0fe90f16271ad740094ac9dde2f3cd928180e861c8694d015a59a",
+  "10-hoodie": "5815da5b5926516ae60c9e6931db4cb02c287818e0510edc485e939125024084",
+  "11-blazer": "cdb6ab00c1e496e14db60a2c2681469589f29719acac81acdd1ab1c8e6dbe235",
+  "12-coat": "4aab8bbd6f598198c9aa197314e1789b31266ffb672cfed49d21b28f5c91869a",
+  "13-crop_top": "0931338b30e727ad18e1679e3d28599dc46332015f85429bf50a75f86631453f",
+  "14-tank_top": "c972db2023dd80685c39b64079ad7b927d71cbc409471eaf50d760584f57178e",
+  "15-t_shirt": "53acf6fa5648e963cc381b4bfdeada2c3f0c65d989fe0deabe8ca71c02e5da16",
+  "16-jeans": "df78b8de0e6c7f5997c027d241664c6274af2886e7775b20ece38ef3951fd16b",
+  "17-jeans": "ee1a661112a47c9c4126a4405b405ce27c647486031ae239cf844d915c820050",
+  "18-jeans": "be418d23810ee4702a77bab9c3e4f4fde568cc4b4f53aecc31d7748742ce2065",
+  "19-jeans": "487cca85c12f90d010edda8f02e5ff14e7a2250e346ec6c5433401cfa8b0e56a",
+  "2-t_shirt": "4c5061efbf56bfe24787c0691820f0d87826c2771465d01e2fd296946b60a59e",
+  "20-cargo_pants": "68fe638455c64a73719aff8941b78f6908cf92333c7b598278d616885fa7324c",
+  "21-sweatpants": "444b8818b9b2ddeb3f7521d103e54294901d053fd8dbbb3b6063ec6e103240a4",
+  "22-jeans": "eb91f3e082fe3810b8adf3215284f1743b01d3a2fe8a36b97006295c04bd4a7f",
+  "23-tailored_pants": "fff5439c180575e03aea8df74216443a471b637a5519135c57b0dfc5dd7f3e31",
+  "24-skirt": "2faf2dcdf40de70d7dcbdf32918399e0c95c134f5783f9bc66edbc56ed946281",
+  "25-skort": "00597c271233a7bc6b8f8f9e7f275760135ec37b5b4890ba4a784f02aa0fc877",
+  "26-skirt": "900b78a9ca0b58e25a4bc9b9778e7ec199a255d3b086100f5f95a58698497577",
+  "27-shorts": "9df876d0b789d7e465e349ede493d27c38479e26aaeb59d021fcf0abee0ac688",
+  "28-denim_shorts": "ce1ee67335caa5fcea7e4ef4cc5bce6fd246aee0934a61358c039117d2f1f050",
+  "29-bermuda_shorts": "281e03eeebadc1292f176f730166cb3b4fe421149c31d14b9cf72f8a1b60d77e",
+  "3-t_shirt": "7ca02927c8b9ba1401018214a4176a5f4f0775876857823de14ff982faf3f5c7",
+  "30-leggings": "24115c596ae00d7de8a3247643b831305c3ed32e268c138e198c39353158b48f",
+  "31-culottes": "c9af19f2ed190862b5b54326ce2c11b037796a895f2c0a6e6c30d41988dbd5b7",
+  "32-dress": "c6a14f3fef08f6623519dcaa6a5fd1dd856940472bacdc880bf1ff638e93d89a",
+  "33-jumpsuit": "51a875aa19b3aa144595f4741576faf9062b94f8b709503e11eae4edceb428ad",
+  "34-overalls": "cd23d181661bb5c1fb6b93bcc002105303c9aa81d9720a1b8c4663d1e3b45461",
+  "35-romper": "30bfcf709a2b21cc44d17ad47954389bbe0860afc67031b21b228ab63f4e662f",
+  "36-ankle_boots": "a8c8fd2593256b800e25e2cc0383db61ab0f7d464070351027ef7e12e5574939",
+  "37-long_boots": "3e3f9e6a436fadd653052ca455a7949b43715257df7062f6e6583ba50d0c2528",
+  "38-casual_sneakers": "6874be4689acb3512c522072cc426ee1a1ef383b589787741b50226a3fbaf3e9",
+  "4-t_shirt": "ad254f2dc7130b37e355f3a4499986ae96708aaec0621ed953ee574d62557d27",
+  "40-calca cargo": "3ce9bfadc44b6c60c37f2a6b167c36546b66ce13d8a2c051763bdf3dd445abc1",
+  "41-vestido longo": "25a07edd968cfa19565021c57272089be82d6e7290e4cf31031d2682a44221a8",
+  "5-shirt": "9e95ea9c9c079735652a16e4829de13668f0a5f2680b05977627d352520eee49",
+  "6-shirt": "017b96f7298f69be87061303db84c68ce52ae2494e0d5aafeb5ee0472c5af764",
+  "7-polo_shirt": "50be137112d08e4cade263cc4cd36b57773bbfeeb895acfebe6bb6bcd447f09f",
+  "8-blouse": "b2777e4c403dbd1fcc75ddf8a19e713a8f1091a752bd6b13f42e6304b0d4b67b",
+  "9-sweater": "8f643145dc97c8a7e37854bc4562da7e89170d2140d0e65c3e0ad762c6f7785e",
+}
+`;
+
+exports[`caracterização — tipos, moldes e caimento (puros) > armOutFor, necklineH, frontPanelCoverage, sleeveEase e legFlareOffset 1`] = `
+{
+  "arms": "4a7430179de535fdc807c20ee3f051452a4bbfece75de6a441eaba0db8520c9f",
+  "legs": "a1bf870bfdf76d681e92351d8847b8a557a6ad9acf4d5f3d19df9fdd8c6bb889",
+  "necks": "0093a1206718c5749275243b1e4ff511cb57b8296f1e35da27353fb101b50f17",
+}
+`;
+
+exports[`caracterização — tipos, moldes e caimento (puros) > kindOf, specOf, specFor e as leituras da taxonomia 1`] = `
+{
+  "fit": "3dc301db3f7d68bdb366fc63b4c5be5ac1607156f3a1946adb40a800efb378d9",
+  "kinds": "ea56eeb0f2e41435dafbee35c0d4e028a56231b41d0ad2d3d5b4a431d364495a",
+  "slots": "ed5a4bb01d242e1a0d653928a3548858274426cc009d3bf5b16dcc29e2793f2a",
+  "specs": "29da8dda6e7c907797b680bde9dd544d7253553184354b189424beee30539a32",
+}
+`;
+
+exports[`caracterização — tipos, moldes e caimento (puros) > material da peça e superfície do tecido 1`] = `
+{
+  "collar": "crop,dress,jumpsuit,longsleeve,romper,shirt,sweater,tank,tee",
+  "material": "b63f4945e52fa787300b05a12aa06548a917405d8ccfe7cfa2a23ef6477cfe02",
+  "surfaces": "9bfde85a9cdc91c9030d105e87e3d97ea2f62b7aac610fe81a7c5e7aa8c6b7ea",
+}
+`;
