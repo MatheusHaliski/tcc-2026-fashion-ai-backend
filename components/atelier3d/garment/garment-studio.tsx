@@ -5,6 +5,7 @@ import { Button } from "@/components/ui";
 import type { LoadedAsset, SceneDocument } from "@/lib/atelier3d/document";
 import { Choice } from "./garment-fields";
 import { GarmentMaterialPanel } from "./garment-material-panel";
+import { GarmentPaintPanel } from "./garment-paint-panel";
 import type { GarmentStudio as Studio, StudioTab } from "./use-garment-studio";
 import styles from "./garment.module.css";
 
@@ -22,6 +23,7 @@ export function GarmentStudioPanel({ studio, asset, doc, editable }: Props) {
   const { t } = useI18n();
   const panels: Partial<Record<StudioTab, ReactNode>> = {
     material: <GarmentMaterialPanel studio={studio} asset={asset} doc={doc} editable={editable} />,
+    paint: <GarmentPaintPanel studio={studio} doc={doc} editable={editable} />,
   };
   const tabs = Object.keys(panels) as StudioTab[];
   return (
