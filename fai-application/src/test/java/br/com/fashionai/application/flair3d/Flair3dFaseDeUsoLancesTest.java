@@ -168,4 +168,15 @@ class Flair3dFaseDeUsoLancesTest {
         assertThat(base.chave().opcoes()).containsExactly("MACIO", "CHUVA");
         assertThat(List.of(SEGUROS.get(2), base.ousados().get(2))).contains(base.chave().certa());
     }
+
+    @Test
+    void osEfeitosDaCartaNosJogosDeZonasTrazemOLanceDaFaseDeUso() {
+        CbcRules.Card vermelha = carta("BRONZE", "red", 70);
+        Flair3dNucleo clube = Flair3dNucleos.porCodigo("CLUBE_CORACAO").orElseThrow();
+        Map<String, Object> m = Flair3dEfeitosDaCarta.daCarta(clube, vermelha.id(), vermelha, new Contexto(Map.of(), null, null), false);
+        assertThat(jogada(List.of(m.get("uso")), 0)).containsEntry("lance", "CHUTE").containsEntry("familia", "Vermelho")
+                .containsEntry("faixa", "HOT").containsEntry("janelaPct", 15);
+        Flair3dNucleo passarela = Flair3dNucleos.porCodigo("PASSARELA").orElseThrow();
+        assertThat(Flair3dEfeitosDaCarta.daCarta(passarela, vermelha.id(), vermelha, new Contexto(Map.of(), null, null), true)).doesNotContainKey("uso");
+    }
 }

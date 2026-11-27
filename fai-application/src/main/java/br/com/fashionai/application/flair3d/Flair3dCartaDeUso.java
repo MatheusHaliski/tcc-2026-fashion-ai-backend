@@ -40,8 +40,8 @@ public final class Flair3dCartaDeUso {
     private Flair3dCartaDeUso() {
     }
 
-    /** O que a carta faz numa marca: o lance, o efeito, se é da cor do uniforme, a faixa de Hype e o quanto abre a janela. */
-    public record Efeito(String lance, String efeito, boolean doUniforme, String faixa, int janelaPct) {
+    /** O que a carta faz numa marca: o lance, o efeito, a família de cor, se é da cor do uniforme, a faixa de Hype e o quanto abre a janela. */
+    public record Efeito(String lance, String efeito, String familia, boolean doUniforme, String faixa, int janelaPct) {
         boolean escudo() {
             return "ESCUDO".equals(efeito) || METAMORFOSE.equals(efeito);
         }
@@ -56,6 +56,7 @@ public final class Flair3dCartaDeUso {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("lance", lance);
             m.put("efeito", efeito);
+            m.put("familia", familia);
             m.put("doUniforme", doUniforme);
             m.put("faixa", faixa);
             m.put("janelaPct", janelaPct);
@@ -77,17 +78,17 @@ public final class Flair3dCartaDeUso {
         boolean daCor = familia != null && doUniforme.contains(familia);
         int torcida = torcidaPct(faixa);
         if (ESPECIAL.equals(carta.tier())) {
-            return new Efeito(METAMORFOSE, METAMORFOSE, daCor, faixa.name(), FOLEGO_PCT + torcida);
+            return new Efeito(METAMORFOSE, METAMORFOSE, familia, daCor, faixa.name(), FOLEGO_PCT + torcida);
         }
         if (familia == null) {
             return null;
         }
         int i = Flair3dCores.FAMILIAS.indexOf(familia);
         String efeito = EFEITOS.get(i);
-        return new Efeito(lances.get(i), efeito, daCor, faixa.name(), ("FOLEGO".equals(efeito) ? FOLEGO_PCT : 0) + torcida);
+        return new Efeito(lances.get(i), efeito, familia, daCor, faixa.name(), ("FOLEGO".equals(efeito) ? FOLEGO_PCT : 0) + torcida);
     }
 
-    /** A torcida empurra pela faixa de Hype da carta: HOT abre a janela 15%, TRENDING 20%, VIRAL 25%; abaixo, nada. */
+    /** A torcida empurra pela faixa de Hype da carta: HOT (60+) abre a janela 15%, TRENDING (75+) 20%, VIRAL (90+) 25%. */
     public static int torcidaPct(Flair3dHype.Band faixa) {
         return switch (faixa) {
             case HOT -> 15;
