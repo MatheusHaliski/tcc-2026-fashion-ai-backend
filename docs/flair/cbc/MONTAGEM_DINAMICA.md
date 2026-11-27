@@ -45,3 +45,18 @@ E o símbolo FAI em órbita é animado em canvas (`lib/flair/montagem/dinamico/m
 - `components/flair/montagem/`: `quebra-cabeca-vivo.tsx` + `use-quebra-cabeca-vivo.ts`, `cbc-arte.tsx` (escolhe entre
   o quebra-cabeça dinâmico e a cena desenhada), `montagem-final.tsx` (o fim no modal de recompensa).
 - Estilos: `app/(site)/_styles/58-flair-montagem-dinamica.css`.
+
+## Capturas (API simulada com `page.route`, Chrome via Playwright)
+
+Em andamento (peças encaixadas em cor, quase no lugar, soltas e sem cor, vagas vazias tracejadas) e o modal do fim:
+
+| Desafio | Em andamento | Modal |
+| --- | --- | --- |
+| Fogo em movimento | ![](capturas/montagem-firefly-fogo-1-andamento.webp) | ![](capturas/montagem-firefly-fogo-3-modal.webp) |
+| Arena em movimento | ![](capturas/montagem-arena-1-andamento.webp) | ![](capturas/montagem-arena-3-modal.webp) |
+| Símbolo FAI em órbita | ![](capturas/montagem-logo-fai-1-andamento.webp) | ![](capturas/montagem-logo-fai-3-modal.webp) |
+| Logo à deriva | ![](capturas/montagem-logo-deriva-1-andamento.webp) | ![](capturas/montagem-logo-deriva-3-modal.webp) |
+| Caleidoscópio azul | ![](capturas/montagem-caleidoscopio-1-andamento.webp) | ![](capturas/montagem-caleidoscopio-3-modal.webp) |
+
+Na captura, o vídeo do modal estava tocando (`paused: false`, `muted: true`, ~2,3 s), em 480×480 (cenas e desenhos) e
+960×720 (arena). Com "reduzir movimento" o canvas fica `data-animando="nao"` e mostra o pôster.

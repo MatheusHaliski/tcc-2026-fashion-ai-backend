@@ -55,6 +55,10 @@ export function pintarLogo(ctx: Ctx, imagem: CanvasImageSource | null, pose: Pos
   ctx.rotate(pose.giro);
   ctx.scale(pose.escala, pose.escala);
   const lado = 92 * escala;
+  // o símbolo é redondo: o recorte em círculo tira o fundo branco dos cantos da imagem, que giraria junto
+  ctx.beginPath();
+  ctx.arc(0, 0, lado * 0.49, 0, Math.PI * 2);
+  ctx.clip();
   if (imagem) ctx.drawImage(imagem, -lado / 2, -lado / 2, lado, lado);
   ctx.restore();
   for (const b of brilhos(t, 12)) {

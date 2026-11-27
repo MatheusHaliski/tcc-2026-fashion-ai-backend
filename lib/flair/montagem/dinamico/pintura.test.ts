@@ -27,7 +27,8 @@ describe("pintura do quebra-cabeça dinâmico", () => {
     const f = criarCtxFalso();
     pintarLogo(f.ctx, APOIO, poseDoLogo(6), 6, 200, 200);
     expect(f.chamadas.find((c) => c.metodo === "rotate")?.args[0]).toBeCloseTo(Math.PI / 2);
-    expect(f.conta("arc")).toBe(12);
+    expect(f.conta("arc")).toBe(13);   // o recorte redondo do símbolo e os 12 brilhos
+    expect(f.conta("clip")).toBe(1);
     const sem = criarCtxFalso();
     pintarLogo(sem.ctx, null, poseDoLogo(0), 0, 200, 200);
     expect(sem.conta("drawImage")).toBe(0);
