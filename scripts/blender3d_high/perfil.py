@@ -33,6 +33,8 @@ ORCAMENTO: dict[str, dict[str, Orcamento]] = {
 }
 #: quanto da malha sobra no nível médio (gltfpack -si) e o lado máximo das texturas
 RAZAO_MEDIO = 0.3
+#: a família que repete muito a mesma malha (66 poltronas da Passarela) desce mais no médio
+RAZAO_MEDIO_DA_FAMILIA = {"passarela": 0.2}
 TEXTURA = {"alto": 1024, "medio": 512}
 
 

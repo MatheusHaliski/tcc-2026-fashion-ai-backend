@@ -59,7 +59,7 @@ def gerar(slug: str, pasta: Path, provas: Path | None) -> dict:
     with tempfile.TemporaryDirectory() as tmp:
         for nivel in perfil.NIVEIS:
             if nivel == "medio":
-                niveis.para_o_medio(sala.relevo)
+                niveis.para_o_medio(sala.relevo, perfil.RAZAO_MEDIO_DA_FAMILIA.get(sala.familia, perfil.RAZAO_MEDIO))
             bruto = exportar.exportar_bruto(Path(tmp) / f"{nivel}.glb")
             arquivo = pasta / (f"{slug}.glb" if nivel == "alto" else f"{slug}-{nivel}.glb")
             exportar.comprimir(bruto, arquivo)

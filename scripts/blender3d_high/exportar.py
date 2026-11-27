@@ -33,9 +33,10 @@ def _gltfpack() -> list[str]:
     return [achado] if achado else ["npx", "-y", GLTFPACK]
 
 
-def comprimir(bruto: Path, destino: Path, simplificar: float | None = None) -> Path:
-    """meshopt (-cc) e instancing (-mi); ``simplificar`` (0 a 1) é a razão de triângulos do nível médio."""
-    comando = [*_gltfpack(), "-i", str(bruto), "-o", str(destino), "-cc", "-mi", "-km"]
+def comprimir(bruto: Path, destino: Path, simplificar: float | None = None, nos: bool = False) -> Path:
+    """meshopt (-cc) e instancing (-mi); ``simplificar`` (0 a 1) é a razão de triângulos do nível médio; ``nos`` mantém
+    os nós com nome (a folha de uma porta, que o jogo gira)."""
+    comando = [*_gltfpack(), "-i", str(bruto), "-o", str(destino), "-cc", "-mi", "-km", *(["-kn"] if nos else [])]
     if simplificar:
         comando += ["-si", str(simplificar), "-se", "0.004"]
     subprocess.run(comando, check=True, capture_output=True)

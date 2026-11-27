@@ -1,0 +1,1244 @@
+{
+  "materials": [
+    {
+      "slug": "piso-espinha-nogueira",
+      "title": "Parquet espinha-de-peixe de nogueira",
+      "kind": "piso",
+      "repeatMeters": 0.72,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/piso-espinha-nogueira-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-espinha-nogueira-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-espinha-nogueira-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-espinha-nogueira-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-espinha-nogueira-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-espinha-nogueira-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/piso-espinha-nogueira-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-espinha-nogueira-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/piso-espinha-nogueira.glb",
+        "bytes": 14844
+      },
+      "bytes": 31030
+    },
+    {
+      "slug": "piso-espinha-carvalho",
+      "title": "Parquet espinha-de-peixe de carvalho",
+      "kind": "piso",
+      "repeatMeters": 0.72,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/piso-espinha-carvalho-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-espinha-carvalho-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-espinha-carvalho-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-espinha-carvalho-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-espinha-carvalho-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-espinha-carvalho-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/piso-espinha-carvalho-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-espinha-carvalho-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/piso-espinha-carvalho.glb",
+        "bytes": 14888
+      },
+      "bytes": 31698
+    },
+    {
+      "slug": "piso-marmore-xadrez",
+      "title": "Mármore em xadrez (Carrara e Nero Marquina)",
+      "kind": "piso",
+      "repeatMeters": 1.2,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/piso-marmore-xadrez-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-marmore-xadrez-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-marmore-xadrez-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-marmore-xadrez-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-marmore-xadrez-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-marmore-xadrez-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/piso-marmore-xadrez-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-marmore-xadrez-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/piso-marmore-xadrez.glb",
+        "bytes": 24248
+      },
+      "bytes": 94408
+    },
+    {
+      "slug": "piso-porcelanato",
+      "title": "Porcelanato polido",
+      "kind": "piso",
+      "repeatMeters": 1.2,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/piso-porcelanato-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-porcelanato-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-porcelanato-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-porcelanato-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-porcelanato-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-porcelanato-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/piso-porcelanato-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-porcelanato-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/piso-porcelanato.glb",
+        "bytes": 6368
+      },
+      "bytes": 9470
+    },
+    {
+      "slug": "piso-carpete-bordo",
+      "title": "Carpete bordô com medalhão",
+      "kind": "piso",
+      "repeatMeters": 1.5,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/piso-carpete-bordo-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-carpete-bordo-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-carpete-bordo-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-carpete-bordo-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-carpete-bordo-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-carpete-bordo-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/piso-carpete-bordo-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-carpete-bordo-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/piso-carpete-bordo.glb",
+        "bytes": 44244
+      },
+      "bytes": 149042
+    },
+    {
+      "slug": "piso-carpete-azul",
+      "title": "Carpete azul com medalhão",
+      "kind": "piso",
+      "repeatMeters": 1.5,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/piso-carpete-azul-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-carpete-azul-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-carpete-azul-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-carpete-azul-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/piso-carpete-azul-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/piso-carpete-azul-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/piso-carpete-azul-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/piso-carpete-azul-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/piso-carpete-azul.glb",
+        "bytes": 38856
+      },
+      "bytes": 128104
+    },
+    {
+      "slug": "parede-boiserie-creme",
+      "title": "Boiserie pintada de creme",
+      "kind": "parede",
+      "repeatMeters": 1.0,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/parede-boiserie-creme-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/parede-boiserie-creme-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/parede-boiserie-creme-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/parede-boiserie-creme-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/parede-boiserie-creme-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/parede-boiserie-creme-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/parede-boiserie-creme-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/parede-boiserie-creme-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/parede-boiserie-creme.glb",
+        "bytes": 9644
+      },
+      "bytes": 22590
+    },
+    {
+      "slug": "parede-boiserie-nogueira",
+      "title": "Boiserie de nogueira",
+      "kind": "parede",
+      "repeatMeters": 1.0,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/parede-boiserie-nogueira-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/parede-boiserie-nogueira-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/parede-boiserie-nogueira-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/parede-boiserie-nogueira-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/parede-boiserie-nogueira-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/parede-boiserie-nogueira-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/parede-boiserie-nogueira-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/parede-boiserie-nogueira-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/parede-boiserie-nogueira.glb",
+        "bytes": 8944
+      },
+      "bytes": 17662
+    },
+    {
+      "slug": "parede-damasco-bordo",
+      "title": "Papel de parede damasco bordô",
+      "kind": "parede",
+      "repeatMeters": 0.6,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/parede-damasco-bordo-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/parede-damasco-bordo-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/parede-damasco-bordo-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/parede-damasco-bordo-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/parede-damasco-bordo-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/parede-damasco-bordo-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/parede-damasco-bordo-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/parede-damasco-bordo-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/parede-damasco-bordo.glb",
+        "bytes": 13140
+      },
+      "bytes": 21118
+    },
+    {
+      "slug": "parede-damasco-verde",
+      "title": "Papel de parede damasco verde",
+      "kind": "parede",
+      "repeatMeters": 0.6,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/parede-damasco-verde-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/parede-damasco-verde-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/parede-damasco-verde-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/parede-damasco-verde-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/parede-damasco-verde-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/parede-damasco-verde-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/parede-damasco-verde-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/parede-damasco-verde-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/parede-damasco-verde.glb",
+        "bytes": 12804
+      },
+      "bytes": 18860
+    },
+    {
+      "slug": "parede-estuque",
+      "title": "Estuque veneziano",
+      "kind": "parede",
+      "repeatMeters": 1.5,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/parede-estuque-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/parede-estuque-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/parede-estuque-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/parede-estuque-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/parede-estuque-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/parede-estuque-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/parede-estuque-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/parede-estuque-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/parede-estuque.glb",
+        "bytes": 27124
+      },
+      "bytes": 55042
+    },
+    {
+      "slug": "teto-gesso",
+      "title": "Teto de gesso",
+      "kind": "teto",
+      "repeatMeters": 1.0,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/teto-gesso-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/teto-gesso-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/teto-gesso-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/teto-gesso-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/teto-gesso-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/teto-gesso-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/teto-gesso-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/teto-gesso-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/teto-gesso.glb",
+        "bytes": 5332
+      },
+      "bytes": 8534
+    },
+    {
+      "slug": "teto-caixotoes",
+      "title": "Teto de caixotões de madeira",
+      "kind": "teto",
+      "repeatMeters": 1.2,
+      "maps": {
+        "cor": "/flair/3d/kit-mansao/materiais/teto-caixotoes-cor.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/teto-caixotoes-normal.webp",
+        "aspereza": "/flair/3d/kit-mansao/materiais/teto-caixotoes-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/teto-caixotoes-ao.webp"
+      },
+      "mapsMedium": {
+        "aspereza": "/flair/3d/kit-mansao/materiais/teto-caixotoes-aspereza.webp",
+        "ao": "/flair/3d/kit-mansao/materiais/teto-caixotoes-ao.webp",
+        "cor": "/flair/3d/kit-mansao/materiais/teto-caixotoes-cor-512.webp",
+        "normal": "/flair/3d/kit-mansao/materiais/teto-caixotoes-normal-512.webp"
+      },
+      "sample": {
+        "url": "/flair/3d/kit-mansao/materiais/teto-caixotoes.glb",
+        "bytes": 11812
+      },
+      "bytes": 27050
+    }
+  ],
+  "pieces": [
+    {
+      "slug": "quadro-arena",
+      "title": "Quadro com editorial do FashionAI (arena)",
+      "support": "parede",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "",
+      "size": [
+        1.596,
+        1.23,
+        0.155
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/quadro-arena.glb",
+          "triangles": 850,
+          "calls": 5,
+          "bytes": 252700
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/quadro-arena-medio.glb",
+          "triangles": 850,
+          "calls": 5,
+          "bytes": 141888
+        }
+      }
+    },
+    {
+      "slug": "quadro-atelie",
+      "title": "Quadro com editorial do FashionAI (atelie)",
+      "support": "parede",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "",
+      "size": [
+        1.496,
+        1.0,
+        0.065
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/quadro-atelie.glb",
+          "triangles": 74,
+          "calls": 4,
+          "bytes": 220856
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/quadro-atelie-medio.glb",
+          "triangles": 74,
+          "calls": 4,
+          "bytes": 130640
+        }
+      }
+    },
+    {
+      "slug": "quadro-show",
+      "title": "Quadro com editorial do FashionAI (show)",
+      "support": "parede",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "",
+      "size": [
+        1.496,
+        1.0,
+        0.075
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/quadro-show.glb",
+          "triangles": 58,
+          "calls": 4,
+          "bytes": 199512
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/quadro-show-medio.glb",
+          "triangles": 58,
+          "calls": 4,
+          "bytes": 123088
+        }
+      }
+    },
+    {
+      "slug": "quadro-praca",
+      "title": "Quadro com editorial do FashionAI (praca)",
+      "support": "parede",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "",
+      "size": [
+        1.596,
+        1.23,
+        0.155
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/quadro-praca.glb",
+          "triangles": 850,
+          "calls": 5,
+          "bytes": 215216
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/quadro-praca-medio.glb",
+          "triangles": 850,
+          "calls": 5,
+          "bytes": 131144
+        }
+      }
+    },
+    {
+      "slug": "espelho-oval",
+      "title": "Espelho oval do hall com moldura dourada e laço",
+      "support": "parede",
+      "rooms": [
+        "hall",
+        "closet"
+      ],
+      "role": "",
+      "size": [
+        0.98,
+        1.44,
+        0.09
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/espelho-oval.glb",
+          "triangles": 1656,
+          "calls": 3,
+          "bytes": 11692
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/espelho-oval-medio.glb",
+          "triangles": 1656,
+          "calls": 3,
+          "bytes": 11692
+        }
+      }
+    },
+    {
+      "slug": "tapete-persa",
+      "title": "Tapete persa com medalhão e franjas",
+      "support": "piso",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "",
+      "size": [
+        3.16,
+        0.013,
+        2.1
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/tapete-persa.glb",
+          "triangles": 2320,
+          "calls": 4,
+          "bytes": 387260
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/tapete-persa-medio.glb",
+          "triangles": 2320,
+          "calls": 4,
+          "bytes": 387260
+        }
+      }
+    },
+    {
+      "slug": "cortina-brocado",
+      "title": "Cortina de brocado com bandô, varão e borlas",
+      "support": "parede",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "",
+      "size": [
+        2.73,
+        2.855,
+        0.277
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/cortina-brocado.glb",
+          "triangles": 63788,
+          "calls": 4,
+          "bytes": 404196
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/cortina-brocado-medio.glb",
+          "triangles": 19970,
+          "calls": 4,
+          "bytes": 171492
+        }
+      }
+    },
+    {
+      "slug": "medalhao-teto",
+      "title": "Medalhão de gesso para o lustre",
+      "support": "teto",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "",
+      "size": [
+        0.9,
+        0.07,
+        0.9
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/medalhao-teto.glb",
+          "triangles": 2304,
+          "calls": 2,
+          "bytes": 17332
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/medalhao-teto-medio.glb",
+          "triangles": 1368,
+          "calls": 2,
+          "bytes": 13044
+        }
+      }
+    },
+    {
+      "slug": "castical-prata",
+      "title": "Castiçal de prata de três braços com velas",
+      "support": "piso",
+      "rooms": [
+        "jantar",
+        "salao-baile",
+        "hall",
+        "biblioteca"
+      ],
+      "role": "",
+      "size": [
+        0.38,
+        0.595,
+        0.18
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/castical-prata.glb",
+          "triangles": 1504,
+          "calls": 4,
+          "bytes": 16352
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/castical-prata-medio.glb",
+          "triangles": 1504,
+          "calls": 4,
+          "bytes": 16352
+        }
+      }
+    },
+    {
+      "slug": "sanca-1m",
+      "title": "Módulo de sanca (1 m)",
+      "support": "parede",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "",
+      "size": [
+        1.0,
+        0.17,
+        0.16
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/sanca-1m.glb",
+          "triangles": 26,
+          "calls": 1,
+          "bytes": 6964
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/sanca-1m-medio.glb",
+          "triangles": 26,
+          "calls": 1,
+          "bytes": 6964
+        }
+      }
+    },
+    {
+      "slug": "rodape-1m",
+      "title": "Módulo de rodapé (1 m)",
+      "support": "parede",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "",
+      "size": [
+        1.0,
+        0.2,
+        0.02
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/rodape-1m.glb",
+          "triangles": 22,
+          "calls": 1,
+          "bytes": 7116
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/rodape-1m-medio.glb",
+          "triangles": 22,
+          "calls": 1,
+          "bytes": 7116
+        }
+      }
+    },
+    {
+      "slug": "moldura-parede",
+      "title": "Moldura de parede (quadro de boiserie 1 × 1,5 m)",
+      "support": "parede",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "",
+      "size": [
+        1.05,
+        1.55,
+        0.02
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/moldura-parede.glb",
+          "triangles": 32,
+          "calls": 1,
+          "bytes": 2048
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/moldura-parede-medio.glb",
+          "triangles": 32,
+          "calls": 1,
+          "bytes": 2048
+        }
+      }
+    },
+    {
+      "slug": "lustre-cristal",
+      "title": "Lustre de cristal de três andares",
+      "support": "teto",
+      "rooms": [
+        "hall",
+        "jantar"
+      ],
+      "role": "luz",
+      "size": [
+        1.19,
+        1.524,
+        1.19
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/lustre-cristal.glb",
+          "triangles": 23492,
+          "calls": 9,
+          "bytes": 55340
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/lustre-cristal-medio.glb",
+          "triangles": 18650,
+          "calls": 9,
+          "bytes": 36312
+        }
+      }
+    },
+    {
+      "slug": "lustre-imperial",
+      "title": "Lustre imperial com festões de contas",
+      "support": "teto",
+      "rooms": [
+        "salao-baile"
+      ],
+      "role": "luz",
+      "size": [
+        1.91,
+        1.759,
+        1.91
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/lustre-imperial.glb",
+          "triangles": 71620,
+          "calls": 14,
+          "bytes": 69184
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/lustre-imperial-medio.glb",
+          "triangles": 65164,
+          "calls": 14,
+          "bytes": 44592
+        }
+      }
+    },
+    {
+      "slug": "lustre-ferro-velas",
+      "title": "Lustre de ferro forjado com velas",
+      "support": "teto",
+      "rooms": [
+        "biblioteca",
+        "escritorio"
+      ],
+      "role": "luz",
+      "size": [
+        1.377,
+        0.762,
+        1.326
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/lustre-ferro-velas.glb",
+          "triangles": 12311,
+          "calls": 5,
+          "bytes": 120124
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/lustre-ferro-velas-medio.glb",
+          "triangles": 10697,
+          "calls": 5,
+          "bytes": 110096
+        }
+      }
+    },
+    {
+      "slug": "lustre-art-deco",
+      "title": "Lustre art déco de vidro escalonado",
+      "support": "teto",
+      "rooms": [
+        "jantar",
+        "closet"
+      ],
+      "role": "luz",
+      "size": [
+        1.16,
+        0.825,
+        1.16
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/lustre-art-deco.glb",
+          "triangles": 748,
+          "calls": 3,
+          "bytes": 38140
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/lustre-art-deco-medio.glb",
+          "triangles": 748,
+          "calls": 3,
+          "bytes": 38140
+        }
+      }
+    },
+    {
+      "slug": "arandela-cristal",
+      "title": "Arandela de cristal com dois braços",
+      "support": "parede",
+      "rooms": [
+        "hall",
+        "salao-baile",
+        "jantar"
+      ],
+      "role": "luz",
+      "size": [
+        0.444,
+        0.269,
+        0.195
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/arandela-cristal.glb",
+          "triangles": 1032,
+          "calls": 4,
+          "bytes": 14848
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/arandela-cristal-medio.glb",
+          "triangles": 1032,
+          "calls": 4,
+          "bytes": 14848
+        }
+      }
+    },
+    {
+      "slug": "arandela-ferro",
+      "title": "Arandela de ferro com lanterna",
+      "support": "parede",
+      "rooms": [
+        "biblioteca",
+        "escritorio",
+        "jardim"
+      ],
+      "role": "luz",
+      "size": [
+        0.18,
+        0.24,
+        0.284
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/arandela-ferro.glb",
+          "triangles": 610,
+          "calls": 2,
+          "bytes": 77244
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/arandela-ferro-medio.glb",
+          "triangles": 610,
+          "calls": 2,
+          "bytes": 77244
+        }
+      }
+    },
+    {
+      "slug": "escadaria-hall",
+      "title": "Escadaria do hall com balaústres torneados e passadeira",
+      "support": "piso",
+      "rooms": [
+        "hall"
+      ],
+      "role": "",
+      "size": [
+        1.88,
+        3.575,
+        4.755
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/escadaria-hall.glb",
+          "triangles": 28312,
+          "calls": 8,
+          "bytes": 169252
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/escadaria-hall-medio.glb",
+          "triangles": 28312,
+          "calls": 8,
+          "bytes": 169252
+        }
+      }
+    },
+    {
+      "slug": "cadeira-dourada",
+      "title": "Cadeira dourada de salão (bambu) com almofada de veludo",
+      "support": "piso",
+      "rooms": [
+        "salao-baile"
+      ],
+      "role": "",
+      "size": [
+        0.465,
+        0.923,
+        0.485
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/cadeira-dourada.glb",
+          "triangles": 3056,
+          "calls": 7,
+          "bytes": 115076
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/cadeira-dourada-medio.glb",
+          "triangles": 3056,
+          "calls": 7,
+          "bytes": 115076
+        }
+      }
+    },
+    {
+      "slug": "estante-biblioteca",
+      "title": "Estante de nogueira cheia (livros, globo, castiçal, bustos)",
+      "support": "piso",
+      "rooms": [
+        "biblioteca"
+      ],
+      "role": "",
+      "size": [
+        2.3,
+        2.7,
+        0.52
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/estante-biblioteca.glb",
+          "triangles": 28062,
+          "calls": 15,
+          "bytes": 656532
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/estante-biblioteca-medio.glb",
+          "triangles": 26516,
+          "calls": 15,
+          "bytes": 648636
+        }
+      }
+    },
+    {
+      "slug": "escada-biblioteca",
+      "title": "Escada de biblioteca de correr com trilho de latão",
+      "support": "piso",
+      "rooms": [
+        "biblioteca"
+      ],
+      "role": "",
+      "size": [
+        2.4,
+        2.662,
+        0.626
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/escada-biblioteca.glb",
+          "triangles": 2048,
+          "calls": 5,
+          "bytes": 51212
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/escada-biblioteca-medio.glb",
+          "triangles": 2048,
+          "calls": 5,
+          "bytes": 51212
+        }
+      }
+    },
+    {
+      "slug": "mesa-jantar-posta",
+      "title": "Mesa de jantar de mogno posta para oito (pratos, talheres, castiçais, flores)",
+      "support": "piso",
+      "rooms": [
+        "jantar"
+      ],
+      "role": "",
+      "size": [
+        3.0,
+        1.35,
+        1.1
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/mesa-jantar-posta.glb",
+          "triangles": 14538,
+          "calls": 17,
+          "bytes": 357832
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/mesa-jantar-posta-medio.glb",
+          "triangles": 14538,
+          "calls": 17,
+          "bytes": 357832
+        }
+      }
+    },
+    {
+      "slug": "cadeira-jantar",
+      "title": "Cadeira de jantar entalhada com encosto de brocado capitonê",
+      "support": "piso",
+      "rooms": [
+        "jantar"
+      ],
+      "role": "",
+      "size": [
+        0.48,
+        1.139,
+        0.54
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/cadeira-jantar.glb",
+          "triangles": 5912,
+          "calls": 4,
+          "bytes": 77900
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/cadeira-jantar-medio.glb",
+          "triangles": 3224,
+          "calls": 4,
+          "bytes": 65456
+        }
+      }
+    },
+    {
+      "slug": "mesa-escritorio",
+      "title": "Mesa de ébano laqueado com tampo de couro, luminária de banqueiro e papéis",
+      "support": "piso",
+      "rooms": [
+        "escritorio"
+      ],
+      "role": "",
+      "size": [
+        1.8,
+        1.08,
+        0.9
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/mesa-escritorio.glb",
+          "triangles": 2308,
+          "calls": 10,
+          "bytes": 138932
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/mesa-escritorio-medio.glb",
+          "triangles": 2308,
+          "calls": 10,
+          "bytes": 138932
+        }
+      }
+    },
+    {
+      "slug": "espelho-triplo",
+      "title": "Espelho triplo de provador com molduras douradas",
+      "support": "piso",
+      "rooms": [
+        "closet"
+      ],
+      "role": "",
+      "size": [
+        1.8,
+        2.8,
+        0.42
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/espelho-triplo.glb",
+          "triangles": 344,
+          "calls": 5,
+          "bytes": 12508
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/espelho-triplo-medio.glb",
+          "triangles": 344,
+          "calls": 5,
+          "bytes": 12508
+        }
+      }
+    },
+    {
+      "slug": "manequim-vestido",
+      "title": "Manequim de costura com vestido de festa",
+      "support": "piso",
+      "rooms": [
+        "closet"
+      ],
+      "role": "",
+      "size": [
+        0.979,
+        1.642,
+        0.465
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/manequim-vestido.glb",
+          "triangles": 8838,
+          "calls": 5,
+          "bytes": 183316
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/manequim-vestido-medio.glb",
+          "triangles": 3266,
+          "calls": 5,
+          "bytes": 156528
+        }
+      }
+    },
+    {
+      "slug": "estante-partitura",
+      "title": "Estante de partitura com folhas abertas",
+      "support": "piso",
+      "rooms": [
+        "salao-baile"
+      ],
+      "role": "",
+      "size": [
+        0.559,
+        1.492,
+        0.544
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/estante-partitura.glb",
+          "triangles": 324,
+          "calls": 3,
+          "bytes": 37812
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/estante-partitura-medio.glb",
+          "triangles": 324,
+          "calls": 3,
+          "bytes": 37812
+        }
+      }
+    },
+    {
+      "slug": "porta-salao-dupla",
+      "title": "Porta dupla do salão com vidro bisotado",
+      "support": "piso",
+      "rooms": [
+        "salao-baile",
+        "hall",
+        "jantar"
+      ],
+      "role": "porta",
+      "size": [
+        2.1,
+        3.075,
+        0.2
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/porta-salao-dupla.glb",
+          "triangles": 4404,
+          "calls": 12,
+          "bytes": 45424
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/porta-salao-dupla-medio.glb",
+          "triangles": 2028,
+          "calls": 12,
+          "bytes": 29208
+        }
+      }
+    },
+    {
+      "slug": "porta-biblioteca",
+      "title": "Porta de nogueira da biblioteca com almofadas entalhadas",
+      "support": "piso",
+      "rooms": [
+        "biblioteca",
+        "escritorio"
+      ],
+      "role": "porta",
+      "size": [
+        1.32,
+        2.4,
+        0.18
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/porta-biblioteca.glb",
+          "triangles": 2912,
+          "calls": 4,
+          "bytes": 66088
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/porta-biblioteca-medio.glb",
+          "triangles": 1040,
+          "calls": 4,
+          "bytes": 52948
+        }
+      }
+    },
+    {
+      "slug": "porta-servico",
+      "title": "Porta de serviço lisa com chapa de chute",
+      "support": "piso",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "porta",
+      "size": [
+        1.12,
+        2.1,
+        0.18
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/porta-servico.glb",
+          "triangles": 696,
+          "calls": 4,
+          "bytes": 18424
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/porta-servico-medio.glb",
+          "triangles": 696,
+          "calls": 4,
+          "bytes": 18424
+        }
+      }
+    },
+    {
+      "slug": "porta-dos-fundos",
+      "title": "Porta dos fundos trancada (herói): ferragens, ferrolho e cadeado",
+      "support": "piso",
+      "rooms": [
+        "qualquer"
+      ],
+      "role": "porta",
+      "size": [
+        1.76,
+        3.0,
+        0.335
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/porta-dos-fundos.glb",
+          "triangles": 6916,
+          "calls": 10,
+          "bytes": 189804
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/porta-dos-fundos-medio.glb",
+          "triangles": 3024,
+          "calls": 10,
+          "bytes": 163528
+        }
+      }
+    },
+    {
+      "slug": "portao-ferro",
+      "title": "Portão de ferro forjado com volutas, lanças e fechadura",
+      "support": "piso",
+      "rooms": [
+        "jardim"
+      ],
+      "role": "porta",
+      "size": [
+        3.38,
+        3.12,
+        0.5
+      ],
+      "levels": {
+        "alto": {
+          "url": "/flair/3d/kit-mansao/pecas/portao-ferro.glb",
+          "triangles": 9280,
+          "calls": 8,
+          "bytes": 191640
+        },
+        "medio": {
+          "url": "/flair/3d/kit-mansao/pecas/portao-ferro-medio.glb",
+          "triangles": 3728,
+          "calls": 8,
+          "bytes": 140812
+        }
+      }
+    }
+  ],
+  "generator": "scripts/blender3d_high/kit"
+}
