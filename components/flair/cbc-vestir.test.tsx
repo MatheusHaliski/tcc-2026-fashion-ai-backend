@@ -5,7 +5,7 @@ import { CbcList, CbcPlay } from "@/components/flair/cbc";
 import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
 
 /**
- * Desafios de Montagem "vestir a cena" (V127): a cena é a imagem ANTES; a carta que o servidor aceita para a vaga veste
+ * Desafios de Montagem "vestir a cena" (V132): a cena é a imagem ANTES; a carta que o servidor aceita para a vaga veste
  * aquele personagem com o recorte da roupa da imagem DEPOIS; carta recusada não veste e a vaga avisa; tirar a carta
  * despe; as quatro certas mostram a imagem DEPOIS inteira. A lista mostra a imagem ANTES como miniatura.
  */

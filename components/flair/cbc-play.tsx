@@ -1,8 +1,9 @@
 "use client";
 /**
  * Montagem de um Desafio de Montagem (/flair/desafios/[slug]): em cima, a cena dinâmica do desafio como quebra-cabeça
- * (uma peça por vaga: entra quando a carta é posta e encaixa conforme a sintonia que o servidor dá); embaixo, as vagas
- * em grade; ao pé da tela, a bandeja com as cartas da vaga em destaque. Pôr uma carta é um toque, um arrasto ou
+ * (uma peça por vaga: entra quando a carta é posta e encaixa conforme a sintonia que o servidor dá) — a cena desenhada
+ * ou, nos cenários dinâmicos, o vídeo / símbolo FAI em movimento recortado em peças (montagem/cbc-arte.tsx);
+ * embaixo, as vagas em grade; ao pé da tela, a bandeja com as cartas da vaga em destaque. Pôr uma carta é um toque, um arrasto ou
  * Espaço/A no teclado e no controle (use-cbc-controle.ts).
  * A lista está em cbc.tsx; os dados e a conferência, em use-cbc-mesa.ts; a jogada, em use-cbc-jogo.ts.
  */
@@ -15,14 +16,13 @@ import { CbcPainel } from "@/components/flair/cbc-painel";
 import { CbcRewardDialog, Story, SubmissionView } from "@/components/flair/cbc-partes";
 import { CbcVagas } from "@/components/flair/cbc-vagas";
 import { CenaVestir } from "@/components/flair/cenas/cena-vestir";
-import { CenaViva } from "@/components/flair/cenas/cena-viva";
+import { CbcArte, estiloDaArte } from "@/components/flair/montagem/cbc-arte";
 import { Bandeja } from "@/components/flair/montagem/bandeja";
 import { useCbcControle } from "@/components/flair/use-cbc-controle";
 import { useCbcJogo } from "@/components/flair/use-cbc-jogo";
 import { useCbcLabels, windowOf } from "@/components/flair/use-cbc-labels";
 import { useCbcMesa } from "@/components/flair/use-cbc-mesa";
 import { HowItWorks } from "@/components/guide/guide";
-import { cenaDoCenario } from "@/lib/flair/cenas/catalogo";
 import { vestidos, vestirDoCenario } from "@/lib/flair/vestir/cenas";
 import { useState } from "react";
 import { CbcCenarioPreferido } from "@/components/flair/cbc-cenario-preferido";
@@ -39,7 +39,8 @@ export function CbcPlay({ slug }: { slug: string }) {
   if (m.detail.error) return <ErrorState error={m.detail.error} onRetry={m.detail.reload} />;
   if (m.detail.loading || !d) return <Skeleton className="h-96" />;
   const w = windowOf(d, t);
-  const cena = cenaDoCenario(preferido ?? d.scenario);
+  const cenario = preferido ?? d.scenario;
+  const arte = estiloDaArte(cenario);
   // "vestir a cena": o personagem troca de roupa quando o servidor aceita a carta da vaga dele (lib/flair/vestir). A cena
   // é o próprio desafio (cada vaga é um personagem da imagem), por isso ali não há cenário preferido (exercício 16).
   const vestir = vestirDoCenario(d.scenario);
@@ -70,8 +71,8 @@ export function CbcPlay({ slug }: { slug: string }) {
 
       {m.readOnly && delivered ? (
         <div className="grid gap-3">
-          <div className={cn("cbc-stage-art is-done", vestir && "is-vestir")}>
-            {vestir ? <CenaVestir cena={vestir} nome={d.name} vestidos={vestir.pessoas.map(() => true)} /> : <CenaViva cena={cena} pecas={d.slots.map(() => "verde")} completa />}
+          <div className={cn("cbc-stage-art is-done", vestir ? "is-vestir" : arte.className)} style={vestir ? undefined : arte.style}>
+            {vestir ? <CenaVestir cena={vestir} nome={d.name} vestidos={vestir.pessoas.map(() => true)} /> : <CbcArte cenario={cenario} pecas={d.slots.map(() => "verde")} completa />}
           </div>
           <SubmissionView s={delivered} scenario={d.scenario} slots={d.slots} />
         </div>
@@ -79,8 +80,9 @@ export function CbcPlay({ slug }: { slug: string }) {
         <div className="cbc-play">
           <div className="cbc-play-stage">
             <div className="cbc-stage">
-              <div className={cn("cbc-stage-art", vestir && "is-vestir")}>
-                {vestir ? <CenaVestir cena={vestir} nome={d.name} vestidos={vestidos(vestir, m.placed, julgadas)} /> : <CenaViva cena={cena} pecas={j.pecas} completa={!!m.result} />}
+              <div className={cn("cbc-stage-art", vestir ? "is-vestir" : arte.className)} style={vestir ? undefined : arte.style}>
+                {vestir ? <CenaVestir cena={vestir} nome={d.name} vestidos={vestidos(vestir, m.placed, julgadas)} />
+                  : <CbcArte cenario={cenario} pecas={j.pecas} completa={!!m.result} selecionada={d.slots.findIndex((s) => s.key === j.atual?.key)} />}
               </div>
               <CbcVagas slots={d.slots} placed={postas} sintonia={sintonia} recusadas={recusadas} selecionada={j.atual?.key} labelOf={(s) => slotLabel(d.scenario, s)}
                 onVaga={m.readOnly ? undefined : j.selecionar} pegar={m.readOnly ? undefined : j.pegar} />

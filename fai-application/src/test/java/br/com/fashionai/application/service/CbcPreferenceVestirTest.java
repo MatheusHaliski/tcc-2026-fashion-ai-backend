@@ -27,8 +27,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Cenário preferido (exercício 16, V121) num Desafio de Montagem "vestir a cena" (V127): a cena é o próprio desafio
- * (cada vaga é um personagem da imagem), então a V127 não cadastra o cenário vestir-* em cbc_scenarios nem associa
+ * Cenário preferido (exercício 16, V121) num Desafio de Montagem "vestir a cena" (V132): a cena é o próprio desafio
+ * (cada vaga é um personagem da imagem), então a V132 não cadastra o cenário vestir-* em cbc_scenarios nem associa
  * outro cenário ao desafio. Resultado: nenhuma opção para escolher e qualquer preferência é recusada, até a "livre".
  */
 class CbcPreferenceVestirTest {
@@ -55,7 +55,7 @@ class CbcPreferenceVestirTest {
         ReflectionTestUtils.setField(u, "id", UUID.randomUUID());
         ana = Kit.as(u);
         when(challenges.visible(any(), eq("show-no-galpao"))).thenReturn(show);
-        when(scenarios.findByCodigo("vestir-show")).thenReturn(Optional.empty());           // a V127 não cadastra vestir-*
+        when(scenarios.findByCodigo("vestir-show")).thenReturn(Optional.empty());           // a V132 não cadastra vestir-*
         when(scenarios.findById(livre.getId())).thenReturn(Optional.of(livre));
         when(scenarios.findAllById(any())).thenReturn(List.of());
         when(allowed.findByIdChallengeId(show.getId())).thenReturn(List.of());              // nem associa a "livre"

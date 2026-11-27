@@ -36,7 +36,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 
 /**
- * Desafios de Montagem "vestir a cena" (V127): o desafio retirado (DRAFT) some da lista, do detalhe e do seu grupo, mas a
+ * Desafios de Montagem "vestir a cena" (V132): o desafio retirado (DRAFT) some da lista, do detalhe e do seu grupo, mas a
  * entrega antiga continua gravada; no desafio novo, /check diz por vaga se a carta é a roupa do personagem (`accepted`),
  * que é o que faz o front vestir o personagem.
  */

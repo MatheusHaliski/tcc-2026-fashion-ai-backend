@@ -19,13 +19,13 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * V127 — os Desafios de Montagem "vestir a cena": a migration retira os desafios antigos sem apagar nada (DRAFT, só
+ * V132 — os Desafios de Montagem "vestir a cena": a migration retira os desafios antigos sem apagar nada (DRAFT, só
  * linhas sem série) e semeia cinco desafios de quatro vagas, uma por personagem, cada uma pedindo a roupa dele
  * (subcategoria e cor). As vagas, na ordem, são as mesmas do manifesto das cenas do front (lib/flair/vestir/cenas.json),
  * que diz qual recorte de roupa aparece em cada vaga.
  */
 class CbcVestirSeedTest {
-    static final Path SQL = CbcSeedTest.MIGRATIONS.resolve("V127__desafios_de_montagem_vestir_a_cena.sql");
+    static final Path SQL = CbcSeedTest.MIGRATIONS.resolve("V132__desafios_de_montagem_vestir_a_cena.sql");
     static final Path MANIFESTO = Path.of("..", "lib", "flair", "vestir", "cenas.json");
     static final Pattern ROW = Pattern.compile("^\\('7e[^']*','([a-z0-9-]+)',.*?'(vestir-[a-z]+)','(EASY|MEDIUM|HARD|LEGENDARY)','ACTIVE',NULL,'(\\[.*?\\])','(\\[.*?\\])',",
             Pattern.MULTILINE);
@@ -53,6 +53,9 @@ class CbcVestirSeedTest {
         String sql = Files.readString(SQL).replaceAll("(?m)^--.*$", "").replaceAll("\\s+", " ");
         assertThat(sql).contains("UPDATE flair_challenges SET status = 'DRAFT'", "WHERE series IS NULL AND status <> 'DRAFT' AND slug NOT IN (");
         assertThat(sql).doesNotContainIgnoringCase("DELETE ").doesNotContainIgnoringCase("DROP ").doesNotContainIgnoringCase("TRUNCATE");
+        // os quebra-cabeças dinâmicos da V131 continuam ativos
+        assertThat(sql.substring(0, sql.indexOf("INSERT"))).contains("'fogo-em-movimento'", "'arena-em-movimento'",
+                "'simbolo-fai-em-orbita'", "'logo-a-deriva'", "'caleidoscopio-azul'");
     }
 
     /**
@@ -69,7 +72,7 @@ class CbcVestirSeedTest {
         String sql = String.join(" ", comandos);
         assertThat(comandos).hasSize(2);
         assertThat(comandos.get(0)).startsWith("UPDATE flair_challenges SET status = 'DRAFT', version = version + 1, updated_at = '2026-11-26 12:00:00', "
-                + "last_modified_by = 'V127' WHERE series IS NULL");
+                + "last_modified_by = 'V132' WHERE series IS NULL");
         assertThat(comandos.get(1)).startsWith("INSERT INTO flair_challenges (").endsWith("ON DUPLICATE KEY UPDATE id = id");
         assertThat(sql.toLowerCase()).doesNotContain("flair_cbc_squad", "flair_card_instance", "flair_deck", "flair3d_", "flair_challenge_submissions",
                 "flair_challenge_groups", "flair_game_rewards", "cbc_scenarios", "cbc_challenge_scenarios", "cbc_preferences", "alter table",

@@ -61,6 +61,11 @@ public final class Flair3dJogadaDeCena implements Flair3dNucleo {
     }
 
     @Override
+    public Resultado comExecucao(Resultado look, Resultado comNota, int execucao, Contexto contexto) {
+        return jogo.comExecucao(look, comNota, execucao, contexto);
+    }
+
+    @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
         Resultado look = jogo.pontuar(entrega, contexto);
         Map<String, String> tabela = Flair3dCores.tabelaDe(codigo());

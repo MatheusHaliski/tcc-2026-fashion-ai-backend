@@ -182,7 +182,7 @@ proxy não deixa passar MySQL); a conferência fica com `scripts/catalog/audit_m
 - Memória (README): 10 GB para a forma, 21 GB para a textura, 29 GB para as duas no mesmo processo. Uma GPU de 24 GB
   não comporta as duas carregadas ao mesmo tempo; nesse caso a alternativa é o TRELLIS.2 4B (MIT, mínimo de 24 GB,
   `.glb` PBR).
-- Ambiente: Python 3.10, PyTorch 2.5.1 + cu124 (`scripts/catalog/runpod_setup_hunyuan.sh`).
+- Ambiente: Python 3.10, PyTorch 2.5.1 + cu124 (`scripts/catalog/hunyuan_glb_setup_runpod.sh`).
 - **Vistas:** no código oficial, a forma usa uma imagem só e a pintura condiciona apenas por `input_images[0]`. Passar
   uma lista em `image_path` quebra a chamada (`image_prompt` fica sem valor). A geração usa a **frente** do flat lay
   aprovado. As costas são baixadas e servem só para a revisão. Usar as costas de verdade exige outro modelo de forma
@@ -195,11 +195,28 @@ textura vem do 2.1, pela frente. Cada etapa roda num processo (`--stage shape`, 
 modelos não ficam carregados juntos: o pico esperado é o da textura (~21 GB) e uma GPU de 24 GB serve. Gerador gravado:
 `hunyuan3d-2mv+2.1`.
 
-**Fluxo:** `export_glb_batch.py` (Mac, só lê o banco) → `lote.csv` → `runpod_hunyuan_runner.py` (pod, `--stage shape` e depois `--stage paint`, grava só no volume) → `~/glb-hunyuan` → `import_meshy_glbs.py --generator hunyuan3d-2mv+2.1 --origin runpod` (ensaio; `--apply` só
+**Fluxo:** `export_glb_batch.py` (Mac, só lê o banco) → `lote.csv` → `hunyuan_glb_runner.py` (pod, `--stage shape` e depois `--stage paint`, grava só no volume) → `~/glb-hunyuan` → `import_meshy_glbs.py --generator hunyuan3d-2mv+2.1 --origin runpod` (ensaio; `--apply` só
 com confirmação). O gerador e a origem vão para `catalog_product_models_3d.generator` e `metrics_json.import`.
 
 **A medir no piloto:** GPU, VRAM de pico, segundos por produto, custo por hora e total, e as notas comparadas com a
 Meshy (mesma régua do `glb_quality.py`, renders de frente, lado e costas).
+
+## T4 da GCP e lote sem flat lay obrigatório (15/11/2026)
+
+**Decisão:** o lote 3D passa a aceitar três fontes por produto: flat lay aprovado › Peça inteira (`RENDERED`) › foto
+do produto, com a pessoa removida na GPU pelo recorte FASHN do packshot. Assim o flat lay deixa de ser obrigatório (só
+~206 produtos têm). O plano completo está em `plano-glb-catalogo.md`.
+
+**GPU:** T4 de 16 GB na GCP, em VM spot (`scripts/cloud/hunyuan_t4_vm.py`). A cota "Custom model serving Nvidia T4" é
+de endpoint do Vertex AI, que cobra enquanto fica ligado; para um lote, a VM spot que se apaga sai mais barata. O
+Hunyuan3D 2.1 Paint (21 GB) não cabe na T4, então a textura passa a vir do Hunyuan3D-2 Paint 2.0 turbo, que gera só
+cor, sem PBR. Gerador gravado: `hunyuan3d-2mv+2.0`.
+
+**Estimativa (não medida):** 240 a 420 s por produto. Custo: ~US$ 0,30/h spot, ~US$ 0,95/h sob demanda. Catálogo
+inteiro: US$ 290 a 500 em spot.
+
+**A medir no piloto (`--pilot 30`):** segundos por produto e por fonte, VRAM de pico, falhas do recorte, notas do
+`glb_quality.py` por fonte, comparação com a Meshy.
 
 ## Provador com os `.glb` da Meshy (19/11/2026)
 

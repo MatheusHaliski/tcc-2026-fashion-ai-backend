@@ -64,8 +64,10 @@ export function decalTriangles(
 export function rasterDecal(target: Pixels, image: Pixels, triangles: DecalTriangle[], opacity: number) {
   const W = target.width, H = target.height;
   for (const { uv, st } of triangles) {
-    const p = uv.map(([u, v]) => [(((u % 1) + 1) % 1) * W, (((v % 1) + 1) % 1) * H]);
-    if (Math.max(...p.map((q) => q[0])) - Math.min(...p.map((q) => q[0])) > W / 2) continue;
+    // UV fora de 0..1 (texturas repetidas) volta para o ladrilho pelo canto do triângulo, sem partir a face
+    const shiftU = Math.floor(Math.min(uv[0][0], uv[1][0], uv[2][0])), shiftV = Math.floor(Math.min(uv[0][1], uv[1][1], uv[2][1]));
+    const p = uv.map(([u, v]) => [(u - shiftU) * W, (v - shiftV) * H]);
+    if (Math.max(...p.map((q) => q[0])) - Math.min(...p.map((q) => q[0])) > W) continue;
     const det = (p[1][1] - p[2][1]) * (p[0][0] - p[2][0]) + (p[2][0] - p[1][0]) * (p[0][1] - p[2][1]);
     if (Math.abs(det) < 1e-9) continue;
     const x0 = Math.max(0, Math.floor(Math.min(p[0][0], p[1][0], p[2][0]))), x1 = Math.min(W - 1, Math.ceil(Math.max(p[0][0], p[1][0], p[2][0])));

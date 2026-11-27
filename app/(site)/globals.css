@@ -58,6 +58,8 @@
 @import "./_styles/54-flair3d-execucao.css";
 @import "./_styles/55-flair3d-esporte-tempo.css";
 @import "./_styles/56-flair3d-fase-de-uso.css";
+@import "./_styles/57-flair3d-batalha.css";
+@import "./_styles/58-flair3d-zonas.css";
 @import "./_styles/55-card-grade-info.css";
 @import "./_styles/39-flair-elencos-quebra-cabeca.css";
 @import "./_styles/39-seletor-pecas.css";
@@ -74,4 +76,5 @@
 @import "./_styles/48-flair-elencos-vagas.css";
 @import "./_styles/49-flair-cbc-vagas.css";
 @import "./_styles/57-aura-destrava.css";
-@import "./_styles/58-flair-cbc-vestir.css";
+@import "./_styles/58-flair-montagem-dinamica.css";
+@import "./_styles/59-flair-cbc-vestir.css";

@@ -104,6 +104,12 @@ public class BatalhaLooksNucleo implements Flair3dNucleo {
                 .comCartas(new Flair3dRateio(vestidas).cada(POR_PECA, BatalhaLooksNucleo::azul).lista());
     }
 
+    /** A execução do desfile final entra na soma contra a casa e o desfecho manda na nota ({@link BatalhaLooksFecho}). */
+    @Override
+    public Resultado comExecucao(Resultado look, Resultado comNota, int execucao, Contexto contexto) {
+        return BatalhaLooksFecho.comExecucao(look, comNota, execucao, contexto);
+    }
+
     static boolean azul(CbcRules.Card c) {
         return Flair3dPecas.daFamilia(c, "Azul");
     }

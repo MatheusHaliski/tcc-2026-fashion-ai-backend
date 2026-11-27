@@ -6,11 +6,10 @@ import { useI18n } from "@/lib/i18n/i18n";
 import type { CbcGroup, CbcList as CbcListData, CbcSummary } from "@/lib/flair/cbc";
 import { Badge, Card, cn, EmptyState, ErrorState, PageHeader, SkeletonGrid, UiIcon } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
-import { CenaVestir } from "@/components/flair/cenas/cena-vestir";
-import { CenaViva } from "@/components/flair/cenas/cena-viva";
+import { CbcArte } from "@/components/flair/montagem/cbc-arte";
 import { useCbcLabels, windowOf } from "@/components/flair/use-cbc-labels";
 import { HowItWorks } from "@/components/guide/guide";
-import { cenaDoCenario } from "@/lib/flair/cenas/catalogo";
+import { CenaVestir } from "@/components/flair/cenas/cena-vestir";
 import { vestirDoCenario } from "@/lib/flair/vestir/cenas";
 import { CbcPreferidos, cenarioVisivel, useCenarioPreferido } from "@/components/flair/cbc-cenario-preferido";
 
@@ -71,7 +70,7 @@ export function CbcCard({ c }: { c: CbcSummary }) {
   const preferido = useCenarioPreferido(c.id);
   const vestir = vestirDoCenario(c.scenario);
   const arte = vestir ? <CenaVestir cena={vestir} nome={c.name} vestidos={vestir.pessoas.map(() => done)} decorativa />
-    : <CenaViva cena={cenaDoCenario(cenarioVisivel(preferido, c.scenario))} decorativa />;
+    : <CbcArte cenario={cenarioVisivel(preferido, c.scenario)} decorativa />;
   return (
     <article className={cn("cbc-card", c.status === "ENDED" && "is-ended")} aria-labelledby={`cbc-card-${c.id}`}>
       <Link href={`/flair/desafios/${encodeURIComponent(c.slug)}`} className="cbc-card-art" aria-hidden tabIndex={-1}>{arte}<span className={cn("cbc-diff", `is-${c.difficulty.toLowerCase()}`)}>{t(`cbc.difficulty.${c.difficulty}`)}</span></Link>

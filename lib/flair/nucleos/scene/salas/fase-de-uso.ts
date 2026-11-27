@@ -191,7 +191,8 @@ const TERRACO = lugarDeUso("SUPER_HEROI", {
     tambor({ pos: [-3.4, 0, -5.2] }, "metal"),
     tambor({ pos: [2.2, 0, -6.6] }, "metal"),
   ],
-  figurantes: [],
+  // os moradores do prédio que a missão protege, nas bordas do terraço: reagem a cada lance
+  figurantes: emPe("MORADORES", [[-5.6, 1.4], [-5.7, 3.4], [5.6, 2.0], [5.7, 4.0]], ["#2B3A67", "#C9D6FF", "#5E636E"], 0).map((p, i) => ({ ...p, giro: i < 2 ? 90 : -90 })),
   proprias: [
     { id: "bancada", tipo: "ponto", cor: "#C9D6FF", intensidade: 16, pos: [0, 4.5, 1] },
     { id: "lua", tipo: "ponto", cor: "#AFC6FF", intensidade: 30, pos: [3, 5, -6] },
