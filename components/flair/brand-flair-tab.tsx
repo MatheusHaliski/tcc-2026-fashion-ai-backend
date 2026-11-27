@@ -10,6 +10,7 @@ import { couponText, GAME_TYPE_LABEL, VoucherDialog, type Combination, type Vouc
 import { useI18n } from "@/lib/i18n/i18n";
 import { CouponChannelField, couponChannelText } from "@/components/coupons/coupon-channel-field";
 import { CouponMinimumFields, minimumBody, minimumValid } from "@/components/coupons/coupon-minimum";
+import { CouponHypeField, hypeMinimumBody } from "@/components/coupons/coupon-hype";
 import { currentIntl } from "@/lib/i18n/state";
 
 interface Tab { admin: boolean; brandName: string; participating: boolean; combinations: Combination[]; redemptions?: Voucher[]; stats?: { issued: number; used: number }; gameTypes?: { id: string; label: string }[]; }
@@ -17,10 +18,10 @@ interface Form {
   id?: string; name: string; description: string; gameType: string; requiredCategories: string[]; requiredStyles: string[]; requiredOccasions: string[];
   minBrandPieces: string; minDeckPower: string; minRarity: string; minWins: string; couponTitle: string; discountKind: "percent" | "amount"; discount: string;
   minPurchase: string; validDays: string; stock: string; active: boolean; accentColor: string; storeUrl: string; canalCupomId: string; canalCupomNome?: string | null;
-  minPurchaseCurrency: string; /** combinação antiga: valor gravado sem moeda */ minPurchaseLegacy?: boolean;
+  minPurchaseCurrency: string; /** combinação antiga: valor gravado sem moeda */ minPurchaseLegacy?: boolean; /** Circuito Aura: vazio = sem exigência */ minHypeLevel: string;
 }
 const EMPTY: Form = { name: "", description: "", gameType: "COMBINACAO", requiredCategories: [], requiredStyles: [], requiredOccasions: [], minBrandPieces: "1", minDeckPower: "0", minRarity: "",
-  minWins: "2", couponTitle: "", discountKind: "percent", discount: "10", minPurchase: "", validDays: "30", stock: "100", active: true, accentColor: "#2D55C9", storeUrl: "", canalCupomId: "", minPurchaseCurrency: "BRL" };
+  minWins: "2", couponTitle: "", discountKind: "percent", discount: "10", minPurchase: "", validDays: "30", stock: "100", active: true, accentColor: "#2D55C9", storeUrl: "", canalCupomId: "", minPurchaseCurrency: "BRL", minHypeLevel: "" };
 
 /**
  * RF14/RF22 — aba "Minhas combinações FLAIR" do perfil da loja: a loja participante define qual combinação de cartas
@@ -44,7 +45,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
     minBrandPieces: String(c.minBrandPieces), minDeckPower: String(c.minDeckPower), minRarity: c.minRarity ?? "", minWins: String(c.minWins || 2), couponTitle: c.coupon.title,
     discountKind: c.coupon.discountPercent !== "" ? "percent" : "amount", discount: String(c.coupon.discountPercent !== "" ? c.coupon.discountPercent : c.coupon.discountAmount),
     minPurchase: c.coupon.minPurchase === "" ? "" : String(c.coupon.minPurchase), validDays: String(c.coupon.validDays), stock: c.stock == null ? "" : String(c.stock), active: c.active, accentColor: c.accentColor, storeUrl: (c as Combination & { storeUrl?: string | null }).storeUrl ?? "", canalCupomId: c.canalCupom?.id ?? "", canalCupomNome: c.canalCupom?.nome,
-    minPurchaseCurrency: c.coupon.minPurchaseCurrency || (c.coupon.minPurchase === "" ? "BRL" : ""), minPurchaseLegacy: c.coupon.minPurchase !== "" && !c.coupon.minPurchaseCurrency,
+    minPurchaseCurrency: c.coupon.minPurchaseCurrency || (c.coupon.minPurchase === "" ? "BRL" : ""), minPurchaseLegacy: c.coupon.minPurchase !== "" && !c.coupon.minPurchaseCurrency, minHypeLevel: c.coupon.minHypeLevel ?? "",
   });
   async function save() {
     if (!form) return;
@@ -53,7 +54,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
     const body = { name: form.name, description: form.description || null, gameType: form.gameType, requiredCategories: form.requiredCategories, requiredStyles: form.requiredStyles,
       requiredOccasions: form.requiredOccasions, minBrandPieces: n(form.minBrandPieces), minDeckPower: n(form.minDeckPower), minRarity: form.minRarity || null, minWins: n(form.minWins),
       couponTitle: form.couponTitle, discountPercent: form.discountKind === "percent" ? n(form.discount) : null, discountAmount: form.discountKind === "amount" ? n(form.discount) : null,
-      ...minimumBody(form.minPurchase, form.minPurchaseCurrency), validDays: n(form.validDays), stock: n(form.stock), active: form.active, accentColor: form.accentColor, storeUrl: form.storeUrl || null, canalCupomId: form.canalCupomId || null };
+      ...minimumBody(form.minPurchase, form.minPurchaseCurrency), validDays: n(form.validDays), stock: n(form.stock), active: form.active, accentColor: form.accentColor, storeUrl: form.storeUrl || null, canalCupomId: form.canalCupomId || null, ...hypeMinimumBody(form.minHypeLevel) };
     try {
       if (form.id) await api.put(`/api/flair/brand/combinations/${form.id}`, body); else await api.post("/api/flair/brand/combinations", body);
       toast.success(t("flair.brandFlairTab.combinacao_salva")); setForm(null); tab.reload();
@@ -134,6 +135,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
             <Field label={form.discountKind === "percent" ? t("flair.brandFlairTab.percentual_1_90") : t("flair.brandFlairTab.valor_r")} id="fc-dv"><Input id="fc-dv" type="number" min={1} value={form.discount} onChange={(e) => setForm({ ...form, discount: e.target.value })} /></Field>
           </div>
           <div className="grid gap-3 sm:grid-cols-2"><CouponMinimumFields amount={form.minPurchase} currency={form.minPurchaseCurrency} legacy={form.minPurchaseLegacy} onChange={(patch) => setForm({ ...form, ...patch })} /></div>
+          <CouponHypeField id="fc-hype" value={form.minHypeLevel} onChange={(minHypeLevel) => setForm({ ...form, minHypeLevel })} />
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label={t("flair.brandFlairTab.validade_dias_7_120")} id="fc-vd"><Input id="fc-vd" type="number" min={7} max={120} value={form.validDays} onChange={(e) => setForm({ ...form, validDays: e.target.value })} /></Field>
             <Field label={t("flair.brandFlairTab.estoque_de_cupons")} id="fc-st" hint={t("common.vazio_ilimitado")}><Input id="fc-st" type="number" min={1} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></Field>

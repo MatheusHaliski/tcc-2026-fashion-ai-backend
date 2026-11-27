@@ -107,7 +107,7 @@ public class FlairService {
                         FaiPointsService faiPoints, HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig,
                         AtelierRewardSystem atelier) {
         this.atelier = atelier;
-        this.coupons = new br.com.fashionai.application.flair.FlairCouponWriter(redemptions);
+        this.coupons = new br.com.fashionai.application.flair.FlairCouponWriter(redemptions, CouponHypeGate.of(hypeScores, hypeConfig));
         this.hypeScores = hypeScores;
         this.hypeConfig = hypeConfig;
         this.events = events;
@@ -776,7 +776,7 @@ public class FlairService {
                                   List<String> requiredStyles, List<String> requiredOccasions, Integer minBrandPieces,
                                   Integer minDeckPower, String minRarity, Integer minWins, String couponTitle,
                                   Integer discountPercent, BigDecimal discountAmount, BigDecimal minPurchase, Integer validDays,
-                                  Integer stock, Boolean active, Instant startsAt, Instant endsAt, String accentColor, String storeUrl, UUID canalCupomId, String minPurchaseCurrency) {
+                                  Integer stock, Boolean active, Instant startsAt, Instant endsAt, String accentColor, String storeUrl, UUID canalCupomId, String minPurchaseCurrency, String minHypeLevel) {
     }
 
     @Transactional
@@ -886,7 +886,7 @@ public class FlairService {
                     .filter(e -> Json.strings(e.getBrandPiecesJson()).contains(bn.toLowerCase(Locale.ROOT))).count();
             out.add(req("WINS", String.valueOf(wins), Msg.t("flair.vitoria_s_nesta_semana_com", (c.getMinWins()), bn, wins), wins >= c.getMinWins()));
         }
-        return out;
+        return coupons.withHype(out, c, cs);
     }
 
     private static Map<String, Object> req(String kind, String value, String label, boolean ok) {
@@ -911,7 +911,7 @@ public class FlairService {
         m.put("minWins", c.getMinWins());
         m.put("coupon", Map.of("title", c.getCouponTitle(), "discountPercent", c.getDiscountPercent() == null ? "" : c.getDiscountPercent(),
                 "discountAmount", c.getDiscountAmount() == null ? "" : c.getDiscountAmount(), "minPurchase", c.getMinPurchase() == null ? "" : c.getMinPurchase(), "validDays", c.getValidDays(),
-                "minPurchaseCurrency", c.getMinPurchaseCurrency() == null ? "" : c.getMinPurchaseCurrency()));
+                "minPurchaseCurrency", c.getMinPurchaseCurrency() == null ? "" : c.getMinPurchaseCurrency(), "minHypeLevel", c.getMinHypeLevel() == null ? "" : c.getMinHypeLevel()));
         m.put("stock", c.getStock());
         m.put("redeemed", c.getRedeemed());
         m.put("active", c.isActive());
@@ -989,9 +989,9 @@ public class FlairService {
         List<Card> wardrobe = cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
         List<Map<String, Object>> checks = check(c, d, wardrobe, user);
         if (checks.isEmpty() || !checks.stream().allMatch(x -> Boolean.TRUE.equals(x.get("ok")))) {
-            throw new ApiException(422, "COMBINACAO_INCOMPLETA", Msg.t("flair.o_deck_ainda_nao_completa"), Map.of("checks", checks));
+            throw coupons.incomplete(checks);
         }
-        FlairRedemption r = coupons.issue(c, users.findById(user.id()).orElseThrow(), s, d == null ? null : d.power());
+        FlairRedemption r = coupons.issue(c, users.findById(user.id()).orElseThrow(), s, d == null ? null : d.power(), checks);
         award(user.id(), 0, 50, "REDEMPTION", c.getId().toString());
         // Atelier: concluir a jornada da marca/celebridade vale um convite de temporada daquele perfil
         atelier.grant(AtelierGrants.brandJourney(user.id(), c.getId(), c.getName(), c.getBrand().getId(), brandNameOf(c.getBrand()), Instant.now()));

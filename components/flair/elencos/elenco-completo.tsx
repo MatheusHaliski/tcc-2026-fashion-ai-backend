@@ -4,6 +4,7 @@
  * página do celular, com os controles) e a edição ganha. Os logos sem vídeo próprio mostram o próprio quebra-cabeça
  * se montando, peça a peça, em CSS (docs/flair/cbc/CINCO_ELENCOS.md, "O modal de conclusão").
  */
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Dialog } from "@/components/ui";
 import { ElencoPuzzle } from "@/components/flair/elencos/elenco-puzzle";
@@ -31,6 +32,7 @@ export function ElencoCompleto({ qc, nome, edicao, aberto, onFechar }: Props) {
       <div className="ep-complete" data-testid="elenco-completo">
         {qc.video ? (
           <video className="ep-complete-video" src={qc.video} poster={qc.imagem} autoPlay muted loop playsInline controls preload="auto"
+            style={{ "--ep-ar": qc.largura / 100 } as CSSProperties}
             aria-label={tx.t("flair3d.elencos.complete.video", { nome })} data-testid="elenco-video" />
         ) : (
           <ElencoPuzzle qc={qc} nome={nome} estados={[]} chaves={[]} completo montando />

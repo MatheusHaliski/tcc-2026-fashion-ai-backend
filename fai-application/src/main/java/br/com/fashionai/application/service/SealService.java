@@ -387,7 +387,7 @@ public class SealService {
     // ================================================================== promoções (CA11–CA13, CA21–CA23, RNF12)
     public record PromotionForm(PromotionType type, String title, String description, String rules, Integer discountPercent,
                                 UUID sealId, String requiredSealKind, Instant startsAt, Instant expiresAt,
-                                Integer totalQuota, Integer perUserLimit, UUID partnerBrandUserId, Visibility visibility, String storeUrl, UUID canalCupomId, java.math.BigDecimal minPurchase, String minPurchaseCurrency) {
+                                Integer totalQuota, Integer perUserLimit, UUID partnerBrandUserId, Visibility visibility, String storeUrl, UUID canalCupomId, java.math.BigDecimal minPurchase, String minPurchaseCurrency, String minHypeLevel) {
     }
 
     @Autowired(required = false)

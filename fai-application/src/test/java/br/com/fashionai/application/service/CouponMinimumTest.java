@@ -64,12 +64,12 @@ class CouponMinimumTest {
 
     private static SealService.PromotionForm promo(String minimo, String moeda) {
         return new SealService.PromotionForm(PromotionType.CUPOM_LOJA, "Cupom da loja", null, null, 10, null, null, null, null, null, null, null, null, null, null,
-                n(minimo), moeda);
+                n(minimo), moeda, null);
     }
 
     private static FlairService.CombinationForm combo(String minimo, String moeda) {
         return new FlairService.CombinationForm("Combo de inverno", null, "COLECAO", List.of("full_body_piece"), List.of(), List.of(), 0, 0, null, 0,
-                "10% na loja", 10, null, n(minimo), 30, 5, true, null, null, null, null, null, moeda);
+                "10% na loja", 10, null, n(minimo), 30, 5, true, null, null, null, null, null, moeda, null);
     }
 
     @Test

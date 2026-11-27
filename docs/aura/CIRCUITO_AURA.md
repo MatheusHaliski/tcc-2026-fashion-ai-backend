@@ -75,7 +75,7 @@ O mesmo vale ao contrário para as Auras de expressão: escolher uma Aura bonita
   `MILESTONE_POINTS`, `AURA_REWARD`), `family`, `title`, `detail`, `href`, `requiredLevel`, `met`.
 - `GET /api/hype/{type}/{id}/unlocks` (`AuraUnlocksController` → `AuraUnlocksService`), com a mesma visibilidade das
   rotas de Hype. Fontes: faixa no FLAIR e campanhas de selo (`AuraUnlockSources`), cupons com Hype mínimo
-  (`CouponHypeUnlocks`) e pontos de marco (`HypeMilestoneUnlocks`), via `AuraUnlockProvider`.
+  (`CouponHypeOffers`) e pontos de marco (`HypeMilestoneUnlocks`, só para o dono), via `AuraUnlockProvider`.
 - O modelo já é genérico: `family` em cada item e o tipo `AURA_REWARD` existem e são renderizados; na fase 1 nenhuma
   fonte produz `AURA_REWARD` (ver fase 2, item 1).
 - Front: bloco "O que este card destrava" no resumo da análise do Hype (`components/hype/aura-unlocks-panel.tsx`,
@@ -90,13 +90,19 @@ O mesmo vale ao contrário para as Auras de expressão: escolher uma Aura bonita
   `FAIXA_HYPE_INVALIDA`; card abaixo da faixa → 409 `HYPE_INSUFICIENTE` e nada é emitido; oferta antiga (NULL) segue
   como sempre. Promoção de selo: vale o card que carrega o vínculo do selo. Combinação FLAIR: valem as cartas da
   combinação.
-- Front: campo "Hype mínimo" nos dois formulários de oferta; na carteira, cupom "travado: falta chegar a <faixa>" com a
-  faixa atual do card, e no cupom emitido a faixa registrada na emissão.
+- Carteira: `GET /api/me/coupons/hype-locked` (`CouponHypeController` → `CouponHypeOffers.locked`) lista as ofertas em
+  que só falta a faixa (selo ou deck em ordem, dentro do limite por pessoa).
+- Front: campo "Hype mínimo do card" nos dois formulários de oferta (`components/coupons/coupon-hype.tsx`); na
+  carteira, a seção "Travados pelo Hype" com a faixa que falta e a atual do card; no cupom emitido e no voucher FLAIR,
+  a faixa registrada na emissão; na vitrine do emissor, o botão "Travado pelo Hype" com o motivo.
 
 **Elo 3 — marco que vale algo**
 
 - `HypeMilestoneRewards`: depois do dedupe do `HypeMilestoneNotifier`, credita FAI Points uma vez por card e marco
-  (valores em configuração: `HOT` 20, `TRENDING` 50, `VIRAL` 120). O aviso diz o que foi destravado e o link abre o card
+  (valores em configuração `fai.hype.milestone-points.{hot,trending,viral}`: 20, 50, 120; regra `HYPE_MILESTONE` do
+  extrato criada pela V126 com valor 0, chave idempotente `<dono>:HYPE_MILESTONE:<tipo>:<id>:<marco>`). Falha no
+  crédito nunca derruba o aviso. O texto do resumo saiu do notificador para `HypeMilestoneDigest` (extração com o
+  `HypeMilestoneTest` como caracterização). O aviso diz o que foi destravado e o link abre o card
   com o painel em foco (`?destrava=<id>`). Card privado: os pontos vão para o dono e o texto continua dizendo que é Hype
   pessoal. Nada disso publica sinal de Hype.
 

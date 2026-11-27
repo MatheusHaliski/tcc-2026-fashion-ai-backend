@@ -13,12 +13,10 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.fashionai.application.common.ApiException;
-import br.com.fashionai.application.physicalstore.PhysicalStoreReturnEvents;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.*;
@@ -69,13 +67,6 @@ public class RetailDemandService {
         PhysicalStoreVariant variant = cmd.variantId() == null ? null : variants.findById(cmd.variantId()).filter(v -> true).orElse(null);
         boolean stored = store(user.id(), product, cmd.variantId(), variant == null ? null : variant.getColorName(), variant == null ? cmd.sizeLabel() : variant.getSizeLabel(), cmd.kind());
         return Map.of("recorded", stored, "kind", cmd.kind(), "identityStored", false);
-    }
-
-    /** Motivo de caimento da devolução (RF-PESQ-02) entra só se a pessoa consentiu a finalidade analítica. */
-    @EventListener
-    public void onFitFeedback(PhysicalStoreReturnEvents.FitFeedbackRecorded feedback) {
-        if (!consented(feedback.contributorId())) return;
-        products.findById(feedback.productId()).ifPresent(p -> { if (p.getBrandId() != null) store(feedback.contributorId(), p, feedback.variantId(), null, feedback.sizeLabel(), "SIZE_MISMATCH"); });
     }
 
     private boolean store(UUID userId, CatalogProduct product, UUID variantId, String color, String size, String kind) {
