@@ -49,5 +49,5 @@ def sala(**dados) -> Callable[[Callable[[], None]], Callable[[], None]]:
 
 
 def carregar() -> dict[str, SalaHigh]:
-    from . import detetive_a, detetive_b, detetive_c, passarela  # noqa: F401
+    from . import detetive_a, detetive_b, detetive_c, detetive_demo, passarela  # noqa: F401
     return SALAS

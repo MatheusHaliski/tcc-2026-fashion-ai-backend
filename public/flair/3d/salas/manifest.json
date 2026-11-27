@@ -443,5 +443,35 @@
       }
     },
     "imports": []
+  },
+  {
+    "slug": "detetive-arquivo",
+    "title": "Arquivo (high poly)",
+    "family": "detetive",
+    "games": [
+      "FASHION_DETECTIVE"
+    ],
+    "author": "FashionAI",
+    "source": "scripts/blender3d_high/salas",
+    "license": "Própria",
+    "hash": "d346983d4c7c46b7",
+    "environment": "/flair/3d/salas/detetive-arquivo-ambiente.webp",
+    "levels": {
+      "alto": {
+        "url": "/flair/3d/salas/detetive-arquivo.glb",
+        "triangles": 110034,
+        "calls": 32,
+        "instanced": 929,
+        "bytes": 721200
+      },
+      "medio": {
+        "url": "/flair/3d/salas/detetive-arquivo-medio.glb",
+        "triangles": 108420,
+        "calls": 32,
+        "instanced": 929,
+        "bytes": 399744
+      }
+    },
+    "imports": []
   }
 ]

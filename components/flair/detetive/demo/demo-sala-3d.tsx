@@ -9,6 +9,7 @@ import { useRef, type MutableRefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { estiloDaSala } from "@/components/flair/detetive/sala-3d";
+import { SalaAlta } from "@/components/flair/salas-altas/sala-alta";
 import { LIMITES, LUGAR, MOVEIS, PORTA } from "@/lib/flair/detetive/demo/mundo";
 import type { Caixa, Interativo } from "@/lib/flair/detetive/demo/tipos";
 import type { Simulacao } from "@/components/flair/detetive/demo/use-demo";
@@ -138,8 +139,9 @@ function Item({ sim, id, tipo, reduzido }: { sim: MutableRefObject<Simulacao>; i
 
 export function DemoSala3D({ sim, reduzido }: { sim: MutableRefObject<Simulacao>; reduzido: boolean }) {
   const w = LIMITES.x1 - LIMITES.x0;
-  return (
-    <group name="sala-demo">
+  // o que não se mexe é a reserva da sala high poly (scripts/blender3d_high/salas/detetive_demo.py): mesmas caixas
+  const procedural = (
+    <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, (FRENTE - 2.5) / 2]} receiveShadow>
         <planeGeometry args={[w + 0.4, FRENTE + 2.5]} />
         <meshStandardMaterial color={SALAO.piso} roughness={0.85} />
@@ -156,6 +158,11 @@ export function DemoSala3D({ sim, reduzido }: { sim: MutableRefObject<Simulacao>
       {MOVEIS.filter((m) => m.tipo !== "ARARA").map((m) => <Bloco key={m.id} c={m.caixa} altura={ALTURA_DO_MOVEL[m.tipo] ?? 1} cor={COR_DO_MOVEL[m.tipo] ?? "#555"} />)}
       <Arara />
       <Bloco c={{ x0: PORTA.x0, x1: PORTA.x1, z0: PORTA.z0, z1: PORTA.z1 }} altura={0.6} cor={SALAO.detalhe} y={2.4} />
+    </>
+  );
+  return (
+    <group name="sala-demo">
+      <SalaAlta slug="detetive-demo" reserva={procedural} />
       <Porta sim={sim} reduzido={reduzido} />
       <Gaveta sim={sim} reduzido={reduzido} />
       <PortasDoArmario sim={sim} reduzido={reduzido} />
