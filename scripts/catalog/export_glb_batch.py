@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Etapa 3, geração: monta o lote de produtos que ainda precisam de .glb e as vistas do flat lay aprovado.
+"""Etapa 3, geração: monta o lote de produtos que ainda precisam de .glb e a melhor imagem de cada um.
 
-Entrada: ``faltam.txt`` (flat lay aprovado sem modelo BOM) e o ``relatorio.csv`` do import_meshy_glbs.py (os de situação
-``GERAR_DE_NOVO``). Para cada produto, lê em ``catalog_images`` o flat lay com ``flat_lay_status = 'APPROVED'`` (frente e,
-se houver, costas); com mais de uma imagem aprovada, fica a principal, depois a que tem costas, depois a mais recente.
+Quem entra: ``--catalogo`` (todo produto sem modelo 3D PUBLISHED) ou ``--faltam`` (faltam.txt do import_meshy_glbs.py),
+mais, com ``--relatorio``, os de situação ``GERAR_DE_NOVO``. Qual imagem: a melhor fonte de glb_batch_sources.py
+(flat lay aprovado › Peça inteira › foto do produto, sem a pessoa recortada na GPU); ``--fontes`` restringe.
 
-Só lê o banco. Grava ``lote.csv`` (product_id, front_url, back_url, category, subcategory, motivo) e ``sem_flat_lay.txt``.
-Nenhum dado pessoal: só ids e URLs públicas do catálogo (/media/).
+Só lê o banco. Grava ``lote.csv`` (product_id, fonte, front_url, back_url, category, subcategory, motivo) e
+``sem_imagem.txt``. Nenhum dado pessoal: só ids e URLs públicas do catálogo.
 
+    python scripts/catalog/export_glb_batch.py --catalogo --out-dir ~/glb-hunyuan
     python scripts/catalog/export_glb_batch.py --faltam ~/glb-analise/faltam.txt \
         --relatorio ~/glb-analise/relatorio.csv --out-dir ~/glb-hunyuan
 """
@@ -18,10 +19,13 @@ import csv
 import sys
 from pathlib import Path
 
-FLAT_LAYS = """SELECT i.product_id, i.flat_lay_url, i.flat_lay_back_url, i.is_primary, i.updated_at, p.category,
-  p.subcategory FROM catalog_images i JOIN catalog_products p ON p.id = i.product_id
-  WHERE i.flat_lay_status = 'APPROVED' AND i.product_id IN %(ids)s"""
-COLUMNS = ["product_id", "front_url", "back_url", "category", "subcategory", "motivo"]
+try:
+    from .glb_batch_sources import IMAGES, SOURCES, WITHOUT_MODEL, choose
+except ImportError:   # rodado como script: scripts/catalog no sys.path
+    from glb_batch_sources import IMAGES, SOURCES, WITHOUT_MODEL, choose
+
+COLUMNS = ["product_id", "fonte", "front_url", "back_url", "category", "subcategory", "motivo"]
+CHUNK = 500
 
 
 def read_ids(path: Path) -> list[str]:
@@ -42,34 +46,22 @@ def wanted(missing: list[str], regenerate: list[str]) -> dict[str, str]:
     return out
 
 
-def https(url: str | None) -> str:
-    url = (url or "").strip()
-    return url if url.startswith("https://") else ""
+def query(conn, sql: str, params: dict | None = None) -> list[dict]:
+    with conn.cursor() as cur:
+        cur.execute(sql, params)
+        return list(cur.fetchall())
 
 
-def best(rows: list[dict]) -> dict[str, dict]:
-    """Uma imagem por produto: principal › com costas › mais recente. Sem frente https, a linha não serve."""
-    chosen: dict[str, dict] = {}
-    rank = lambda r: (bool(r["is_primary"]), bool(https(r["flat_lay_back_url"])), str(r["updated_at"] or ""))  # noqa: E731
-    for row in rows:
-        pid = str(row["product_id"]).lower()
-        if not https(row["flat_lay_url"]):
-            continue
-        if pid not in chosen or rank(row) > rank(chosen[pid]):
-            chosen[pid] = row
-    return chosen
+def catalog_targets(conn) -> dict[str, str]:
+    return {str(r["id"]).lower(): "SEM_MODELO" for r in query(conn, WITHOUT_MODEL)}
 
 
-def build(conn, targets: dict[str, str]) -> tuple[list[dict], list[str]]:
-    rows = []
-    if targets:
-        with conn.cursor() as cur:
-            cur.execute(FLAT_LAYS, {"ids": tuple(sorted(targets))})
-            rows = list(cur.fetchall())
-    chosen = best(rows)
-    lot = [{"product_id": pid, "front_url": https(r["flat_lay_url"]), "back_url": https(r["flat_lay_back_url"]),
-            "category": r.get("category") or "", "subcategory": r.get("subcategory") or "", "motivo": targets[pid]}
-           for pid, r in sorted(chosen.items())]
+def build(conn, targets: dict[str, str], allowed=SOURCES) -> tuple[list[dict], list[str]]:
+    ids, rows = sorted(targets), []
+    for start in range(0, len(ids), CHUNK):   # catálogo inteiro: IN em blocos, para não estourar o pacote do MySQL
+        rows += query(conn, IMAGES, {"ids": tuple(ids[start:start + CHUNK])})
+    chosen = choose(rows, allowed)
+    lot = [{"product_id": pid, **chosen[pid], "motivo": targets[pid]} for pid in sorted(chosen)]
     return lot, sorted(set(targets) - set(chosen))
 
 
@@ -81,14 +73,22 @@ def _real_connect():
 
 def main(argv=None, connect=_real_connect) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--faltam", type=Path, required=True, help="faltam.txt do import_meshy_glbs.py")
-    parser.add_argument("--relatorio", type=Path, help="relatorio.csv (entram os GERAR_DE_NOVO)")
-    parser.add_argument("--out-dir", type=Path, default=Path("."), help="onde gravar lote.csv e sem_flat_lay.txt")
+    who = parser.add_mutually_exclusive_group(required=True)
+    who.add_argument("--catalogo", action="store_true", help="todo produto sem modelo 3D PUBLISHED")
+    who.add_argument("--faltam", type=Path, help="faltam.txt do import_meshy_glbs.py")
+    parser.add_argument("--relatorio", type=Path, help="relatorio.csv (entram também os GERAR_DE_NOVO)")
+    parser.add_argument("--fontes", default=",".join(SOURCES), help=f"fontes aceitas, em ordem fixa ({','.join(SOURCES)})")
+    parser.add_argument("--out-dir", type=Path, default=Path("."), help="onde gravar lote.csv e sem_imagem.txt")
     args = parser.parse_args(argv)
-    targets = wanted(read_ids(args.faltam), regenerate_ids(args.relatorio) if args.relatorio else [])
+    allowed = {s.strip().upper() for s in args.fontes.split(",") if s.strip()}
+    if not allowed or allowed - set(SOURCES):
+        parser.error(f"--fontes aceita só {', '.join(SOURCES)}")
     conn, target = connect()
     try:
-        lot, without = build(conn, targets)
+        targets = catalog_targets(conn) if args.catalogo else wanted(read_ids(args.faltam), [])
+        if args.relatorio:
+            targets.update(wanted([], regenerate_ids(args.relatorio)))
+        lot, without = build(conn, targets, allowed)
     finally:
         conn.close()
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -96,13 +96,13 @@ def main(argv=None, connect=_real_connect) -> int:
         writer = csv.DictWriter(handle, fieldnames=COLUMNS)
         writer.writeheader()
         writer.writerows(lot)
-    (args.out_dir / "sem_flat_lay.txt").write_text("".join(f"{p}\n" for p in without), encoding="utf-8")
-    reasons = {m: sum(r["motivo"] == m for r in lot) for m in ("FALTA", "GERAR_DE_NOVO")}
+    (args.out_dir / "sem_imagem.txt").write_text("".join(f"{p}\n" for p in without), encoding="utf-8")
     print(f"lote de geração · só leitura · {target}")
-    split = f"{reasons['FALTA']} FALTA + {reasons['GERAR_DE_NOVO']} GERAR_DE_NOVO no lote"
-    print(f"  {len(targets):5d}  produtos pedidos ({split})")
-    print(f"  {len(lot):5d}  no lote.csv ({sum(bool(r['back_url']) for r in lot)} com costas)")
-    print(f"  {len(without):5d}  sem flat lay aprovado com URL https (sem_flat_lay.txt)")
+    print(f"  {len(targets):5d}  produtos pedidos")
+    for source in SOURCES:
+        print(f"  {sum(r['fonte'] == source for r in lot):5d}  fonte {source}")
+    print(f"  {sum(bool(r['back_url']) for r in lot):5d}  com costas (só flat lay)")
+    print(f"  {len(without):5d}  sem nenhuma imagem https utilizável (sem_imagem.txt)")
     return 0
 
 

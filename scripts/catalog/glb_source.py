@@ -13,12 +13,13 @@ GENERATORS = {
     "meshy-6-lite": ("meshy", "Meshy (lote do Codex)"),
     "meshy-7.1": ("meshy", "Meshy 7.1 (frente e costas do packshot, peça de cima em pose T)"),
     "hunyuan3d-2.1": ("hunyuan3d", "Hunyuan3D 2.1 (flat lay aprovado, frente)"),
-    "hunyuan3d-2mv+2.1": ("hunyuan3d", "Hunyuan3D-2mv (forma: frente e costas do flat lay aprovado) + 2.1 (textura PBR)"),
+    "hunyuan3d-2mv+2.1": ("hunyuan3d", "Hunyuan3D-2mv (forma, frente e costas quando há) + 2.1 (textura PBR)"),
+    "hunyuan3d-2mv+2.0": ("hunyuan3d", "Hunyuan3D-2mv (forma, frente e costas quando há) + 2.0 (textura, T4)"),
     "trellis.2-4b": ("trellis", "TRELLIS.2 4B (flat lay aprovado, frente)"),
     "garment-blender-1": ("blender", "Motor Blender (services/garment_blender): base da subcategoria em medida real, "
                                      "com a cor, a padronagem e os desenhos lidos na foto do produto"),
 }
-ORIGINS = ("codex", "runpod", "local")   # local: gerado na máquina de quem roda o lote (o motor é CPU)
+ORIGINS = ("codex", "runpod", "gcp", "local")   # local: gerado na máquina de quem roda o lote (o motor é CPU)
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,52 @@
+/* ── Desafios de Montagem · quebra-cabeça dinâmico (components/flair/montagem/quebra-cabeca-vivo.tsx) ──────────────
+   O canvas recorta as peças de uma fonte em movimento (vídeo ou símbolo FAI). O contêiner da arte troca o 16:10 das
+   cenas pela proporção do quadro (--qc-ar) e fica sem fundo: nada de faixas pretas em volta do vídeo. */
+.cbc-stage-art.is-dinamico {
+  aspect-ratio: var(--qc-ar, 1);
+  background: transparent;
+  border: 0;
+}
+
+/* a montagem não passa de 46% da altura da tela, na proporção do quadro: as vagas ficam na primeira dobra */
+.cbc-play .cbc-stage-art.is-dinamico {
+  width: min(100%, calc(46dvh * var(--qc-ar, 1)));
+}
+
+.cbc-card-art .qc-vivo {
+  height: 100%;
+  object-fit: cover;
+}
+
+.qc-vivo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: var(--qc-ar, 1);
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+/* ── O fim (montagem-final.tsx, dentro do modal de recompensa): o vídeo em quadro cheio, na proporção dele ──────── */
+.qc-final {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.qc-final-video,
+.qc-final-logo {
+  display: block;
+  width: min(100%, calc(60dvh * var(--qc-ar, 1)));
+  height: auto;
+  aspect-ratio: var(--qc-ar, 1);
+  object-fit: cover;
+  background: transparent;
+  border-radius: var(--radius);
+}
+
+.qc-final-logo .qc-vivo {
+  width: 100%;
+  height: 100%;
+}

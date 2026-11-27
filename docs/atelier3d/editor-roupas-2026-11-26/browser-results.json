@@ -1,0 +1,61 @@
+{
+  "api": "em memória, não produção",
+  "glb": "fai-tee-prototype.glb",
+  "results": {
+    "material": {
+      "presets": 6
+    },
+    "paint": {
+      "strokes": 3,
+      "layers": 2
+    },
+    "print": {
+      "patterns": 4,
+      "decals": 1,
+      "imageTile": 1
+    },
+    "shape": {
+      "fit": 3,
+      "sculptStrokes": 4
+    },
+    "extras": {
+      "stitches": 2,
+      "accessories": 5,
+      "thumbnail": true
+    },
+    "export": {
+      "bytes": 274620,
+      "images": 8,
+      "extensions": [
+        "KHR_texture_transform",
+        "KHR_materials_sheen"
+      ],
+      "nodes": [
+        "AuxScene",
+        "FAI_tee_prototype",
+        "Body",
+        "FAI acabamentos",
+        "FAI pesponto",
+        "FAI botão",
+        "FAI botão",
+        "FAI botão",
+        "FAI rebite",
+        "FAI rebite",
+        "Sleeve_left",
+        "FAI acabamentos",
+        "FAI pesponto",
+        "Sleeve_right",
+        "Neck_opening"
+      ],
+      "savedGarmentSections": [
+        "fabrics",
+        "layers",
+        "patterns",
+        "decals",
+        "images",
+        "stitches",
+        "accessories"
+      ]
+    }
+  }
+}

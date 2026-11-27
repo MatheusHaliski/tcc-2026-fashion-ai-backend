@@ -8,6 +8,7 @@ import { Badge, Button, cn, Dialog } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { FlairHubIcon } from "@/components/flair/hub-icons";
 import { useCbcLabels } from "@/components/flair/use-cbc-labels";
+import { MontagemFinal } from "@/components/flair/montagem/montagem-final";
 
 export function Story({ lines, text }: { lines: CbcStoryLine[]; text: (l: CbcStoryLine) => string }) {
   const { t } = useI18n();
@@ -59,6 +60,7 @@ export function CbcRewardDialog({ open, result, challenge, onClose, text }: { op
     <Dialog open={open} onClose={onClose} size="lg" title={t("cbc.reward.title")}
       footer={<><Link href="/flair/desafios" className="btn">{t("cbc.back_to_list")}</Link><Button variant="primary" onClick={onClose} data-autofocus>{t("cbc.reward.close")}</Button></>}>
       <div className="cbc-reward">
+        <MontagemFinal cenario={challenge.scenario} nome={challenge.name} />
         <div className="cbc-reward-head">
           <FlairHubIcon id="cbc" size={28} state="selected" />
           <div><p className="type-label text-muted">{challenge.name}</p><p className="type-h2">{t("cbc.reward.sintonia", { n: result.evaluation.sintonia, max: result.evaluation.sintoniaMax })}</p></div>

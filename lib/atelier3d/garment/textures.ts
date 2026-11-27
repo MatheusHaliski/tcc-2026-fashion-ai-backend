@@ -45,6 +45,8 @@ export function canvasTexture(canvas: HTMLCanvasElement, color: boolean, wrap: T
   texture.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
   texture.wrapS = texture.wrapT = wrap;
   texture.anisotropy = 4;
+  // cor composta é opaca: JPEG no GLB exportado mantém o arquivo bem abaixo do teto de 8 MB
+  if (color) texture.userData.mimeType = "image/jpeg";
   texture.needsUpdate = true;
   return texture;
 }

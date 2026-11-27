@@ -82,6 +82,13 @@ Requisitos: `COR`, `ESTILO` e `OCASIAO` (pelo menos `alvo` cartas com o `valor`,
 `MARCAS` (distintas) e `NIVEL_CARTA`. A avaliação (`FlairCbcAvaliacao`) passa cada vaga ao motor como `accepts`: a
 peça encaixa quando a vaga tem carta e a carta cumpre o pedido.
 
+## A arte em Minhas Artes
+
+Quem completa um elenco ganha a sua cópia da imagem do quebra-cabeça. Ela aparece na aba Minhas Artes do perfil
+(só para a própria pessoa), na seção "Artes dos Elencos": a imagem na proporção dela, a edição gravada na entrega,
+"Baixar imagem" e "Ver o elenco" (`components/flair/elencos/my-elenco-arts.tsx`, dados do GET /api/flair/elencos).
+Captura: `capturas/elencos-minhas-artes.webp`.
+
 ## Capturas
 
 Em `capturas/` (API simulada no navegador): a lista (`elencos-01-lista.webp`), o fogo em andamento com uma peça que não

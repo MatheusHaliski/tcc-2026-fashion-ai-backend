@@ -192,7 +192,7 @@ final class BatalhaLooksRodadas {
             private boolean venceu(List<Passo> passos) {
                 int voce = soma(passos);
                 int outro = somaDoAdversario(passos);
-                return voce > outro || (voce == outro && contexto.sorteio("plateia").nextBoolean());
+                return BatalhaLooksVoto.venceu(voce, outro, contexto);
             }
 
             @Override
