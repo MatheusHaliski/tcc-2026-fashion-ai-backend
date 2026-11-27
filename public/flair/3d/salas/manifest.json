@@ -569,5 +569,62 @@
         "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
       }
     ]
+  },
+  {
+    "slug": "detetive-passarela",
+    "title": "Passarela da revelação (high poly)",
+    "family": "detetive",
+    "games": [
+      "FASHION_DETECTIVE"
+    ],
+    "author": "FashionAI",
+    "source": "scripts/blender3d_high/salas",
+    "license": "Própria",
+    "hash": "e804d5b5bdbfaa03",
+    "environment": "/flair/3d/salas/detetive-passarela-ambiente.webp",
+    "levels": {
+      "alto": {
+        "url": "/flair/3d/salas/detetive-passarela.glb",
+        "triangles": 361150,
+        "calls": 20,
+        "instanced": 154,
+        "bytes": 776124
+      },
+      "medio": {
+        "url": "/flair/3d/salas/detetive-passarela-medio.glb",
+        "triangles": 126922,
+        "calls": 20,
+        "instanced": 154,
+        "bytes": 542208
+      }
+    },
+    "imports": [
+      {
+        "model": "monumentalVase",
+        "url": "/heist/models/monumentalVase.glb",
+        "medium": "/flair/3d/salas/importados/monumentalVase-medio.glb",
+        "pos": [
+          -3.9,
+          0,
+          -3.2
+        ],
+        "rotation": 0,
+        "height": 1.6,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      },
+      {
+        "model": "monumentalVase",
+        "url": "/heist/models/monumentalVase.glb",
+        "medium": "/flair/3d/salas/importados/monumentalVase-medio.glb",
+        "pos": [
+          3.9,
+          0,
+          -3.2
+        ],
+        "rotation": 0,
+        "height": 1.6,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      }
+    ]
   }
 ]

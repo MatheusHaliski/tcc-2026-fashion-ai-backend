@@ -32,7 +32,7 @@ def arquivo() -> None:
                   Importado("monumentalVase", (-4.2, 0, -3.15), 0, 1.6)),
       jogos=JOGO)
 def escritorio() -> None:
-    casca(Estilo("#2C2A28", "madeira", "#E3E1DC", "#1B2440", "#F0EEEA", repete_piso=0.6))
+    casca(Estilo("#2C2A28", "madeira", "#E3E1DC", "#1B2440", "#F0EEEA", repete_piso=0.6), sem_quadro=((1, 1.2),))
     arandelas("#FFF0D8", ARANDELAS_FUNDO)
     em_ponto(mesa_de_vidro(), 3, -1)
     em_ponto(trofeus(), -3, -1)

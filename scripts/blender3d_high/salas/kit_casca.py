@@ -62,7 +62,8 @@ def _parede(nome: str, mat, comprimento: float, centro: tuple[float, float], gir
     caixa(nome, mat, (comprimento, 0.12, ALTURA), pos=jogo(x, ALTURA / 2, z), giro=(0, 0, giro))
 
 
-def casca(e: Estilo, painel_alto: bool = True) -> None:
+def casca(e: Estilo, painel_alto: bool = True, sem_quadro: tuple[tuple[int, float], ...] = ()) -> None:
+    """``sem_quadro``: (lado, z) dos quadros altos que não entram (onde a sala põe janela)."""
     piso = material("piso", e.piso, e.textura_piso, aspereza=0.35, repete=e.repete_piso)
     parede = material("parede", e.parede, "tecido" if e.textura_piso != "concreto" else "concreto", aspereza=0.85, repete=0.5)
     lambri = material("lambri", e.lambri, "laca", aspereza=0.32, verniz=0.4)
@@ -95,6 +96,8 @@ def casca(e: Estilo, painel_alto: bool = True) -> None:
                 instancia(m, jogo(x, 2.1, FUNDO_Z + 0.015), 0)
         for lado in (-1, 1):
             for z in (-2.4, -0.6, 1.2, 2.9):
+                if (lado, z) in sem_quadro:
+                    continue
                 for m in (alto, moldura_a):
                     instancia(m, jogo(lado * (LADO_X - 0.015), 2.1, z), -lado * 90)
 
