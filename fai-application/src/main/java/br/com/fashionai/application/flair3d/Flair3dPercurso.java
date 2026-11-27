@@ -21,8 +21,8 @@ import java.util.Map;
 public final class Flair3dPercurso {
     public static final String CUMPRIDA = "ETAPA_CUMPRIDA";
     public static final String NAO_CUMPRIDA = "ETAPA_NAO_CUMPRIDA";
-    /** Os eventos da etapa que a prévia mostra antes da entrega: as peças cansadas da Batalha de Looks. */
-    static final java.util.Set<String> AVISOS_DA_PREVIA = java.util.Set.of("CARTAS_CANSADAS");
+    /** Os eventos da etapa que a prévia mostra antes da entrega: as peças cansadas e o júri da Aura da Batalha de Looks. */
+    static final java.util.Set<String> AVISOS_DA_PREVIA = java.util.Set.of("CARTAS_CANSADAS", "AURA_NA_PARTIDA");
 
     /** O que a etapa diz do look: se a partida avança, a nota da etapa (0 a 100), as regras e os eventos dela. */
     public record Avaliacao(boolean passa, double pontos, List<RegraResultado> regras, List<Evento> eventos) {

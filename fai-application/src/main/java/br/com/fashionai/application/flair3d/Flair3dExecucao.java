@@ -3,6 +3,7 @@ package br.com.fashionai.application.flair3d;
 import br.com.fashionai.application.flair.CbcRules;
 import br.com.fashionai.application.flair3d.Acionamento.Execucao;
 import br.com.fashionai.application.flair3d.Acionamento.Toque;
+import br.com.fashionai.application.flair3d.aura.Flair3dAuraNaExecucao;
 import br.com.fashionai.application.flair3d.Resultado.Evento;
 import br.com.fashionai.application.flair3d.Resultado.RegraResultado;
 import br.com.fashionai.application.flair3d.recurso.Flair3dDesgaste;
@@ -89,7 +90,7 @@ public final class Flair3dExecucao implements Flair3dNucleo {
         Recurso recurso = recursoDo(codigo());
         int reserva = depoisDasDecisoes > 0 ? depoisDasDecisoes : Flair3dRecursoEstado.de(contexto.andamento().usos()).get(recurso);
         List<String> botoes = botoes(contexto);
-        int janela = janelaMs(atributoDaJanela(entrega, contexto));
+        int janela = Flair3dAuraNaExecucao.janela(codigo(), janelaMs(atributoDaJanela(entrega, contexto)), contexto.vestidas(entrega).values(), contexto);
         Pedido pedido = new Pedido(botoes, janela, recurso.name(), reserva, drenoDe(recurso), Flair3dFaseDeUso.riscoDe(codigo(), botoes, janela, contexto));
         List<Evento> eventos = new ArrayList<>(look.eventos());
         eventos.add(new Evento("EXECUCAO_PEDIDA", pedido.paraTela()));
@@ -97,7 +98,7 @@ public final class Flair3dExecucao implements Flair3dNucleo {
         if (feita == null) {
             return Resultado.parcial(Resultado.EM_ACAO, Resultado.EM_ACAO, look.regras(), eventos);
         }
-        Nota nota = avaliar(pedido, feita);
+        Nota nota = Flair3dAuraNaExecucao.reavaliar(codigo(), pedido, avaliar(pedido, feita), contexto.vestidas(entrega).values(), contexto, eventos);
         eventos.add(new Evento("EXECUCAO", nota.paraTela()));
         List<RegraResultado> regras = new ArrayList<>(look.regras());
         regras.add(new RegraResultado("EXECUCAO", nota.pontos() > 0, nota.pontos()));
@@ -119,7 +120,7 @@ public final class Flair3dExecucao implements Flair3dNucleo {
         if (acs.isEmpty()) {
             return null;
         }
-        Andamento antes = new Andamento(a.tentativas(), acs.subList(0, acs.size() - 1), a.anteriores(), a.rodada(), a.rascunho(), a.usos());
+        Andamento antes = new Andamento(a.tentativas(), acs.subList(0, acs.size() - 1), a.anteriores(), a.rodada(), a.rascunho(), a.usos(), a.hype());
         if (!jogo.pontuar(entrega, contexto.comAndamento(antes)).fecha()) {
             return null;
         }
