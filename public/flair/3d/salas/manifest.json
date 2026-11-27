@@ -221,5 +221,75 @@
         "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
       }
     ]
+  },
+  {
+    "slug": "detetive-camarim",
+    "title": "Camarim (high poly)",
+    "family": "detetive",
+    "games": [
+      "FASHION_DETECTIVE"
+    ],
+    "author": "FashionAI",
+    "source": "scripts/blender3d_high/salas",
+    "license": "Própria",
+    "hash": "fc0df8e41bad64ee",
+    "environment": "/flair/3d/salas/detetive-camarim-ambiente.webp",
+    "levels": {
+      "alto": {
+        "url": "/flair/3d/salas/detetive-camarim.glb",
+        "triangles": 93385,
+        "calls": 46,
+        "instanced": 186,
+        "bytes": 1075160
+      },
+      "medio": {
+        "url": "/flair/3d/salas/detetive-camarim-medio.glb",
+        "triangles": 50455,
+        "calls": 46,
+        "instanced": 186,
+        "bytes": 691232
+      }
+    },
+    "imports": [
+      {
+        "model": "loungeScreen",
+        "url": "/heist/models/loungeScreen.glb",
+        "medium": "/flair/3d/salas/importados/loungeScreen-medio.glb",
+        "pos": [
+          2.7,
+          0,
+          -3.25
+        ],
+        "rotation": 0,
+        "height": 1.75,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      },
+      {
+        "model": "loungeArmchair",
+        "url": "/heist/models/loungeArmchair.glb",
+        "medium": "/flair/3d/salas/importados/loungeArmchair-medio.glb",
+        "pos": [
+          -2.6,
+          0,
+          -2.95
+        ],
+        "rotation": 20,
+        "height": 0.95,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      },
+      {
+        "model": "vestFloral",
+        "url": "/heist/models/vestFloral.glb",
+        "medium": "/flair/3d/salas/importados/vestFloral-medio.glb",
+        "pos": [
+          -4.15,
+          0,
+          -3.15
+        ],
+        "rotation": 0,
+        "height": 1.7,
+        "credit": "Meshy (gerado pelo projeto para o MET Gala Heist, 31/10 a 02/11/2026; scripts/heist/meshy/run.mjs)"
+      }
+    ]
   }
 ]

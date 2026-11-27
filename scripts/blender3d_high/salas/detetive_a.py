@@ -92,6 +92,15 @@ def seguranca() -> None:
     em_ponto(armario("#3A4048", "#9AA6B4", alt=1.1, prefixo="balcao-ponto"), 3, -1)
     portas("#3A4048", "#9AA6B4", [(0, 2.4)])
     _monitores(3.95, 1.5)
+    from .kit_escritorio import _cadeira, relogio
+
+    for peca in _cadeira():
+        instancia(peca, jogo(3.35, 0, 1.5), 90)
+    cofre_de_parede = armario("#5A626C", "#C9CCD2", alt=1.9, larg=0.8, fundo=0.5, prefixo="armario-de-aco")
+    for x in (-1.6, -0.8, 0.8, 1.6):
+        for peca in cofre_de_parede:
+            instancia(peca, jogo(x, 0, -3.38), 0)
+    relogio(0, 2.55, -3.62)
     luz_de_prova((0.85, 0.92, 1))
 
 
@@ -102,7 +111,9 @@ def _monitores(x: float, z: float) -> None:
     tampo = material("bancada", "#6A707A", "laca", aspereza=0.3, verniz=0.3)
     base = jogo(x, 0, z)
     pecas = [caixa("bancada-tampo", tampo, (0.75, 1.9, 0.05), pos=(0, 0, 0.76), chanfro=0.01, seg=3),
-             caixa("bancada-gaveteiro", aco, (0.6, 0.45, 0.7), pos=(0.05, 0.65, 0.37), chanfro=0.01, seg=3)]
+             caixa("bancada-gaveteiro", aco, (0.6, 0.45, 0.7), pos=(0.05, 0.65, 0.37), chanfro=0.01, seg=3),
+             caixa("bancada-pe", aco, (0.6, 0.05, 0.72), pos=(0.05, -0.9, 0.37), chanfro=0.01, seg=3),
+             caixa("bancada-teclado", aco, (0.16, 0.45, 0.02), pos=(-0.15, 0, 0.795), chanfro=0.006, seg=2)]
     moldura = caixa("monitor", aco, (0.05, 0.62, 0.38), chanfro=0.012, seg=3)
     vidro = caixa("monitor-vidro", tela, (0.01, 0.58, 0.34))
     for o in (*pecas, moldura, vidro):

@@ -132,3 +132,19 @@ def janela(x_jogo: float, z_jogo: float, giro: float, cortina_cor: str) -> None:
         from ..formas import instancia
 
         instancia(p, centro, giro)
+
+
+def relogio(x_jogo: float, y_jogo: float, z_jogo: float) -> None:
+    """O relógio do corredor (pista do enigma da linha do tempo): caixa torneada, mostrador aceso e ponteiros."""
+    aro = material("relogio-aro", "#2A2E34", metal=0.9, aspereza=0.3)
+    mostrador = material("relogio-mostrador", "#F4F1EA", emissao=0.4, aspereza=0.4)
+    centro = jogo(x_jogo, y_jogo, z_jogo)
+    pecas = [torneado("relogio-caixa", aro, [(0, 0), (0.24, 0), (0.25, 0.02), (0.24, 0.06), (0.22, 0.07), (0, 0.07)], lados=64,
+                      pos=centro, giro=(90, 0, 0)),
+             cilindro("relogio-mostrador", mostrador, 0.215, 0.01, pos=(centro[0], centro[1] - 0.07, centro[2]), giro=(90, 0, 0), lados=64)]
+    for i in range(12):
+        a = 2 * math.pi * i / 12
+        pecas.append(caixa("relogio-marca", aro, (0.012, 0.006, 0.04), pos=(centro[0] + 0.18 * math.sin(a), centro[1] - 0.078,
+                                                                         centro[2] + 0.18 * math.cos(a)), giro=(0, -math.degrees(a), 0)))
+    pecas.append(caixa("relogio-hora", aro, (0.014, 0.006, 0.11), pos=(centro[0] + 0.04, centro[1] - 0.082, centro[2] + 0.03), giro=(0, -50, 0)))
+    pecas.append(caixa("relogio-minuto", aro, (0.01, 0.006, 0.16), pos=(centro[0] - 0.02, centro[1] - 0.084, centro[2] + 0.075), giro=(0, 15, 0)))
