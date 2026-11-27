@@ -17,6 +17,7 @@ import { CameraSteps, Rig, humanStore, type Controls } from "@/components/three/
 import { useI18n } from "@/lib/i18n/i18n";
 import { sizedPieces } from "@/lib/tryon/sizes";
 import { FittingStudioLights, FittingStudioRoom } from "@/components/three/fitting-studio-room";
+import type { MaquiagemNoRosto } from "@/lib/flair/beleza/maquiagem-no-rosto";
 
 /** Browser Three.js fitting studio in metres. Architecture is conceptual, not a
  * reconstruction of a physical store. Catalogue photos are framed references;
@@ -28,7 +29,7 @@ type V3 = [number, number, number];
  *  NEXT_PUBLIC_FITTING_REFERENCES=1). No produto, a cabine não mostra fotos de catálogo — nem a pessoa fotografada. */
 export const SHOW_CATALOG_REFERENCES = process.env.NEXT_PUBLIC_FITTING_REFERENCES === "1";
 
-export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas, onProfile, onHuman, debug, cameraYaw, closeUp = false, onCamera, references = SHOW_CATALOG_REFERENCES }: {
+export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas, onProfile, onHuman, debug, cameraYaw, closeUp = false, onCamera, references = SHOW_CATALOG_REFERENCES, maquiagem }: {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; build?: string | null; skinTone?: string | null; body?: BodyParams | null;
   pieces: Look3dPiece[]; environment: ResolvedEnvironment; scene?: StoreScene | null; light?: LightMode; view?: AvatarView; onCanvas?: (c: HTMLCanvasElement) => void;
   /** o perfil do estúdio desenhado (objetos com função, paleta, fotos de referência) — inventário da auditoria */
@@ -43,6 +44,8 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
   onCamera?: (api: FittingCameraApi | null) => void;
   /** quadros de referência do catálogo (revisão/desenvolvimento) */
   references?: boolean;
+  /** a maquiagem escolhida, no rosto (FLAIR 3D MAKE UP) */
+  maquiagem?: MaquiagemNoRosto | null;
 
 }) {
   const { t } = useI18n(), asset = useBodyAsset(), reduced = useReducedMotion(), controls = useRef<Controls>(null);
@@ -69,7 +72,7 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
       <FittingStudioLights light={light} /><FittingStudioRoom key={env.key} profile={profile} target={target} references={references} />
       <group name="fitting-avatar">
         <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={sized} sway={false} body={params}
-          fallback={null} still={!!debug?.pose} onHuman={(p) => { setParts(p); human.set(p); onHuman?.(p); }} />
+          fallback={null} still={!!debug?.pose} maquiagem={maquiagem} onHuman={(p) => { setParts(p); human.set(p); onHuman?.(p); }} />
       </group>
       {debug && <SceneDebug parts={parts} options={debug} />}
       <Rig view={view} target={target} dist={dist} yaw={cameraYaw} /><OrbitControls ref={controls} target={target} enablePan={false} minDistance={1.4} maxDistance={dist * 1.25} maxPolarAngle={Math.PI * .52} />

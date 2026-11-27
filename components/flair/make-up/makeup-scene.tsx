@@ -57,12 +57,12 @@ export function MakeUpScene(props: Props) {
   const fallback = <Cena2D {...props} />;
   if (webgl === false) return fallback;
   if (webgl === null) return <div className="n3d-scene2d" role="status">{tx.t("flair3d.ui.scene.loading")}</div>;
-  const { avatar, protagonista, pecas } = props;
+  const { avatar, protagonista, pecas, maquiagem } = props;
   return (
     <Boundary fallback={fallback}>
       <div className="n3d-scene3d" data-testid="makeup-scene-3d">
         <MakeUpScene3D avatar={protagonista.avatar} sexo={protagonista.sexo} corpo={protagonista.corpo} pecas={pecas}
-          giro={avatar.giro} zoom={avatar.zoom} poses={avatar.poses} reduzido={reduzido} />
+          giro={avatar.giro} zoom={avatar.zoom} poses={avatar.poses} reduzido={reduzido} maquiagem={maquiagem} />
       </div>
     </Boundary>
   );

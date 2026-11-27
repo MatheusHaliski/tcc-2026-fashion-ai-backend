@@ -3,14 +3,16 @@
  * Cenário do MAKE UP: o provador 3D do app (components/three/fitting-room-scene.tsx) com o logo do FashionAI na parede
  * do fundo e as cores da marca (env.logoUrl e as cores do ambiente, sem mudar o padrão do provador). Girar muda o
  * ângulo da câmera; posar faz um 3/4 rápido; o zoom vai do corpo inteiro ao enquadramento próximo e chega ao rosto
- * pela câmera de detalhe (parada "gola"), para ver a maquiagem.
+ * pela câmera de detalhe (parada "gola"), para ver a maquiagem. A maquiagem escolhida vai para o rosto em tempo real
+ * pelo mesmo desenho do Road to Glory (lib/flair/beleza/camadas-do-rosto.ts).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import FittingRoomScene from "@/components/three/fitting-room-scene";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import { FASHIONAI_PROVADOR } from "@/lib/flair/make-up/briefs";
 import type { FittingCameraApi } from "@/lib/scene3d/orbit-steps";
+import { maquiagemNoRosto, type EscolhaDeMaquiagem } from "@/lib/flair/beleza/maquiagem-no-rosto";
 
 export interface MakeUpScene3DProps {
   avatar: Avatar3dRef | null;
@@ -21,12 +23,15 @@ export interface MakeUpScene3DProps {
   zoom: number;
   poses: number;
   reduzido: boolean;
+  /** a maquiagem escolhida por área (família, acabamento e intensidade) */
+  maquiagem?: Record<string, EscolhaDeMaquiagem>;
 }
 
-export default function MakeUpScene3D({ avatar, sexo, corpo, pecas, giro, zoom, poses, reduzido }: MakeUpScene3DProps) {
+export default function MakeUpScene3D({ avatar, sexo, corpo, pecas, giro, zoom, poses, reduzido, maquiagem }: MakeUpScene3DProps) {
   const [camera, setCamera] = useState<FittingCameraApi | null>(null);
   const [posando, setPosando] = useState(false);
   const rosto = zoom >= 2;
+  const pintura = useMemo(() => maquiagemNoRosto(maquiagem), [maquiagem]);
   useEffect(() => {
     if (!poses) return;
     setPosando(true);
@@ -41,6 +46,6 @@ export default function MakeUpScene3D({ avatar, sexo, corpo, pecas, giro, zoom, 
   }, [camera, rosto]);
   return (
     <FittingRoomScene avatar={avatar} sex={sexo} body={corpo} pieces={pecas} environment={FASHIONAI_PROVADOR}
-      cameraYaw={giro + (posando ? 35 : 0)} closeUp={zoom >= 1} onCamera={setCamera} />
+      cameraYaw={giro + (posando ? 35 : 0)} closeUp={zoom >= 1} onCamera={setCamera} maquiagem={pintura} />
   );
 }

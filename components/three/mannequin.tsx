@@ -12,7 +12,8 @@ import { withDefaultOutfit } from "@/lib/avatar3d/human/default-outfit";
 import { useReducedMotion } from "@/components/three/common";
 import { clampAdjust, skinWithLight, validateModel } from "@/lib/avatar3d/model";
 import { BODY_KEYS, buildSpec, mannequinBody, validateBody, type BodyParams, type BodySources, type Sex, type Spec } from "@/lib/avatar3d/body-spec";
-import { rostoMaquiado, type MaquiagemNoRosto } from "@/lib/flair/make-up/rosto-maquiado";
+import { rostoMaquiado } from "@/lib/flair/beleza/camadas-do-rosto";
+import type { MaquiagemNoRosto } from "@/lib/flair/beleza/maquiagem-no-rosto";
 
 /*
  * Manequim da Passarela 3D, do My Stage 3D, do "Gerar 3D", da "Foto com meu manequim" e do Avatar 3D. O corpo sai
