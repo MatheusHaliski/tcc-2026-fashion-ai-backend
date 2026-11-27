@@ -1,0 +1,177 @@
+{
+ "vestir-piscina": {
+  "slug": "gala-na-piscina",
+  "largura": 998,
+  "altura": 667,
+  "pessoas": [
+   {
+    "vaga": "creme",
+    "x": 57,
+    "y": 77,
+    "w": 232,
+    "h": 570
+   },
+   {
+    "vaga": "cobre",
+    "x": 287,
+    "y": 112,
+    "w": 223,
+    "h": 526
+   },
+   {
+    "vaga": "noite",
+    "x": 497,
+    "y": 97,
+    "w": 229,
+    "h": 544
+   },
+   {
+    "vaga": "petroleo",
+    "x": 710,
+    "y": 94,
+    "w": 218,
+    "h": 537
+   }
+  ]
+ },
+ "vestir-arena": {
+  "slug": "noite-da-jaqueta-college",
+  "largura": 998,
+  "altura": 667,
+  "pessoas": [
+   {
+    "vaga": "preta",
+    "x": 7,
+    "y": 256,
+    "w": 256,
+    "h": 297
+   },
+   {
+    "vaga": "laranja",
+    "x": 248,
+    "y": 301,
+    "w": 255,
+    "h": 266
+   },
+   {
+    "vaga": "creme",
+    "x": 490,
+    "y": 257,
+    "w": 267,
+    "h": 286
+   },
+   {
+    "vaga": "vinho",
+    "x": 743,
+    "y": 311,
+    "w": 252,
+    "h": 278
+   }
+  ]
+ },
+ "vestir-atelie": {
+  "slug": "atelie-do-futuro",
+  "largura": 998,
+  "altura": 667,
+  "pessoas": [
+   {
+    "vaga": "vestido",
+    "x": 13,
+    "y": 148,
+    "w": 282,
+    "h": 469
+   },
+   {
+    "vaga": "bomber",
+    "x": 283,
+    "y": 123,
+    "w": 214,
+    "h": 190
+   },
+   {
+    "vaga": "colete",
+    "x": 532,
+    "y": 155,
+    "w": 183,
+    "h": 393
+   },
+   {
+    "vaga": "casaco",
+    "x": 714,
+    "y": 101,
+    "w": 247,
+    "h": 447
+   }
+  ]
+ },
+ "vestir-show": {
+  "slug": "show-no-galpao",
+  "largura": 998,
+  "altura": 667,
+  "pessoas": [
+   {
+    "vaga": "guitarra",
+    "x": 1,
+    "y": 195,
+    "w": 252,
+    "h": 422
+   },
+   {
+    "vaga": "voz",
+    "x": 240,
+    "y": 245,
+    "w": 320,
+    "h": 421
+   },
+   {
+    "vaga": "bateria",
+    "x": 503,
+    "y": 232,
+    "w": 207,
+    "h": 197
+   },
+   {
+    "vaga": "baixo",
+    "x": 717,
+    "y": 258,
+    "w": 280,
+    "h": 408
+   }
+  ]
+ },
+ "vestir-praca": {
+  "slug": "praca-dos-jacarandas",
+  "largura": 998,
+  "altura": 667,
+  "pessoas": [
+   {
+    "vaga": "bicicleta",
+    "x": 29,
+    "y": 235,
+    "w": 248,
+    "h": 212
+   },
+   {
+    "vaga": "mochila",
+    "x": 287,
+    "y": 196,
+    "w": 236,
+    "h": 257
+   },
+   {
+    "vaga": "sacola",
+    "x": 547,
+    "y": 257,
+    "w": 220,
+    "h": 210
+   },
+   {
+    "vaga": "oculos",
+    "x": 763,
+    "y": 207,
+    "w": 234,
+    "h": 260
+   }
+  ]
+ }
+}

@@ -9,7 +9,7 @@ const VIEWS: View[] = ['perspective', 'front', 'back', 'left', 'right', 'top'];
 export function PieceEditorBadges({ info }: { info: Customization }) {
   const { t } = useI18n();
   return <div className="flex flex-wrap items-center gap-2">
-    <Badge tone={info.tryOnApproved ? 'chalk' : 'mark'}>{t(info.tryOnApproved ? 'editor3d.approvedAsset' : info.quarantine ? 'editor3d.quarantine' : 'editor3d.showcaseOnly')}</Badge>
+    <Badge tone={info.tryOnApproved ? 'chalk' : 'mark'}>{t(info.tryOnApproved ? 'editor3d.approvedAsset' : info.quarantine ? 'editor3d.quarantine' : info.modelKind === 'PROPRIO' ? 'editor3d.ownModel' : 'editor3d.showcaseOnly')}</Badge>
     {info.viewOnly && <Badge tone="thread">{t('editor3d.viewOnly')}</Badge>}
     {info.baseChanged && <Badge tone="mark">{t('editor3d.baseChanged')}</Badge>}
     <span className="type-caption text-muted">{info.revision > 0 ? t('editor3d.revision', { revision: info.revision }) : t('editor3d.noCustomization')}</span>

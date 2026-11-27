@@ -9,6 +9,8 @@ import { FaiIcon } from "@/components/fai-icon";
 import { CbcArte } from "@/components/flair/montagem/cbc-arte";
 import { useCbcLabels, windowOf } from "@/components/flair/use-cbc-labels";
 import { HowItWorks } from "@/components/guide/guide";
+import { CenaVestir } from "@/components/flair/cenas/cena-vestir";
+import { vestirDoCenario } from "@/lib/flair/vestir/cenas";
 import { CbcPreferidos, cenarioVisivel, useCenarioPreferido } from "@/components/flair/cbc-cenario-preferido";
 
 export { CbcPlay } from "@/components/flair/cbc-play";
@@ -64,15 +66,19 @@ export function CbcCard({ c }: { c: CbcSummary }) {
   const { t } = useI18n(); const { requirement } = useCbcLabels();
   const w = windowOf(c, t);
   const done = !!c.mine?.done;
-  const preferido = useCenarioPreferido(c.id);   // exercício 16: a cena que esta pessoa prefere, sem mudar o desafio
+  // exercício 16: a cena que esta pessoa prefere, sem mudar o desafio; num desafio de vestir, a cena é o próprio desafio
+  const preferido = useCenarioPreferido(c.id);
+  const vestir = vestirDoCenario(c.scenario);
+  const arte = vestir ? <CenaVestir cena={vestir} nome={c.name} vestidos={vestir.pessoas.map(() => done)} decorativa />
+    : <CbcArte cenario={cenarioVisivel(preferido, c.scenario)} decorativa />;
   return (
     <article className={cn("cbc-card", c.status === "ENDED" && "is-ended")} aria-labelledby={`cbc-card-${c.id}`}>
-      <Link href={`/flair/desafios/${encodeURIComponent(c.slug)}`} className="cbc-card-art" aria-hidden tabIndex={-1}><CbcArte cenario={cenarioVisivel(preferido, c.scenario)} decorativa /><span className={cn("cbc-diff", `is-${c.difficulty.toLowerCase()}`)}>{t(`cbc.difficulty.${c.difficulty}`)}</span></Link>
+      <Link href={`/flair/desafios/${encodeURIComponent(c.slug)}`} className="cbc-card-art" aria-hidden tabIndex={-1}>{arte}<span className={cn("cbc-diff", `is-${c.difficulty.toLowerCase()}`)}>{t(`cbc.difficulty.${c.difficulty}`)}</span></Link>
       <div className="cbc-card-body">
         <div className="flex flex-wrap items-center gap-2"><Badge tone={w.tone}>{w.text}</Badge>{c.moment && <Badge>{c.moment.name}</Badge>}{done && <Badge tone="thread">{t("cbc.done")}</Badge>}</div>
         <h3 id={`cbc-card-${c.id}`} className="type-h3 mt-1">{c.name}</h3>
         {c.description && <p className="type-body-sm text-muted">{c.description}</p>}
-        {preferido && <p className="type-caption text-muted" data-cbc-cenario={preferido.codigo}>{t("cbc.cenarioPreferido.no_card", { nome: preferido.nome })}</p>}
+        {preferido && !vestir && <p className="type-caption text-muted" data-cbc-cenario={preferido.codigo}>{t("cbc.cenarioPreferido.no_card", { nome: preferido.nome })}</p>}
         <ul className="cbc-reqs-mini">
           <li>{t("cbc.slots_n", { n: c.slotsCount })}</li>
           {c.requirements.map((r, i) => <li key={i}>{requirement(r)}</li>)}

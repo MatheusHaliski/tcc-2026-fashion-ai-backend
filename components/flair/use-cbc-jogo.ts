@@ -38,7 +38,7 @@ export function useCbcJogo(m: CbcMesa) {
   const opcoes = useMemo(() => {
     if (!atual) return [];
     const vizinhas = Object.entries(m.placed).filter(([k]) => k !== atual.key).map(([, id]) => carta(id));
-    return opcoesDaVaga(m.available, atual.key, atual.position, m.placed, vizinhas.filter((c) => !!c));
+    return opcoesDaVaga(m.available, atual.key, atual.position, m.placed, vizinhas.filter((c) => !!c), atual.accepts);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atual, m.available, m.placed]);
 

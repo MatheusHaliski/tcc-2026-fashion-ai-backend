@@ -97,6 +97,16 @@ describe("ACERVO · ficha da peça: Passaporte, Editor 3D e Tamanhos", () => {
     expect(within(soLeitura.ficha).getByRole("link", { name: "Ver o modelo 3D" })).toBeTruthy();
   });
 
+  it("Editor 3D: peça só com o relevo da foto não oferece editar e explica por quê", async () => {
+    const relevo = await abrirFicha({ "GET /api/pieces/p1/customization": { ...personalizacao, editable: false, modelKind: "RELEVO_FOTO", editBlockedReason: "CUSTOMIZATION_PHOTO_RELIEF" } });
+    fireEvent.click(within(relevo.ficha).getByRole("tab", { name: "Editor 3D" }));
+    const aviso = await within(relevo.ficha).findByTestId("acervo-editor3d-bloqueado");
+    expect(aviso.textContent).toContain("Esta peça não pode ser editada");
+    expect(aviso.textContent).toContain("relevo gerado da foto");
+    expect(within(relevo.ficha).queryByRole("link", { name: "Abrir editor 3D da peça" })).toBeNull();
+    expect(within(relevo.ficha).getByRole("link", { name: "Ver o modelo 3D" })).toBeTruthy();
+  });
+
   it("Tamanhos: mostra os tamanhos, bloqueia o indisponível, diz quando falta 3D e marca a variação como aproximação", async () => {
     const { ficha } = await abrirFicha();
     fireEvent.click(within(ficha).getByRole("tab", { name: "Tamanhos" }));

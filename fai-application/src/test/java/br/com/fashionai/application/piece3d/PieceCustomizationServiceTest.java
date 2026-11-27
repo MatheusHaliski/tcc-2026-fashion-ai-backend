@@ -23,6 +23,7 @@ class PieceCustomizationServiceTest {
     WardrobeItemRepository pieces = MemoryRepository.of(WardrobeItemRepository.class);
     GarmentAsset3dRepository assets = MemoryRepository.of(GarmentAsset3dRepository.class);
     Guard guard = mock(Guard.class);
+    PieceModelKinds kinds = mock(PieceModelKinds.class);
     PieceCustomizationService service;
     User ana, bia;
     WardrobeItem piece;
@@ -34,7 +35,8 @@ class PieceCustomizationServiceTest {
 
     @BeforeEach void setUp() {
         when(customizations.lockByPieceIdAndOwnerId(any(), any())).thenAnswer(inv -> customizations.findByPieceIdAndOwnerId(inv.getArgument(0), inv.getArgument(1)));
-        service = new PieceCustomizationService(customizations, pieces, assets, guard);
+        when(kinds.of(any())).thenReturn(PieceModelKind.PROPRIO);
+        service = new PieceCustomizationService(customizations, pieces, assets, guard, kinds);
         ana = new User("ana", "Ana", "a@x.invalid", "h1", "p", ProfileType.PESSOAL); ana.assignId(UUID.randomUUID()); ana.setStatus(AccountStatus.ACTIVE);
         bia = new User("bia", "Bia", "b@x.invalid", "h2", "p", ProfileType.PESSOAL); bia.assignId(UUID.randomUUID()); bia.setStatus(AccountStatus.ACTIVE);
         piece = new WardrobeItem(); piece.setUser(ana); piece.setName("Jaqueta"); piece.setCategory("upper_piece"); piece.setVisibility(Visibility.PUBLIC);
@@ -69,5 +71,33 @@ class PieceCustomizationServiceTest {
         piece.setModel3dStatus(Model3dStatus.FAILED);
         assertThatThrownBy(() -> service.save(actor(ana), piece.getId(), new PieceCustomizationService.SaveCmd(0, doc("#ffffff", 1), "cust-00000011"))).isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("CUSTOMIZATION_NO_MODEL"));
         assertThat(service.get(actor(ana), piece.getId())).containsEntry("modelAvailable", false).containsEntry("editable", false);
+    }
+
+    @Test void photoReliefAndForeignModelsAreViewOnlyAndSavingIsRefusedWithAClearReason() {
+        when(kinds.of("/media/jaqueta.glb")).thenReturn(PieceModelKind.RELEVO_FOTO);
+        assertThat(service.get(actor(ana), piece.getId())).containsEntry("editable", false).containsEntry("modelAvailable", true)
+                .containsEntry("modelKind", "RELEVO_FOTO").containsEntry("editBlockedReason", "CUSTOMIZATION_PHOTO_RELIEF");
+        assertThatThrownBy(() -> service.save(actor(ana), piece.getId(), new PieceCustomizationService.SaveCmd(0, doc("#ff0000", 1), "cust-00000020")))
+                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("CUSTOMIZATION_PHOTO_RELIEF"));
+        when(kinds.of("/media/jaqueta.glb")).thenReturn(PieceModelKind.EXTERNO);
+        assertThat(service.get(actor(ana), piece.getId())).containsEntry("editable", false).containsEntry("editBlockedReason", "CUSTOMIZATION_NOT_OWN_MODEL");
+        assertThatThrownBy(() -> service.save(actor(ana), piece.getId(), new PieceCustomizationService.SaveCmd(0, doc("#ff0000", 1), "cust-00000021")))
+                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("CUSTOMIZATION_NOT_OWN_MODEL"));
+        assertThat(customizations.findByPieceIdAndOwnerId(piece.getId(), ana.getId())).isEmpty();
+    }
+
+    @Test void fabricTintHiddenPartsAndLogosSurviveSaveAndReopen() {
+        var decal = new CustomizationDecal("n0", null, "data:image/png;base64,iVBORw0KGgo=", List.of(0d, 1.2d, 0.1d), List.of(0d, 0d, 1d), 0.12, 1d, 0.3, "#112233", true);
+        var document = new CustomizationDocument(Map.of(), Map.of("n0.p0", new CustomizationDocument.MaterialEdit("#ffffff", 0.8, 0d, List.of(1d, 1d), 0d, "#aa2200", false),
+                "n0.p3", new CustomizationDocument.MaterialEdit("#ffffff", 0.8, 0d, List.of(1d, 1d), 0d, null, true)), Map.of(), Map.of("d1", decal));
+        service.save(actor(ana), piece.getId(), new PieceCustomizationService.SaveCmd(0, document, "cust-00000030"));
+        var reopened = (CustomizationDocument) service.get(actor(ana), piece.getId()).get("document");
+        assertThat(reopened.materials().get("n0.p0").tint()).isEqualTo("#aa2200");
+        assertThat(reopened.materials().get("n0.p3").hidden()).isTrue();
+        assertThat(reopened.decals().get("d1")).isEqualTo(decal);
+        var bad = new CustomizationDecal("n0", null, "javascript:alert(1)", List.of(0d, 0d, 0d), List.of(0d, 0d, 1d), 0.1, 1d, 0d, null, true);
+        assertThatThrownBy(() -> service.save(actor(ana), piece.getId(), new PieceCustomizationService.SaveCmd(1,
+                new CustomizationDocument(Map.of(), Map.of(), Map.of(), Map.of("d1", bad)), "cust-00000031")))
+                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("CUSTOMIZATION_INVALID"));
     }
 }

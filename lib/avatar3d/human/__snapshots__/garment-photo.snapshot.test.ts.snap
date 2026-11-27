@@ -1,0 +1,87 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`caracterização — foto da peça (puros) > amostras de tecido, recorte, buracos e barra 1`] = `
+{
+  "backdrop": "2dcfbfa9fd856b854ad9ddb2a69c9014af04bfa5023b1e2128f46ed0fe4609a8",
+  "estudio": "ea711b5b584c780a089caed35a68fa45031fab8a7749dbb6b0128d3f136dcd10",
+  "furado": "86cccde36c60a0f547667ffe33743898b45d1e67b6d605d7c6c46dc03ade6fb2",
+  "liso": "352347e99ef2e5a79b5199e59058214fffc3b2dffb79366838a674c4522b04ad",
+  "listras": "9eb4e23d824ba21a6b543d5dd97d4b302c01eccc4184ed9cb9ffd7c4bd990a4e",
+  "look": "85309b5c7016a0841714b7e41c43a11fa720a57ecfa04c7f0a937a9eaf427809",
+  "medoid": "a0a0d673ecd7204b98a3352699dae96a1ce17f209eb2dba79466a1153b0555bf",
+  "modelo": "70843c684a7dbb94d463867cb457e0a2e539635ed45d548abd55d9ce08b4f648",
+  "outfit": "be7a87db5b05b05813c2972d7e188fdda2310ac495aaf5020eec887d28eef901",
+  "trama": "3c17203397b61dc98b78ab9ead23c8ecc056a6a8685a51ff1baa0b026058c217",
+  "xadrez": "85496e9b66180d2920f32d75a3e9a5df56f27046d49af97317ac1453e59585d4",
+}
+`;
+
+exports[`caracterização — projeção da foto na malha > malha sintética: mangas, gola, marcos, costas e pernas 1`] = `
+{
+  "costas-pants": "d9d611f96b537df690bb82fd16e3b5a9aca173688ae49801f5abcedafb68381a",
+  "costas-shirt": "4048c3948a4da082f8abe399ab5cff54b39ded8e906a79a11249c6d44f3deb79",
+  "costas-shoes": "c8758f12f0b3c567c5d21e1f03185b04d1e545afd80181c59331927a82d8539b",
+  "costas-skirt": "d9d611f96b537df690bb82fd16e3b5a9aca173688ae49801f5abcedafb68381a",
+  "costas-tee": "4048c3948a4da082f8abe399ab5cff54b39ded8e906a79a11249c6d44f3deb79",
+  "gola-pants": "6d1d8a23b04a06fd93594f3fe4e118e8019df969e278dec6e77270fab7eeb99b",
+  "gola-shirt": "b16d0e36156b3d9ccb8fcee79055b311d5d47e3c78913c01a7828429b7762d93",
+  "gola-shoes": "c8758f12f0b3c567c5d21e1f03185b04d1e545afd80181c59331927a82d8539b",
+  "gola-skirt": "6d1d8a23b04a06fd93594f3fe4e118e8019df969e278dec6e77270fab7eeb99b",
+  "gola-tee": "b16d0e36156b3d9ccb8fcee79055b311d5d47e3c78913c01a7828429b7762d93",
+  "mangas-pants": "09b3108092facb6626d2d63bbbe316bf3fd61dfcd67202b25296095fc550f97a",
+  "mangas-shirt": "86ce785d1d44f0355381b8226e0b72e4ed7471e535da1abc4623bd30fcdb809d",
+  "mangas-shoes": "28766bdaddd3b637e22f90f86303fd0d1e58cf7398f5efb827ba710280714c7a",
+  "mangas-skirt": "09b3108092facb6626d2d63bbbe316bf3fd61dfcd67202b25296095fc550f97a",
+  "mangas-tee": "5c2bfcfb42985526e2375312d77262224181b6350eda8f983fa6e4cd563a6a50",
+  "marcos-pants": "5f6f2ceef76e2a244734158ae55d5eebd2f9536166ae64ae689ebec488662e75",
+  "marcos-shirt": "3604897286497dd8d2561f72a45612c8036fdd625fa11bfbe47694802c074179",
+  "marcos-shoes": "470f7ce9ce846fe543a020d34197e4258aee1db1de753decd52457ec938e2fef",
+  "marcos-skirt": "5f6f2ceef76e2a244734158ae55d5eebd2f9536166ae64ae689ebec488662e75",
+  "marcos-tee": "b66d823dbcd92cce486abeaa3982b0f6e21688be5fbf8783aa7bc14e0444fc40",
+  "pernas-pants": "948cc1ffe4452ebfe3112dd5d8dd66e85d78a573252360b9e6848456310eaa85",
+  "pernas-shirt": "d9d611f96b537df690bb82fd16e3b5a9aca173688ae49801f5abcedafb68381a",
+  "pernas-shoes": "c8758f12f0b3c567c5d21e1f03185b04d1e545afd80181c59331927a82d8539b",
+  "pernas-skirt": "d9d611f96b537df690bb82fd16e3b5a9aca173688ae49801f5abcedafb68381a",
+  "pernas-tee": "d9d611f96b537df690bb82fd16e3b5a9aca173688ae49801f5abcedafb68381a",
+  "simples-pants": "d9d611f96b537df690bb82fd16e3b5a9aca173688ae49801f5abcedafb68381a",
+  "simples-shirt": "d9d611f96b537df690bb82fd16e3b5a9aca173688ae49801f5abcedafb68381a",
+  "simples-shoes": "c8758f12f0b3c567c5d21e1f03185b04d1e545afd80181c59331927a82d8539b",
+  "simples-skirt": "d9d611f96b537df690bb82fd16e3b5a9aca173688ae49801f5abcedafb68381a",
+  "simples-tee": "d9d611f96b537df690bb82fd16e3b5a9aca173688ae49801f5abcedafb68381a",
+}
+`;
+
+exports[`caracterização — projeção da foto na malha > molde real com as fotos sintéticas 1`] = `
+{
+  "boots-costas": "cc803b5255a87d6f6635344793830f5b71e379b8d087090a7934bc81bce9214d",
+  "boots-gola": "cc803b5255a87d6f6635344793830f5b71e379b8d087090a7934bc81bce9214d",
+  "boots-mangas": "cc803b5255a87d6f6635344793830f5b71e379b8d087090a7934bc81bce9214d",
+  "boots-marcos": "cc803b5255a87d6f6635344793830f5b71e379b8d087090a7934bc81bce9214d",
+  "boots-pernas": "cc803b5255a87d6f6635344793830f5b71e379b8d087090a7934bc81bce9214d",
+  "boots-simples": "cc803b5255a87d6f6635344793830f5b71e379b8d087090a7934bc81bce9214d",
+  "jacket-costas": "69be79316bbef07b147acdf85a4f48b54d89e48fb62243cce566cfc83ed3cea6",
+  "jacket-gola": "71f3be4c6b7fbe6073fc143280478fca7f8e0e961ad85a13b22a82772a067d08",
+  "jacket-mangas": "9300416adc11fe48b16a1e7770fc8175d5237ed682870a5461ff0c5f6c4ff9e2",
+  "jacket-marcos": "1d34eca25e9a04aedc8621f7fd4add7ca428201790adb96a9041b893489e7568",
+  "jacket-pernas": "c5a720377335507100b060a4b18af0483b3b7c3c246435aa12a674b8e3bdf5c4",
+  "jacket-simples": "c5a720377335507100b060a4b18af0483b3b7c3c246435aa12a674b8e3bdf5c4",
+  "pants-costas": "d54ba628dd2a5bd810e8108f2f1515a304db6aa93a22d72effffca5ae6cafce0",
+  "pants-gola": "3d4d31f4fed8c8467c633ba7794bc909835431f8b478f553fa18a2a1f140c60c",
+  "pants-mangas": "ebf40a40b457922b13f257d4408b41c6c8f13c92cfa99b675484a1a85c5d7d60",
+  "pants-marcos": "0c769470dc5f3570c5fc31d88c6fc42e4aa91d35d0f8ad53f1019b29a7602dbd",
+  "pants-pernas": "874219c6926435ef8c0ddc86b4b6b674639c9a8c2c070285c54b880547f6fc01",
+  "pants-simples": "d54ba628dd2a5bd810e8108f2f1515a304db6aa93a22d72effffca5ae6cafce0",
+  "shirt-costas": "4418ae75e91da8b06d7f286ae498f8780238c83eb041ca141b38267a92d2bb49",
+  "shirt-gola": "7c941964b59c1aec61557d3a6d028332ec85f4541346bdaa076dd1e8fbeb8e9d",
+  "shirt-mangas": "4377ef6c1404cb93ba44c9cfcc2e0fc6819fbbb3cda7a1f70cdf38cf6a117444",
+  "shirt-marcos": "0f75305c4e97034806f9b3a176f3c0a14750c3f0a4b4b36fdb120943d9124585",
+  "shirt-pernas": "de6d1af2d54d4394688adbc7014c296576d3faf190d70d04812b6b53de5e8470",
+  "shirt-simples": "de6d1af2d54d4394688adbc7014c296576d3faf190d70d04812b6b53de5e8470",
+  "tee-costas": "2087474301a3c84f258ba5e785f0ad448ff8c6f118e405262763fe6b1da8b399",
+  "tee-gola": "e07b8ca6f798ba4cf369042b4cb6a46e60a04f061fc92ba394c16c97e8ae4a98",
+  "tee-mangas": "6cb1dd72c21b9440083ffbf5c5f84ddf3308e6c94c788639de2bf6ffac339f28",
+  "tee-marcos": "a219932716c569b9ea1fcafcc1f393db9988dee772610e7dc9c42f6093ae2b8d",
+  "tee-pernas": "48f90962d0ac3d2e6fb996e50ef07f11d406e93ce217826ac5242b386d8d8871",
+  "tee-simples": "48f90962d0ac3d2e6fb996e50ef07f11d406e93ce217826ac5242b386d8d8871",
+}
+`;
