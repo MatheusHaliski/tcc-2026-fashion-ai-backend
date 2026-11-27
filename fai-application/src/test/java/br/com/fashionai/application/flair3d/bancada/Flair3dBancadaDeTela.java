@@ -9,13 +9,16 @@ import br.com.fashionai.application.flair3d.Flair3dNucleoService;
 import br.com.fashionai.application.flair3d.Flair3dProgresso;
 import br.com.fashionai.application.flair3d.Flair3dRascunho;
 import br.com.fashionai.application.flair3d.Flair3dRetomada;
+import br.com.fashionai.application.flair3d.aura.Flair3dAuraTrunfo;
 import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoUso;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.domain.model.FlairCardInstance;
+import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.repository.Flair3dMatchRepository;
 import br.com.fashionai.domain.repository.FlairCardInstanceRepository;
 import br.com.fashionai.domain.repository.UserRepository;
+import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
@@ -44,13 +47,14 @@ import java.util.regex.Pattern;
  */
 class Flair3dBancadaDeTela {
     private static final Pattern NUCLEO = Pattern.compile("/api/flair/3d/nucleos/([A-Za-z_0-9]+)(?:/(efeitos|partidas|progresso|em-andamento))?");
-    private static final Pattern PARTIDA = Pattern.compile("/api/flair/3d/partidas/([0-9a-f-]+)/(entrega|previa|acionar|rascunho|recursos|usar)");
+    private static final Pattern PARTIDA = Pattern.compile("/api/flair/3d/partidas/([0-9a-f-]+)/(entrega|previa|acionar|rascunho|recursos|usar|hype)");
 
     private Flair3dNucleoService service;
     private Flair3dRetomada retomada;
     private Flair3dProgresso progresso;
     private Flair3dRascunho rascunho;
     private Flair3dRecursoUso uso;
+    private Flair3dAuraTrunfo trunfo;
     private CurrentUser ana;
     private List<FlairCardInstance> cartas;
 
@@ -66,7 +70,12 @@ class Flair3dBancadaDeTela {
         progresso = new Flair3dProgresso(partidas);
         rascunho = new Flair3dRascunho(partidas, service);
         uso = kit.build(Flair3dRecursoUso.class);
-        cartas = Flair3dBancadaGuardaRoupa.cartas(ana.id()).stream().map(c -> kit.save(FlairCardInstanceRepository.class, c)).toList();
+        trunfo = kit.build(Flair3dAuraTrunfo.class);
+        User dona = kit.dep(UserRepository.class).findById(ana.id()).orElseThrow();
+        cartas = Flair3dBancadaGuardaRoupa.cartas(ana.id()).stream().map(c -> {
+            Flair3dBancadaGuardaRoupa.comAura(c, dona).ifPresent(w -> kit.save(WardrobeItemRepository.class, w));
+            return kit.save(FlairCardInstanceRepository.class, c);
+        }).toList();
 
         HttpServer http = HttpServer.create(new InetSocketAddress("127.0.0.1", Integer.getInteger("flair3d.bancada.porta")), 0);
         http.createContext("/", this::atender);
@@ -155,6 +164,7 @@ class Flair3dBancadaDeTela {
             case "acionar" -> service.acionar(ana, id, ler(json, Acionamento.class));
             case "rascunho" -> rascunho.guardar(ana, id, ler(json, Entrega.class));
             case "usar" -> uso.usar(ana, id, ler(json, Flair3dRecursoUso.PedidoDeUso.class));
+            case "hype" -> trunfo.chamar(ana, id, ler(json, Flair3dAuraTrunfo.PedidoDeTrunfo.class));
             default -> uso.estado(ana, id);
         };
     }

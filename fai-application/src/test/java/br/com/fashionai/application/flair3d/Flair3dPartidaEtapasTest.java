@@ -225,12 +225,13 @@ class Flair3dPartidaEtapasTest {
         assertThat(semPerfil(zonas.get("efeitos"))).isEqualTo(List.of(Map.of("cardId", neutra.getId(), "itens", List.of())));
     }
 
-    /** Os efeitos sem o perfil da peça (a regra peça-recurso tem teste próprio: Flair3dRecursoTabelaTest). */
+    /** Os efeitos sem o perfil da peça (a regra peça-recurso tem teste próprio: Flair3dRecursoTabelaTest) nem o lance de uso dos jogos de zonas. */
     @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> semPerfil(Object efeitos) {
         return ((List<Map<String, Object>>) efeitos).stream().map(m -> {
             Map<String, Object> copia = new java.util.LinkedHashMap<>(m);
             copia.remove("perfil");
+            copia.remove("uso");
             return copia;
         }).toList();
     }
