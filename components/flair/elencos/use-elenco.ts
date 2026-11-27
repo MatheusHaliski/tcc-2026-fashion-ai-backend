@@ -1,10 +1,12 @@
 "use client";
 /**
- * Um elenco do FLAIR Card Building Challenge: formação (API, completada pela formação local), cartas da pessoa, a mesa
- * (cartas por vaga, com desfazer e guardada neste aparelho), a conferência no servidor a cada mudança (/conferir) e a
- * entrega com a edição. A conferência guarda as cartas que julgou: linha com carta diferente ainda está sendo conferida.
+ * Um elenco em quebra-cabeça: formação (API, completada pela formação local), cartas da pessoa, a mesa (cartas por
+ * vaga, com desfazer e guardada neste aparelho), a conferência no servidor a cada mudança (/conferir) e a entrega com a
+ * edição. Quando a conferência diz que o deck inteiro encaixou, a entrega sai sozinha (uma vez por montagem): é o
+ * quebra-cabeça se completando. A conferência guarda as cartas que julgou: peça com carta diferente ainda está sendo
+ * conferida.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useAction, useApi } from "@/lib/hooks/use-api";
 import type { FlairCollection } from "@/components/flair/flair-collection";
@@ -12,7 +14,6 @@ import { useMesa } from "@/components/flair/montagem/use-mesa";
 import { buscarElenco, conferirElenco, entregarElenco } from "@/lib/flair/elencos/api";
 import { mesclarElenco } from "@/lib/flair/elencos/formacoes";
 import type { ElencoConferencia, ElencoEntregaResultado } from "@/lib/flair/elencos/types";
-import { gravarRascunho, lerRascunho } from "@/lib/flair/elencos/rascunho";
 
 type Conferida = ElencoConferencia & { de: Record<string, string> };
 
@@ -23,14 +24,7 @@ export function useElenco(codigo: string) {
   const banco = useMemo(() => bank.data?.cards ?? [], [bank.data]);
   const chaves = useMemo(() => (elenco?.vagas ?? []).map((v) => v.chave), [elenco]);
   const ids = useMemo(() => (bank.data ? banco.map((c) => c.id) : null), [bank.data, banco]);
-  const cabe = (cardId: string, vaga: string) => banco.find((c) => c.id === cardId)?.position === elenco?.vagas.find((v) => v.chave === vaga)?.posicao;
-  // o elenco em montagem volta ao recarregar (a mesa guarda); um rascunho do formato anterior é lido uma vez e apagado
-  const legado = () => {
-    const rascunho = lerRascunho(codigo);
-    gravarRascunho(codigo, {});
-    return rascunho;
-  };
-  const mesa = useMesa(`elenco.${codigo}`, chaves, ids, cabe, legado);
+  const mesa = useMesa(`elenco.${codigo}`, chaves, ids, () => true);
   const cartas = mesa.cartas;
   const chave = JSON.stringify(cartas);
   const temCartas = Object.keys(cartas).length > 0;
@@ -46,8 +40,15 @@ export function useElenco(codigo: string) {
     setResultado(null);
     jogada(...args);
   };
-  const conferencia = temCartas ? resultado ?? conf.data : null;
-
+  const conferencia = temCartas ? resultado ?? conf.data : resultado;
+  const fresca = !!conf.data && JSON.stringify(conf.data.de) === chave;
+  // o deck inteiro encaixou: entrega uma vez por montagem (um erro não repete sozinho; o botão continua lá)
+  const tentada = useRef("");
+  useEffect(() => {
+    if (!conf.data?.ok || !fresca || resultado || entrega.busy || tentada.current === chave) return;
+    tentada.current = chave;
+    void entrega.run();
+  }, [conf.data, fresca, resultado, entrega, chave]);
   return {
     elenco,
     offline: !!def.error,
@@ -57,7 +58,7 @@ export function useElenco(codigo: string) {
     cartas,
     conferencia,
     /** as cartas que a conferência julgou */
-    conferidas: conferencia?.de ?? {},
+    conferidas: conferencia ? resultado?.de ?? conf.data?.de ?? {} : {},
     conferindo: conf.loading,
     erroConferir: temCartas ? conf.error : null,
     por: mudar(mesa.por),

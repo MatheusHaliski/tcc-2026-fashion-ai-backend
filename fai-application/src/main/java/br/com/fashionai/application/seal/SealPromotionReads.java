@@ -11,6 +11,8 @@ import java.util.UUID;
 
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.service.CouponHypeGate;
+import br.com.fashionai.application.service.CouponHypeRules;
 import br.com.fashionai.application.service.FlairService;
 import br.com.fashionai.domain.model.Promotion;
 import br.com.fashionai.domain.model.PromotionRedemption;
@@ -32,6 +34,7 @@ public final class SealPromotionReads {
     private final SealIssuers issuers;
     private final SealHypeAverages averages;
     private final SealViews views;
+    private final CouponHypeGate hypeGate;
 
     public SealPromotionReads(PromotionRepository promotions, PromotionRedemptionRepository redemptions, SealBondRepository bonds, UserRepository users, SealIssuers issuers, SealHypeAverages averages, SealViews views) {
         this.promotions = promotions;
@@ -41,6 +44,7 @@ public final class SealPromotionReads {
         this.issuers = issuers;
         this.averages = averages;
         this.views = views;
+        this.hypeGate = CouponHypeGate.of(averages.hypeQuery());
     }
 
     public Map<String, Object> mySeals(CurrentUser user) {
@@ -93,7 +97,7 @@ public final class SealPromotionReads {
             }
             List<SealBond> ownerBonds = mine.stream().filter(b -> b.getTargetOwner().getId().equals(owner)).toList();
             for (Promotion p : promotions.findByOwnerUserIdAndStatusOrderByCreatedAtDesc(owner, PromotionStatus.AVAILABLE)) {
-                if (unavailable(p, now) == null && eligibleBond(p, ownerBonds) != null
+                if (unavailable(p, now) == null && qualifyingBond(p, ownerBonds) != null
                         && redemptions.countByPromotionIdAndUserId(p.getId(), userId) < p.getPerUserLimit()) {
                     out.add(p);
                 }
@@ -112,17 +116,44 @@ public final class SealPromotionReads {
         boolean owner = viewer != null && viewer.id().equals(ownerId);
         return promotions.findByOwnerUserIdOrderByCreatedAtDesc(ownerId).stream()
                 .filter(p -> owner || p.getStatus() == PromotionStatus.AVAILABLE)
-                .map(p -> promotionView(p, eligibleBond(p, myBonds))).toList();
+                .map(p -> promotionView(p, bestBond(p, myBonds))).toList();
     }
 
     private List<Map<String, Object>> promotionsFor(CurrentUser user, SealBond b) {
         return promotions.findByOwnerUserIdOrderByCreatedAtDesc(b.getTargetOwner().getId()).stream()
                 .filter(p -> p.getStatus() == PromotionStatus.AVAILABLE)
-                .map(p -> promotionView(p, eligibleBond(p, List.of(b)))).toList();
+                .map(p -> promotionView(p, bestBond(p, List.of(b)))).toList();
     }
 
     SealBond eligibleBond(Promotion p, List<SealBond> candidates) {
         return PromotionRules.eligibleBond(p, candidates, Instant.now());
+    }
+
+    /** Circuito Aura — leitura da faixa de Hype que conta (pública e atualizada) para o cupom por Hype. */
+    public CouponHypeGate hypeGate() {
+        return hypeGate;
+    }
+
+    /**
+     * Vínculo elegível cujo card (a peça ou o look que carrega o selo) atende ao Hype mínimo da oferta. Oferta sem
+     * exigência de Hype: o vínculo elegível de sempre.
+     */
+    public SealBond qualifyingBond(Promotion p, List<SealBond> candidates) {
+        if (p.getMinHypeLevel() == null) {
+            return eligibleBond(p, candidates);
+        }
+        for (SealBond b : candidates) {
+            if (eligibleBond(p, List.of(b)) != null && CouponHypeRules.meets(p.getMinHypeLevel(), hypeGate.ofBond(b))) {
+                return b;
+            }
+        }
+        return null;
+    }
+
+    /** O vínculo a mostrar na oferta: o que destrava o cupom ou, se nenhum chega à faixa, o elegível (aparece travado). */
+    SealBond bestBond(Promotion p, List<SealBond> candidates) {
+        SealBond qualifying = qualifyingBond(p, candidates);
+        return qualifying != null ? qualifying : eligibleBond(p, candidates);
     }
 
     Map<String, Object> promotionView(Promotion p, SealBond eligible) {
@@ -148,8 +179,10 @@ public final class SealPromotionReads {
         m.put("canalCupom", br.com.fashionai.application.service.CouponChannelResolver.view(p.getCanalCupom()));
         m.put("minPurchase", p.getMinPurchase());
         m.put("minPurchaseCurrency", p.getMinPurchaseCurrency());
-        m.put("eligible", eligible != null && unavailable(p, now) == null);
-        m.put("unavailableReason", eligible == null ? Msg.t("seal.e_preciso_ter_um_selo") : unavailable(p, now));
+        boolean hypeMet = CouponHypeRules.offerView(m, p.getMinHypeLevel(), eligible == null ? null : hypeGate.ofBond(eligible));
+        String unavailable = unavailable(p, now);
+        m.put("eligible", eligible != null && unavailable == null && hypeMet);
+        m.put("unavailableReason", eligible == null ? Msg.t("seal.e_preciso_ter_um_selo") : unavailable != null || hypeMet ? unavailable : m.get("hypeLockedReason"));
         m.put("eligibleBondId", eligible == null ? null : eligible.getId());
         return m;
     }

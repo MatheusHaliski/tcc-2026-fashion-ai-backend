@@ -5,6 +5,7 @@ import { api } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { Badge, Button, Chip, Dialog, EmptyState, ErrorState, SkeletonGrid, useToast } from "@/components/ui";
 import { FaiCoupon, type Coupon, type CouponRight } from "@/components/coupons/fai-coupon";
+import { HypeLockedCoupons } from "@/components/coupons/coupon-hype";
 import { useI18n } from "@/lib/i18n/i18n";
 
 interface Mine { pending: CouponRight[]; coupons: Coupon[]; note: string; }
@@ -43,6 +44,7 @@ export function MyCoupons({ openRight }: { openRight?: string | null }) {
             </div>))}</div>
         </section>
       )}
+      <HypeLockedCoupons />
       <section aria-label={t("common.meus_cupons_resgatados")}>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="type-h3">{t("common.meus_cupons_resgatados")}</h2>

@@ -21,8 +21,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * FLAIR Card Building Challenge — os cinco elencos (BASE_NUCLEOS.md). Contexto do Strategy {@link FlairCbcElenco}: lista,
- * formação, conferir (cartas da pessoa, 422) e entrega (422 com requisito falhando), com a edição pela ordem de conclusão
+ * FLAIR Card Building Challenge — os elencos em quebra-cabeça (CINCO_ELENCOS.md). Contexto do Strategy {@link FlairCbcElenco}:
+ * lista, formação, conferir (cartas da pessoa, 422) e entrega (422 com peça ou requisito faltando), com a edição pela ordem de conclusão
  * do elenco; repetir não cria nova edição. A edição sai do contador do elenco, lido com bloqueio de escrita dentro da
  * transação da entrega: duas primeiras conclusões simultâneas esperam uma pela outra e nunca levam o mesmo número.
  */
@@ -45,7 +45,7 @@ public class FlairCbcSquadService {
         return FlairCbcElencos.porCodigo(codigo).orElseThrow(() -> Flair3dErros.naoEncontrado("ELENCO_NAO_ENCONTRADO", "elenco_nao_encontrado"));
     }
 
-    /** {elencos:[{codigo, vagas, linhas, concluido, edicao}]}: vagas e linhas são contagens; edição da pessoa ou nula. */
+    /** {elencos:[{codigo, pecas, concluido, edicao}]}: pecas é a contagem de vagas; edição da pessoa ou nula. */
     @Transactional(readOnly = true)
     public Map<String, Object> lista(CurrentUser user) {
         Map<String, Integer> edicoes = new LinkedHashMap<>();
@@ -58,8 +58,7 @@ public class FlairCbcSquadService {
         for (FlairCbcElenco e : FlairCbcElencos.TODOS) {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("codigo", e.codigo());
-            m.put("vagas", e.vagas().size());
-            m.put("linhas", e.linhas().size());
+            m.put("pecas", e.vagas().size());
             m.put("concluido", edicoes.containsKey(e.codigo()));
             m.put("edicao", edicoes.get(e.codigo()));
             out.add(m);
@@ -67,13 +66,12 @@ public class FlairCbcSquadService {
         return Map.of("elencos", out);
     }
 
-    /** {codigo, vagas:[{chave, posicao, coluna, linha}], linhas:[{a, b}], requisitos:[{tipo, alvo, ...}]}. */
+    /** {codigo, vagas:[{chave, posicao, pede}], requisitos:[{tipo, alvo, ...}]}. */
     public Map<String, Object> formacao(String codigo) {
         FlairCbcElenco e = elenco(codigo);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("codigo", e.codigo());
         out.put("vagas", e.vagas());
-        out.put("linhas", e.linhas().stream().map(l -> Map.of("a", l.a(), "b", l.b())).toList());
         out.put("requisitos", e.requisitosCompletos().stream().map(FlairCbcElenco.Requisito::toMap).toList());
         return out;
     }
@@ -100,7 +98,8 @@ public class FlairCbcSquadService {
         nova.setUserId(user.id());
         nova.setElenco(e.codigo());
         nova.setCartasJson(Json.write(pedido.cartas()));
-        nova.setQuimica((Integer) out.get("quimica"));
+        // a coluna "quimica" guarda o quanto do quebra-cabeça encaixou (na entrega, sempre 100)
+        nova.setQuimica(100 * (Integer) out.get("completas") / Math.max(1, (Integer) out.get("total")));
         nova.setOk(true);
         nova.setEdicao(edicao);
         entregas.save(nova);

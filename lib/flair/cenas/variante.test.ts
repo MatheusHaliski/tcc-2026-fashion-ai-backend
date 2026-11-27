@@ -61,9 +61,9 @@ describe("variar", () => {
 });
 
 describe("usos", () => {
-  it("nenhum elenco ou cenário repete o desenho de outro", () => {
+  it("nenhum cenário repete o desenho de outro (os elencos usam imagens, não cenas)", () => {
     const usos = Object.entries({ ...CENA_DO_ELENCO, ...CENA_DO_CENARIO });
-    expect(usos).toHaveLength(20);
+    expect(usos).toHaveLength(15);
     const desenhos = new Set(usos.map(([, c]) => JSON.stringify(c)));
     expect(desenhos.size).toBe(usos.length);
     const chaves = new Set(usos.map(([, c]) => `${c.id}/${c.variante ?? ""}`));

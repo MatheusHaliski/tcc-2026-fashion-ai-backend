@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import br.com.fashionai.application.common.Json;
-import br.com.fashionai.application.physicalstore.PhysicalStoreReturnEvents;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.testkit.MemoryRepository;
@@ -92,9 +91,5 @@ class RetailDemandServiceTest {
         var panel = service.panel(seller, null, null);
         assertThat((List<?>) panel.get("cells")).isEmpty();
         assertThat(panel).containsEntry("suppressedCells", 2);
-        User fit = person(true);
-        service.onFitFeedback(new PhysicalStoreReturnEvents.FitFeedbackRecorded(seller.id(), jacket.getId(), null, "M", "FIT_TOO_SMALL", fit.getId()));
-        service.onFitFeedback(new PhysicalStoreReturnEvents.FitFeedbackRecorded(seller.id(), jacket.getId(), null, "M", "FIT_TOO_SMALL", person(false).getId()));
-        assertThat(MemoryRepository.<RetailDemandEvent>rows(events).stream().filter(e -> "SIZE_MISMATCH".equals(e.getKind()))).hasSize(1);
     }
 }

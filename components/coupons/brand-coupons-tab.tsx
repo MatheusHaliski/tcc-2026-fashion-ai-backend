@@ -7,6 +7,7 @@ import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input
 import { FaiCoupon, type Coupon, type CouponOwner } from "@/components/coupons/fai-coupon";
 import { CouponChannelField } from "@/components/coupons/coupon-channel-field";
 import { CouponMinimumFields, minimumBody, minimumValid } from "@/components/coupons/coupon-minimum";
+import { CouponHypeField, hypeMinimumBody } from "@/components/coupons/coupon-hype";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
 
@@ -36,7 +37,7 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
   const [promoFilter, setPromoFilter] = useState<"ATIVAS" | "INATIVAS">("ATIVAS");
   const [code, setCode] = useState(""); const [checked, setChecked] = useState<Coupon | null>(null);
   const [chooser, setChooser] = useState(false);
-  const empty = { open: false, id: undefined as string | undefined, type: "DESCONTO_ECOMMERCE", title: "", description: "", rules: "", discountPercent: "", sealId: "", startsAt: "", expiresAt: "", totalQuota: "", perUserLimit: "1", storeUrl: "", canalCupomId: "", minPurchase: "", minPurchaseCurrency: "BRL" };
+  const empty = { open: false, id: undefined as string | undefined, type: "DESCONTO_ECOMMERCE", title: "", description: "", rules: "", discountPercent: "", sealId: "", startsAt: "", expiresAt: "", totalQuota: "", perUserLimit: "1", storeUrl: "", canalCupomId: "", minPurchase: "", minPurchaseCurrency: "BRL", minHypeLevel: "" };
   const [form, setForm] = useState(empty);
   if (admin.error) return <ErrorState error={admin.error} onRetry={admin.reload} />;
   if (admin.loading || !admin.data) return <Skeleton className="h-64" />;
@@ -47,7 +48,7 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
   async function savePromo() {
     const iso = (v: string) => (v ? new Date(v).toISOString() : null);
     const body = { type: form.type, title: form.title, description: form.description || null, rules: form.rules || null, discountPercent: form.discountPercent ? Number(form.discountPercent) : null,
-      sealId: form.sealId || null, startsAt: iso(form.startsAt), expiresAt: iso(form.expiresAt), totalQuota: form.totalQuota ? Number(form.totalQuota) : null, perUserLimit: Number(form.perUserLimit || 1), storeUrl: form.storeUrl || null, canalCupomId: form.canalCupomId || null, ...minimumBody(form.minPurchase, form.minPurchaseCurrency) };
+      sealId: form.sealId || null, startsAt: iso(form.startsAt), expiresAt: iso(form.expiresAt), totalQuota: form.totalQuota ? Number(form.totalQuota) : null, perUserLimit: Number(form.perUserLimit || 1), storeUrl: form.storeUrl || null, canalCupomId: form.canalCupomId || null, ...minimumBody(form.minPurchase, form.minPurchaseCurrency), ...hypeMinimumBody(form.minHypeLevel) };
     try { if (form.id) await api.put(`/api/promotions/${form.id}`, body); else await api.post("/api/promotions", body); toast.success(t("coupons.brandCouponsTab.promocao_salva_quem_tiver_o")); setForm(empty); admin.reload(); } catch (e) { toast.fromError(e); }
   }
   async function toggleSeal(p: Promo) {
@@ -121,6 +122,7 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
           </div>
           <CouponChannelField value={form.canalCupomId} onChange={(canalCupomId) => setForm({ ...form, canalCupomId })} />
           <div className="grid gap-3 sm:grid-cols-2"><CouponMinimumFields amount={form.minPurchase} currency={form.minPurchaseCurrency} onChange={(patch) => setForm({ ...form, ...patch })} /></div>
+          <CouponHypeField id="pp-hype" value={form.minHypeLevel} onChange={(minHypeLevel) => setForm({ ...form, minHypeLevel })} />
           <Field label={t("common.link_da_loja_onde_o")} id="pp-url" hint={t("common.opcional_sem_ele_vale_o")}><Input id="pp-url" type="url" placeholder="https://" value={form.storeUrl} onChange={(e) => setForm({ ...form, storeUrl: e.target.value })} /></Field>
           <Field label={t("common.regras")} id="pp-rules"><Textarea id="pp-rules" rows={2} value={form.rules} onChange={(e) => setForm({ ...form, rules: e.target.value })} /></Field>
         </div>
