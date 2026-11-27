@@ -1,9 +1,13 @@
 package br.com.fashionai.application.piece3d;
 
+import br.com.fashionai.application.imaging.ReliefModelGenerator;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.ports.WebFetchPort;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +49,15 @@ class PieceModelKindTest {
         assertThat(PieceModelKind.RELEVO_FOTO.blockedCode()).isEqualTo("CUSTOMIZATION_PHOTO_RELIEF");
         assertThat(PieceModelKind.EXTERNO.blockedCode()).isEqualTo("CUSTOMIZATION_NOT_OWN_MODEL");
         assertThat(PieceModelKind.PROPRIO.blockedCode()).isNull();
+    }
+
+    @Test void theReliefTheServerItselfGeneratesFromAPhotoIsRecognised() {
+        BufferedImage cutout = new BufferedImage(90, 110, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = cutout.createGraphics();
+        g.setColor(new Color(30, 60, 160));
+        g.fillRect(15, 10, 60, 90);
+        g.dispose();
+        assertThat(PieceModelKind.of(ReliefModelGenerator.generate(cutout, 0.7).glb())).isEqualTo(PieceModelKind.RELEVO_FOTO);
     }
 
     @Test void readsStoredModelOnceAndNeverCachesAFailedRead() {
