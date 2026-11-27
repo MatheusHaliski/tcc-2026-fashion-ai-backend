@@ -5,7 +5,7 @@
  * comando da tela; e toca os clipes das sequências (poses, caminhada, luta, reação) nos ossos do esqueleto. Com
  * "reduzir movimento", cada ação chega à pose final de uma vez, sem transição.
  */
-import { Suspense, useContext, useMemo, useRef } from "react";
+import { Suspense, useContext, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Mannequin } from "@/components/three/mannequin";
@@ -20,6 +20,8 @@ import { NA_MARCA, type Jogador } from "@/components/flair/nucleos/scene/andaril
 import { amostrar } from "@/lib/flair/nucleos/scene/clips";
 import { clipDe } from "@/lib/flair/nucleos/scene/clips/index";
 import { agora, aplicarNoObjeto, CenaContexto, estadoDoAtor } from "@/components/flair/nucleos/scene/stage-context";
+import { UniformeNoCorpo } from "@/components/flair/nucleos/scene/uniforme/uniforme-no-corpo";
+import type { ItemDoUniforme } from "@/lib/flair/nucleos/uniforme/desenho";
 
 /** Protagonista: o Avatar 3D do perfil (PROPRIO) ou a modelo da casa (manequim de vitrine, sem rosto de ninguém). */
 export interface Protagonista {
@@ -62,9 +64,11 @@ interface AvatarProps {
   maquiagem?: MaquiagemNoRosto | null;
   /** andar livre (scene/andarilho.tsx): onde a pessoa levou a personagem, somado ao lugar do diretor */
   jogador?: React.MutableRefObject<Jogador>;
+  /** jogos de zonas: o uniforme pintado (estampas e adereços) e se a personagem já está na fase de uso */
+  uniforme?: { codigo: string; itens: ItemDoUniforme[]; emUso: boolean };
 }
 
-export function NucleoAvatar({ estado, pecas, reduzido, protagonista, altura = 0, maquiagem, jogador }: AvatarProps) {
+export function NucleoAvatar({ estado, pecas, reduzido, protagonista, altura = 0, maquiagem, jogador, uniforme }: AvatarProps) {
   const { avatar, sexo, corpo } = protagonista;
   const manequim = useMemo<Mannequin3d>(() => ({ sex: sexo, head: avatar ? "AVATAR" : "PADRAO", avatar }), [sexo, avatar]);
   const cena = useContext(CenaContexto);
@@ -72,8 +76,10 @@ export function NucleoAvatar({ estado, pecas, reduzido, protagonista, altura = 0
   const raiz = useRef<THREE.Group>(null);
   const humano = useRef<HumanParts | null>(null);
   const giro = useRef(estado.giro);
+  const [montado, setMontado] = useState<HumanParts | null>(null);
   const guardarHumano = (p: HumanParts) => {
     humano.current = p;
+    setMontado(p);
   };
   useFrame((_, dt) => {
     if (!fora.current || !raiz.current) return;
@@ -99,6 +105,10 @@ export function NucleoAvatar({ estado, pecas, reduzido, protagonista, altura = 0
           <Mannequin mannequin={manequim} body={corpo} pieces={pecas} still={reduzido} externalPose maquiagem={maquiagem}
             onHuman={guardarHumano} fallback={<Silhueta cor="#ECE6DC" />} />
         </Suspense>
+        {uniforme && (
+          <UniformeNoCorpo humano={montado} prefixo={`pintada-${uniforme.codigo}`} itens={uniforme.itens} emUso={uniforme.emUso} reduzido={reduzido}
+            chaveDaRoupa={pecas.map((p) => `${p.id}:${p.colorHex}:${p.material}`).join("|")} />
+        )}
       </group>
     </group>
   );

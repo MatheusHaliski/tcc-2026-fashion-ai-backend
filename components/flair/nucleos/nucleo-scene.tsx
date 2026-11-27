@@ -44,6 +44,8 @@ interface Props {
   zonas?: Record<string, ZonaEscolha>;
   /** a maquiagem escolhida (Road to Glory): aparece no rosto do avatar */
   maquiagem?: Record<string, MaquiagemEscolha>;
+  /** a resposta que veste (o emblema do herói) */
+  emblema?: string | null;
   /** o jogo anda livre na preparação, na velocidade da agilidade do look */
   andarLivre?: boolean;
   agilidade?: number;

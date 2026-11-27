@@ -168,7 +168,7 @@ export function NucleoGame(props: Props) {
           resultado={resultado} tentativa={props.tentativa}
           previa={props.previa ?? null}
           variante={variante} semente={props.partida?.semente}
-          zonas={estado.sel.zonas} maquiagem={estado.sel.maquiagem}
+          zonas={estado.sel.zonas} emblema={estado.sel.resposta} maquiagem={estado.sel.maquiagem}
           prefs={fx.prefs}
           onPref={fx.alternar}
           entrada={entrada} recursos={recursos} usoDeRecursos={usoDeRecursos} cinema={cinema} onFimDesfile={acao.pular} entreLances={acao.aberta}
