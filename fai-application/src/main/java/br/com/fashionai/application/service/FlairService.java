@@ -490,7 +490,7 @@ public class FlairService {
         return out;
     }
 
-    private void entry(FlairMatch m, User u, Scheme s, String side, Deck d, Double score) {
+    void entry(FlairMatch m, User u, Scheme s, String side, Deck d, Double score) {
         FlairMatchEntry e = new FlairMatchEntry();
         e.setMatch(m);
         e.setUser(u);
@@ -578,7 +578,7 @@ public class FlairService {
 
     // ================================================================== equipes 3×3 e liga
 
-    private Map<String, Object> teamView(FlairTeam t, CurrentUser viewer) {
+    Map<String, Object> teamView(FlairTeam t, CurrentUser viewer) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", t.getId());
         m.put("name", t.getName());
@@ -668,89 +668,10 @@ public class FlairService {
                 .sorted(Comparator.comparingInt((Map.Entry<Scheme, Deck> e) -> e.getValue().power()).reversed()).limit(3).toList();
     }
 
+    /** Duelo de equipes (3 pares) contra outra equipe pelo código ou, com {@code CASA}, o treino contra a equipe da Casa. */
     @Transactional
     public Map<String, Object> teamBattle(CurrentUser user, String opponentCode) {
-        guard.requireCanCreate(user);
-        FlairTeam mine = members.findByUserId(user.id()).map(FlairTeamMember::getTeam).orElseThrow(() -> new ApiException(409, "SEM_EQUIPE", Msg.t("flair.entre_numa_equipe_para_desafiar")));
-        FlairTeam rival = teams.findByCode(opponentCode == null ? "" : opponentCode.trim().toUpperCase(Locale.ROOT)).orElseThrow(() -> ApiException.notFound(Msg.t("flair.equipe_adversaria")));
-        if (rival.getId().equals(mine.getId())) {
-            throw ApiException.badRequest("MESMA_EQUIPE", Msg.t("flair.escolha_outra_equipe"));
-        }
-        boolean playedToday = matches.findTop20ByTeamAIdOrTeamBIdOrderByCreatedAtDesc(mine.getId(), mine.getId()).stream()
-                .anyMatch(x -> today().equals(x.getPlayDate()) && (rival.getId().equals(x.getTeamAId()) || rival.getId().equals(x.getTeamBId())));
-        if (playedToday) {
-            throw ApiException.conflict("JA_DUELARAM_HOJE", Msg.t("flair.suas_equipes_ja_se_enfrentaram"));
-        }
-        List<Map.Entry<Scheme, Deck>> a = teamDecks(mine, user), b = teamDecks(rival, user);
-        if (a.isEmpty() || b.isEmpty()) {
-            throw new ApiException(409, "SEM_DECKS", Msg.t("flair.cada_equipe_precisa_de_ao"));
-        }
-        List<Map<String, Object>> duels = new ArrayList<>();
-        int wa = 0, wb = 0;
-        for (int i = 0; i < Math.max(a.size(), b.size()); i++) {
-            Map.Entry<Scheme, Deck> x = i < a.size() ? a.get(i) : null, y = i < b.size() ? b.get(i) : null;
-            String w;
-            List<FlairEngine.Round> rounds = List.of();
-            if (x == null) {
-                w = "B";
-            } else if (y == null) {
-                w = "A";
-            } else {
-                FlairEngine.DuelResult r = FlairEngine.duel(x.getValue(), y.getValue());
-                w = r.winner();
-                rounds = r.rounds();
-            }
-            wa += "A".equals(w) ? 1 : 0;
-            wb += "B".equals(w) ? 1 : 0;
-            Map<String, Object> d = new LinkedHashMap<>();
-            d.put("slot", i + 1);
-            d.put("a", x == null ? null : Map.of("user", Views.user(x.getKey().getUser()), "deck", x.getKey().getTitle(), "power", x.getValue().power()));
-            d.put("b", y == null ? null : Map.of("user", Views.user(y.getKey().getUser()), "deck", y.getKey().getTitle(), "power", y.getValue().power()));
-            d.put("winner", w);
-            d.put("rounds", rounds);
-            duels.add(d);
-        }
-        String winner = wa == wb ? "DRAW" : wa > wb ? "A" : "B";
-        FlairMatch m = new FlairMatch();
-        m.setMode("TEAM");
-        m.setStatus("FINISHED");
-        m.setPlayDate(today());
-        m.setTheme(mine.getName() + " × " + rival.getName());
-        m.setCreatedByUser(users.findById(user.id()).orElseThrow());
-        m.setTeamAId(mine.getId());
-        m.setTeamBId(rival.getId());
-        m.setWinnerSide(winner);
-        m.setResultJson(Json.write(Map.of("duels", duels, "winsA", wa, "winsB", wb)));
-        matches.save(m);
-        a.forEach(e -> entry(m, e.getKey().getUser(), e.getKey(), "A", e.getValue(), null));
-        b.forEach(e -> entry(m, e.getKey().getUser(), e.getKey(), "B", e.getValue(), null));
-        // RF41: quem dispara a partida joga (e vence, se o time dele vencer); antes do laço para contar os dois lançamentos
-        int teamFai = faiPoints.game(user.id(), "FLAIR_TEAM", m.getId().toString(), "A".equals(winner) ? "WIN" : "PLAYED");
-        if ("DRAW".equals(winner)) {
-            mine.setPoints(mine.getPoints() + 1);
-            rival.setPoints(rival.getPoints() + 1);
-        } else {
-            FlairTeam w = "A".equals(winner) ? mine : rival;
-            w.setPoints(w.getPoints() + 3);
-            members.findByTeamIdOrderByCreatedAtAsc(w.getId()).forEach(x -> award(x.getUser().getId(), 30, 20, "TEAM_WIN", m.getId().toString()));
-            // RF41: a vitória vale FAI Points para cada integrante do time vencedor (idempotente para quem disparou)
-            members.findByTeamIdOrderByCreatedAtAsc(w.getId()).forEach(x ->
-                    faiPoints.award(x.getUser().getId(), "GAME_WON", "GAME", "FLAIR_TEAM:" + m.getId(), null));
-            // Atelier: cada integrante do time vencedor ganha um fragmento da obra coletiva (idempotente por partida)
-            FlairTeam lost = w == mine ? rival : mine;
-            members.findByTeamIdOrderByCreatedAtAsc(w.getId()).forEach(x ->
-                    atelier.grant(AtelierGrants.teamWin(x.getUser().getId(), m.getId(), w.getId(), w.getName(), lost.getName())));
-        }
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("matchId", m.getId());
-        out.put("teamA", teamView(mine, user));
-        out.put("teamB", teamView(rival, user));
-        out.put("duels", duels);
-        out.put("score", Map.of("a", wa, "b", wb));
-        out.put("winner", winner);
-        out.put("faiPoints", teamFai);
-        members.findByTeamIdOrderByCreatedAtAsc(mine.getId()).forEach(x -> rightsCheck(x.getUser().getId()));
-        return out;
+        return new FlairTeamBattles(this, teams, members, matches, users, pieces, faiPoints, atelier, guard).battle(user, opponentCode);
     }
 
     /** Card RF38 — uma vitória pode completar uma combinação: reavalia os direitos a cupom depois do commit. */
