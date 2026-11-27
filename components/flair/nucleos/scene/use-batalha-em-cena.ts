@@ -6,7 +6,7 @@
  */
 import { useMemo } from "react";
 import type { Look3dPiece } from "@/components/three/common";
-import { pecasDoAdversario, rodadasDaBatalha, somaDaBatalha } from "@/lib/flair/nucleos/batalha-placar";
+import { fechoDaBatalha, pecasDoAdversario, rodadasDaBatalha, somaDaBatalha } from "@/lib/flair/nucleos/batalha-placar";
 import type { NucleoResultado } from "@/lib/flair/nucleos/types";
 
 interface BatalhaEmCena {
@@ -23,7 +23,8 @@ export function useBatalhaEmCena(codigo: string, resultado: NucleoResultado | nu
     if (codigo !== "BATALHA_LOOKS") return NADA;
     const rodadas = rodadasDaBatalha(resultado, anterior);
     const pecas = pecasDoAdversario(rodadas);
-    const soma = somaDaBatalha(rodadas);
+    // no fim, a soma do servidor com a execução do desfile final (a mesma da tabela)
+    const soma = fechoDaBatalha(resultado) ?? somaDaBatalha(rodadas);
     return { roupas: pecas ? { ADVERSARIO: pecas } : null, placar: soma ? `${soma.voce} × ${soma.adversario}` : null };
   }, [codigo, resultado, anterior]);
 }
