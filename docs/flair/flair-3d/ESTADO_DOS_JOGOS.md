@@ -348,6 +348,57 @@ critério de nenhum jogo chega a 8. Em ordem do que mais pesa:
 - **Fashion Detective (5,4):** o culpado é fixo (a história e as cutscenes nomeiam o Bento) e não há ✕ contextual.
 - **Dress Fighter e Passarela (6,1 e 5,7):** vida por look, fôlego por golpe e descarte da carta; desfile curto de decisão.
 
+## Rodada 8f (27/11/2026): Batalha de Looks no perfil peça-recurso e o critério Aura
+
+Fecha o que o item 5 deixou ("falta a Batalha no perfil peça-recurso e o adversário vestido no 3D") e abre o critério
+novo, **Aura**: como as cartas com Aura/Hype entram em cada jogo. Visto na tela com a bancada de tela
+(`BANCADA_DE_TELA.md`): as regras de verdade em memória atrás de `page.route`, sem banco nem conta real.
+
+### Item 1 (feito): a nota da rodada da Batalha com regra, look e foco, para os dois lados
+
+`BatalhaLooksPlacar`: a nota de cada rodada é regra do desafio (25 por vaga, −25 pela proibida) + até 10 pelo carisma e
+pela agilidade do look + até 5 pelo foco das peças do deck gastas como recurso nesta rodada (30 de foco dão o teto),
+parada em 100. O look da casa passa pela mesma conta, sem recurso. Não contam na regra nem no look a peça que desfilou
+na rodada anterior (carta cansada, rodada 8e) e a peça gasta como recurso na mesma rodada; a proibida conta no look
+inteiro. O merge da 8e com a 8f na main tinha deixado `BatalhaLooksRodadas` sem compilar; a rodada junta as duas
+regras (teste `aPecaQueDesfilouNaRodadaAnteriorEAGastaComoRecursoNaoContamJuntas`).
+
+**Tela.** Tabela rodada a rodada (`batalha-placar.tsx`) na preparação da rodada seguinte e no resultado: a conta de
+cada lado ("50 da regra + 2 do look + 0 do foco = 52"), o desafio, as vagas que não contaram e a família do look da
+casa; a soma no rodapé e no painel de LED da cena ("80 × 103"). O adversário veste no 3D o look que o servidor revela
+(`use-batalha-em-cena.ts`, `pecasDoAdversario`): a mesma pessoa, com outra roupa.
+
+### Item 2 (feito): a faixa de Hype da carta no resultado (Aura, só leitura)
+
+Em "Cartas que pontuaram", de todos os jogos, cada carta mostra a faixa de Hype em que jogou ("Hype: Relevante"), com
+os limiares do servidor (`hype-da-carta.ts`, os mesmos de `Flair3dHype`). Os jogos leem o Hype, nunca o escrevem
+(Circuito Aura); a nota não depende disto.
+
+**Visto na tela:** a Batalha inteira (deck de 8, três rodadas, foco gasto na segunda, a terceira com duas peças
+cansadas, a tabela, o painel de LED, o adversário vestido, a faixa de Hype). Capturas em
+`scratchpad/shots/jogos/8f/`. **Não visto:** o treino de uma rodada (está no teste da tela); celular.
+
+### Nota projetada depois da rodada 8f
+
+Projeção de quem implementou, a conferir por auditor independente. Coluna nova **Aura** (como Aura/Hype entra no
+jogo; antes desta rodada, a nota que o jogo já teria). Hoje o Hype aparece só na carta ampliada e nos anéis de luz no
+piso; só o Fashion Sports o usa na regra (+3 com Hype 80 ou mais). A faixa no resultado sobe todos em 0,5. A
+Batalha muda nos outros critérios; os demais jogos ficam com a projeção anterior.
+
+| Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Aura (antes → depois) | Final (sem Aura) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| BATALHA_LOOKS | 5,0 (4,6) | 5,0 (3,8) | 6,3 (6) | 5,2 (5) | 4,8 (4) | 6,5 | 5,5 | 2,5 → 3 | **5,5** (5,1) |
+| FASHION_SPORTS | 4,8 | 5 | 6 | 4,5 | 4,5 | 5,2 | 5 | 4 → 4,5 | 5,0 |
+| DRESS_FIGHTER | 6,2 | 6 | 7 | 5 | 6,3 | 6 | 6 | 2,5 → 3 | 6,1 |
+| demais 12 jogos | como acima | | | | | | | 2 a 2,5 → 2,5 a 3 | sem mudança |
+
+Média projetada dos 15 (sem Aura): 5,2. Aura média: 2,3 → 2,8. Nenhum jogo chega a 8 em nenhum critério.
+
+**Para a Aura chegar a 8** (proposta, não feito): a faixa de Hype precisa mudar a partida, não só aparecer. Por
+gênero: plateia e júri que reagem pela faixa (Passarela, Batalha, Singer), o Hype como recurso que se gasta uma vez
+por partida (destaque na foto, voto da plateia no empate), a Aura Metamorfose da carta Especial como poder com tempo
+de recarga, e cartas privadas sem Hype explicadas na tela. Sempre lendo o Hype, nunca escrevendo (Circuito Aura).
+
 ## Resumo
 
 | Nº | Jogo | Estado ao escrever este documento | Mais incompleto primeiro (ordem de trabalho) |
@@ -834,9 +885,9 @@ Cena: `scene/salas/batalha-looks.ts` (passarela em Y, adversário, plateia, pain
 | Rodada "Batalha": 3 rodadas com objetivo sorteado, soma contra o adversário, desempate pela plateia | feito | não |
 | Rodadas de treino: Look Monocromático em azul (a da base), Dress Code do Convite, Vista o Clima | feito | não |
 | Um cartão apresenta o objetivo de cada rodada | feito | não |
-| O painel da cena mostra a soma dos dois | pendente | não |
+| O painel da cena mostra a soma dos dois | feito (rodada 8f): painel de LED "você × adversário" | sim (bancada) |
 | Efeito de cor na cena 3D | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
-| Resultado com a nota de cada rodada, sua e do adversário | feito | não |
+| Resultado com a nota de cada rodada, sua e do adversário | feito; rodada 8f: tabela com a conta (regra + look + foco) de cada lado | sim (bancada) |
 | "Cartas que pontuaram" com os pontos de cada carta nas rodadas em etapas (antes: "vale conforme o pedido da vez", auditoria 3); o resultado explica que cada etapa entra com 1/n dos pontos (o "8,33" de uma etapa de 25 em 3) | feito para todas as rodadas em etapas (Batalha, Boutique, Volta ao mundo, Labirinto): a regra de uma vaga cumprida vale para a carta dessa vaga, com o peso da etapa | não (só testes) |
 | Duelo 1×1, sala de 4 e modos com amigos | pendente (online) | não |
 

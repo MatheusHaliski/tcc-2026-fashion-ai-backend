@@ -6,6 +6,10 @@ import type { LoadedAsset, SceneDocument } from "@/lib/atelier3d/document";
 import { assetIsPhotoRelief } from "@/lib/atelier3d/garment-parts";
 import { Choice } from "./garment-fields";
 import { GarmentMaterialPanel } from "./garment-material-panel";
+import { GarmentPaintPanel } from "./garment-paint-panel";
+import { GarmentPrintPanel } from "./garment-print-panel";
+import { GarmentShapePanel } from "./garment-shape-panel";
+import { GarmentExtrasPanel } from "./garment-extras-panel";
 import type { GarmentStudio as Studio, StudioTab } from "./use-garment-studio";
 import styles from "./garment.module.css";
 
@@ -25,6 +29,10 @@ export function GarmentStudioPanel({ studio, asset, doc, editable: canEdit }: Pr
   const relief = assetIsPhotoRelief(asset), editable = canEdit && !relief;
   const panels: Partial<Record<StudioTab, ReactNode>> = {
     material: <GarmentMaterialPanel studio={studio} asset={asset} doc={doc} editable={editable} />,
+    paint: <GarmentPaintPanel studio={studio} doc={doc} editable={editable} />,
+    print: <GarmentPrintPanel studio={studio} doc={doc} editable={editable} />,
+    shape: <GarmentShapePanel studio={studio} asset={asset} doc={doc} editable={editable} />,
+    extras: <GarmentExtrasPanel studio={studio} asset={asset} doc={doc} editable={editable} />,
   };
   const tabs = Object.keys(panels) as StudioTab[];
   return (

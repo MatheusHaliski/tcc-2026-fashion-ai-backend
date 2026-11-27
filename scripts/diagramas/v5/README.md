@@ -31,6 +31,10 @@ Graphviz.
 | `globais.py` | Classes de todas as entidades por área (mesmas áreas de `scripts/docs/taxonomia_entidades.py`) e componentes da arquitetura inteira. |
 | `indice.py` | Escreve `docs/diagramas/INDICE-2026-10.md`. |
 
+`modelo.py`, `tsmodelo.py`, `gerar.py`, `unidades.py` e `estados_ts.py` são fachadas: o código fica nos módulos com o
+mesmo prefixo (`modelo_*.py`, `tsmodelo_*.py`, `gerar_*.py`, `unidades_*.py`, `estados_ts_*.py`, um por
+responsabilidade) e é reexportado por elas, então `import modelo as M` e `from gerar import ...` continuam valendo.
+
 ## Quando o código não tem o que o diagrama do time desenhou
 
 Se não existe no código um campo, enum ou método de estado equivalente (por exemplo, o resgate em dinheiro do RF48 ainda

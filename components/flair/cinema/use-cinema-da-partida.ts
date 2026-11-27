@@ -3,13 +3,15 @@
  * As cutscenes da partida (lib/flair/cinema): a abertura toca quando a partida começa na preparação, uma vez por
  * partida; o final (vitória, empate ou derrota, pelo desfecho do servidor) toca quando o resultado fecha a partida. A
  * cena 3D recebe a cutscene pelos eventos (fx-events) e põe a câmera nas tomadas; aqui ficam o relógio, a legenda da
- * tomada na tela e o pular. Nenhuma cutscene muda a nota.
+ * tomada na tela e o pular. Nos jogos de zonas, o desfecho do momento-chave da fase de uso toca a cutscene do lance
+ * (lib/flair/cinema/lances.ts), uma vez por partida. Nenhuma cutscene muda a nota.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cutsceneDe, finalDoResultado } from "@/lib/flair/cinema/catalogo";
+import { cutsceneDoLance } from "@/lib/flair/cinema/lances";
 import { cameraNoInstante } from "@/lib/flair/cinema/tomada";
 import { duracao, type Cutscene } from "@/lib/flair/cinema/types";
-import { emitirFx } from "@/lib/flair/nucleos/fx-events";
+import { assinarFx, emitirFx } from "@/lib/flair/nucleos/fx-events";
 import type { Momento } from "@/lib/flair/nucleos/moments";
 import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -63,6 +65,12 @@ export function useCinemaDaPartida({ codigo, partida, momento, resultado, reduzi
   useEffect(() => {
     if (momento === "RESULTADO" && resultado && fecha(resultado)) tocar(finalDoResultado(codigo, resultado), `final:${partida ?? codigo}:${resultado.resultado}:${resultado.pontos}`);
   }, [momento, resultado, partida, codigo, tocar]);
+
+  useEffect(() => assinarFx((ev) => {
+    if (ev.tipo !== "uso-chave" || ev.nucleo !== codigo || ev.certa === null) return;
+    const c = cutsceneDoLance(codigo, ev.certa);
+    if (c) tocar(c, `lance:${partida ?? codigo}:${ev.chave.marca}`);
+  }), [codigo, partida, tocar]);
 
   useEffect(() => {
     if (!tocando) return;

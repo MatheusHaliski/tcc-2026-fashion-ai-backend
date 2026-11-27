@@ -228,12 +228,11 @@ public class FlairChallengeService {
                 .collect(Collectors.groupingBy(FlairChallengeSubmission::getChallengeId));
     }
 
+    /** Só grupos com algum desafio fora de rascunho: um grupo cujos desafios foram todos retirados some da lista. */
     List<Map<String, Object>> groupViews(CurrentUser viewer, List<FlairChallenge> all) {
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (FlairChallengeGroup g : groups.findAllByOrderBySortOrderAsc()) {
-            out.add(groupView(viewer, g, all.stream().filter(c -> g.getCode().equals(c.getGroupCode()) && c.getStatus() != FlairChallengeStatus.DRAFT).toList()));
-        }
-        return out;
+        return groups.findAllByOrderBySortOrderAsc().stream()
+                .map(g -> Map.entry(g, all.stream().filter(c -> g.getCode().equals(c.getGroupCode()) && c.getStatus() != FlairChallengeStatus.DRAFT).toList()))
+                .filter(e -> !e.getValue().isEmpty()).map(e -> groupView(viewer, e.getKey(), e.getValue())).toList();
     }
 
     Map<String, Object> groupView(CurrentUser viewer, FlairChallengeGroup g, List<FlairChallenge> members) {

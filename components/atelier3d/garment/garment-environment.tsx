@@ -18,7 +18,7 @@ export function GarmentEnvironment({ studio }: { studio: GarmentStudio }) {
     const room = new RoomEnvironment();
     const target = generator.fromScene(room, 0.04);
     scene.environment = target.texture;
-    scene.environmentIntensity = light === "warm" ? 0.55 : 0.9;
+    scene.environmentIntensity = light === "warm" ? 0.3 : 0.45;
     scene.environmentRotation.set(0, light === "warm" ? Math.PI * 0.75 : 0, 0);
     return () => {
       scene.environment = null;

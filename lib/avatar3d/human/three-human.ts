@@ -8,9 +8,13 @@
 import * as THREE from "three";
 import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
-import { eyeRig, eyeApertures, isCorneaCap, lowerLidLine, type EyeApertures } from "./eyes";
+import { eyeRig, eyeApertures, isCorneaCap, lowerLidLine } from "./eyes";
 import { openEyeSockets } from "./eye-sockets";
 import { earVertexMask } from "./hair-geometry";
+import { fitEyeOpening } from "./eye-opening";
+import { earMaskAttribute, installEarScattering, skinMaterial } from "./skin-material";
+export { clipEyeGeometryForExport } from "./eye-opening";
+export { earMaskAttribute, installEarScattering, skinMaterial } from "./skin-material";
 
 export interface Human {
   root: THREE.Group;
@@ -63,155 +67,6 @@ export function buildSkeleton(a: BodyAsset, joints: Float32Array): THREE.Bone[] 
 }
 
 export interface HumanLook { skin: string; skinMap?: THREE.Texture | null; eyeMap?: THREE.Texture | null; debugHair?: boolean; eyeShape?: ArrayLike<number> | null }
-
-/** Abre cada globo apenas entre as pálpebras medidas, com cobertura MSAA e o contorno fixo na cabeça (não na íris). */
-function fitEyeOpening(material: THREE.MeshPhysicalMaterial, aperture: EyeApertures, head: THREE.Bone): () => void {
-  const uniforms = {
-    ocularLeft: { value: aperture.left.map((p) => new THREE.Vector2(...p)) },
-    ocularRight: { value: aperture.right.map((p) => new THREE.Vector2(...p)) },
-    ocularRestHead: { value: head.matrixWorld.clone() },
-    ocularHeadInverse: { value: new THREE.Matrix4() },
-  };
-  const update = () => uniforms.ocularHeadInverse.value.copy(head.matrixWorld).invert();
-  material.alphaToCoverage = true;
-  material.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, uniforms);
-    shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>
-      uniform mat4 ocularRestHead;
-      uniform mat4 ocularHeadInverse;
-      varying vec2 vOcularPosition;`);
-    shader.vertexShader = shader.vertexShader.replace("#include <project_vertex>", `#include <project_vertex>
-      vOcularPosition = (ocularRestHead * ocularHeadInverse * modelMatrix * vec4(transformed, 1.0)).xy;`);
-    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>
-      uniform vec2 ocularLeft[16];
-      uniform vec2 ocularRight[16];
-      varying vec2 vOcularPosition;
-      float ocularEdge(vec2 p, vec2 contour[16]) {
-        bool inside = false;
-        float nearest = 1e6;
-        vec2 previous = contour[15];
-        for (int i = 0; i < 16; i++) {
-          vec2 current = contour[i];
-          vec2 e = current - previous;
-          float f = clamp(dot(p - previous, e) / max(dot(e, e), 1e-12), 0.0, 1.0);
-          nearest = min(nearest, length(p - previous - f * e));
-          if ((current.y > p.y) != (previous.y > p.y)) {
-            float crossing = current.x + (p.y - current.y) * (previous.x - current.x) / (previous.y - current.y);
-            if (p.x < crossing) inside = !inside;
-          }
-          previous = current;
-        }
-        float signedDistance = inside ? nearest : -nearest;
-        float aa = max(fwidth(signedDistance), 1e-5);
-        return smoothstep(-aa, aa, signedDistance);
-      }`);
-    shader.fragmentShader = shader.fragmentShader.replace("#include <alphatest_fragment>", `
-      float ocularCoverage = vOcularPosition.x > 0.0 ? ocularEdge(vOcularPosition, ocularLeft) : ocularEdge(vOcularPosition, ocularRight);
-      if (ocularCoverage < 0.001) discard;
-      diffuseColor.a *= ocularCoverage;
-      #include <alphatest_fragment>`);
-  };
-  material.customProgramCacheKey = () => "observed-eye-aperture-v1";
-  material.userData.eyeAperture = aperture;
-  return update;
-}
-
-/**
- * glTF não guarda onBeforeCompile. Recorta os triângulos do globo na pose neutra, interpolando os atributos, para
- * manter a abertura medida no arquivo. A animação exportada movimenta a cabeça, sem olhar independente dos olhos.
- * Retorna uma malha temporária; o chamador deve restaurar a original e descartar esta após exportar.
- */
-export function clipEyeGeometryForExport(h: Human): THREE.BufferGeometry | null {
-  const aperture = (h.eyes.material as THREE.Material).userData.eyeAperture as EyeApertures | undefined;
-  if (!aperture) return null;
-  const g = h.eyes.geometry, position = g.getAttribute("position") as THREE.BufferAttribute;
-  const index = g.getIndex()!;
-  const attributes = Object.entries(g.attributes) as [string, THREE.BufferAttribute][];
-  const layout = attributes.map(([name, attr]) => ({ name, attr, size: attr.itemSize }));
-  const values = layout.map(() => [] as number[]);
-  const vertex = (i: number) => layout.map(({ attr, size }) => Array.from({ length: size }, (_, k) => Number(attr.array[i * size + k])));
-  const posIndex = layout.findIndex((a) => a.name === "position");
-  const polygons = (s: "left" | "right") => {
-    const points = aperture[s].map((p) => new THREE.Vector2(...p));
-    return THREE.ShapeUtils.triangulateShape(points, []).map((tri) => tri.map((i) => points[i]));
-  };
-  const masks = { left: polygons("left"), right: polygons("right") };
-  const cross = (a: THREE.Vector2, b: THREE.Vector2, p: number[]) => (b.x - a.x) * (p[1] - a.y) - (b.y - a.y) * (p[0] - a.x);
-  for (let t = 0; t < index.count; t += 3) {
-    const ids = [index.getX(t), index.getX(t + 1), index.getX(t + 2)];
-    const side = position.getX(ids[0]) > 0 ? "left" : "right";
-    for (const mask of masks[side]) {
-      let poly = ids.map(vertex);
-      const orientation = Math.sign(cross(mask[0], mask[1], [mask[2].x, mask[2].y]));
-      for (let edge = 0; edge < 3 && poly.length; edge++) {
-        const a = mask[edge], b = mask[(edge + 1) % 3], output: number[][][] = [];
-        let previous = poly[poly.length - 1];
-        let pd = orientation * cross(a, b, previous[posIndex]);
-        for (const current of poly) {
-          const cd = orientation * cross(a, b, current[posIndex]);
-          if ((pd >= 0) !== (cd >= 0)) {
-            const f = pd / (pd - cd);
-            output.push(previous.map((attr, j) => attr.map((v, k) => v + (current[j][k] - v) * f)));
-          }
-          if (cd >= 0) output.push(current);
-          previous = current; pd = cd;
-        }
-        poly = output;
-      }
-      for (let k = 1; k < poly.length - 1; k++) {
-        const tri = [poly[0], poly[k], poly[k + 1]], a = tri[0][posIndex], b = tri[1][posIndex], c = tri[2][posIndex];
-        const area = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
-        if (area < 1e-12) continue;
-        for (const v of tri) v.forEach((attr, j) => values[j].push(...attr));
-      }
-    }
-  }
-  const out = new THREE.BufferGeometry();
-  layout.forEach(({ name, attr, size }, i) => {
-    const Ctor = attr.array.constructor as Float32ArrayConstructor | Uint16ArrayConstructor | Uint8ArrayConstructor;
-    out.setAttribute(name, new THREE.BufferAttribute(new Ctor(values[i]), size, attr.normalized));
-  });
-  out.normalizeNormals(); out.computeBoundingSphere();
-  return out;
-}
-
-export function skinMaterial(look: HumanLook): THREE.MeshPhysicalMaterial {
-  const m = new THREE.MeshPhysicalMaterial({
-    color: look.skinMap ? "#ffffff" : look.skin, map: look.skinMap ?? null, roughness: 0.55, metalness: 0,
-    // sheen discreto e quase na cor da própria pele: o véu claro de antes esbranquiçava o corpo sob a luz do estúdio
-    sheen: 0.22, sheenRoughness: 0.6, sheenColor: new THREE.Color(look.skin).lerp(new THREE.Color("#ffd9c8"), 0.18),
-  });
-  m.name = "pele";
-  return m;
-}
-
-/**
- * Pele da orelha: a pinna é fina e vascularizada, portanto precisa de uma resposta quente quando recebe luz de
- * contraluz. A máscara vem da topologia do asset, não de uma heurística por UV, para acompanhar a forma do rosto.
- */
-export function installEarScattering(material: THREE.MeshPhysicalMaterial): void {
-  material.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>\nattribute float earMask;\nvarying float vEarMask;`);
-    shader.vertexShader = shader.vertexShader.replace("#include <project_vertex>", `#include <project_vertex>\n  vEarMask = earMask;`);
-    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>\nvarying float vEarMask;`);
-    shader.fragmentShader = shader.fragmentShader.replace("#include <opaque_fragment>", `
-      #if NUM_DIR_LIGHTS > 0
-        vec3 earTransmission = vec3(0.0);
-        for (int earLight = 0; earLight < NUM_DIR_LIGHTS; earLight++) {
-          float earBacklight = pow(max(dot(-normal, directionalLights[earLight].direction), 0.0), 2.0);
-          earTransmission += directionalLights[earLight].color * earBacklight;
-        }
-        outgoingLight += vEarMask * diffuseColor.rgb * vec3(1.0, 0.28, 0.14) * earTransmission * 0.18;
-      #endif
-      #include <opaque_fragment>`);
-  };
-  material.customProgramCacheKey = () => "avatar-skin-ear-scattering-v2";
-}
-
-/** Binary topological masks need 255 when normalized as an unsigned-byte attribute. */
-export function earMaskAttribute(mask:Uint8Array,vertices:Uint32Array|Uint16Array){
-  return new THREE.BufferAttribute(Uint8Array.from(vertices,v=>mask[v]?255:0),1,true);
-}
 
 export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   const root = new THREE.Group(); root.name = "avatar";
