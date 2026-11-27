@@ -21,9 +21,10 @@ O que vale para todos os jogos e não se repete abaixo:
   foto ou cena.
 - A roupa é o foco: nenhum painel, personagem ou efeito cobre a faixa central do palco.
 - O servidor é a única fonte da nota. A prévia nunca gasta o sorteio: a partida inteira é recalculada da semente.
-- **Fora desta entrega em todos os jogos:** partida online com outras pessoas (sala, fila, convite, voto da plateia de
-  verdade). O desenho descreve essas variações, mas a base só abre partida solo (`BASE_NUCLEOS.md`, "Os avatares de
-  cada partida"). Onde o jogo pede adversário ou plateia, entra um figurante com nota tirada da semente.
+- **Multiplayer (27/11/2026, `MULTIPLAYER.md`):** convite por busca na rede FAI (nunca tag), sala com a mesma semente
+  nos 15 jogos e no MAKE UP e sala por turnos julgada no servidor na Batalha de Looks, no Dress Fighter e no Fashion
+  Sports. Ainda fora: tempo real, fila, cooperativo (Detective/Super-Herói) e voto da plateia de verdade. No single
+  player, onde o jogo pede adversário ou plateia, continua o figurante com nota tirada da semente.
 - **Fluidez do 3D:** não medida. O ambiente de desenvolvimento não tem placa de vídeo.
 - **Modelo cinza na ação (auditoria 3):** conferido de novo em quadros a cada 0,35 s do Dress Fighter, da entrega ao
   resultado, sem placa de vídeo: a modelo fica vestida o tempo todo. O corpo humano só aparece com as três zonas
@@ -453,11 +454,15 @@ Comum e a Metamorfose renderam.
 `Flair3dNucleoServiceTest`). Vitest: `aura-na-partida.test.ts`, `nucleo-aura.test.tsx`, `batalha-fecho.test.tsx`,
 `batalha-placar.test.ts`.
 
-**Visto na tela:** a Batalha inteira com o trunfo chamado na 3ª rodada (+5 na rodada, "Comum: o primeiro erro não
-drenou o recurso" no resultado) e a Passarela com o painel e o trunfo. Capturas em `scratchpad/shots/jogos/8g/`.
-**Não visto:** Dress the Star, Personagem de Filme e Boutique na tela (mesmo componente e mesmo Decorator, cobertos
-pelos testes); celular; a Metamorfose disparando na tela (a carta Especial da bancada é ACE e o look da captura errou
-nenhuma marca com ela).
+**HUD mínimo de console** (auditoria de 27/11): fechado, o painel mostra só o resumo curto ("Aura: plateia +6", "Aura
++6 · trunfo +4"); a plateia, as famílias e o trunfo abrem como painel.
+
+**Visto na tela** (bancada): a Batalha inteira com o trunfo chamado na 3ª rodada (+5 na rodada, "Comum: o primeiro
+erro não drenou o recurso" no resultado); a Passarela com o resumo, o painel aberto, o trunfo chamado e, seguindo sem
+executar, o resultado com a plateia (+1), o Electro (+150 ms), o Comum (dreno do primeiro erro perdoado) e a
+Metamorfose do Colar branco (a marca 1 virou "bom": execução −6 em vez de −12). Capturas em
+`scratchpad/shots/jogos/8g/`. **Não visto:** Dress the Star, Personagem de Filme e Boutique na tela (mesmo componente
+e mesmo Decorator, cobertos pelos testes); celular.
 
 ### Nota projetada depois da rodada 8g
 
@@ -680,6 +685,8 @@ textos `flair3d.detetive.*` em pt-BR, en e es.
 | Celular (auditoria 3: textos sobre a cena, botões e resultado cortados) | feito: a faixa de baixo cabe na largura (antes passava 20 px), a ação quebra a linha em vez de cortar ("Pegar o papel do bolso do segurança do salão", com a contração certa em pt-BR e es), o quadro termina acima da barra de navegação, a câmera mostra só o ícone e o elenco só quem joga; o resultado rola dentro da faixa; a dica do preparo fala do caso novo (antes dizia "Salão 1 de 6") | sim (tela real do jogo em 390×844 com a API simulada no navegador: preparo, sala com enigma e ações, final parcial e resultado) |
 | Salvar por sala | feito: o servidor grava cada passo; ao voltar ao jogo, "Continuar desta sala" mostra a sala, as pistas, o fôlego e o relógio e retoma dali | não (só testes) |
 | Limite de 45 minutos | feito (relógio da partida; ao passar, Iolanda chama para a passarela) | não |
+| Tela e controle de console (pedido da dona em 27/11: "tela de jogo muito pequena", "informação confusa", setas, roda no X) | feito: na investigação a sala ocupa a tela toda abaixo do cabeçalho (T ou o botão: Fullscreen API; modo imersivo onde ela não existe); HUD mínimo (sala e objetivo, vida, relógio, recurso equipado, prompt só quando vale, aviso curto; nenhum texto com mais de 6 palavras sobre a cena); caso, mapa e pistas no painel da esquerda (C), ações, mão, enigma, acusação e inventário no da direita (I), fechados por padrão, Esc fecha; setas andam (Shift corre) pelos corredores do ponto aos vizinhos e chegar ao vizinho manda IR ao servidor, como antes; E usa a ação mais perto (armário, porta, esconderijo, bolso, vigia) com a carta da cor certa; X abre a roda com as seis cores como recursos (chave, disfarce, distração, lupa, fôlego, moeda; P ou soltar X equipa; a cena para enquanto a roda está aberta); A mira (câmera mais perto, anel vermelho no alvo) e F usa o recurso equipado no alvo; ? mostra os controles. O servidor continua julgando tudo pelo mesmo /acionar. Perfil por jogo (`lib/flair/nucleos/controle`, `docs/refactoring/gof/2026-11-27-perfil-console.md`): os outros 14 jogos seguem no mapa antigo | sim (fotos e vídeo em 1440×900 e 390×844) |
+| Demonstração jogável de movimento, combate e interação (`/flair/3d/detective/demo`) | feito, só no navegador (`lib/flair/detetive/demo`): uma sala com colisão, porta trancada, gaveta com a chave, armário com munição, kit de costura e carretel no chão, 3 vigias que patrulham, perseguem e golpeiam, com barra de vida; pistola de alfinetes (pente 12, R recarrega), leque de tesoura, spray de laquê e kit de costura na roda X; mira A e F; vida da pessoa com flash e tremor; "Você foi pega" e reiniciar. Sem sangue (faíscas, brilho, tecido). O caso de verdade continua sem combate (o confronto é a carta azul) | sim (fotos e vídeo) |
 
 ## 7 · Boutique 3D
 

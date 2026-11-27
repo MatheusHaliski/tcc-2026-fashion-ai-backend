@@ -13,6 +13,9 @@ import { NucleoContinuar } from "@/components/flair/nucleos/nucleo-continuar";
 import { NucleoDeck } from "@/components/flair/nucleos/nucleo-deck";
 import { NucleoGame } from "@/components/flair/nucleos/nucleo-game";
 import { NucleoRounds } from "@/components/flair/nucleos/nucleo-rounds";
+import { MultiEntrada } from "@/components/flair/multi/multi-entrada";
+import { SalaFaixa } from "@/components/flair/multi/sala-faixa";
+import { useSalaDaPartida } from "@/components/flair/multi/use-sala-da-partida";
 import { useNucleoMatch } from "@/components/flair/nucleos/use-nucleo-match";
 import { useNucleoMoments } from "@/components/flair/nucleos/use-nucleo-moments";
 import { useNucleoPreview } from "@/components/flair/nucleos/use-nucleo-preview";
@@ -24,7 +27,9 @@ import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
 
 function Partida({ codigo }: { codigo: NucleoCodigo }) {
   const tx = useNucleoText();
-  const m = useNucleoMatch(codigo);
+  // multiplayer com a mesma semente (?sala=): a partida abre pela sala, sem escolha de rodada nem retomada solo
+  const salaP = useSalaDaPartida(codigo);
+  const m = useNucleoMatch(codigo, salaP.daPartida?.id ?? null);
   const retomada = useNucleoRetomada(codigo);
   const campanha = useNucleoProgresso(codigo);
   const d = m.definicao;
@@ -53,15 +58,16 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
     </div>
   );
   let corpo;
-  const aRetomar = !m.partida ? retomada.retomada : null;
-  if (m.carregando || retomada.carregando || (m.banco.loading && !m.banco.data && d.recursos.includes("CARTAS"))) {
+  const aRetomar = !m.partida && !salaP.id ? retomada.retomada : null;
+  const precisaRodada = m.precisaRodada && !salaP.daPartida;
+  if (m.carregando || salaP.carregando || retomada.carregando || (m.banco.loading && !m.banco.data && d.recursos.includes("CARTAS"))) {
     corpo = <SkeletonGrid n={3} />;
   } else if (aRetomar) {
     corpo = <NucleoContinuar codigo={codigo} retomada={aRetomar} onNova={retomada.decidir} onContinuar={() => {
       m.continuar(aRetomar);
       retomada.decidir();
     }} />;
-  } else if (m.precisaRodada) {
+  } else if (precisaRodada) {
     corpo = <NucleoRounds definicao={m.inteira} onEscolher={m.escolherRodada} progresso={campanha.progresso} />;
   } else if (m.precisaDeck && d.deck) {
     corpo = <NucleoDeck codigo={codigo} regras={d.deck} cartas={m.todas} entrando={m.entrando} erro={m.erroEntrar} rodada={m.rodada} regrasDaRodada={d.objetivo.regras.map((r) => r.codigo)} onEntrar={(deck) => void m.entrar(deck)} />;
@@ -91,10 +97,12 @@ function Partida({ codigo }: { codigo: NucleoCodigo }) {
       />
     );
   }
-  const noQuadro = !m.precisaDeck && !m.precisaRodada && !m.carregando && !aRetomar;
+  const noQuadro = !m.precisaDeck && !precisaRodada && !m.carregando && !aRetomar;
   return (
     <>
       {!noQuadro && cabecalho}
+      {salaP.sala && <SalaFaixa sala={salaP.sala} />}
+      {!noQuadro && !salaP.id && !aRetomar && <MultiEntrada jogo={codigo} rodada={m.rodada} />}
       {m.definicaoErro && <p className="n3d-offline" role="status">{tx.t("flair3d.ui.offline")}</p>}
       {!noQuadro && !aRetomar && !m.carregando && campanha.progresso && <NucleoCampanha progresso={campanha.progresso} lista={campanha.progresso.porResposta} />}
       {corpo}

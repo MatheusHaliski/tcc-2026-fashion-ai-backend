@@ -27,9 +27,13 @@ describe("Aura na partida", () => {
     // (5 + 3) / 2 = 4, Tendência; com Splash, Viral: +6
     expect(screen.getByTestId("nucleo-aura-plateia").textContent).toBe("A plateia do desfile reage ao Hype Viral do look: +6 quando o look fechar (até +6; Hype baixo não tira ponto).");
     expect(document.querySelectorAll("[data-familia]")).toHaveLength(2);
+    // HUD mínimo: fechado, só o resumo curto (até 6 palavras)
+    expect(screen.getByTestId("nucleo-aura-resumo").textContent).toBe("Aura: plateia +6");
+    expect(screen.getByTestId("nucleo-aura").hasAttribute("open")).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: /Chamar o Hype de Camisa verde \(\+5\)/ }));
     await waitFor(() => expect(screen.getByTestId("nucleo-aura-trunfo").textContent).toContain("Trunfo chamado: Camisa verde, Hype Viral, +5"));
     expect(calls.filter((c) => c.path.endsWith("/hype"))).toHaveLength(1);
+    expect(screen.getByTestId("nucleo-aura-resumo").textContent!.split(/\s+/).length).toBeLessThanOrEqual(6);
     expect(screen.queryByRole("button", { name: /Chamar o Hype/ })).toBeNull();
   });
 

@@ -108,7 +108,7 @@ public class FlairMakeUpService {
         return out;
     }
 
-    /** {pontos, estrelas, regras, eventos, prestigioGanho, carreira}: 403 abaixo do nível, 422 com carta alheia ou fora da paleta. */
+    /** {pontos, estrelas, regras, eventos, prestigioGanho, carreira, lookId}: 403 abaixo do nível, 422 com carta alheia ou fora da paleta. */
     @Transactional
     public Map<String, Object> entregar(CurrentUser user, String codigo, Entrega entrega) {
         FlairMakeUpBrief b = brief(codigo);
@@ -139,6 +139,8 @@ public class FlairMakeUpService {
         out.put("eventos", r.eventos());
         out.put("prestigioGanho", ganho);
         out.put("carreira", carreiraMap(carreira(user.id())));
+        // o look entregue: a sala multiplayer do MAKE UP (mesmo brief) registra este id (Flair3dSalaAssincrona)
+        out.put("lookId", look.getId());
         return out;
     }
 }

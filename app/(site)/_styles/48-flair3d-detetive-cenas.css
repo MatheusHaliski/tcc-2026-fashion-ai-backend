@@ -53,27 +53,6 @@
   pointer-events: auto;
 }
 
-.dtv-folha {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
-  z-index: 4;
-  max-height: 82%;
-  overflow: auto;
-  padding: 12px;
-  border-radius: 12px;
-  background: #f6f2ea;
-  color: #1a1a1e;
-}
-
-.dtv-folha header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
 .dtv-caderno {
   display: grid;
   gap: 8px;

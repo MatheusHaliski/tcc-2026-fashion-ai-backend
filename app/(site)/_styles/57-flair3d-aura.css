@@ -8,6 +8,10 @@
   font-size: var(--text-caption);
 }
 
+.n3d-aura summary {
+  cursor: pointer;
+}
+
 .n3d-aura p {
   margin: 4px 0;
 }

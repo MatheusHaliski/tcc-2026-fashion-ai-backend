@@ -18,6 +18,8 @@ export const MEIA_LARGURA = 0.55;
 export const RAIO_DE_CHEGADA = 0.45;
 /** Andar da detetive, em m/s (devagar: é uma investigação, com vigias). */
 export const VELOCIDADE = 1.8;
+/** Correndo (Shift ou L3, no perfil console). */
+export const CORRENDO = 3.2;
 
 /** Distância do lugar ao segmento a–b. */
 function aoSegmento(p: Lugar, a: Lugar, b: Lugar): number {
@@ -38,9 +40,9 @@ export function noCorredor(p: Lugar, aqui: Lugar, vizinhos: readonly Lugar[]): b
  * Um passo no sentido da câmera: `mover.y` positivo vai para onde a câmera olha (`rumo`, em radianos, 0 = -z), `mover.x`
  * para a direita dela. Fora dos corredores, tenta escorregar em um eixo; se nem assim, fica.
  */
-export function passoDaDetetive(atual: Lugar, mover: Vetor, dt: number, rumo: number, aqui: Lugar, vizinhos: readonly Lugar[]): Lugar {
+export function passoDaDetetive(atual: Lugar, mover: Vetor, dt: number, rumo: number, aqui: Lugar, vizinhos: readonly Lugar[], velocidade = VELOCIDADE): Lugar {
   if (Math.hypot(mover.x, mover.y) < 1e-3 || dt <= 0) return atual;
-  const d = Math.min(dt, 0.1) * VELOCIDADE;
+  const d = Math.min(dt, 0.1) * velocidade;
   const fx = Math.sin(rumo);
   const fz = -Math.cos(rumo);
   const dx = (mover.y * fx - mover.x * fz) * d;

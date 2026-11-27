@@ -67,12 +67,12 @@ export function estadoInicial(): EstadoDaDemo {
   return {
     t: 0,
     jogador: {
-      x: 0, z: 3.8, giro: Math.PI, vida: VIDA_MAXIMA, arma: "PISTOLA", municao: { pente: 12, reserva: 12, laque: 3, kits: 1 }, chave: false,
+      x: 0, z: 4.3, giro: Math.PI, vida: VIDA_MAXIMA, arma: "PISTOLA", municao: { pente: 12, reserva: 12, laque: 3, kits: 1 }, chave: false,
       recarga: 0, recarregando: 0, gesto: null, folga: 0, andando: false, correndo: false,
     },
     vigias: [
-      vigia("V1", [{ x: -4.6, z: 1.8 }, { x: -1.6, z: 3.6 }, { x: -4.6, z: 4.2 }]),
-      vigia("V2", [{ x: 4.8, z: -0.6 }, { x: 4.8, z: 1.6 }, { x: 1.9, z: -0.8 }]),
+      vigia("V1", [{ x: -4.6, z: 2.4 }, { x: -4.6, z: 0.1 }]),
+      vigia("V2", [{ x: 4.8, z: -0.8 }, { x: 4.8, z: 1.8 }, { x: 1.9, z: -0.8 }]),
       vigia("V3", [{ x: -3.2, z: -4.2 }, { x: 3.4, z: -4 }]),
     ],
     interativos: interativosIniciais(),

@@ -43,4 +43,6 @@ export interface MakeUpResultado {
   eventos?: { codigo: string; valor?: unknown }[];
   prestigioGanho: number;
   carreira?: MakeUpCarreira | null;
+  /** o look gravado (a sala multiplayer do MAKE UP o registra) */
+  lookId?: string;
 }
