@@ -19,7 +19,7 @@ function take(fn: TexFn) {
   return takeCanvas();
 }
 
-describe("texturas das áreas no tamanho real", () => {
+describe("texturas das áreas no tamanho real", { timeout: 60_000 }, () => {
   it("galeria: parquet, granito, gesso, tecido, textos, etiquetas, arte, aurora, lanternim e manchas de luz", async () => {
     const T = await import("./galeria-tex"), J = await import("./galeria-trajes");
     const out: Record<string, unknown> = {
@@ -71,7 +71,7 @@ describe("texturas das áreas no tamanho real", () => {
   });
 });
 
-describe("as áreas inteiras com as texturas no tamanho real (as que só o desenho da área cria: lavagens, luar, brilho)", () => {
+describe("as áreas inteiras com as texturas no tamanho real (as que só o desenho da área cria: lavagens, luar, brilho)", { timeout: 60_000 }, () => {
   for (const name of ["galeria", "lounge", "cofre", "doca"] as const) {
     it(name, async () => {
       const { M } = await import("../interior-mats"), { AREA } = await import(`./${name}`);

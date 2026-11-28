@@ -39,12 +39,18 @@ final class Fk {
         return value;
     }
 
+    /** Todas as classes de dublê: {@link ServiceFakes} e {@link ServiceFakesLoja}. */
+    static Class<?>[] fakeClasses() {
+        return java.util.stream.Stream.of(ServiceFakes.class, ServiceFakesLoja.class, ServiceFakesFlair.class)
+                .flatMap(holder -> java.util.Arrays.stream(holder.getDeclaredClasses())).toArray(Class<?>[]::new);
+    }
+
     /** Argumento de construtor dos dublês: interfaces viram proxies; o resto, padrão neutro. */
     static Object arg(Class<?> type) {
         if (type.isInterface()) return proxy(type);
         if (type.isPrimitive()) return primitive(type);
         if (type == String.class) return "";
-        for (Class<?> fake : ServiceFakes.class.getDeclaredClasses()) {
+        for (Class<?> fake : fakeClasses()) {
             if (fake.getSuperclass() == type) {
                 try {
                     Constructor<?> k = fake.getDeclaredConstructor();

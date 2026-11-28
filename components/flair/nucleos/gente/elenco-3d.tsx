@@ -12,13 +12,12 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { clone as clonarComOssos } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { MultidaoLeve } from "@/components/flair/nucleos/gente/corpo-leve";
 import { Humanoides } from "@/components/flair/nucleos/gente/humanoides-3d";
+import { clonar, type Clone } from "@/components/flair/nucleos/gente/clone-do-molde";
 import { MoldeHumano, type Molde } from "@/components/flair/nucleos/gente/molde-humano";
-import { animate, cloneRig, newMotionState, type MotionState, type Rig } from "@/lib/avatar3d/human/locomotion";
-import type { Motion } from "@/lib/avatar3d/human/locomotion-model";
-import { corposCheios, fazSombraDeLonge, nivelDeDetalhe, QUADROS_POR_NIVEL, type NivelDeDetalhe } from "@/lib/flair/nucleos/gente/detalhe";
+import { animate } from "@/lib/avatar3d/human/locomotion";
+import { corposCheios, fazSombraDeLonge, nivelDeDetalhe, QUADROS_POR_NIVEL } from "@/lib/flair/nucleos/gente/detalhe";
 import type { AtorDeCena } from "@/lib/flair/nucleos/gente/ator";
 import { aplicarGesto } from "@/lib/flair/nucleos/gente/gestos";
 import { humanoidesDaCena, poseHumana } from "@/lib/flair/nucleos/gente/humanoides";
@@ -26,52 +25,8 @@ import { poseLeveAnimada, poseLeveDoAtor } from "@/lib/flair/nucleos/gente/leve"
 import { agora as relogioDaCena } from "@/components/flair/nucleos/scene/stage-context";
 import { sorteio, type PessoaDoElenco } from "@/lib/flair/nucleos/gente/elenco";
 
-interface Clone {
-  grupo: THREE.Group;
-  /** o corpo completo; no nível LONGE ele some e a pessoa aparece na multidão leve */
-  raiz: THREE.Object3D;
-  rig: Rig;
-  st: MotionState;
-  malhas: THREE.Mesh[];
-  detalhes: THREE.Object3D[];
-  nivel: NivelDeDetalhe | null;
-  sombra: boolean | null;
-  quadro: number;
-  acumulado: number;
-  anim: Motion;
-  desde: number;
-}
-
 const PARALELO = 2;
-/** acabamentos de poucos pixels: saem no nível leve (mesmos nomes de malha do corpo humano) */
-const DETALHE = /^(córnea|linha-dagua|pelos-sobrancelhas|barra-|punho-|costura-|botoes-|gola-ponta-|cadarco-|colarinho-)/;
 const RAD_CHUTE = -1.15;
-
-function clonar(m: Molde, id: string, semente: number): Clone {
-  const raiz = clonarComOssos(m.raiz);
-  let corpo: THREE.SkinnedMesh | null = null;
-  raiz.traverse((o) => {
-    const s = o as THREE.SkinnedMesh;
-    if (s.isSkinnedMesh && s.name === "corpo") corpo = s;
-  });
-  const malhas: THREE.Mesh[] = [];
-  const detalhes: THREE.Object3D[] = [];
-  raiz.traverse((o) => {
-    const s = o as THREE.SkinnedMesh;
-    if (s.isSkinnedMesh && corpo && s !== corpo) s.bind((corpo as THREE.SkinnedMesh).skeleton, s.bindMatrix);
-    if ((o as THREE.Mesh).isMesh) {
-      o.frustumCulled = false;
-      malhas.push(o as THREE.Mesh);
-    }
-    if (o !== raiz && DETALHE.test(o.name)) detalhes.push(o);
-  });
-  raiz.visible = true;
-  const grupo = new THREE.Group();
-  grupo.name = `pessoa-${id}`;
-  grupo.add(raiz);
-  const rig = cloneRig(m.rig, raiz);
-  return { grupo, raiz, rig, st: newMotionState(rig, semente, "idle"), malhas, detalhes, nivel: null, sombra: null, quadro: semente % 4, acumulado: 0, anim: "idle", desde: 0 };
-}
 
 interface Props {
   pessoas: Map<string, PessoaDoElenco>;
@@ -181,6 +136,11 @@ export function Elenco3D({ pessoas, atores, prontos, reduzido, limite = Infinity
       const molde = pessoa && moldes.current.get(pessoa.chave);
       let c = clones.current.get(a.id);
       const cheio = !cheios.current || cheios.current.has(a.id);
+      // a pessoa trocou de roupa (o look da casa da rodada): o clone do molde antigo sai quando o novo fica pronto
+      if (c && molde && c.chave !== molde.chave) {
+        grupo.remove(c.grupo);
+        c = undefined;
+      }
       if (!c && molde) {
         c = clonar(molde, a.id, Math.floor(sorteio(1, a.id) * 1000));
         clones.current.set(a.id, c);

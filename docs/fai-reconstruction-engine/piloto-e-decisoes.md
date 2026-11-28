@@ -182,7 +182,7 @@ proxy não deixa passar MySQL); a conferência fica com `scripts/catalog/audit_m
 - Memória (README): 10 GB para a forma, 21 GB para a textura, 29 GB para as duas no mesmo processo. Uma GPU de 24 GB
   não comporta as duas carregadas ao mesmo tempo; nesse caso a alternativa é o TRELLIS.2 4B (MIT, mínimo de 24 GB,
   `.glb` PBR).
-- Ambiente: Python 3.10, PyTorch 2.5.1 + cu124 (`scripts/catalog/runpod_setup_hunyuan.sh`).
+- Ambiente: Python 3.10, PyTorch 2.5.1 + cu124 (`scripts/catalog/hunyuan_glb_setup_runpod.sh`).
 - **Vistas:** no código oficial, a forma usa uma imagem só e a pintura condiciona apenas por `input_images[0]`. Passar
   uma lista em `image_path` quebra a chamada (`image_prompt` fica sem valor). A geração usa a **frente** do flat lay
   aprovado. As costas são baixadas e servem só para a revisão. Usar as costas de verdade exige outro modelo de forma
@@ -195,11 +195,28 @@ textura vem do 2.1, pela frente. Cada etapa roda num processo (`--stage shape`, 
 modelos não ficam carregados juntos: o pico esperado é o da textura (~21 GB) e uma GPU de 24 GB serve. Gerador gravado:
 `hunyuan3d-2mv+2.1`.
 
-**Fluxo:** `export_glb_batch.py` (Mac, só lê o banco) → `lote.csv` → `runpod_hunyuan_runner.py` (pod, `--stage shape` e depois `--stage paint`, grava só no volume) → `~/glb-hunyuan` → `import_meshy_glbs.py --generator hunyuan3d-2mv+2.1 --origin runpod` (ensaio; `--apply` só
+**Fluxo:** `export_glb_batch.py` (Mac, só lê o banco) → `lote.csv` → `hunyuan_glb_runner.py` (pod, `--stage shape` e depois `--stage paint`, grava só no volume) → `~/glb-hunyuan` → `import_meshy_glbs.py --generator hunyuan3d-2mv+2.1 --origin runpod` (ensaio; `--apply` só
 com confirmação). O gerador e a origem vão para `catalog_product_models_3d.generator` e `metrics_json.import`.
 
 **A medir no piloto:** GPU, VRAM de pico, segundos por produto, custo por hora e total, e as notas comparadas com a
 Meshy (mesma régua do `glb_quality.py`, renders de frente, lado e costas).
+
+## T4 da GCP e lote sem flat lay obrigatório (15/11/2026)
+
+**Decisão:** o lote 3D passa a aceitar três fontes por produto: flat lay aprovado › Peça inteira (`RENDERED`) › foto
+do produto, com a pessoa removida na GPU pelo recorte FASHN do packshot. Assim o flat lay deixa de ser obrigatório (só
+~206 produtos têm). O plano completo está em `plano-glb-catalogo.md`.
+
+**GPU:** T4 de 16 GB na GCP, em VM spot (`scripts/cloud/hunyuan_t4_vm.py`). A cota "Custom model serving Nvidia T4" é
+de endpoint do Vertex AI, que cobra enquanto fica ligado; para um lote, a VM spot que se apaga sai mais barata. O
+Hunyuan3D 2.1 Paint (21 GB) não cabe na T4, então a textura passa a vir do Hunyuan3D-2 Paint 2.0 turbo, que gera só
+cor, sem PBR. Gerador gravado: `hunyuan3d-2mv+2.0`.
+
+**Estimativa (não medida):** 240 a 420 s por produto. Custo: ~US$ 0,30/h spot, ~US$ 0,95/h sob demanda. Catálogo
+inteiro: US$ 290 a 500 em spot.
+
+**A medir no piloto (`--pilot 30`):** segundos por produto e por fonte, VRAM de pico, falhas do recorte, notas do
+`glb_quality.py` por fonte, comparação com a Meshy.
 
 ## Provador com os `.glb` da Meshy (19/11/2026)
 
@@ -256,3 +273,22 @@ o desenho e o recorte (`services/garment_blender/README.md`, "Peças do catálog
   botões e colarinho, "jeans" na descrição não faz a peça de jeans, a roupa de baixo aparecendo pela frente aberta, o
   cordão do capuz, o cadarço do zíper e o fundo da gola não viram desenho, blocos de cor não viram estampa corrida,
   capuz não conta como alto da peça, logo de manga, infantil pelo endereço.
+- **Lote v8 (26–27/11), o que vai ao banco:** `catalog/model3d/motor-blender-2026-11-27/` (substitui o lote parcial
+  de 25/11, que parou em 230 peças). 8.545 produtos lidos: 7.620 fichas, 904 pulados (414 infantil, 179 praia, 138
+  sem download, 107 parte de baixo, 43 sem foto, 17 vestido, 6 sem peça na foto) e 21 erros. Montadas e publicadas
+  5.991 peças (0 falhas): 5.294 lisas, 1.848 com desenho ou logo, 349 estampas corridas, 129 listradas (contagem das
+  fichas, com repetidas). Cor da malha canelada furta-cor pela massa da cor (49 peças reanalisadas e remontadas antes
+  da importação). **Tempo:** análise ~50 min (rótulos em cache, 2 processos × 2 núcleos), montagem ~50 min, envio ao
+  bucket ~11 min (12 conexões). **Custo:** zero (CPU do contêiner). Seleção para o download:
+  `docs/provador/motor-blender/2026-11-27/selecao.csv`.
+
+## Salas high poly do FLAIR 3D (perfil `high` do motor Blender, 27/11/2026)
+
+- **Provedor/modelo:** nenhum novo. Modelagem por código no Blender 4.2 (`bpy` do pip), Cycles na CPU para a oclusão
+  assada, o relevo do alto no médio, o mapa de ambiente e as provas; compressão com gltfpack 0.22 (npm, WebAssembly).
+  Os modelos prontos reaproveitados são os 22 GLB do MET Gala Heist já gerados pela Meshy para o projeto (31/10 a
+  02/11/2026, `scripts/heist/meshy/run.mjs`): nenhuma chamada nova à Meshy, nenhum crédito gasto.
+- **Custo:** zero (CPU do contêiner, 4 vCPU, sem GPU; a RunPod não foi necessária).
+- **Tempo medido:** 4 a 8 min por sala do Detective (oclusão de piso e três paredes a 48 amostras, panorama de
+  1024 × 512, foto de prova de 1280 × 720 e os dois níveis); a Passarela do jogo 1, ~15 min. A folha de contato dos 22
+  modelos do Heist (320 px, 16 amostras), ~1 min.

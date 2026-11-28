@@ -1,0 +1,150 @@
+/* Multiplayer do FLAIR 3D, parte 2: a sala (pessoas, convite, turnos, lance, mesma semente e resultado). */
+.fm-sala-pessoas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.fm-pessoa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.fm-pessoa em {
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 400;
+}
+
+.fm-res-x {
+  color: var(--muted);
+  font-size: 1.4rem;
+}
+
+.fm-convite,
+.fm-vez,
+.fm-assincrona,
+.fm-resultado {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.fm-placar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 1.1rem;
+}
+
+.fm-vez-topo,
+.fm-turno-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.fm-desafio,
+.fm-selado {
+  margin: 0;
+}
+
+.fm-erro {
+  color: var(--mark);
+}
+
+.fm-lance {
+  display: grid;
+  gap: 10px;
+}
+
+.fm-lance-cartas {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0 0 4px;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.fm-carta {
+  padding: 2px;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  cursor: pointer;
+}
+
+.fm-carta.is-on {
+  border-color: var(--thread);
+}
+
+.fm-carta:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.fm-lance-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fm-turno {
+  display: grid;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.fm-turno-lados,
+.fm-assincrona-lados,
+.fm-res-lados {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fm-res-lados {
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  text-align: center;
+}
+
+.fm-res-lado {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 12px;
+  border-radius: var(--radius);
+}
+
+.fm-res-lado.is-venceu {
+  outline: 2px solid var(--thread);
+}
+
+.fm-res-pontos {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.fm-res-titulo {
+  margin: 0;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .fm-turno-lados,
+  .fm-assincrona-lados {
+    grid-template-columns: 1fr;
+  }
+}

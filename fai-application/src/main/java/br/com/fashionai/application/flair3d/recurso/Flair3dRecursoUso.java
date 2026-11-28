@@ -78,11 +78,20 @@ public class Flair3dRecursoUso {
             throw Flair3dErros.invalido("SEM_USOS", "sem_usos");
         }
         UsoDeRecurso uso = new UsoDeRecurso(pedido.carta(), perfil.recurso().name(), perfil.quantidade(), pedido.pedido(),
-                a.acionamentos().size(), a.anteriores().size());
+                a.acionamentos().size(), etapaDeAgora(m, a));
         Andamento depois = a.comUso(uso);
         m.setEstadoJson(Json.write(depois));
         matches.save(m);
         return resposta(m, depois, uso);
+    }
+
+    /**
+     * A etapa em que o uso vale: quantas entregas a partida já fechou. Na rodada em etapas que segue ABERTA (a Batalha, a
+     * Boutique), a última entrega ainda não entrou nas anteriores do andamento, mas já passou: o uso é da etapa seguinte.
+     */
+    public static int etapaDeAgora(Flair3dMatch m, Andamento a) {
+        boolean jaEntregou = Flair3dMatch.ABERTA.equals(m.getStatus()) && a.tentativas() > 0 && m.getEntregaJson() != null;
+        return a.anteriores().size() + (jaEntregou ? 1 : 0);
     }
 
     /** {recursos, uso:{carta, recurso, quantidade, antes, depois}, usados:{cardId: n}}. */
@@ -111,7 +120,7 @@ public class Flair3dRecursoUso {
      * As cartas que dá para usar: as do deck; no jogo sem deck (o Road to Glory veste do guarda-roupa inteiro), as que
      * a pessoa vestiu na partida — o look entregue e o rascunho guardado. A carta de outra pessoa cai depois, no dono.
      */
-    static List<UUID> usaveis(Flair3dMatch m, Andamento a) {
+    public static List<UUID> usaveis(Flair3dMatch m, Andamento a) {
         List<UUID> deck = Flair3dDeck.ids(m.getDeckJson());
         if (!deck.isEmpty()) {
             return deck;

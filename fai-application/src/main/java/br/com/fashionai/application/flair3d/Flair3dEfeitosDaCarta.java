@@ -1,6 +1,8 @@
 package br.com.fashionai.application.flair3d;
 
 import br.com.fashionai.application.flair.CbcRules;
+import br.com.fashionai.application.flair.Flair3dHype;
+import br.com.fashionai.application.flair3d.aura.Flair3dAuraRegras;
 import br.com.fashionai.application.flair3d.recurso.Flair3dRecursoCalculo;
 import br.com.fashionai.application.flair3d.recurso.PecaRecurso.PerfilDaPeca;
 
@@ -8,12 +10,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * O que a tela recebe de cada carta em POST .../efeitos: os itens do jogo (o selo, com o efeito da cor no fim) e o
  * perfil da regra peça-recurso — atributos, o recurso do uso, os usos e as ações que a peça destrava. Tudo calculado
- * aqui; o cliente só mostra.
+ * aqui; o cliente só mostra. Nos jogos de zonas, também o lance da carta na fase de uso ({@link Flair3dCartaDeUso}).
  */
 final class Flair3dEfeitosDaCarta {
     private Flair3dEfeitosDaCarta() {
@@ -25,7 +28,25 @@ final class Flair3dEfeitosDaCarta {
         List<Efeito> itens = n.efeitos(carta, ctx);
         m.put("itens", comEfeitoDaCor(n.codigo(), carta, itens.isEmpty() && deCartas ? List.of(Efeito.motivo(Efeito.SEM_BONUS)) : itens));
         m.put("perfil", perfil(Flair3dRecursoCalculo.daCarta(carta, null)));
+        if (Flair3dAuraRegras.noJogo(n.codigo())) {
+            m.put("aura", aura(carta, ctx));
+        }
+        if (Flair3dFaseDeUso.tem(n.codigo())) {
+            // na fase de uso dos jogos de zonas, o lance que a cor da carta aciona (a cor do uniforme a tela confere)
+            Flair3dCartaDeUso.Efeito uso = Flair3dCartaDeUso.de(n.codigo(), carta, Set.of());
+            m.put("uso", uso == null ? null : uso.paraTela());
+        }
         return m;
+    }
+
+    /** A Aura da carta neste jogo (rodada 8g): {familia, faixa, trunfo (o bônus se chamada), metamorfose}. Só leitura. */
+    static Map<String, Object> aura(CbcRules.Card carta, Contexto ctx) {
+        Map<String, Object> a = new LinkedHashMap<>();
+        a.put("familia", ctx.aura(carta));
+        a.put("faixa", Flair3dHype.bandOf(carta).name());
+        a.put("trunfo", Flair3dAuraRegras.podeSerTrunfo(carta) ? Flair3dAuraRegras.trunfo(carta) : 0);
+        a.put("metamorfose", Flair3dAuraRegras.metamorfose(carta, ctx));
+        return a;
     }
 
     /** O perfil como a tela lê: {vaga, atributos:{AGILIDADE: 20}, recurso, quantidade, usos, acoes:[], dominante}. */

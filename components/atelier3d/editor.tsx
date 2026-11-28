@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { ApiError } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
-import { Button, Dialog, Select } from "@/components/ui";
+import { Button, Dialog } from "@/components/ui";
 import {
   loadGlb,
   disposeAsset,
@@ -29,7 +29,13 @@ import { EditorBackLink } from "./editor-back-link";
 import { useGenderEvidence } from "./use-gender-evidence";
 import { nodeLabel } from "./node-label";
 import { GuestPanel } from "./guest-panel";
+import { EditorViewToolbar } from "./editor-view-toolbar";
+import { EditorVersionHistory } from "./editor-version-history";
 import type { Tool, View } from "./viewport";
+import { useGarmentStudio } from "./garment/use-garment-studio";
+import { GarmentStudioPanel } from "./garment/garment-studio";
+import { GarmentViewportLayer } from "./garment/garment-viewport-layer";
+import { preloadGarmentImages } from "@/lib/atelier3d/garment/images";
 import styles from "./editor.module.css";
 const Viewport = dynamic(() => import("./viewport"), { ssr: false });
 export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
@@ -61,6 +67,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
     [paused, setPaused] = useState(false),
     [confirmReload, setConfirmReload] = useState(false);
   const [vertex, setVertex] = useState(0);
+  const studio = useGarmentStudio(loaded, doc, selected, change);
   const activeAsset = useRef<LoadedAsset | null>(null),
     busyRef = useRef(false),
     dirtyRef = useRef(false),
@@ -328,6 +335,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
     busyRef.current = true;
     setBusy(true);
     try {
+      await preloadGarmentImages(doc);
       const bytes = await exportGlb(loaded, doc);
       downloadBlob(
         new Blob([bytes], { type: "model/gltf-binary" }),
@@ -416,68 +424,10 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
         <p>{t("atelier3d.empty")}</p>
       ) : (
         <>
-          <div className={styles.toolbar}>
-            {(["translate", "rotate", "scale"] as Tool[]).map((mode) => (
-              <Button
-                key={mode}
-                aria-pressed={tool === mode}
-                onClick={() => setTool(mode)}
-              >
-                {t(`atelier3d.${mode}`)}
-              </Button>
-            ))}
-            <Button
-              disabled={!canEdit || !history.past.length}
-              onClick={() => travel("undo")}
-            >
-              {t("atelier3d.undo")}
-            </Button>
-            <Button
-              disabled={!canEdit || !history.future.length}
-              onClick={() => travel("redo")}
-            >
-              {t("atelier3d.redo")}
-            </Button>
-            <Select
-              aria-label={t("atelier3d.view")}
-              value={view}
-              onChange={(e) => setView(e.target.value as View)}
-            >
-              {(
-                [
-                  "perspective",
-                  "front",
-                  "back",
-                  "left",
-                  "right",
-                  "top",
-                ] as View[]
-              ).map((v) => (
-                <option key={v} value={v}>
-                  {t(`atelier3d.view.${v}`)}
-                </option>
-              ))}
-            </Select>
-            <Button onClick={() => setFit((n) => n + 1)}>
-              {t("atelier3d.fit")}
-            </Button>
-            <label className={styles.check}>
-              <input
-                type="checkbox"
-                checked={wireframe}
-                onChange={(e) => setWireframe(e.target.checked)}
-              />
-              {t("atelier3d.wireframe")}
-            </label>
-            <label className={styles.check}>
-              <input
-                type="checkbox"
-                checked={snap}
-                onChange={(e) => setSnap(e.target.checked)}
-              />
-              {t("atelier3d.snap")}
-            </label>
-          </div>
+          <EditorViewToolbar tool={tool} view={view} wireframe={wireframe} snap={snap}
+            canUndo={canEdit && history.past.length > 0} canRedo={canEdit && history.future.length > 0}
+            onTool={setTool} onView={setView} onFit={() => setFit((n) => n + 1)} onWireframe={setWireframe} onSnap={setSnap} onTravel={travel} />
+          <GarmentStudioPanel studio={studio} asset={loaded} doc={doc} editable={canEdit} />
           <div className={styles.layout}>
             <aside className={styles.panel}>
               <h2 className="type-h3">{t("atelier3d.objects")}</h2>
@@ -499,19 +449,21 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
             <div className={styles.viewport}>
               <Viewport
                 asset={loaded}
-                document={doc}
+                document={studio.draft ?? doc}
                 selected={selected}
                 tool={tool}
                 view={view}
                 fit={fit}
                 wireframe={wireframe}
                 snap={snap}
-                editable={canEdit}
+                editable={canEdit && studio.mode === "none"}
                 onSelect={setSelected}
                 onTransform={(value) =>
                   change(updateNode(doc, selected, value, loaded.baseline))
                 }
-              />
+              >
+                <GarmentViewportLayer studio={studio} asset={loaded} doc={doc} editable={canEdit} />
+              </Viewport>
             </div>
             <SceneInspector
               loaded={loaded}
@@ -551,24 +503,7 @@ export function Atelier3dEditor({ projectId, guestId, token }: SceneAccess) {
         disabled={!canEdit}
       />
       {!effectiveConfirmed && <p>{t("atelier3d.gender.exportPending")}</p>}
-      {scene && (
-        <section className={styles.evidence}>
-          <h2 className="type-h3">{t("atelier3d.history")}</h2>
-          {scene.history.map((v) => (
-            <div className={styles.toolbar} key={v.id}>
-              <span>
-                {t("atelier3d.version", { number: v.sequence })} · {v.author}
-              </span>
-              <Button
-                disabled={!canEdit || dirty}
-                onClick={() => void restore(v)}
-              >
-                {t("atelier3d.restore")}
-              </Button>
-            </div>
-          ))}
-        </section>
-      )}
+      {scene && <EditorVersionHistory history={scene.history} canRestore={canEdit && !dirty} onRestore={(v) => void restore(v)} />}
       {scene?.manageGuests && <GuestPanel client={client} />}
       <Dialog
         open={confirmReload}

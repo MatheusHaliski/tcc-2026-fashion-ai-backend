@@ -31,6 +31,8 @@ export function buscarNucleo(codigo: NucleoCodigo, signal?: AbortSignal): Promis
 export interface OndeDosEfeitos {
   rodada?: string | null;
   partida?: string | null;
+  /** a etapa da vez numa rodada em etapas: não vai no pedido (o servidor a conhece), só faz a tela pedir os selos de novo */
+  vez?: number | null;
 }
 
 /** Efeito de cada carta da pessoa neste núcleo (logado; só cartas da própria pessoa). */

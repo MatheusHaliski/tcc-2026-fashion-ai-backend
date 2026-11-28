@@ -4,6 +4,10 @@ import {
   type GLTF,
 } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
+import type { GarmentState } from "./garment/state";
+import { applyGarment, disposeGarment } from "./garment/apply";
+import { applyPieceEdits, withoutHiddenParts } from "./garment-scene";
+import type { DecalEdit } from "./decals";
 export type Vec3 = [number, number, number];
 export interface NodeEdit {
   position: Vec3;
@@ -17,11 +21,18 @@ export interface MaterialEdit {
   metalness: number;
   repeat: [number, number];
   rotation: number;
+  /** Cor do tecido quando a cor está na textura: a textura é recolorida (color segue sendo o fator do arquivo). */
+  tint?: string | null;
+  hidden?: boolean;
 }
 export interface SceneDocument {
   nodes: Record<string, NodeEdit>;
   materials: Record<string, MaterialEdit>;
   vertices: Record<string, Record<string, Vec3>>;
+  /** Tecido, pintura, estampas, costuras e aviamentos (lib/atelier3d/garment). */
+  garment?: GarmentState;
+  /** Logos e estampas projetados no tecido da peça (editor da peça); ausente em documentos anteriores. */
+  decals?: Record<string, DecalEdit>;
 }
 export interface Inspection {
   nodes: number;
@@ -52,59 +63,8 @@ export const EMPTY_DOCUMENT: SceneDocument = {
   materials: {},
   vertices: {},
 };
-export const MAX_GLB_BYTES = 8 * 1024 * 1024;
-const EXTENSIONS = new Set([
-  "KHR_materials_unlit",
-  "KHR_texture_transform",
-  "KHR_materials_clearcoat",
-  "KHR_materials_transmission",
-  "KHR_materials_ior",
-  "KHR_materials_sheen",
-  "KHR_materials_specular",
-  "KHR_materials_volume",
-  "KHR_materials_iridescence",
-  "KHR_materials_anisotropy",
-]);
-/** Inspect before GLTFLoader can resolve any resource. Server repeats the inspection. */
-export function inspectGlb(buffer: ArrayBuffer) {
-  if (buffer.byteLength < 20 || buffer.byteLength > MAX_GLB_BYTES)
-    throw Error("ATELIER_GLB_SIZE");
-  const view = new DataView(buffer);
-  if (
-    view.getUint32(0, true) !== 0x46546c67 ||
-    view.getUint32(4, true) !== 2 ||
-    view.getUint32(8, true) !== buffer.byteLength
-  )
-    throw Error("ATELIER_GLB_HEADER");
-  const length = view.getUint32(12, true);
-  if (
-    view.getUint32(16, true) !== 0x4e4f534a ||
-    length > 2 * 1024 * 1024 ||
-    20 + length > buffer.byteLength
-  )
-    throw Error("ATELIER_GLB_JSON");
-  const root = JSON.parse(
-    new TextDecoder().decode(new Uint8Array(buffer, 20, length)).trim(),
-  );
-  if (
-    root.scenes?.length !== 1 ||
-    root.nodes?.length > 2000 ||
-    root.asset?.version !== "2.0" ||
-    root.buffers?.length !== 1 ||
-    root.buffers.some((b: { uri?: string }) => b.uri !== undefined) ||
-    root.images?.some(
-      (i: { uri?: string; bufferView?: number }) =>
-        i.uri !== undefined || i.bufferView === undefined,
-    )
-  )
-    throw Error("ATELIER_GLB_EXTERNAL");
-  for (const ext of [
-    ...(root.extensionsUsed ?? []),
-    ...(root.extensionsRequired ?? []),
-  ])
-    if (!EXTENSIONS.has(ext)) throw Error("ATELIER_GLB_EXTENSION");
-  return root;
-}
+export { MAX_GLB_BYTES, inspectGlb } from "./glb-inspect";
+import { inspectGlb } from "./glb-inspect";
 export async function loadGlb(buffer: ArrayBuffer): Promise<LoadedAsset> {
   inspectGlb(buffer);
   const manager = new THREE.LoadingManager();
@@ -269,7 +229,9 @@ export function applyDocument(asset: LoadedAsset, doc: SceneDocument) {
       mesh.geometry.computeBoundingSphere();
     }
   }
+  applyGarment(asset, doc);
   asset.gltf.scene.updateMatrixWorld(true);
+  applyPieceEdits(asset, doc);
 }
 export async function exportGlb(
   asset: LoadedAsset,
@@ -288,11 +250,11 @@ export async function exportGlb(
   });
   let result;
   try {
-    result = await new GLTFExporter().parseAsync(asset.gltf.scene, {
+    result = await withoutHiddenParts(asset, () => new GLTFExporter().parseAsync(asset.gltf.scene, {
       binary: true,
       onlyVisible: false,
       animations: asset.gltf.animations,
-    });
+    }));
   } finally {
     for (const [object, data] of internal) object.userData = data;
   }
@@ -301,6 +263,7 @@ export async function exportGlb(
   return result;
 }
 export function disposeAsset(asset: LoadedAsset) {
+  disposeGarment(asset);
   const textures = new Set<THREE.Texture>();
   asset.gltf.scene.traverse((o) => {
     const m = o as THREE.Mesh;
@@ -314,38 +277,7 @@ export function disposeAsset(asset: LoadedAsset) {
   });
   textures.forEach((t) => t.dispose());
 }
-export function updateNode(
-  document: SceneDocument,
-  key: string,
-  value: Partial<NodeEdit>,
-  baseline: SceneDocument,
-): SceneDocument {
-  return {
-    ...document,
-    nodes: {
-      ...document.nodes,
-      [key]: { ...baseline.nodes[key], ...document.nodes[key], ...value },
-    },
-  };
-}
-export function updateMaterial(
-  document: SceneDocument,
-  key: string,
-  value: Partial<MaterialEdit>,
-  baseline: SceneDocument,
-): SceneDocument {
-  return {
-    ...document,
-    materials: {
-      ...document.materials,
-      [key]: {
-        ...baseline.materials[key],
-        ...document.materials[key],
-        ...value,
-      },
-    },
-  };
-}
+export { updateNode, updateMaterial } from "./document-edits";
 export function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob),
     a = document.createElement("a");

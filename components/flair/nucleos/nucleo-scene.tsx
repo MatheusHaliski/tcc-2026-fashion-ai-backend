@@ -33,6 +33,8 @@ interface Props {
   protagonista: Protagonista;
   /** resultado da entrega (opcional): a cena toca a sequência automática do jogo e a reação do avatar */
   resultado?: NucleoResultado | null;
+  /** a última entrega que não fechou a partida (a rodada anterior da Batalha de Looks) */
+  anterior?: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
   variante?: string | null;
   /** semente da partida (os corpos das pessoas de cena) */
@@ -42,6 +44,8 @@ interface Props {
   zonas?: Record<string, ZonaEscolha>;
   /** a maquiagem escolhida (Road to Glory): aparece no rosto do avatar */
   maquiagem?: Record<string, MaquiagemEscolha>;
+  /** a resposta que veste (o emblema do herói) */
+  emblema?: string | null;
   /** o jogo anda livre na preparação, na velocidade da agilidade do look */
   andarLivre?: boolean;
   agilidade?: number;

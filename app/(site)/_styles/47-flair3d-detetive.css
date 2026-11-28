@@ -1,6 +1,6 @@
 /* ── FLAIR 3D · Fashion Detective, o caso "A Coleção Maré" (components/flair/detetive): a sala explorável no palco,
-   o HUD de vida, relógio e pistas, as cutscenes com legenda, as folhas do caso (caderno, mapa, inventário) e a faixa de
-   baixo com as ações, a mão de cartas, o enigma e a acusação. Tudo cabe em 390 × 844 sem cobrir o avatar. */
+   as marcas de vida e relógio do HUD e o painel de ações (as ações do ponto, a mão de cartas, o enigma e a acusação),
+   que fica no painel lateral da direita (63-flair3d-detetive-tela.css). */
 .dtv-palco {
   position: relative;
   height: 100%;
@@ -14,29 +14,6 @@
   height: 100%;
 }
 
-.dtv-hud,
-.dtv-hud-botoes {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  z-index: 2;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  color: #f4f2ee;
-  font-size: var(--text-caption);
-}
-
-.dtv-hud {
-  top: 8px;
-}
-
-.dtv-hud-botoes {
-  top: 60px;
-}
-
-.dtv-sala,
 .dtv-vida,
 .dtv-relogio,
 .dtv-escondido,
@@ -63,27 +40,6 @@
 
 .dtv-look {
   font-size: var(--text-caption);
-}
-
-.dtv-btn {
-  min-height: var(--touch);
-  background: #000b;
-  color: #fff;
-}
-
-.dtv-aviso {
-  position: absolute;
-  left: 50%;
-  bottom: 12px;
-  z-index: 2;
-  max-width: calc(100% - 24px);
-  margin: 0;
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: #000d;
-  color: #fff;
-  font-size: var(--text-caption);
-  transform: translateX(-50%);
 }
 
 .dtv-painel {

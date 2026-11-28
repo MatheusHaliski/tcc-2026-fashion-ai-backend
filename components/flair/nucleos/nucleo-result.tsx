@@ -5,16 +5,20 @@
  */
 import type { ReactNode } from "react";
 import { cn } from "@/components/ui";
+import { BatalhaPlacar } from "@/components/flair/nucleos/batalha-placar";
+import { NucleoResultAura } from "@/components/flair/nucleos/nucleo-result-aura";
 import { NucleoResultCampanha } from "@/components/flair/nucleos/nucleo-result-campanha";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { desfechoDe } from "@/lib/flair/nucleos/narrativa";
-import type { NucleoResultado } from "@/lib/flair/nucleos/types";
+import type { NucleoCodigo, NucleoResultado } from "@/lib/flair/nucleos/types";
 
 export interface CartaNoResultado {
   cardId: string;
   nome: string;
   /** pontos ou efeito da carta, já em texto */
   texto: string;
+  /** a faixa de Hype em que a carta jogou (só leitura: o jogo não escreve Hype) */
+  hype?: string;
 }
 
 interface Props {
@@ -31,6 +35,9 @@ interface Props {
   children?: ReactNode;
 }
 
+/** Eventos que a tabela da Batalha já mostra. */
+const NA_TABELA = new Set(["RODADA_DA_BATALHA", "SOMA_DA_BATALHA", "LOOK_DO_ADVERSARIO", "CONTA_DA_BATALHA", "ADVERSARIO"]);
+
 /** Quantas dicas de "o que trocar" cabem no resultado. */
 const MAX_DICAS = 4;
 
@@ -43,7 +50,8 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
   const desfecho = tx.ou(`flair3d.narrativa.${codigo}.final.${rodada ?? "-"}.${final}`, tx.ou(`flair3d.narrativa.${codigo}.final.${final}`, ""));
   /** a conta da nota quando as regras não somam direto em 100 (a Passarela soma até 70) */
   const conta = resultado.eventos.find((e) => e.codigo === "CONTA");
-  const eventos = resultado.eventos.filter((e) => e.codigo !== "CONTA").map((e) => tx.evento(e)).filter((texto) => texto.trim() !== "");
+  // a comparação da Batalha tem a tabela dela (batalha-placar.tsx): as linhas de cada rodada não se repetem em texto
+  const eventos = resultado.eventos.filter((e) => e.codigo !== "CONTA" && !NA_TABELA.has(e.codigo)).map((e) => tx.evento(e)).filter((texto) => texto.trim() !== "");
   /** o que trocar: uma dica por regra não cumprida, sem repetir */
   /** rodada em etapas: cada etapa entra com 1/n dos pontos dela ("8,33" para uma etapa de 25 em 3) */
   const etapas = resultado.eventos.filter((e) => e.codigo === "ETAPA").length;
@@ -73,6 +81,8 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
           </li>
         ))}
       </ul>
+      {codigo === "BATALHA_LOOKS" && <BatalhaPlacar resultado={resultado} />}
+      <NucleoResultAura codigo={codigo as NucleoCodigo} resultado={resultado} />
       {conta && !semPlacar && <p className="n3d-hint" data-testid="nucleo-result-conta">{tx.evento(conta)}</p>}
       {etapas > 1 && !semPlacar && <p className="n3d-hint" data-testid="nucleo-result-media">{tx.t("flair3d.ui.result.media", { n: etapas })}</p>}
       {dicas.length > 0 && (
@@ -92,7 +102,7 @@ export function NucleoResult({ codigo, resultado, onAgain, cartas = [], semPlaca
           <ol className="n3d-result-cards">
             {cartas.map((c) => (
               <li key={c.cardId}>
-                <span>{c.nome}</span>
+                <span>{c.nome}{c.hype && <small className="n3d-result-hype" data-hype={c.hype}>{tx.t("flair3d.ui.result.hype", { faixa: tx.t(`hype.level.${c.hype}`) })}</small>}</span>
                 <em className="tabular">{c.texto}</em>
               </li>
             ))}

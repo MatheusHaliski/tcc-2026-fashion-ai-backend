@@ -17,7 +17,7 @@ function omit<T>(map: Record<string, T>, key: string): Record<string, T> {
 function bounded(point: Vec3): boolean {
   return point.every((coordinate) => Number.isFinite(coordinate) && Math.abs(coordinate) <= 10_000);
 }
-function storePoints(asset: LoadedAsset, doc: SceneDocument, primitive: string, points: Vec3[]): SceneDocument {
+export function storePoints(asset: LoadedAsset, doc: SceneDocument, primitive: string, points: Vec3[]): SceneDocument {
   const original = asset.originalPositions.get(primitive)!;
   const changes: Record<string, Vec3> = {};
   for (let i = 0; i < points.length; i++) {

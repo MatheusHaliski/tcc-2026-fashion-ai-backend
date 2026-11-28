@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -47,10 +46,12 @@ public class Flair3dNucleoService {
 
     private final Flair3dMatchRepository matches;
     private final Flair3dCartas cartas;
+    private final Flair3dPartidaAbertura abertura;
 
     public Flair3dNucleoService(Flair3dMatchRepository matches, Flair3dCartas cartas) {
         this.matches = matches;
         this.cartas = cartas;
+        this.abertura = new Flair3dPartidaAbertura(matches, cartas);
     }
 
     static Flair3dNucleo nucleo(String codigo) {
@@ -96,33 +97,13 @@ public class Flair3dNucleoService {
     /** Abre a partida solo: confere o deck (422), sorteia a semente e grava os participantes da cena. */
     @Transactional
     public Map<String, Object> abrir(CurrentUser user, String codigo, AbrirPartida pedido) {
-        Flair3dNucleo n = nucleo(codigo);
-        Definicao d = n.definicao();
-        List<UUID> deck = pedido == null || pedido.deck() == null ? List.of() : pedido.deck().stream().filter(Objects::nonNull).toList();
-        if (!d.deck().semDeck()) {
-            Flair3dDeck.validar(d.deck(), deck, cartas.daPessoa(user.id(), deck));
-        }
-        Flair3dMatch m = new Flair3dMatch();
-        m.setUserId(user.id());
-        m.setNucleo(n.codigo());
-        m.setStatus(Flair3dMatch.ABERTA);
-        m.setSemente(ThreadLocalRandom.current().nextLong(SEMENTE_MAX));
-        m.setDeckJson(d.deck().semDeck() ? null : Json.write(deck));
-        String rodada = rodadaPedida(d, pedido == null ? null : pedido.rodada());
-        m.setEstadoJson(rodada == null ? null : Json.write(Andamento.naRodada(rodada)));
-        List<Avatares.Participante> participantes = d.avatares().participantes(user.id(), pedido == null ? null : pedido.avatar());
-        m.setParticipantesJson(Json.write(participantes));
-        m = matches.save(m);
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("id", m.getId());
-        out.put("nucleo", m.getNucleo());
-        out.put("status", m.getStatus());
-        out.put("semente", m.getSemente());
-        out.put("deck", d.deck().semDeck() ? null : deck);
-        out.put("participantes", participantes);
-        out.put("rodada", rodada);
-        out.put("abertura", n.abertura(cartas.contexto(cartas.daPessoa(user.id(), deck), m.getSemente()).naRodada(rodada)));
-        return out;
+        return abertura.abrir(user, nucleo(codigo), pedido, ThreadLocalRandom.current().nextLong(SEMENTE_MAX));
+    }
+
+    /** Abre a partida de um lado da sala multiplayer com a semente da sala (Flair3dSalaAssincrona). */
+    @Transactional
+    public Map<String, Object> abrirComSemente(CurrentUser user, String codigo, AbrirPartida pedido, long semente) {
+        return abertura.abrir(user, nucleo(codigo), pedido, semente);
     }
 
     /**
@@ -163,27 +144,21 @@ public class Flair3dNucleoService {
         return Flair3dRecursoBonus.naPrevia(n.codigo(), n.previa(e, ctx), vestidasOuZonas(n, e, ctx), a.usos()).comStatus(m.getStatus());
     }
 
-    /** A rodada pedida, quando o jogo a tem (422 RODADA_INVALIDA); sem pedido, nula: vale o objetivo mais simples. */
-    private static String rodadaPedida(Definicao d, String pedida) {
-        if (pedida == null || pedida.isBlank()) {
-            return null;
-        }
-        return d.rodada(pedida.trim()).map(Definicao.Rodada::codigo)
-                .orElseThrow(() -> Flair3dErros.invalido("RODADA_INVALIDA", "rodada_invalida"));
-    }
-
     /** O contexto dos selos: o da partida (rodada e sorteio dela, só do dono) ou o da rodada pedida, ainda sem sorteio. */
     private Contexto contextoDosEfeitos(CurrentUser user, Flair3dNucleo n, Map<UUID, CbcRules.Card> minhas, PedidoEfeitos pedido) {
-        Contexto base = new Contexto(minhas, cartas.paises(), null);
+        Contexto base = new Contexto(minhas, cartas.paises(), null).comAuras(cartas.auras(user.id(), minhas.keySet()));
         if (pedido == null) {
             return base;
         }
         if (pedido.partida() == null) {
-            return base.naRodada(rodadaPedida(n.definicao(), pedido.rodada()));
+            return base.naRodada(Flair3dPartidaAbertura.rodadaPedida(n.definicao(), pedido.rodada()));
         }
         Flair3dMatch m = matches.findById(pedido.partida()).filter(x -> x.getUserId().equals(user.id()) && x.getNucleo().equals(n.codigo()))
                 .orElseThrow(() -> Flair3dErros.naoEncontrado("PARTIDA_NAO_ENCONTRADA", "partida_nao_encontrada"));
-        return base.comSemente(m.getSemente()).comAndamento(Andamento.ler(m.getEstadoJson()));
+        // como na prévia: a entrega já feita conta como etapa passada, e o selo vale para o pedido da vez
+        Andamento a = Andamento.ler(m.getEstadoJson());
+        boolean aberta = Flair3dMatch.ABERTA.equals(m.getStatus());
+        return base.comSemente(m.getSemente()).comAndamento(aberta ? a.proximaTentativa(Json.read(m.getEntregaJson(), Entrega.class)) : a);
     }
 
     /** A partida da pessoa (404, 403) no status que a operação pede (409). */
@@ -208,7 +183,10 @@ public class Flair3dNucleoService {
         Map<UUID, CbcRules.Card> minhas = cartas.daPessoa(user.id(), usadas);
         List<UUID> deck = Flair3dDeck.ids(m.getDeckJson());
         Flair3dEntregas.conferir(n.definicao().naRodada(a.rodada()), e, minhas, deck, a.cartas());
-        return cartas.contexto(minhas, m.getSemente()).comAndamento(a).comDeck(deck.isEmpty() ? minhas : cartas.daPessoa(user.id(), deck));
+        List<UUID> comAura = new ArrayList<>(usadas);
+        comAura.addAll(deck);
+        return cartas.contexto(minhas, m.getSemente()).comAndamento(a).comDeck(deck.isEmpty() ? minhas : cartas.daPessoa(user.id(), deck))
+                .comAuras(cartas.auras(user.id(), comAura));
     }
 
     /** A nota do jogo com o que o look e os recursos somam (regra peça-recurso, Flair3dRecursoBonus). */

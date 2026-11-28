@@ -1,31 +1,110 @@
-/* ================= FLAIR CBC · cena dinâmica e quebra-cabeça (components/flair/cenas, elencos/elenco-jigsaw.tsx) ====
-   A cena é pintada em canvas (lib/flair/cenas): as peças, o encaixe, o véu de cada estado e o floreio são desenhados
-   lá, com a mesma animação em todas as peças. A arte tem paleta própria (escura, de painel) e por isso é igual nos
-   temas claro, escuro e alto contraste; em volta dela só há tokens do tema. Movimento reduzido: quadro parado. */
-.cena-viva {
+/* ── Elencos · o quebra-cabeça (components/flair/elencos/elenco-puzzle.tsx) ──────────────────────────────────────────
+   A imagem em SVG: ao fundo apagada (.ep-ghost) e, por cima, cada peça recortada (clipPath) com o contorno. A peça
+   encaixada voa de fora (--dx, --dy) até o lugar; a que não cumpre o pedido fica torta e sem cor; a que o servidor
+   ainda julga pulsa fraca. .is-assembling (modal dos logos sem vídeo) monta todas as peças em sequência (--i). */
+.ep-puzzle {
+  position: relative;
+  /* em tela larga a imagem não passa de 46% da altura da tela: as vagas ficam na primeira dobra */
+  width: min(100%, calc(46dvh * var(--ep-ratio, 1)));
+  margin: 0 auto;
+  aspect-ratio: var(--ep-ratio, 1);
+}
+
+.ep-puzzle svg {
   display: block;
   width: 100%;
   height: 100%;
-  background: #0d0e15;
-  object-fit: cover;
+  overflow: visible;
+  border-radius: var(--radius);
 }
 
-.el-pieces {
-  position: absolute;
-  inset: 0;
+.ep-ghost {
+  opacity: 0.16;
+  filter: grayscale(1);
 }
 
-/* miniatura da cena nos cartões das listas */
-.cena-thumb {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background: #0d0e15;
+.ep-arte {
+  opacity: 0;
+  /* gira em torno do centro da peça (transform-origin inline, em unidades da imagem) */
+  transform-box: view-box;
+  transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
-/* alto contraste: a arte ganha um contorno nítido para se separar do fundo preto */
-:root[data-theme="contrast"] :is(.el-jigsaw, .cena-thumb, .cbc-stage-art) {
-  outline: 2px solid var(--line);
+.ep-contorno {
+  fill: transparent;
+  stroke: #fff9;
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+  cursor: pointer;
+  transition: stroke 0.2s ease;
+}
+
+.ep-contorno.is-selected,
+.ep-contorno[data-drop] {
+  stroke: #f08a24;
+  stroke-width: 3;
+  stroke-dasharray: none;
+}
+
+.is-conferindo .ep-arte {
+  opacity: 0.35;
+  animation: ep-pulso 1s ease-in-out infinite alternate;
+}
+
+.is-fora .ep-arte {
+  opacity: 0.7;
+  filter: grayscale(1) brightness(0.6);
+  transform: translate(calc(var(--dx) * 0.12), calc(var(--dy) * 0.12)) rotate(-5deg);
+}
+
+.is-fora .ep-contorno {
+  stroke: #d93a3a;
+}
+
+.is-encaixada .ep-arte {
+  opacity: 1;
+  animation: ep-encaixe 0.6s cubic-bezier(0.2, 0.8, 0.2, 1.15) both;
+}
+
+.is-encaixada .ep-contorno {
+  stroke: #fff5;
+  stroke-dasharray: none;
+  stroke-width: 0.8;
+}
+
+/* completo: as emendas somem e a imagem brilha uma vez */
+.ep-puzzle.is-complete .ep-contorno {
+  stroke: transparent;
+}
+
+.ep-puzzle.is-complete svg {
+  animation: ep-brilho 1.2s ease 0.4s both;
+}
+
+.ep-puzzle.is-assembling .ep-arte {
+  animation-delay: calc(var(--i) * 140ms);
+  animation-duration: 0.9s;
+}
+
+.ep-puzzle.is-assembling svg {
+  animation-delay: 1.9s;
+}
+
+@keyframes ep-encaixe {
+  from {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(10deg) scale(0.85);
+  }
+}
+
+@keyframes ep-pulso {
+  to {
+    opacity: 0.55;
+  }
+}
+
+@keyframes ep-brilho {
+  50% {
+    filter: brightness(1.25) drop-shadow(0 0 18px #f08a24aa);
+  }
 }

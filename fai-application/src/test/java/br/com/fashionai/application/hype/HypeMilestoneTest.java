@@ -284,7 +284,7 @@ class HypeMilestoneTest {
         notifier.record(ev(HypeEntityType.SCHEME, c.getId(), owner.getId(), Kind.EMERGING, true));
         verify(notifications, times(1)).notify(any(), any(), any(), any(), any(), anyString(), any(), any());
         assertThat(first.isRead()).isFalse();   // novidade no mesmo resumo volta como não lida
-        assertThat(first.getResourceType()).isEqualTo(HypeMilestoneNotifier.DIGEST_RESOURCE);
+        assertThat(first.getResourceType()).isEqualTo(HypeMilestoneDigest.DIGEST_RESOURCE);
         assertThat(first.getResourceId()).isNull();
         assertThat(first.getPayloadJson()).contains("\"href\":\"/history?tab=hype\"").contains("\"count\":3");
         assertThat(Msg.resolve(Msg.PT_BR, first.getTitle())).isEqualTo("Seu Hype subiu: 3 itens hoje");
@@ -314,13 +314,13 @@ class HypeMilestoneTest {
             day.add(row(id, Kind.HOT, true));
             names.put(id, "Peça " + i);
         }
-        HypeMilestoneNotifier.Content c = HypeMilestoneNotifier.content(day, names);
+        HypeMilestoneDigest.Content c = HypeMilestoneDigest.content(day, names);
         String body = Msg.resolve(Msg.PT_BR, c.body());
         assertThat(body).contains("Casaco chegou à faixa Viral").doesNotContain("Casaco entrou na faixa Em alta").contains("E mais 2.");
         assertThat(Msg.resolve(Msg.PT_BR, c.title())).isEqualTo("Seu Hype subiu: 5 itens hoje");
         assertThat(c.payload().get("count")).isEqualTo(5);
-        assertThat(HypeMilestoneNotifier.shortName("x".repeat(200))).hasSize(HypeMilestoneNotifier.NAME_MAX);
-        assertThat(HypeMilestoneNotifier.shortName("a§b\u001Fc")).isEqualTo("a b c");   // não quebra o marcador de i18n
+        assertThat(HypeMilestoneDigest.shortName("x".repeat(200))).hasSize(HypeMilestoneDigest.NAME_MAX);
+        assertThat(HypeMilestoneDigest.shortName("a§b\u001Fc")).isEqualTo("a b c");   // não quebra o marcador de i18n
     }
 
     HypeMilestone row(UUID id, Kind kind, boolean pub) {
@@ -336,7 +336,7 @@ class HypeMilestoneTest {
 
     @Test
     void textoTraduzidoNosTresIdiomas() {
-        HypeMilestoneNotifier.Content c = HypeMilestoneNotifier.content(List.of(row(UUID.randomUUID(), Kind.TRENDING, false)),
+        HypeMilestoneDigest.Content c = HypeMilestoneDigest.content(List.of(row(UUID.randomUUID(), Kind.TRENDING, false)),
                 Map.of());
         assertThat(Msg.resolve(Msg.PT_BR, c.title())).isEqualTo("Seu Hype subiu");
         assertThat(Msg.resolve(Locale.ENGLISH, c.title())).isEqualTo("Your Hype went up");

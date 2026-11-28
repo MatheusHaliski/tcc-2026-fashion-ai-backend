@@ -15,6 +15,7 @@ import { NucleoActionFx } from "@/components/flair/nucleos/nucleo-action-fx";
 import { NucleoBarrasDeVida } from "@/components/flair/nucleos/nucleo-barras-de-vida";
 import type { Protagonista } from "@/components/flair/nucleos/nucleo-avatar";
 import { NucleoCameraSelector } from "@/components/flair/nucleos/nucleo-camera-selector";
+import { SeletorDeQualidade } from "@/components/flair/salas-altas/seletor-de-qualidade";
 import { NucleoCardFx } from "@/components/flair/nucleos/nucleo-card-fx";
 import { NucleoRodaAtributos } from "@/components/flair/nucleos/recursos/nucleo-roda-atributos";
 import type { LookDosRecursos } from "@/components/flair/nucleos/recursos/use-look-dos-recursos";
@@ -57,6 +58,8 @@ export interface NucleoStageProps {
   objetivoAberto: boolean;
   /** última resposta do servidor (entrega ou acionamento); null na preparação */
   resultado: NucleoResultado | null;
+  /** a última entrega que não fechou a partida (a rodada anterior, nas rodadas em etapas) */
+  tentativa?: NucleoResultado | null;
   /** prévia do look de agora (preparação) */
   previa: NucleoResultado | null;
   /** sala do jogo quando ele tem mais de uma (o salão da vez, a modalidade) */
@@ -65,6 +68,8 @@ export interface NucleoStageProps {
   semente?: number;
   /** o que a pessoa já pintou em cada zona (modos do Ateliê) */
   zonas?: Record<string, ZonaEscolha>;
+  /** a resposta da preparação que veste (o emblema do herói) */
+  emblema?: string | null;
   maquiagem?: Record<string, MaquiagemEscolha>;
   prefs: FxPrefs;
   onPref: (campo: keyof FxPrefs) => void;
@@ -99,9 +104,9 @@ export function NucleoStage(props: NucleoStageProps) {
   const variante = salaDaFaseDeUso(definicao.codigo, momento, props.resultado) ?? props.variante;
   return (
     <div className="n3d-stage" data-testid="nucleo-stage">
-      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} variante={variante} semente={props.semente}
+      <NucleoScene config={config} avatar={props.avatar} pecas={props.pecas} protagonista={props.protagonista} resultado={props.resultado} anterior={props.tentativa} variante={variante} semente={props.semente}
         camera={camera} momento={momentoDaCamera(momento)}
-        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} maquiagem={props.maquiagem}
+        zonasDaPeca={definicao.recursos.includes("ZONAS") ? definicao.zonas : undefined} zonas={props.zonas} emblema={props.emblema} maquiagem={props.maquiagem}
         andarLivre={andaAgora(definicao.codigo, definicao.acoes, momento, props.entreLances)}
         agilidade={props.recursos?.look.atributos.AGILIDADE} desfileAtivo={desfileNaAcao} />
       {desfileNaAcao && props.onFimDesfile && <DesfileHud codigo={definicao.codigo} onFim={props.onFimDesfile} resultado={props.resultado} onExecucao={props.onExecucao} reduzido={reduzido} />}
@@ -140,6 +145,7 @@ export function NucleoStage(props: NucleoStageProps) {
         baseDireita={
           <>
             {!reduzido && <NucleoCameraSelector opcoes={opcoesDeCamera(definicao.codigo)} atual={camera} onTrocar={setCamera} />}
+            <SeletorDeQualidade />
             <NucleoControls grupo="camera" acoes={definicao.acoes} gamepad={props.gamepad} permitido={(a) => comandoPermitido(momento, a)} onComando={props.onComando} />
           </>
         }

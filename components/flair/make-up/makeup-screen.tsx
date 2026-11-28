@@ -5,11 +5,14 @@ import { EmptyState, PageHeader, SkeletonGrid, UiIcon } from "@/components/ui";
 import { MakeUpGame } from "@/components/flair/make-up/makeup-game";
 import { MakeUpResult, useBriefText } from "@/components/flair/make-up/makeup-panels";
 import { useMakeUpBrief } from "@/components/flair/make-up/use-makeup-brief";
+import { SalaFaixa } from "@/components/flair/multi/sala-faixa";
+import { useSalaDaPartida } from "@/components/flair/multi/use-sala-da-partida";
 import { briefDaRota } from "@/lib/flair/make-up/briefs";
 
 function Brief({ codigo }: { codigo: string }) {
   const tx = useBriefText();
-  const m = useMakeUpBrief(codigo);
+  const sala = useSalaDaPartida("MAKE_UP");
+  const m = useMakeUpBrief(codigo, sala.daPartida?.id ?? null);
   let corpo;
   if (m.carregando) {
     corpo = <SkeletonGrid n={3} />;
@@ -26,6 +29,7 @@ function Brief({ codigo }: { codigo: string }) {
         <Link href="/flair/make-up" className="btn btn-sm"><UiIcon name="chevronLeft" size={18} />{tx.t("flair3d.makeup.back")}</Link>
         <PageHeader title={tx.brief(codigo)} kicker={tx.t("flair3d.makeup.level", { n: m.brief.nivelMin })} />
       </div>
+      {sala.sala && <SalaFaixa sala={sala.sala} />}
       {m.offline && <p className="n3d-offline" role="status">{tx.t("flair3d.ui.offline")}</p>}
       {corpo}
     </>

@@ -4,7 +4,8 @@
  * gerados pelo motor Blender (scripts/blender3d) no lugar dos móveis procedurais — escala, apoio no piso e para onde
  * cada um fica virado. `?jogo=PERSONAGEM_FILME` escolhe a sala; `?olho=x,y,z` e `?alvo=x,y,z` fixam a câmera;
  * `?glb=0` mostra a sala só com os móveis procedurais, para comparar; `?variante=` escolhe a variante da sala;
- * `?gente=N` põe os figurantes (N de corpo inteiro, os outros no corpo humano leve).
+ * `?gente=N` põe os figurantes (N de corpo inteiro, os outros no corpo humano leve); `?q=ALTA|MEDIA|BAIXA` fixa a
+ * qualidade (a sala high poly, quando o jogo tem uma, entra na Alta e na Média).
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -20,6 +21,7 @@ import { Diretor } from "@/lib/flair/nucleos/scene/director";
 import { salaDe } from "@/lib/flair/nucleos/scene/registry";
 import type { PessoaDoElenco } from "@/lib/flair/nucleos/gente/elenco";
 import type { NucleoCodigo } from "@/lib/flair/nucleos/types";
+import { gravarPreferencia, PREFERENCIAS, type PreferenciaDeQualidade } from "@/lib/flair/salas-altas/preferencia";
 
 type V3 = [number, number, number];
 const tripla = (texto: string | null, padrao: V3): V3 => {
@@ -45,6 +47,8 @@ export default function SalasLab() {
   const [cena, setCena] = useState<{ jogo: NucleoCodigo; olho: V3; alvo: V3; semObjetos: boolean; variante: string | null; gente: number | null; catalogo: boolean } | null>(null);
   useEffect(() => {
     const q = new URLSearchParams(location.search);
+    const nivel = q.get("q");
+    if (nivel && (PREFERENCIAS as readonly string[]).includes(nivel)) gravarPreferencia(nivel as PreferenciaDeQualidade);
     setCena({ jogo: (q.get("jogo") ?? "PERSONAGEM_FILME") as NucleoCodigo, olho: tripla(q.get("olho"), [0, 2.4, 7.5]), alvo: tripla(q.get("alvo"), [0, 1, 0]), semObjetos: q.get("glb") === "0", variante: q.get("variante"), gente: q.has("gente") ? Number(q.get("gente")) : null, catalogo: q.has("humanoides") });
   }, []);
   // a sala lê o diretor das sequências a cada quadro: aqui, um diretor parado (nenhuma sequência tocando)

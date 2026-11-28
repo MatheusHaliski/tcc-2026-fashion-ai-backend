@@ -29,7 +29,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/atelier3d/editor.tsx": {
-   "max": 590,
+   "max": 525,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/avatar3d/my-avatar.test.tsx": {
@@ -61,11 +61,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/flair/modes-paineis.test.tsx": {
-   "max": 557,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "components/flair/modes.tsx": {
-   "max": 422,
+   "max": 517,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/globe-hype.test.tsx": {
@@ -188,22 +184,6 @@
    "max": 1018,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/FabricFrame.java": {
-   "max": 581,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/ProductRuleFrame.java": {
-   "max": 757,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/ProductSegmenter.java": {
-   "max": 253,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/catalog/image/SemanticCropper.java": {
-   "max": 296,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
   "fai-application/src/main/java/br/com/fashionai/application/copilot/CopilotLexicon.java": {
    "max": 317,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
@@ -222,10 +202,6 @@
   },
   "fai-application/src/main/java/br/com/fashionai/application/hype/HypeCalculator.java": {
    "max": 379,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/hype/HypeMilestoneNotifier.java": {
-   "max": 263,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/hype/HypeQueryService.java": {
@@ -317,7 +293,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/passport/GarmentPassportService.java": {
-   "max": 369,
+   "max": 367,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/photoedit/PhotoEditService.java": {
@@ -381,7 +357,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/FlairChallengeService.java": {
-   "max": 987,
+   "max": 986,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/FlairCollectionService.java": {
@@ -389,7 +365,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/FlairService.java": {
-   "max": 1063,
+   "max": 984,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/IdentityService.java": {
@@ -430,10 +406,6 @@
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/PhotoService.java": {
    "max": 416,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "fai-application/src/main/java/br/com/fashionai/application/service/PhysicalStoreService.java": {
-   "max": 303,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/PreferencesService.java": {
@@ -561,7 +533,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-web/src/test/java/br/com/fashionai/web/controller/ServiceFakes.java": {
-   "max": 4300,
+   "max": 4234,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/api/client.ts": {
@@ -569,7 +541,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/atelier3d/document.ts": {
-   "max": 356,
+   "max": 288,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/avatar3d/body-spec.ts": {
@@ -590,42 +562,6 @@
   },
   "lib/avatar3d/hair.ts": {
    "max": 269,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/eyes.ts": {
-   "max": 259,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garment-fit.ts": {
-   "max": 257,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garment-photo.ts": {
-   "max": 428,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garment-trims.ts": {
-   "max": 257,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garments.test.ts": {
-   "max": 475,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/garments.ts": {
-   "max": 1205,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/hair-geometry.ts": {
-   "max": 408,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/hair-strands.ts": {
-   "max": 714,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "lib/avatar3d/human/three-human.ts": {
-   "max": 333,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "lib/avatar3d/image-stats.ts": {
@@ -734,26 +670,6 @@
   },
   "scripts/cloud/photo_sets_vertex.py": {
    "max": 269,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/estados_ts.py": {
-   "max": 337,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/gerar.py": {
-   "max": 1430,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/modelo.py": {
-   "max": 1061,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/tsmodelo.py": {
-   "max": 313,
-   "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
-  },
-  "scripts/diagramas/v5/unidades.py": {
-   "max": 565,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "scripts/docs/taxonomia_entidades.py": {

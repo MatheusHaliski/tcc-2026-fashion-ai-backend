@@ -88,9 +88,9 @@ class FlairCbcEdicaoConcorrenteTest {
         for (int i = 0; i < PESSOAS; i++) {
             CurrentUser pessoa = Kit.as(kit.save(UserRepository.class, Kit.user("pessoa" + i)));
             Map<String, UUID> cartas = new LinkedHashMap<>();
-            for (FlairCbcElenco.Vaga v : FlairCbcElencos.porCodigo("PRIMEIRO_ELENCO").orElseThrow().vagas()) {
+            for (FlairCbcElenco.Vaga v : FlairCbcElencos.porCodigo("DESAFIO_FOGO").orElseThrow().vagas()) {
                 cartas.put(v.chave(), kit.save(FlairCardInstanceRepository.class,
-                        Flair3dFixtures.instance(pessoa.id(), v.posicao(), "brand:Farm")).getId());
+                        Flair3dFixtures.instance(pessoa.id(), "SUP", "color:red")).getId());
             }
             pessoas.add(pessoa);
             pedidos.add(new FlairCbcSquadService.Pedido(cartas));
@@ -105,7 +105,7 @@ class FlairCbcEdicaoConcorrenteTest {
             Callable<Integer> entrega = () -> {
                 largada.await();
                 try {
-                    return (Integer) service.entregar(pessoa, "PRIMEIRO_ELENCO", pedido).get("edicao");
+                    return (Integer) service.entregar(pessoa, "DESAFIO_FOGO", pedido).get("edicao");
                 } finally {
                     trava.commit();
                 }
@@ -121,6 +121,6 @@ class FlairCbcEdicaoConcorrenteTest {
 
         assertThat(edicoes).doesNotHaveDuplicates().hasSize(PESSOAS);
         assertThat(edicoes).allMatch(e -> e >= 1 && e <= PESSOAS);
-        assertThat(trava.memoria.findByElenco("PRIMEIRO_ELENCO").orElseThrow().getUltima()).isEqualTo(PESSOAS);
+        assertThat(trava.memoria.findByElenco("DESAFIO_FOGO").orElseThrow().getUltima()).isEqualTo(PESSOAS);
     }
 }

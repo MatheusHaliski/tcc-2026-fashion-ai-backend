@@ -56,7 +56,7 @@ RULES = (   # (tecido, regra) na ordem: a primeira que casar no texto decide; "@
     ("camurca", _rx(r"camurca", r"\bsuede\b", r"\bnu?buck\b")),
     ("couro", _rx(r"\bcouro\b", r"\bleather\b", r"\bpu\b", r"desserto", r"\bnapp?a\b", r"\bpelica\b")),
     ("acolchoado", _rx(r"\bpuffer", r"\bpuff (jacket|vest|coat)", r"(jaqueta|colete|casaco) puff", r"acolchoad",
-                       r"matelass", r"\bquilted\b", r"\bpadded\b", r"steppjacke", r"\bplumas?\b", r"\binsulated\b",
+                       r"matelass", r"\bquilted\b", r"\bpadded\b", r"steppjacke", r"\bplumas?\b",
                        r"\bdown[- ](fill\w*|insulat\w*|jacket|vest|coat|parka|puffer)", r"\b(goose|duck) down\b",
                        r"\d+[- ]?fill\b", r"\bfilled (canvas|jacket|coat|vest)")),
     ("veludo", _rx(r"\bvelvet\b", r"\bveludo\b(?! cotele)", r"\bvelou?r\b")),

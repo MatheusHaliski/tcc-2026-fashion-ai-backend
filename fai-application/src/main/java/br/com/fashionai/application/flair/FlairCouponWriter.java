@@ -3,12 +3,15 @@ package br.com.fashionai.application.flair;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Map;
 
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.seal.PromotionRules;
 import br.com.fashionai.application.service.CouponChannelResolver;
+import br.com.fashionai.application.service.CouponHypeGate;
 import br.com.fashionai.application.service.CouponMinimumRules;
 import br.com.fashionai.application.service.CouponTermsSnapshotWriter;
 import br.com.fashionai.application.service.FlairService.CombinationForm;
@@ -20,17 +23,20 @@ import br.com.fashionai.domain.repository.FlairRedemptionRepository;
 
 /**
  * FLAIR — o cupom da combinação: os campos de cupom da oferta (título, desconto, compra mínima, validade, canal, loja)
- * e a emissão do cupom de quem completou o jogo, com as condições da hora copiadas para ele. Extraído do FlairService
+ * e a emissão do cupom de quem completou o jogo, com as condições da hora copiadas para ele (canal, compra mínima e a
+ * faixa de Hype das cartas, quando a combinação exige uma). Extraído do FlairService
  * (exercício 14), que continua dono da transação, da autorização e das regras do jogo.
  */
 public final class FlairCouponWriter {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private final FlairRedemptionRepository redemptions;
+    private final FlairCouponHype hype;
     private CouponChannelResolver channels;
 
-    public FlairCouponWriter(FlairRedemptionRepository redemptions) {
+    public FlairCouponWriter(FlairRedemptionRepository redemptions, CouponHypeGate hypeGate) {
         this.redemptions = redemptions;
+        this.hype = new FlairCouponHype(hypeGate);
     }
 
     public void useChannels(CouponChannelResolver channels) {
@@ -51,10 +57,21 @@ public final class FlairCouponWriter {
         c.setValidDays(Math.max(7, Math.min(120, f.validDays() == null ? 30 : f.validDays())));
         c.setCanalCupom(CouponChannelResolver.resolve(channels, f.canalCupomId(), c.getCanalCupom()));
         c.setStoreUrl(PromotionRules.storeUrl(f.storeUrl()));
+        c.setMinHypeLevel(FlairCouponHype.minimum(f.minHypeLevel()));
+    }
+
+    /** Circuito Aura — acrescenta ao checklist o requisito de Hype da combinação, lido das cartas apresentadas. */
+    public List<Map<String, Object>> withHype(List<Map<String, Object>> checks, FlairCombination c, List<FlairEngine.Card> cards) {
+        return hype.withHype(checks, c, cards);
+    }
+
+    /** Por que a combinação não rende cupom: só falta Hype (409 HYPE_INSUFICIENTE) ou o deck ainda não a completa (422). */
+    public ApiException incomplete(List<Map<String, Object>> checks) {
+        return FlairCouponHype.incomplete(checks);
     }
 
     /** Emite o cupom: código único, validade a partir de agora e o canal da oferta copiado para o cupom. */
-    public FlairRedemption issue(FlairCombination c, User user, Scheme deck, Integer deckPower) {
+    public FlairRedemption issue(FlairCombination c, User user, Scheme deck, Integer deckPower, List<Map<String, Object>> checks) {
         FlairRedemption r = new FlairRedemption();
         r.setCombination(c);
         r.setUser(user);
@@ -68,6 +85,7 @@ public final class FlairCouponWriter {
         r.setDeckPower(deckPower);
         r.setExpiresAt(Instant.now().plus(c.getValidDays(), ChronoUnit.DAYS));
         CouponTermsSnapshotWriter.issue(r, c);
+        r.setHypeLevelSnapshot(FlairCouponHype.levelAtIssue(checks));   // a faixa da emissão fica no cupom
         redemptions.save(r);
         c.setRedeemed(c.getRedeemed() + 1);
         return r;

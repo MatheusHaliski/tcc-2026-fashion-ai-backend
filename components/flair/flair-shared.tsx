@@ -7,13 +7,15 @@ import { currentIntl } from "@/lib/i18n/state";
 import { fmtOriginal } from "@/lib/i18n/money";
 import { couponChannelText, type CouponChannel } from "@/components/coupons/coupon-channel-field";
 import type { CouponMinimumSnapshot } from "@/components/coupons/coupon-minimum";
+import { couponHypeText, type CouponHypeSnapshot } from "@/components/coupons/coupon-hype";
+import type { HypeLevel } from "@/lib/hype/types";
 
 /** Tipos e utilitários do FLAIR compartilhados entre a página /flair e a aba da loja (RF14/RF22). */
 export interface Check { kind: string; value: string; label: string; ok: boolean; }
 
-export interface Coupon { title: string; discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | ""; validDays: number; minPurchaseCurrency?: string | null; }
+export interface Coupon { title: string; discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | ""; validDays: number; minPurchaseCurrency?: string | null; /** Circuito Aura: "" = sem exigência */ minHypeLevel?: HypeLevel | ""; }
 
-export interface Voucher extends CouponChannel, CouponMinimumSnapshot { id: string; code: string; status: string; expiresAt: string; usedAt?: string | null; createdAt: string; deck?: string | null; deckPower?: number | null; user: UserCard; combination: { id: string; name: string; brandName: string; coupon: string; discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | ""; accentColor: string }; }
+export interface Voucher extends CouponChannel, CouponMinimumSnapshot, CouponHypeSnapshot { id: string; code: string; status: string; expiresAt: string; usedAt?: string | null; createdAt: string; deck?: string | null; deckPower?: number | null; user: UserCard; combination: { id: string; name: string; brandName: string; coupon: string; discountPercent: number | ""; discountAmount: number | ""; minPurchase: number | ""; accentColor: string }; }
 
 export interface Combination {
   id: string; brand: UserCard; brandName: string; brandSlug?: string | null; name: string; description?: string | null; gameType: "COMBINACAO" | "COLECAO" | "DUELO_PATROCINADO";
@@ -47,6 +49,7 @@ export function VoucherDialog({ voucher, onClose }: { voucher: Voucher | null; o
         <p className="type-h3">{voucher.combination.coupon}</p>
         <p className="type-caption text-muted">{couponText({ ...voucher.combination, minPurchaseCurrency: voucher.minPurchaseCurrencySnapshot })}</p>
         <p className="type-caption text-muted" data-coupon-channel={voucher.canalCodigoSnapshot ?? ""}>{couponChannelText(voucher)}</p>
+        {couponHypeText(voucher) && <p className="type-caption text-muted" data-coupon-hype={voucher.hypeLevelSnapshot ?? ""}>{couponHypeText(voucher)}</p>}
         <p className="flair-code flair-code-lg my-4" aria-label={t("flair.flairShared.codigo", { join: voucher.code.split("").join(" ") })}>{voucher.code}</p>
         <p className="type-body-sm">{rich("flair.flairShared.mostre_este_codigo_no_caixa", { status: voucher.status, value: voucher.expiresAt ? t("flair.flairShared.valido_ate", { toLocaleDateString: new Date(voucher.expiresAt).toLocaleDateString(currentIntl()) }) : "" }, { 0: ($c) => <b>{$c}</b> })}</p>
         {voucher.deck && <p className="type-caption text-muted mt-1">{t("flair.flairShared.trocado_com_o_deck_poder", { deck: voucher.deck, deckPower: voucher.deckPower })}</p>}

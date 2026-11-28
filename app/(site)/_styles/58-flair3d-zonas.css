@@ -1,0 +1,113 @@
+/* Rodada zonas da fase de uso (components/flair/nucleos/fase-de-uso-mao.tsx): a deixa do momento-chave do jogo (pênalti,
+   virada da música, pit stop, ameaça) e a mão de cartas do guarda-roupa, cada uma com o lance que a cor aciona. */
+.n3d-chave {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  padding: 6px 10px;
+  border: 1px solid rgb(224 176 77 / 70%);
+  border-radius: 12px;
+  background: rgb(224 176 77 / 16%);
+  animation: n3d-chave-entra 260ms ease-out;
+}
+
+.n3d-chave strong {
+  font-size: var(--text-caption);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #f3d58a;
+}
+
+.n3d-chave em {
+  font-style: normal;
+  font-weight: 600;
+}
+
+@keyframes n3d-chave-entra {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.n3d-mao {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.n3d-mao > small {
+  flex: 1 1 100%;
+  font-size: var(--text-caption);
+  opacity: 0.85;
+}
+
+.n3d-mao-carta {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 8px;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 999px;
+  background: rgb(18 16 15 / 55%);
+  color: inherit;
+  font-size: var(--text-caption);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.n3d-mao-carta kbd {
+  font-size: var(--text-caption);
+  opacity: 0.7;
+}
+
+.n3d-mao-carta small {
+  font-size: var(--text-caption);
+  opacity: 0.8;
+}
+
+.n3d-mao-carta[data-efeito="EMBALO"] {
+  border-color: rgb(240 118 43 / 70%);
+}
+
+.n3d-mao-carta[data-efeito="FOLEGO"] {
+  border-color: rgb(80 200 120 / 70%);
+}
+
+.n3d-mao-carta[data-efeito="ESCUDO"] {
+  border-color: rgb(77 163 224 / 70%);
+}
+
+.n3d-mao-carta[data-efeito="METAMORFOSE"] {
+  border-color: rgb(185 168 255 / 85%);
+  background: linear-gradient(135deg, rgb(122 92 255 / 35%), rgb(224 176 77 / 25%));
+}
+
+.n3d-mao-carta[data-uniforme] b::after {
+  content: " ★";
+  color: #f3d58a;
+}
+
+.n3d-mao-carta[data-armada] {
+  outline: 2px solid #f3d58a;
+  outline-offset: 1px;
+  background: rgb(224 176 77 / 28%);
+}
+
+.n3d-mao-carta:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .n3d-chave {
+    animation: none;
+  }
+}

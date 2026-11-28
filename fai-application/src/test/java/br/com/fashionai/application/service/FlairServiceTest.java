@@ -64,7 +64,7 @@ class FlairServiceTest {
     private FlairService.CombinationForm form(String type, List<String> categories, Integer minPower, String rarity, Integer stock) {
         return new FlairService.CombinationForm("Combo de inverno", "Monte o look da estação", type, categories, List.of("classic"),
                 List.of(), 0, minPower, rarity, 2, "10% na loja", 10, null, new BigDecimal("100"), 30, stock, true, null, null, "#aa2233",
-                "https://loja.example.com", null, "BRL");
+                "https://loja.example.com", null, "BRL", null);
     }
 
     @Test
@@ -163,6 +163,18 @@ class FlairServiceTest {
     }
 
     @Test
+    void treinoContraAEquipeDaCasaNaoMexeNaLiga() {
+        String code = String.valueOf(map(flair.createTeam(ana, "Time Solo", null).get("mine")).get("code"));
+        Map<String, Object> practice = flair.teamBattle(ana, "casa");
+        assertThat(practice.get("practice")).isEqualTo(true);
+        assertThat(map(practice.get("teamB")).get("code")).isEqualTo("CASA");
+        assertThat((List<?>) practice.get("duels")).isNotEmpty();
+        assertThat(map(map(flair.league(ana).get("mine"))).get("points")).isEqualTo(0);
+        assertThat(kit.atelierGrants()).noneMatch(g -> g.getCategory() == Category.collectiveWork);
+        assertThat(code).isNotBlank();
+    }
+
+    @Test
     void equipeCheiaNaoAceitaMaisNinguem() {
         String code = String.valueOf(map(flair.createTeam(ana, "Lotado", null).get("mine")).get("code"));
         for (String n : List.of("bia", "caio", "duda", "enzo")) {
@@ -199,11 +211,11 @@ class FlairServiceTest {
         User loja = brand("lojax");
         CurrentUser store = Kit.as(loja);
         assertThatThrownBy(() -> flair.saveCombination(store, null, new FlairService.CombinationForm("Sem requisito", null, "COMBINACAO",
-                List.of(), List.of(), List.of(), 0, 0, null, null, "Cupom", 10, null, null, null, null, null, null, null, null, null, null, null)))
+                List.of(), List.of(), List.of(), 0, 0, null, null, "Cupom", 10, null, null, null, null, null, null, null, null, null, null, null, null)))
                 .isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> flair.saveCombination(store, null, form("TIPO_ERRADO", List.of("lower_piece"), 0, null, 5))).isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> flair.saveCombination(store, null, new FlairService.CombinationForm("Sem desconto", null, null,
-                List.of("lower_piece"), List.of(), List.of(), 0, 0, null, null, "Cupom", null, null, null, null, null, null, null, null, null, null, null, null)))
+                List.of("lower_piece"), List.of(), List.of(), 0, 0, null, null, "Cupom", null, null, null, null, null, null, null, null, null, null, null, null, null)))
                 .isInstanceOf(ApiException.class);
 
         Map<String, Object> combo = flair.saveCombination(store, null, form("COMBINACAO", List.of("full_body_piece", "nao_existe"), 1, "STANDARD", 5));

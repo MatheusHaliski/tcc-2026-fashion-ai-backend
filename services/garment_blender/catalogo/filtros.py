@@ -119,6 +119,8 @@ def verdict(look: Looks, where: dict, frame, clues: dict | None, open_front: boo
             return 2
         if min(w, h) >= 0.1 and look.contrast >= 35 and look.fill >= 0.25 and look.halo <= 0.3:   # estampa grande
             return 2
+        if min(w, h) >= 0.15 and abs(x) < 0.08 and look.contrast >= 25 and look.fill >= 0.25 and look.halo <= 0.35:
+            return 2   # estampa enorme no meio do peito (o "BULLS" lavado): dobra não tem esse tamanho
         return 1 if look.contrast >= PIECE else 0
     if look.halo <= FLAT_HALO and (look.contrast >= 24 or big >= 0.04):
         return 2

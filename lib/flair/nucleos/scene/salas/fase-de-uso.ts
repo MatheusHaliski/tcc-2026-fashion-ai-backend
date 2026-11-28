@@ -12,6 +12,7 @@ import { carroDeCorrida } from "@/lib/flair/nucleos/scene/moveis/camarim-box";
 import { faixa, marcaNoPiso } from "@/lib/flair/nucleos/scene/moveis/marcas";
 import { canhaoLuz, painelLed, trilhoSpots } from "@/lib/flair/nucleos/scene/moveis/palco";
 import { faixaDeParede, lua } from "@/lib/flair/nucleos/scene/moveis/set";
+import { antena, bandeiraDoClube, caixaDAgua, caixaDeRetorno } from "@/lib/flair/nucleos/scene/moveis/uso";
 import { caixote, linhasDaQuadra, parapeito, pilhaDePneus, predio, tambor, trave } from "@/lib/flair/nucleos/scene/moveis/urbano";
 import { noLugar } from "@/lib/flair/nucleos/scene/parts";
 import type { LuzPropria, MaterialDesc, Movel, Sala, Zona } from "@/lib/flair/nucleos/scene/types";
@@ -94,6 +95,9 @@ const CAMPO = lugarDeUso("CLUBE_CORACAO", {
     trave({ pos: [0, 0, -7.5] }, "traves", "rede"),
     arquibancada({ pos: ARQ_ESQ, giro: 90 }, "concreto", "assento", 9, 3),
     arquibancada({ pos: ARQ_DIR, giro: -90 }, "concreto", "assento", 9, 3),
+    // as bandeiras do clube inventado nos cantos do fundo, nas cores da camisa
+    bandeiraDoClube({ pos: [-5.6, 0, -8.2] }, "traves", "assento", "tinta"),
+    bandeiraDoClube({ pos: [5.6, 0, -8.2], giro: 180 }, "traves", "assento", "tinta"),
   ],
   figurantes: [...sentados("TORCIDA", NOS_DEGRAUS, ARQ_ESQ, 90, ["#1E5AA8", "#F2F4F7"]), ...sentados("TORCIDA", NOS_DEGRAUS, ARQ_DIR, -90, ["#F2F4F7", "#1E5AA8"])],
   proprias: [{ id: "bancada", tipo: "ponto", cor: "#FFFFFF", intensidade: 14, pos: [0, 5, 1] }, { id: "estadio", tipo: "ponto", cor: "#DCEBF8", intensidade: 26, pos: [0, 5, -5] }],
@@ -121,6 +125,9 @@ const PALCO = lugarDeUso("FAVORITE_SINGER", {
     canhaoLuz({ pos: [5.6, 0, -0.6], giro: -60 }, "metal", "luzEra"),
     canhaoLuz({ pos: [-5.6, 0, -5.4], giro: 110 }, "metal", "luzEra"),
     canhaoLuz({ pos: [5.6, 0, -5.4], giro: -110 }, "metal", "luzEra"),
+    // as caixas de retorno na beira do palco, voltadas para quem canta
+    caixaDeRetorno({ pos: [-3.4, 0, 3.3], giro: 180 }, "palco", "metal"),
+    caixaDeRetorno({ pos: [3.4, 0, 3.3], giro: 180 }, "palco", "metal"),
   ],
   figurantes: emPe("PLATEIA", [[-4.2, 3.6], [-3.3, 4.1], [-2.4, 3.6], [-1.6, 4.2], [1.6, 3.7], [2.5, 4.2], [3.3, 3.6], [4.2, 4.1]], ["#7A5CFF", "#FF4FD8", "#2B2140"], 180),
   proprias: [
@@ -175,6 +182,7 @@ const TERRACO = lugarDeUso("SUPER_HEROI", {
     metal: metalEscovado("#8E939C"),
     luz: luz("#FFF4E0", 2.2),
     marca: tinta("#F2C230"),
+    tanque: metalPintado("#7C8794"),
   },
   moveis: [
     marcaNoPiso({ pos: [0, 0, 0] }, "marca", 0.5),
@@ -190,8 +198,12 @@ const TERRACO = lugarDeUso("SUPER_HEROI", {
     caixote({ pos: [1.1, 0, -4.4] }, "laje", 1.1),
     tambor({ pos: [-3.4, 0, -5.2] }, "metal"),
     tambor({ pos: [2.2, 0, -6.6] }, "metal"),
+    // a caixa d'água e a antena do prédio, nos cantos do fundo do terraço
+    caixaDAgua({ pos: [-5.6, 0, -6.4] }, "metal", "tanque"),
+    antena({ pos: [5.7, 0, -6.9] }, "metal"),
   ],
-  figurantes: [],
+  // os moradores do prédio que a missão protege, nas bordas do terraço: reagem a cada lance
+  figurantes: emPe("MORADORES", [[-5.6, 1.4], [-5.7, 3.4], [5.6, 2.0], [5.7, 4.0]], ["#2B3A67", "#C9D6FF", "#5E636E"], 0).map((p, i) => ({ ...p, giro: i < 2 ? 90 : -90 })),
   proprias: [
     { id: "bancada", tipo: "ponto", cor: "#C9D6FF", intensidade: 16, pos: [0, 4.5, 1] },
     { id: "lua", tipo: "ponto", cor: "#AFC6FF", intensidade: 30, pos: [3, 5, -6] },

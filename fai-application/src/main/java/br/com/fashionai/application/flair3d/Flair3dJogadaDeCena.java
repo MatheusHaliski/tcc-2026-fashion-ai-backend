@@ -61,6 +61,11 @@ public final class Flair3dJogadaDeCena implements Flair3dNucleo {
     }
 
     @Override
+    public Resultado comExecucao(Resultado look, Resultado comNota, int execucao, Contexto contexto) {
+        return jogo.comExecucao(look, comNota, execucao, contexto);
+    }
+
+    @Override
     public Resultado pontuar(Entrega entrega, Contexto contexto) {
         Resultado look = jogo.pontuar(entrega, contexto);
         Map<String, String> tabela = Flair3dCores.tabelaDe(codigo());
@@ -101,7 +106,7 @@ public final class Flair3dJogadaDeCena implements Flair3dNucleo {
     }
 
     /** Aprovado e reprovado seguem a nota nova (60); os outros desfechos ficam como o jogo disse. */
-    static String rotulo(String antes, double pontos) {
+    public static String rotulo(String antes, double pontos) {
         if ("APROVADO".equals(antes) || "REPROVADO".equals(antes)) {
             return pontos >= 60 ? "APROVADO" : "REPROVADO";
         }

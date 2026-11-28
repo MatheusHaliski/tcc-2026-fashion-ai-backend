@@ -17,6 +17,7 @@ import { TUNEIS_DE_MODA } from "@/lib/flair/cenas/cenas/tuneis-de-moda";
 import { ZIGUE_ZAGUE } from "@/lib/flair/cenas/cenas/zigue-zague";
 import type { Cena } from "@/lib/flair/cenas/tipos";
 import { variar } from "@/lib/flair/cenas/variante";
+import { ehDinamico } from "@/lib/flair/montagem/dinamico/catalogo";
 
 const TODAS = [TUNEIS_DE_COR, ZIGUE_ZAGUE, TUNEIS_DE_MODA, LINHA_DE_CABIDES, RELOJOARIA, RIO_DE_TECIDO, TEAR, ESCADARIA, ESTEIRA, CORRIDA_DE_CONTAS];
 
@@ -24,14 +25,8 @@ export const CENAS: Record<string, Cena> = Object.fromEntries(TODAS.map((c) => [
 
 export const CENA_RESERVA = TUNEIS_DE_COR;
 
-/** Cena de cada elenco (cinco cenas diferentes). */
-export const CENA_DO_ELENCO: Record<string, Cena> = {
-  PRIMEIRO_ELENCO: LINHA_DE_CABIDES,
-  PALETA_ATELIE: TUNEIS_DE_COR,
-  CASA_MARCA: ZIGUE_ZAGUE,
-  NOITE_ESTREIA: ESCADARIA,
-  ELENCO_LENDARIO: RELOJOARIA,
-};
+/** Cena de cada elenco (os cinco elencos de linhas foram retirados; elenco sem cena usa a reserva). */
+export const CENA_DO_ELENCO: Record<string, Cena> = {};
 
 /** Cena de cada cenário dos Desafios de Montagem: metade como é, metade como variante de uma cena de elenco. */
 export const CENA_DO_CENARIO: Record<string, Cena> = {
@@ -56,8 +51,12 @@ export function cenaDoElenco(codigo: string): Cena {
   return CENA_DO_ELENCO[codigo] ?? CENA_RESERVA;
 }
 
-/** A tela sabe desenhar este cenário? "livre" é a cena neutra (a reserva), desenhada de propósito. */
-export const temCenaDoCenario = (cenario: string): boolean => cenario === "livre" || Object.hasOwn(CENA_DO_CENARIO, cenario);
+/**
+ * A tela sabe desenhar este cenário? "livre" é a cena neutra (a reserva), desenhada de propósito; os cenários dos
+ * quebra-cabeças dinâmicos (lib/flair/montagem/dinamico) têm vídeo ou símbolo animado em vez de cena.
+ */
+export const temCenaDoCenario = (cenario: string): boolean =>
+  cenario === "livre" || Object.hasOwn(CENA_DO_CENARIO, cenario) || ehDinamico(cenario);
 
 export function cenaDoCenario(cenario: string): Cena {
   return CENA_DO_CENARIO[cenario] ?? CENA_RESERVA;

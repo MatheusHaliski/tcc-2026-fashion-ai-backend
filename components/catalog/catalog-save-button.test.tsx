@@ -12,6 +12,7 @@ it("sincroniza os dois botões de um produto salvo no perfil", async () => {
     "DELETE /api/me/saved-catalog-products/p1": undefined,
   });
   renderApp(<><CatalogSaveButton id="p1" /><CatalogSaveButton id="p1" /></>);
+  await waitFor(() => expect(calls.some((call) => call.path === "/api/me/saved-catalog-products/ids")).toBe(true));
   fireEvent.click(screen.getAllByRole("button", { name: "Salvar" })[0]);
   await waitFor(() => expect(screen.getAllByRole("button", { name: "Salvo", pressed: true })).toHaveLength(2));
   fireEvent.click(screen.getAllByRole("button", { name: "Salvo" })[1]);

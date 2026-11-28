@@ -48,7 +48,7 @@ public class SecurityConfig {
             "/api/opcoes/**", "/api/estados-conservacao", "/api/tipos-lavagem", "/api/colecoes", "/api/cortes", "/api/intensidades-termicas", "/api/origens",
             "/api/passport-shares/*", "/api/seals/art",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces", "/api/marketplace/**",
-            "/api/profiles/*", "/api/brands", "/api/institutional/**",
+            "/api/profiles/*", "/api/profiles/*/signature-piece", "/api/brands", "/api/institutional/**",
             "/api/schemes/*", "/api/schemes/*/card.png", "/api/schemes/*/look3d", "/api/pieces/*", "/api/pieces/*/aura-media/*", "/api/pieces/*/look3d", "/api/dna-schemes/*",
             "/api/interactions/*/*/comments", "/api/interactions/*/*/counters",
             "/api/users/*/lookbook", "/api/users/*/closet", "/api/users/*/seals", "/api/users/*/promotions",

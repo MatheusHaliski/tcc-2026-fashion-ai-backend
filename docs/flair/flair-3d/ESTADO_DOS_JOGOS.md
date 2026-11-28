@@ -21,9 +21,10 @@ O que vale para todos os jogos e não se repete abaixo:
   foto ou cena.
 - A roupa é o foco: nenhum painel, personagem ou efeito cobre a faixa central do palco.
 - O servidor é a única fonte da nota. A prévia nunca gasta o sorteio: a partida inteira é recalculada da semente.
-- **Fora desta entrega em todos os jogos:** partida online com outras pessoas (sala, fila, convite, voto da plateia de
-  verdade). O desenho descreve essas variações, mas a base só abre partida solo (`BASE_NUCLEOS.md`, "Os avatares de
-  cada partida"). Onde o jogo pede adversário ou plateia, entra um figurante com nota tirada da semente.
+- **Multiplayer (27/11/2026, `MULTIPLAYER.md`):** convite por busca na rede FAI (nunca tag), sala com a mesma semente
+  nos 15 jogos e no MAKE UP e sala por turnos julgada no servidor na Batalha de Looks, no Dress Fighter e no Fashion
+  Sports. Ainda fora: tempo real, fila, cooperativo (Detective/Super-Herói) e voto da plateia de verdade. No single
+  player, onde o jogo pede adversário ou plateia, continua o figurante com nota tirada da semente.
 - **Fluidez do 3D:** não medida. O ambiente de desenvolvimento não tem placa de vídeo.
 - **Modelo cinza na ação (auditoria 3):** conferido de novo em quadros a cada 0,35 s do Dress Fighter, da entrega ao
   resultado, sem placa de vídeo: a modelo fica vestida o tempo todo. O corpo humano só aparece com as três zonas
@@ -348,6 +349,141 @@ critério de nenhum jogo chega a 8. Em ordem do que mais pesa:
 - **Fashion Detective (5,4):** o culpado é fixo (a história e as cutscenes nomeiam o Bento) e não há ✕ contextual.
 - **Dress Fighter e Passarela (6,1 e 5,7):** vida por look, fôlego por golpe e descarte da carta; desfile curto de decisão.
 
+## Rodada 8f (27/11/2026): Batalha de Looks no perfil peça-recurso e o critério Aura
+
+Fecha o que o item 5 deixou ("falta a Batalha no perfil peça-recurso e o adversário vestido no 3D") e abre o critério
+novo, **Aura**: como as cartas com Aura/Hype entram em cada jogo. Visto na tela com a bancada de tela
+(`BANCADA_DE_TELA.md`): as regras de verdade em memória atrás de `page.route`, sem banco nem conta real.
+
+### Item 1 (feito): a nota da rodada da Batalha com regra, look e foco, para os dois lados
+
+`BatalhaLooksPlacar`: a nota de cada rodada é regra do desafio (25 por vaga, −25 pela proibida) + até 10 pelo carisma e
+pela agilidade do look + até 5 pelo foco das peças do deck gastas como recurso nesta rodada (30 de foco dão o teto),
+parada em 100. O look da casa passa pela mesma conta, sem recurso. Não contam na regra nem no look a peça que desfilou
+na rodada anterior (carta cansada, rodada 8e) e a peça gasta como recurso na mesma rodada; a proibida conta no look
+inteiro. O merge da 8e com a 8f na main tinha deixado `BatalhaLooksRodadas` sem compilar; a rodada junta as duas
+regras (teste `aPecaQueDesfilouNaRodadaAnteriorEAGastaComoRecursoNaoContamJuntas`).
+
+**Tela.** Tabela rodada a rodada (`batalha-placar.tsx`) na preparação da rodada seguinte e no resultado: a conta de
+cada lado ("50 da regra + 2 do look + 0 do foco = 52"), o desafio, as vagas que não contaram e a família do look da
+casa; a soma no rodapé e no painel de LED da cena ("80 × 103"). O adversário veste no 3D o look que o servidor revela
+(`use-batalha-em-cena.ts`, `pecasDoAdversario`): a mesma pessoa, com outra roupa.
+
+### Item 2 (feito): a faixa de Hype da carta no resultado (Aura, só leitura)
+
+Em "Cartas que pontuaram", de todos os jogos, cada carta mostra a faixa de Hype em que jogou ("Hype: Relevante"), com
+os limiares do servidor (`hype-da-carta.ts`, os mesmos de `Flair3dHype`). Os jogos leem o Hype, nunca o escrevem
+(Circuito Aura); a nota não depende disto.
+
+**Visto na tela:** a Batalha inteira (deck de 8, três rodadas, foco gasto na segunda, a terceira com duas peças
+cansadas, a tabela, o painel de LED, o adversário vestido, a faixa de Hype). Capturas em
+`scratchpad/shots/jogos/8f/`. **Não visto:** o treino de uma rodada (está no teste da tela); celular.
+
+### Nota projetada depois da rodada 8f
+
+Projeção de quem implementou, a conferir por auditor independente. Coluna nova **Aura** (como Aura/Hype entra no
+jogo; antes desta rodada, a nota que o jogo já teria). Hoje o Hype aparece só na carta ampliada e nos anéis de luz no
+piso; só o Fashion Sports o usa na regra (+3 com Hype 80 ou mais). A faixa no resultado sobe todos em 0,5. A
+Batalha muda nos outros critérios; os demais jogos ficam com a projeção anterior.
+
+| Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Aura (antes → depois) | Final (sem Aura) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| BATALHA_LOOKS | 5,0 (4,6) | 5,0 (3,8) | 6,3 (6) | 5,2 (5) | 4,8 (4) | 6,5 | 5,5 | 2,5 → 3 | **5,5** (5,1) |
+| FASHION_SPORTS | 4,8 | 5 | 6 | 4,5 | 4,5 | 5,2 | 5 | 4 → 4,5 | 5,0 |
+| DRESS_FIGHTER | 6,2 | 6 | 7 | 5 | 6,3 | 6 | 6 | 2,5 → 3 | 6,1 |
+| demais 12 jogos | como acima | | | | | | | 2 a 2,5 → 2,5 a 3 | sem mudança |
+
+Média projetada dos 15 (sem Aura): 5,2. Aura média: 2,3 → 2,8. Nenhum jogo chega a 8 em nenhum critério.
+
+**Para a Aura chegar a 8** (proposta, não feito): a faixa de Hype precisa mudar a partida, não só aparecer. Por
+gênero: plateia e júri que reagem pela faixa (Passarela, Batalha, Singer), o Hype como recurso que se gasta uma vez
+por partida (destaque na foto, voto da plateia no empate), a Aura Metamorfose da carta Especial como poder com tempo
+de recarga, e cartas privadas sem Hype explicadas na tela. Sempre lendo o Hype, nunca escrevendo (Circuito Aura).
+
+## Rodada 8g (27/11/2026): o fim da Batalha e a Aura que muda a partida
+
+Duas coisas: o bug do resultado final da Batalha de Looks e o critério Aura (o de nota mais baixa, média 2,8), que
+passa a mudar a partida em cinco jogos de cartas. Princípio do Circuito Aura mantido: os jogos **leem** a faixa de Hype
+e a família de Aura das cartas e nunca escrevem Hype (nada é gasto, gravado ou publicado no Hype real). Os quatro
+jogos de zonas ficam com outra rodada. Visto na tela com a bancada (`BANCADA_DE_TELA.md`).
+
+### Item 1 (feito): "30 pontos, nenhuma estrela, Vitória" com a tabela 127 × 79
+
+**Causa.** Na Batalha de 3 rodadas, a nota final era a média das rodadas (127 / 3 = 42) mais a execução do desfile
+final; "seguir sem executar" conta as três marcas como erro (−12) e dava 30. O desfecho, porém, vinha da soma das
+rodadas sem a execução (127 > 79): "Vitória" com 0 estrela. Reproduzido em `BatalhaLooksFechoTest` (falhava antes da
+correção) e no componente (`batalha-fecho.test.tsx`).
+
+**Regra nova** (`BatalhaLooksFecho`, chamado pelo gancho `comExecucao` da Strategy, que a execução usa para o jogo
+decidir o desfecho): a execução entra na **soma** da pessoa, que é o que se compara com a casa; no empate, o voto da
+plateia; a nota continua média + execução, mas segue o desfecho: **vitória vale ao menos 60 (1 estrela), derrota no
+máximo 59**. O evento `SOMA_DA_BATALHA` passa a trazer `{voce, adversario, rodadas, execucao}`. Na tela, a tabela ganha
+a linha "Desfile final (execução)", a soma é a do servidor e o painel de LED mostra a mesma soma.
+
+**Visto na tela** (bancada, seguindo sem executar): "60 pts ★", tabela 114 − 12 = 102 × 54, LED igual à tabela.
+
+### Item 2 (feito): a Aura muda a partida em 5 jogos
+
+Regras em `flair3d/aura/Flair3dAuraRegras` (servidor, que julga) e as mesmas em `lib/flair/nucleos/aura-na-partida.ts`
+(a tela avisa antes da entrega). Valem em **Passarela, Dress the Star, Personagem de Filme, Boutique 3D e Batalha de
+Looks** (os de Aura mais baixa entre os de cartas; Fashion Sports já usava o Hype e Dress Fighter tem a carta Especial
+dentro da luta).
+
+| Mecânica | Regra (limitada) | Onde entra |
+| --- | --- | --- |
+| Plateia/júri pela faixa de Hype | média inteira das faixas das peças que pontuam (sinal baixo 0 … viral 5) → 0, 0, 1, 2, 4, 6 pontos; nunca tira ponto | nos 4 jogos de um look, na nota que fecha o look (regra `PLATEIA_DO_HYPE`); na Batalha, na nota de **cada rodada**, dentro da comparação com a casa (parcela "da Aura") |
+| Splash | a plateia lê uma faixa acima | idem |
+| Trunfo do Hype (uso único) | `POST /api/flair/3d/partidas/{id}/hype`: uma carta do deck com Hype Relevante ou mais, uma vez por partida (422 `HYPE_JA_CHAMADO`, `HYPE_SEM_FORCA`, `CARTA_FORA_DO_DECK`; pedido repetido devolve o mesmo); +2 a +5 pela faixa | destaque na foto final (`TRUNFO_DO_HYPE`); na Batalha, soma na rodada em que foi chamado e ganha o voto da plateia no empate |
+| Electro | +150 ms por peça na janela de cada marca da execução (até +300) | execução |
+| Comum | o primeiro erro da execução não drena o recurso-vida (os pontos caem igual) | execução |
+| Metamorfose (só carta Especial) | poder com recarga: na execução, a marca errada vira "bom" e recarrega por 2 marcas; na Batalha, a carta vale na regra de qualquer desafio (a proibida segue proibida) e recarrega por 1 rodada, que coincide com o cansaço da peça | execução; rodada da Batalha |
+
+A família de Aura sai da arte do card da peça (`background_config_json`: `auraMetamorphose` ligada ou
+`compositionPreset.family`), lida por `Flair3dCartas.auras` e levada no `Contexto`; chega à tela pelos selos
+(`efeitos[].aura`). O trunfo fica no andamento da partida (`Andamento.hype`), sem migração. Decisão de padrão em
+`docs/refactoring/gof/R90-flair3d-nucleos.md` (Decorator `Flair3dAuraNaPartida`; a Batalha lê a Aura na rodada).
+
+**Tela.** Na preparação, o painel "Aura na partida": quem reage (a plateia do desfile, os fãs da estrela, a equipe do
+set, as clientes, o júri), a faixa e os pontos (os da prévia do servidor; antes dela, a mesma regra pelos selos), o
+que cada família vestida faz e os botões "Chamar o Hype de … (+n)" só com as cartas que podem ser trunfo; carta
+privada ou sem Hype público é explicada. No resultado, "Aura na partida" diz o que a plateia, o trunfo, o Electro, o
+Comum e a Metamorfose renderam.
+
+**Testes.** JUnit: `Flair3dAuraRegrasTest`, `Flair3dAuraNaPartidaTest`, `Flair3dAuraTrunfoTest` (serviço),
+`BatalhaLooksAuraTest`, `BatalhaLooksFechoTest`; caracterizações ajustadas (`Flair3dPartidaRodadasTest`,
+`Flair3dNucleoServiceTest`). Vitest: `aura-na-partida.test.ts`, `nucleo-aura.test.tsx`, `batalha-fecho.test.tsx`,
+`batalha-placar.test.ts`.
+
+**HUD mínimo de console** (auditoria de 27/11): fechado, o painel mostra só o resumo curto ("Aura: plateia +6", "Aura
++6 · trunfo +4"); a plateia, as famílias e o trunfo abrem como painel.
+
+**Visto na tela** (bancada): a Batalha inteira com o trunfo chamado na 3ª rodada (+5 na rodada, "Comum: o primeiro
+erro não drenou o recurso" no resultado); a Passarela com o resumo, o painel aberto, o trunfo chamado e, seguindo sem
+executar, o resultado com a plateia (+1), o Electro (+150 ms), o Comum (dreno do primeiro erro perdoado) e a
+Metamorfose do Colar branco (a marca 1 virou "bom": execução −6 em vez de −12). Capturas em
+`scratchpad/shots/jogos/8g/`. **Não visto:** Dress the Star, Personagem de Filme e Boutique na tela (mesmo componente
+e mesmo Decorator, cobertos pelos testes); celular.
+
+### Nota projetada depois da rodada 8g
+
+Projeção de quem implementou, a conferir por auditor independente. Entre parênteses, a da rodada 8f. Os outros dez
+jogos não mudam.
+
+| Jogo | Jogab. | Recursos | Sentido | Gráficos | Roupas | Comandos | Cutscenes | Aura | Final (sem Aura) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| BATALHA_LOOKS | 5,3 (5,0) | 5,4 (5,0) | 6,6 (6,3) | 5,2 | 4,8 | 6,5 | 5,5 | **6** (3) | **5,6** (5,5) |
+| PASSARELA | 5,5 (5,3) | 5,2 (4,8) | 6 | 5,5 | 5,5 | 6,5 | 6 | **5,5** (3) | **5,7** (5,7) |
+| DRESS_THE_STAR | 5,3 (5,1) | 5,0 (4,6) | 6,8 | 5,5 | 5,2 | 6,5 | 6 | **5,5** (3) | **5,8** (5,7) |
+| PERSONAGEM_FILME | 5,6 (5,5) | 4,8 (4,4) | 6 | 5,5 | 5 | 6 | 5,5 | **5** (2,5) | **5,5** (5,4) |
+| BOUTIQUE_3D | 4,2 (4) | 4,9 (4,5) | 5,5 | 6 | 4,5 | 6 | 5 | **5** (2,5) | **5,2** (5,1) |
+
+Aura média dos 15: 2,8 → 3,7. Média final (sem Aura): 5,2 → 5,3. Nenhum jogo chega a 8 em nenhum critério.
+
+**O que ainda separa a Aura de 8 nestes cinco:** a plateia reage só em número e texto (falta a plateia 3D reagir à
+faixa: luz, aplauso, flashes por faixa); a Metamorfose não tem efeito visual próprio no palco; o trunfo não tem
+cutscene; a faixa de Hype é a do retrato da carta (fixa na partida). Nos outros dez jogos a Aura segue só na faixa do
+resultado (jogos de zonas: outra rodada).
+
 ## Resumo
 
 | Nº | Jogo | Estado ao escrever este documento | Mais incompleto primeiro (ordem de trabalho) |
@@ -549,6 +685,8 @@ textos `flair3d.detetive.*` em pt-BR, en e es.
 | Celular (auditoria 3: textos sobre a cena, botões e resultado cortados) | feito: a faixa de baixo cabe na largura (antes passava 20 px), a ação quebra a linha em vez de cortar ("Pegar o papel do bolso do segurança do salão", com a contração certa em pt-BR e es), o quadro termina acima da barra de navegação, a câmera mostra só o ícone e o elenco só quem joga; o resultado rola dentro da faixa; a dica do preparo fala do caso novo (antes dizia "Salão 1 de 6") | sim (tela real do jogo em 390×844 com a API simulada no navegador: preparo, sala com enigma e ações, final parcial e resultado) |
 | Salvar por sala | feito: o servidor grava cada passo; ao voltar ao jogo, "Continuar desta sala" mostra a sala, as pistas, o fôlego e o relógio e retoma dali | não (só testes) |
 | Limite de 45 minutos | feito (relógio da partida; ao passar, Iolanda chama para a passarela) | não |
+| Tela e controle de console (pedido da dona em 27/11: "tela de jogo muito pequena", "informação confusa", setas, roda no X) | feito: na investigação a sala ocupa a tela toda abaixo do cabeçalho (T ou o botão: Fullscreen API; modo imersivo onde ela não existe); HUD mínimo (sala e objetivo, vida, relógio, recurso equipado, prompt só quando vale, aviso curto; nenhum texto com mais de 6 palavras sobre a cena); caso, mapa e pistas no painel da esquerda (C), ações, mão, enigma, acusação e inventário no da direita (I), fechados por padrão, Esc fecha; setas andam (Shift corre) pelos corredores do ponto aos vizinhos e chegar ao vizinho manda IR ao servidor, como antes; E usa a ação mais perto (armário, porta, esconderijo, bolso, vigia) com a carta da cor certa; X abre a roda com as seis cores como recursos (chave, disfarce, distração, lupa, fôlego, moeda; P ou soltar X equipa; a cena para enquanto a roda está aberta); A mira (câmera mais perto, anel vermelho no alvo) e F usa o recurso equipado no alvo; ? mostra os controles. O servidor continua julgando tudo pelo mesmo /acionar. Perfil por jogo (`lib/flair/nucleos/controle`, `docs/refactoring/gof/2026-11-27-perfil-console.md`): os outros 14 jogos seguem no mapa antigo | sim (fotos e vídeo em 1440×900 e 390×844) |
+| Demonstração jogável de movimento, combate e interação (`/flair/3d/detective/demo`) | feito, só no navegador (`lib/flair/detetive/demo`): uma sala com colisão, porta trancada, gaveta com a chave, armário com munição, kit de costura e carretel no chão, 3 vigias que patrulham, perseguem e golpeiam, com barra de vida; pistola de alfinetes (pente 12, R recarrega), leque de tesoura, spray de laquê e kit de costura na roda X; mira A e F; vida da pessoa com flash e tremor; "Você foi pega" e reiniciar. Sem sangue (faíscas, brilho, tecido). O caso de verdade continua sem combate (o confronto é a carta azul) | sim (fotos e vídeo) |
 
 ## 7 · Boutique 3D
 
@@ -834,9 +972,9 @@ Cena: `scene/salas/batalha-looks.ts` (passarela em Y, adversário, plateia, pain
 | Rodada "Batalha": 3 rodadas com objetivo sorteado, soma contra o adversário, desempate pela plateia | feito | não |
 | Rodadas de treino: Look Monocromático em azul (a da base), Dress Code do Convite, Vista o Clima | feito | não |
 | Um cartão apresenta o objetivo de cada rodada | feito | não |
-| O painel da cena mostra a soma dos dois | pendente | não |
+| O painel da cena mostra a soma dos dois | feito (rodada 8f): painel de LED "você × adversário" | sim (bancada) |
 | Efeito de cor na cena 3D | feito: a luz de efeito atrás do avatar na cor da família e o que a sala tem (plateia, flashes, luzes do lugar); ainda sem animação própria de cada efeito | não |
-| Resultado com a nota de cada rodada, sua e do adversário | feito | não |
+| Resultado com a nota de cada rodada, sua e do adversário | feito; rodada 8f: tabela com a conta (regra + look + foco) de cada lado | sim (bancada) |
 | "Cartas que pontuaram" com os pontos de cada carta nas rodadas em etapas (antes: "vale conforme o pedido da vez", auditoria 3); o resultado explica que cada etapa entra com 1/n dos pontos (o "8,33" de uma etapa de 25 em 3) | feito para todas as rodadas em etapas (Batalha, Boutique, Volta ao mundo, Labirinto): a regra de uma vaga cumprida vale para a carta dessa vaga, com o peso da etapa | não (só testes) |
 | Duelo 1×1, sala de 4 e modos com amigos | pendente (online) | não |
 

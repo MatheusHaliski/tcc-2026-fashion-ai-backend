@@ -77,12 +77,14 @@ public class BatalhaLooksNucleo implements Flair3dNucleo {
     /** Treino de um desafio só contra o adversário da casa, com a nota dele tirada da semente. */
     private static Resultado treinar(Map<String, CbcRules.Card> vestidas, Contexto contexto) {
         BatalhaLooksRodadas.Desafio desafio = BatalhaLooksRodadas.treino(contexto);
-        List<RegraResultado> regras = BatalhaLooksRodadas.regras(desafio, vestidas);
-        double pontos = BatalhaLooksRodadas.pontos(regras);
+        BatalhaLooksPlacar.DaPessoa voce = BatalhaLooksPlacar.daPessoa(desafio, vestidas, vestidas, contexto.andamento().usos(), 1, contexto);
+        double pontos = voce.nota().total();
         Map<String, Object> adversario = BatalhaLooksRodadas.adversarioNaTela(contexto, 1, desafio);
         int nota = (int) adversario.get("nota");
-        return Resultado.of(pontos, pontos > nota ? "VITORIA" : "DERROTA", regras,
-                List.of(new Evento("DESAFIO", desafio.codigo()), new Evento("ADVERSARIO", nota), new Evento("LOOK_DO_ADVERSARIO", adversario)))
+        Map<String, Object> conta = Map.of("voce", voce.nota().paraTela(), "adversario", adversario.get("conta"), "cansadas", voce.cansadas());
+        return Resultado.of(pontos, pontos > nota ? "VITORIA" : "DERROTA", voce.regras(),
+                List.of(new Evento("DESAFIO", desafio.codigo()), new Evento("ADVERSARIO", nota), new Evento("LOOK_DO_ADVERSARIO", adversario),
+                        new Evento("CONTA_DA_BATALHA", conta), voce.aura().evento()))
                 .comCartas(new Flair3dRateio(vestidas).cada(POR_PECA, desafio.naRegra()).lista());
     }
 
@@ -102,17 +104,28 @@ public class BatalhaLooksNucleo implements Flair3dNucleo {
                 .comCartas(new Flair3dRateio(vestidas).cada(POR_PECA, BatalhaLooksNucleo::azul).lista());
     }
 
+    /** A execução do desfile final entra na soma contra a casa e o desfecho manda na nota ({@link BatalhaLooksFecho}). */
+    @Override
+    public Resultado comExecucao(Resultado look, Resultado comNota, int execucao, Contexto contexto) {
+        return BatalhaLooksFecho.comExecucao(look, comNota, execucao, contexto);
+    }
+
     static boolean azul(CbcRules.Card c) {
         return Flair3dPecas.daFamilia(c, "Azul");
     }
 
     @Override
     public List<Efeito> efeitos(CbcRules.Card carta, Contexto contexto) {
-        if (BatalhaLooksRodadas.BATALHA.equals(contexto.rodada()) || (treino(contexto) && !contexto.emPartida())) {
+        boolean sorteada = BatalhaLooksRodadas.BATALHA.equals(contexto.rodada()) || treino(contexto);
+        if (sorteada && !contexto.emPartida()) {
             return List.of(Efeito.conformeAEtapa());
         }
-        if (treino(contexto)) {
-            BatalhaLooksRodadas.Desafio d = BatalhaLooksRodadas.treino(contexto);
+        if (sorteada) {
+            // dentro da partida o desafio da vez já foi revelado: o selo diz se a carta entra nele
+            BatalhaLooksRodadas.Desafio d = BatalhaLooksRodadas.daVez(contexto);
+            if (d.proibida().test(carta)) {
+                return List.of(Efeito.motivo("PECA_PROIBIDA"));
+            }
             return d.naRegra().test(carta) ? List.of(new Efeito("NA_REGRA", POR_PECA)) : List.of(Efeito.motivo("FORA_DA_REGRA"));
         }
         return azul(carta) ? List.of(new Efeito("FAMILIA_AZUL", POR_PECA)) : List.of(Efeito.motivo("FORA_DA_FAMILIA"));

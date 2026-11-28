@@ -110,4 +110,8 @@ public class Promotion extends VersionedAuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "canal_cupom_id")
     private CanalCupom canalCupom;
+
+    /** Circuito Aura (fase 1) — faixa mínima de Hype do card que destrava o cupom; nulo = oferta sem exigência de Hype. */
+    @Column(name = "min_hype_level", length = 20)
+    private String minHypeLevel;
 }

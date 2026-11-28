@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import { ApiError, mediaUrl } from '@/lib/api/client';
 import { useI18n } from '@/lib/i18n/i18n';
 import { customizationApi, type Customization } from '@/lib/piece3d/customization';
-import { disposeAsset, loadGlb, type LoadedAsset, type SceneDocument } from '@/lib/atelier3d/document';
+import { disposeAsset, loadGlb, updateNode, type LoadedAsset, type SceneDocument } from '@/lib/atelier3d/document';
+import { editBlock } from '@/lib/piece3d/edit-block';
 import { commitSceneEdit, createSceneHistory, travelSceneHistory, type SceneHistory } from '@/lib/atelier3d/history';
 import { SceneInspector } from '@/components/atelier3d/scene-inspector';
 import type { Tool, View } from '@/components/atelier3d/viewport';
 import { Button, Dialog, ErrorState, Skeleton, useToast } from '@/components/ui';
 import { PieceEditorBadges, PieceEditorToolbar } from './piece-editor-toolbar';
-import { PieceEditorNoModel } from './piece-editor-empty';
+import { PieceEditorBlocked, PieceEditorNoModel } from './piece-editor-empty';
 
 const Viewport = dynamic(() => import('@/components/atelier3d/viewport'), { ssr: false, loading: () => <Skeleton className="h-96" /> });
 
@@ -44,7 +45,8 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
         if (!response.ok) throw new Error('GLB');
         const glb = await loadGlb(await response.arrayBuffer());
         if (!alive) { disposeAsset(glb); return; }
-        asset.current = glb; setLoaded(glb);
+        // a peça já abre com o objeto selecionado: o painel da peça (cores, tamanho, barra, logos) aparece sem clicar
+        asset.current = glb; setLoaded(glb); setSelected(glb.nodes.keys().next().value ?? '');
       } catch (failure) {
         if (alive) setError(failure instanceof ApiError ? failure.message : t('editor3d.loadError'));
       }
@@ -53,7 +55,9 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
   }, [pieceId, t]);
 
   const doc = history.doc;
-  const editable = !!info?.editable;
+  // só GLB próprio (motor de peças) é editável: relevo da foto e modelos de fora ficam só para ver
+  const blocked = info ? editBlock(info, loaded) : null;
+  const editable = !!info?.editable && !blocked;
   function change(next: SceneDocument) { if (!editable) return; setHistory((h) => commitSceneEdit(h, next)); setDirty(true); }
   function travel(direction: 'undo' | 'redo') { if (!editable) return; setHistory((h) => travelSceneHistory(h, direction)); setDirty(true); }
   useEffect(() => {
@@ -80,11 +84,12 @@ export function PieceEditor({ pieceId }: { pieceId: string }) {
   return <div className="grid gap-3">
     <PieceEditorBadges info={info} />
     {error && <p role="alert" className="type-body-sm text-critical">{error}</p>}
-    <PieceEditorToolbar info={info} tool={tool} view={view} canUndo={history.past.length > 0} canRedo={history.future.length > 0} dirty={dirty} busy={busy}
+    {blocked && <PieceEditorBlocked reason={blocked} />}
+    <PieceEditorToolbar info={{ ...info, editable }} tool={tool} view={view} canUndo={history.past.length > 0} canRedo={history.future.length > 0} dirty={dirty} busy={busy}
       onTool={setTool} onView={setView} onFit={() => setFit((n) => n + 1)} onUndo={() => travel('undo')} onRedo={() => travel('redo')} onRestore={() => (dirty ? setConfirmRestore(true) : restore())} onSave={() => void save()} />
     <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
-      <div className="h-[480px] overflow-hidden rounded-lg border border-line-soft"><Viewport asset={loaded} document={doc} selected={selected} tool={tool} view={view} fit={fit} wireframe={false} snap={false} editable={editable} onSelect={setSelected} onTransform={(value) => change({ ...doc, nodes: { ...doc.nodes, [selected]: value } })} /></div>
-      {selected ? <SceneInspector loaded={loaded} document={doc} selected={selected} editable={editable} vertex={vertex} onVertexChange={setVertex} onChange={change} /> : <p className="type-body-sm text-muted">{t('editor3d.pickNode')}</p>}
+      <div className="h-[480px] overflow-hidden rounded-lg border border-line-soft"><Viewport asset={loaded} document={doc} selected={selected} tool={tool} view={view} fit={fit} wireframe={false} snap={false} editable={editable} onSelect={setSelected} onTransform={(value) => change(updateNode(doc, selected, value, loaded.baseline))} /></div>
+      {blocked ? null : selected ? <SceneInspector loaded={loaded} document={doc} selected={selected} editable={editable} vertex={vertex} onVertexChange={setVertex} onChange={change} pieceTools /> : <p className="type-body-sm text-muted">{t('editor3d.pickNode')}</p>}
     </div>
     <p className="type-caption text-muted">{t('editor3d.scaleNote')}</p>
     {info.savedAt && <p className="type-caption text-muted">{t('editor3d.savedAt', { date: fmtDateTime(info.savedAt) })}</p>}

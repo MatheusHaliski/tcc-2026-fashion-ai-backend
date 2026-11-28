@@ -9,6 +9,7 @@ import type { CartaNoResultado } from "@/components/flair/nucleos/nucleo-result"
 import type { BrilhoDaVaga } from "@/components/flair/nucleos/nucleo-slot-ruler";
 import { useNucleoText } from "@/components/flair/nucleos/use-nucleo-text";
 import { cartasQuePontuaram } from "@/lib/flair/nucleos/action-fx";
+import { faixaDeHype } from "@/lib/flair/nucleos/hype-da-carta";
 import type { Momento } from "@/lib/flair/nucleos/moments";
 import type { EfeitoItem, NucleoResultado } from "@/lib/flair/nucleos/types";
 
@@ -33,7 +34,8 @@ export function useResultCards({ momento, resultado, vestidas, cards, efeitos }:
       else if (p.selo) texto = tx.efeito(p.selo);
       // na régua a miniatura é estreita: os pontos inteiros ("20 pts"); a lista do resultado guarda as casas ("20,33")
       brilho[p.vaga] = { ordem, texto: p.pontos != null ? tx.pontos(Math.round(p.pontos)) : texto };
-      lista.push({ cardId: p.cardId, nome: cards.find((c) => c.id === p.cardId)?.name ?? "", texto });
+      const carta = cards.find((c) => c.id === p.cardId);
+      lista.push({ cardId: p.cardId, nome: carta?.name ?? "", texto, hype: carta ? faixaDeHype(carta) : undefined });
     });
     return { brilho, lista };
   }, [momento, resultado, vestidas, cards, efeitos, tx]);

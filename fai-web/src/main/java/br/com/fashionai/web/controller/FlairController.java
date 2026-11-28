@@ -1,5 +1,6 @@
 package br.com.fashionai.web.controller;
 
+import br.com.fashionai.application.flair.FlairDueloOponente;
 import br.com.fashionai.application.flair.FlairEngine;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.FlairService;
@@ -25,12 +26,15 @@ import java.util.UUID;
 @Tag(name = "FLAIR — jogo de cartas, duelos, equipes e cupons das lojas")
 public class FlairController {
     private final FlairService flair;
+    private final FlairDueloOponente oponente;
 
-    public FlairController(FlairService flair) {
+    public FlairController(FlairService flair, FlairDueloOponente oponente) {
         this.flair = flair;
+        this.oponente = oponente;
     }
 
-    public record DuelRequest(UUID schemeId, String opponent) {
+    /** {@code opponentId}: a pessoa escolhida na busca de adversários; sem ele, vale {@code opponent} (@usuário ou CASA). */
+    public record DuelRequest(UUID schemeId, String opponent, UUID opponentId) {
     }
 
     public record ArenaRequest(UUID schemeId) {
@@ -79,9 +83,9 @@ public class FlairController {
     }
 
     @PostMapping("/api/flair/duels")
-    @Operation(summary = "FLAIR — duelo de estilo 1×1 (5 rodadas) contra @usuário ou contra a Casa (treino)")
+    @Operation(summary = "FLAIR — duelo de estilo 1×1 (5 rodadas) contra a pessoa da busca (opponentId), @usuário ou a Casa (treino)")
     public Map<String, Object> duel(CurrentUser user, @RequestBody DuelRequest body) {
-        return flair.duel(user, body.schemeId(), body.opponent());
+        return flair.duel(user, body.schemeId(), oponente.oponente(user, body.opponentId(), body.opponent()));
     }
 
     @GetMapping("/api/flair/arena")

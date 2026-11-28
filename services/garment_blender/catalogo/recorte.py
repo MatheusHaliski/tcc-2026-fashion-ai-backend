@@ -5,7 +5,7 @@ A análise acha o desenho numa imagem de até 900 px; ampliar a máscara dela da
 perderia o traço mais fino que um pixel de análise. Aqui a máscara de análise só diz onde procurar (dilatada um pixel
 de análise): dentro disso, cada pixel da foto é desenho se foge da cor do tecido com a sombra do lugar, como na
 análise; o miolo claro achado na análise (``Group.fill``) entra inteiro, sem novo limiar, para não sair furado.
-Nada de fechar buracos: o vão das letras fica vazado.
+Só o vão de 1–2 px dentro de um ponto fecha: o vão das letras fica vazado.
 """
 from __future__ import annotations
 
@@ -39,7 +39,10 @@ def decal_rgba(rgb: np.ndarray, lab: np.ndarray, shade: np.ndarray, base: np.nda
     where = (group.alpha | fill).astype(np.uint8) * 255
     roi = _up(where, size, Image.Resampling.NEAREST) > 0
     roi = ndimage.binary_dilation(roi, iterations=max(1, int(np.ceil(scale))))
-    hard = _no_specks(roi & (d_big > THRESHOLD), max(2, int(scale * scale)))
+    hard = roi & (d_big > THRESHOLD)
+    # a tachinha e o ponto de retícula têm brilho e sombra: os dois lados do ponto se juntam num ponto só (o vão de
+    # 1–2 px da foto fecha; o vão das letras, bem maior, continua vazado)
+    hard = _no_specks(ndimage.binary_closing(hard, iterations=max(1, round(scale / 2))) & roi, max(2, int(scale * scale)))
     hard |= _up(fill.astype(np.uint8) * 255, size, Image.Resampling.BILINEAR) > 127   # o miolo claro entra inteiro
     alpha = np.clip(ndimage.gaussian_filter(hard.astype(np.float32), 0.6) * 255, 0, 255)
     lab_big[..., 0] = np.clip(lab_big[..., 0] + (base[0] - shade_big), 0, 100)

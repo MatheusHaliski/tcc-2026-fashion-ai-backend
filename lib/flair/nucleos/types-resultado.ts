@@ -2,6 +2,8 @@
  * FLAIR 3D, base dos 15 núcleos (docs/flair/flair-3d/BASE_NUCLEOS.md, seção "API"): o que o servidor devolve da prévia,
  * da entrega e do acionamento de uma partida, e o efeito de cada carta na tela do deck. Reexportado por `types.ts`.
  */
+import type { AuraDaCarta } from "@/lib/flair/nucleos/aura-na-partida";
+import type { UsoDaCarta } from "@/lib/flair/nucleos/movimento/lances-de-uso";
 import type { PerfilDaPeca } from "@/lib/flair/recursos/types";
 
 export interface RegraResultado {
@@ -53,5 +55,7 @@ export interface EfeitoItem {
 
 export interface EfeitosResposta {
   /** `perfil`: a regra peça-recurso da carta (lib/flair/recursos/types.ts); servidor antigo não manda */
-  efeitos: { cardId: string; itens: EfeitoItem[]; perfil?: PerfilDaPeca }[];
+  /** `uso`: nos jogos de zonas, o lance que a cor da carta aciona na fase de uso (lib/flair/nucleos/movimento/lances-de-uso.ts) */
+  /** `aura`: a Aura da carta nos jogos com Aura na partida (rodada 8g) */
+  efeitos: { cardId: string; itens: EfeitoItem[]; perfil?: PerfilDaPeca; uso?: UsoDaCarta | null; aura?: AuraDaCarta }[];
 }

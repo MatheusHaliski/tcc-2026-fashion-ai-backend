@@ -44,20 +44,25 @@ describe("desafios — catálogo e início", () => {
     expect(screen.getByText("Sem compras").closest(".ring-2")).toBeTruthy();
   });
 
-  it("começar em duelo manda os convidados e abre o desafio criado", async () => {
+  it("começar em duelo manda os convidados escolhidos na busca da rede FAI e abre o desafio criado", async () => {
     const href = vi.spyOn(window, "location", "get");
     const loc = { href: "" } as Location; href.mockReturnValue(loc);
-    const { calls } = loggedAs(undefined, { "GET /api/challenges/catalog": CATALOG, "GET /api/me/challenges": {}, "GET /api/challenges/votes": [], "POST /api/challenges": { id: "novo", message: "Bora!" } });
+    const { calls } = loggedAs(undefined, { "GET /api/challenges/catalog": CATALOG, "GET /api/me/challenges": {}, "GET /api/challenges/votes": [], "POST /api/challenges": { id: "novo", message: "Bora!" },
+      "GET /api/flair/3d/adversarios": { resultados: ["ana", "bia"].map((u) => ({ id: `id-${u}`, username: u, nivel: "ROOKIE", nivelLabel: "Rookie", pontos: 0, ativo: false, relacao: "SIGO", status: "DISPONIVEL", convidavel: true })), niveis: [] } });
     renderApp(<ChallengesPage />);
     fireEvent.click((await screen.findAllByRole("button", { name: "Começar" }, { timeout: 4000 }))[0]);
     const dlg = await screen.findByRole("dialog", { name: "Sem compras" });
     expect(within(dlg).getByText("Use só o que tem")).toBeTruthy();
-    expect(within(dlg).queryByLabelText("Convidar (usernames separados por vírgula)")).toBeNull();
+    expect(within(dlg).queryByRole("button", { name: "Buscar na rede FAI" })).toBeNull();
     fireEvent.click(within(dlg).getByRole("button", { name: "Duelo" }));
-    fireEvent.change(within(dlg).getByLabelText("Convidar (usernames separados por vírgula)"), { target: { value: "ana, , bia " } });
+    fireEvent.click(within(dlg).getByRole("button", { name: "Buscar na rede FAI" }));
+    const busca = await screen.findByRole("dialog", { name: "Buscar na rede FAI" });
+    fireEvent.click(await within(busca).findByRole("button", { name: "Escolher @ana" }));
+    fireEvent.click(within(busca).getByRole("button", { name: "Escolher @bia" }));
+    fireEvent.click(within(busca).getByRole("button", { name: "Pronto" }));
     fireEvent.click(within(dlg).getAllByRole("button", { name: "Começar" }).at(-1)!);
     await waitFor(() => expect(loc.href).toBe("/challenges/novo"));
-    expect(calls.find((c) => c.method === "POST" && c.path === "/api/challenges")!.body).toEqual({ code: "NO_BUY", mode: "DUELO", params: {}, invitees: ["ana", "bia"] });
+    expect(calls.find((c) => c.method === "POST" && c.path === "/api/challenges")!.body).toEqual({ code: "NO_BUY", mode: "DUELO", params: {}, invitees: ["id-ana", "id-bia"] });
     expect(await screen.findByText("Bora!")).toBeTruthy();
     href.mockRestore();
   });
