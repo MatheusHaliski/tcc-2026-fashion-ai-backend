@@ -29,6 +29,7 @@ import { FashionMotionButton } from "@/components/hype/fashion-motion-button";
 import { FashionCardStats } from "@/components/hype/fashion-card-panel";
 import { PieceCardPanels } from "@/components/piece-card-panels";
 import { fashionCardLevel } from "@/lib/hype/fashion-card";
+import { PieceCardFrame } from "@/components/pieces/piece-card-frame";
 import { PieceCardPhoto } from "@/components/pieces/piece-card-photo";
 import { conservationLabel } from "@/lib/api/piece-references";
 
@@ -102,17 +103,15 @@ export function PieceCard(props: PieceCardProps) {
     <span className="seal-row">
       {isPreview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
     </span>
+    {(piece.expiresAt && Date.parse(piece.expiresAt) <= Date.now()) && <span className="pc-sale">{t("marketplace.expired")}</span>}
     {!!seals?.length && <CardSealSummary seals={seals} />}
     {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular"><Price value={piece.price} /></b></span>}
   </div>;
   
   const card = (
-    <article {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode="feed" className={`fai-card piece-card ${isSelection ? "" : "is-social"} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${isSelection && props.selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
-      <CardBorder entityId={`PIECE:${piece.id}`} background={piece.background} auraHype={auraEnabled} hype={hypeState} live={live}/>
+    <PieceCardFrame {...surface} {...depth.events} ref={depth.ref} data-fashion-level={auraEnabled ? (fashionCardLevel(hype.summary) ?? "PENDING") : undefined} data-card-mode="feed" className={`${isSelection ? "" : "is-social"} ${auraEnabled ? "is-fashion-hype" : ""} ${surface.className} ${isSelection && props.selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name} layers={<><CardBorder entityId={`PIECE:${piece.id}`} background={piece.background} auraHype={auraEnabled} hype={hypeState} live={live}/>
       {tilt && <span className="fashion-depth-glare" aria-hidden/>}
-      <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} animate={isPreview} />
-      <div className="pc-frame">
-        <div className="pc-content">
+      <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} animate={isPreview} /></>}>
           {!isSelection && <CardHeader owner={piece.owner} sub={visibility} linked={!isPreview} className="pc-header" trailing={flippable ? <CardFlipButton side="front" /> : undefined} />}
           {tilt && <FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={() => void depth.toggleSensor()}/>}
 
@@ -138,9 +137,7 @@ export function PieceCard(props: PieceCardProps) {
           )}
           {extra && <div className="c-extra">{extra}</div>}
           {!isSelection && <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={isPreview} />}
-        </div>
-      </div>
-    </article>
+    </PieceCardFrame>
   );
 
   if (!flippable) return card;

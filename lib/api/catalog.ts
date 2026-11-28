@@ -1,3 +1,4 @@
+import type { PieceCommerce } from "@/lib/marketplace/piece-commerce";
 import type {FashionCard,AuraContextMetadata} from "@/lib/fashion-card/types";
 import { api, ApiError } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
@@ -26,6 +27,11 @@ export interface CatalogCardImage { variantId?: string | null; url: string; sour
 export interface CatalogProductImage { variantId?: string | null; id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance; sourceUrl?: string; processedUrl?: string | null; viewType?: string; canonical?: boolean; viewRole?: string | null; qualityScore?: number | null; processingStatus?: string }
 
 export interface CatalogProduct {
+  commerce?: PieceCommerce;
+  wardrobeItemId?: string;
+  status?: "AVAILABLE" | "EXPIRED";
+  expiresAt?: string | null;
+  auraMetamorphoseStatus?: "SPECIAL" | "STANDARD";
   /** Optional viewer-owned projection; never a canonical public user portrait. */
   fashionCard?: FashionCard | LegacyFashionCard | null; auraPresetId?: string | null; auraContext?: AuraContextMetadata | null; imageProcessingStatus?: "READY" | "PENDING" | "ERROR";
   id: string; brand: CatalogBrandRef | null; productName: string; modelName?: string | null; category: string; subcategory: string;

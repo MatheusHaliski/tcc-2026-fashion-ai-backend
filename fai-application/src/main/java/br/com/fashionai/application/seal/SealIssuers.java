@@ -34,6 +34,9 @@ public final class SealIssuers {
 
     /** Emissor apto a conceder selo: marca validada ou celebridade verificada com consentimento (RF20.CA06/RF21.CA19). */
     Issuer issuer(User owner) {
+        if (owner.getProfileType() == ProfileType.PESSOAL) {
+            return new Issuer("PERSONAL", owner.getDisplayName(), owner.getAvatarUrl(), false);
+        }
         if (owner.getProfileType() == ProfileType.CELEBRIDADE) {
             return celebrityProfiles.findByOwnerId(owner.getId())
                     .filter(cp -> cp.getVerificationStatus() == ApprovalStatus.APROVADO && cp.isSealConsentGranted())
@@ -44,6 +47,10 @@ public final class SealIssuers {
     }
 
     void requireIssuer(CurrentUser user) {
+        if (user != null && user.profileType() == ProfileType.PESSOAL) {
+            guard.requireCanCreate(user);
+            return;
+        }
         guard.requireApprovedInstitutional(user, "seals", Msg.t("seal.selos_e_promocoes_sao_geridos"));
     }
 }

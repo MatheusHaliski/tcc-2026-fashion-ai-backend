@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * Cadastro (RF1): disponibilidade do username, validação local (username e termos), envio para o BFF com os dados de
- * pessoa, marca ou celebridade, avisos do servidor e ida para a confirmação de e-mail.
+ * pessoa e marca, avisos do servidor e ida para a confirmação de e-mail.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
@@ -80,7 +80,7 @@ describe("cadastro — envio", () => {
     fireEvent.click(screen.getByRole("button", { name: "manequim feminino" }));
     submit();
     await waitFor(() => expect(router.push).toHaveBeenCalledWith("/verify-email"));
-    expect(body(calls)).toMatchObject({ profileType: "PESSOAL", fullName: "Nova Pessoa", username: "nova", country: "BR", acceptTerms: true, avatarUrl: "/up/avatar.png", sex: "FEMININO", brand: null, celebrity: null });
+    expect(body(calls)).toMatchObject({ profileType: "PESSOAL", fullName: "Nova Pessoa", username: "nova", country: "BR", acceptTerms: true, avatarUrl: "/up/avatar.png", sex: "FEMININO", brand: null });
     expect(await screen.findByText("Confirme em 7 dias")).toBeTruthy();
     await dismiss();
     expect(await screen.findByText("Confirme seu e-mail")).toBeTruthy();
@@ -98,24 +98,15 @@ describe("cadastro — envio", () => {
     fireEvent.click(screen.getByRole("button", { name: /Comprovante de atividade/ }));
     submit();
     await waitFor(() => expect(router.push).toHaveBeenCalledWith("/verify-email"));
-    expect(body(calls)).toMatchObject({ profileType: "MARCA", celebrity: null, sex: null,
+    expect(body(calls)).toMatchObject({ profileType: "MARCA", sex: null,
       brand: { razaoSocial: "Marca LTDA", cnpj: "123", nomeFantasia: "Marca", fashionCategory: "Casual", storeUrl: "https://marca.com", commercialContact: "c@m.com", officialHashtag: "#marca", logoUrl: "/up/logo.png", activityProofUrl: "/up/activity-proof.png" } });
   });
 
-  it("celebridade: áreas viram lista, documentos, histórico e consentimento do selo", async () => {
-    const { calls } = mockApi({ "GET /api/usernames/nova/availability": { available: true }, "POST /bff/auth/register": SESSION });
+  it("oferece apenas os cadastros Pessoal e Marca", () => {
+    mockApi({});
     renderApp(<RegisterPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Celebridade" }));
-    fillBase();
-    type("stageName", "Nova Star"); type("realName", "Nova Pessoa"); type("areas", "música, , TV ");
-    type("verificationUrl", "https://instagram.com/nova"); type("representationContact", "agente@x.com"); type("professionalHistory", "10 anos");
-    fireEvent.click(screen.getByRole("button", { name: /Foto oficial/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Documento de identifica/ }));
-    fireEvent.click(screen.getByText("Autorizo o uso do meu nome/imagem em selos vinculados.").closest("label")!.querySelector("input")!);
-    submit();
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/verify-email"));
-    expect(body(calls)).toMatchObject({ profileType: "CELEBRIDADE", brand: null,
-      celebrity: { stageName: "Nova Star", realName: "Nova Pessoa", areas: ["música", "TV"], verificationUrl: "https://instagram.com/nova", representationContact: "agente@x.com", professionalHistory: "10 anos", sealConsentGranted: true, officialPhotoUrl: "/up/official-photo.png", identityProofUrl: "/up/identity.png", fashionInterests: [] } });
+    expect(screen.getByRole("button", { name: "Marca" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Celebridade" })).toBeNull();
   });
 
   it("erro do servidor com campos aparece no modal e nos campos; não navega", async () => {

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { usePieceCommerceCells } from "@/components/pieces/piece-commerce-cells";
 import type { PieceView } from "@/lib/api/types";
 import {HypeBadge} from "@/components/hype/hype-badge";
 import {hypeViewState} from "@/lib/hype/model";
@@ -29,7 +30,7 @@ function InfoIcon() {
  * atributos derivados do Hype, os mesmos do verso). Separa o que a peça É do que a comunidade faz com ela; uma aba por vez
  * mantém o card curto. Teclado de tablist: setas trocam de aba.
  */
-export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[], infoBefore, infoContent, replaceInfoRows = false, selectedSeals = selectedPieceSeals(piece.seals), live, grid, metaSource, gridCells }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao"|"seals">>; summary?: HypeSummary | null; initial?: Tab;
+export function PieceCardPanels({ piece, summary, initial = "info", auraMode, loading=false, error=false, type="PIECE", summaryFacts=false, infoRows=[], infoBefore, infoContent, replaceInfoRows = false, selectedSeals = selectedPieceSeals(piece.seals), live, grid, metaSource, gridCells }: { piece: Pick<PieceView,"name"> & Partial<Pick<PieceView,"brandName"|"brandLogoUrl"|"category"|"subcategory"|"color"|"colorHex"|"style"|"occasion"|"material"|"size"|"condition"|"estadoConservacao"|"seals"|"expiresAt"|"commerce">>; summary?: HypeSummary | null; initial?: Tab;
   /** modelo AURA Hype escolhido na peça: define a disposição da lista de atributos */
   auraMode?: string | null;loading?:boolean;error?:boolean;type?:HypeEntity; summaryFacts?:boolean; infoRows?:[string,ReactNode][]; infoBefore?: ReactNode; infoContent?: ReactNode; replaceInfoRows?: boolean; selectedSeals?: SelectedSealRef[];
   /** memória e sinal do Hype desta pessoa (deltas do painel desde a última visita) */
@@ -37,6 +38,7 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
   /** card do feed: grade configurável (Background Studio); com ela só entram os campos escolhidos, numa grade só */
   grid?: InfoGridView; metaSource?: FashionMetaSource; gridCells?: Partial<Record<InfoField, ReactNode>> }) {
   const { t } = useI18n();
+  const commerce = usePieceCommerceCells(piece);
   const [tab, setTab] = useState<Tab>(initial);
   // a aba inicial acompanha a preferência (a AURA Hype salva no navegador chega depois do 1º render) até a pessoa escolher
   const touched = useRef(false);
@@ -63,7 +65,7 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode, lo
   const meta = grid ? fashionMetaCells(metaSource ?? { styles: piece.style, occasions: piece.occasion, brands: piece.brandName ? [{ name: piece.brandName, logoUrl: piece.brandLogoUrl }] : [], colors: piece.color ? [{ name: piece.color, hex: piece.colorHex }] : [] }) : null;
   const cellOf: Partial<Record<InfoField, ReactNode>> = meta ? {
     ...meta, category: categoryNode, material: piece.material ? label(piece.material) : null, size: piece.size ? label(piece.size) : null,
-    condition: type === "SCHEME" ? null : condition, ...gridCells,
+    condition: type === "SCHEME" ? null : condition, ...commerce, ...gridCells,
   } : {};
   const gridRows = grid ? grid.fields.filter((f) => !!cellOf[f]).map((f) => [f, t(INFO_FIELD_LABEL[f]), cellOf[f]] as const) : null;
   const tabs: { key: Tab; icon: ReactNode; text: string }[] = [

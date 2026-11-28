@@ -6,21 +6,20 @@ function target(path: string, query = ""): string | null {
   const sp = new URLSearchParams(query);
   for (const r of LEGACY_REDIRECTS) {
     const prefix = r.source.replace("/:path*", "");
-    const hit = r.source.endsWith("/:path*") ? path.startsWith(`${prefix}/`) : path === r.source;
+    const hit = r.source.endsWith("/:path*") ? (path === prefix || path.startsWith(`${prefix}/`)) : path === r.source;
     if (hit && (r.has ?? []).every((h) => sp.get(h.key) === h.value)) return r.destination;
   }
   return null;
 }
 
 describe("endereços antigos", () => {
-  it("a Cidade de Vidro leva ao FLAIR 3D; os links do quarto, ao ACERVO", () => {
-    expect(target("/flair/jogos")).toBe("/flair/3d");
-    expect(target("/flair/jogos", "series=B")).toBe("/flair/3d");
-    expect(target("/flair/jogos/b31-prova-com-a-estrela")).toBe("/flair/3d");
-    expect(target("/flair/jogos", "district=SUITE")).toBe("/acervo");
-    expect(target("/flair/jogos/a01-espelho-partido")).toBe("/acervo");
+  it("endereços dos jogos levam ao Marketplace e endereços de lojas ficam disponíveis", () => {
+    expect(target("/flair/jogos")).toBe("/flair");
+    expect(target("/flair/jogos/b31-prova-com-a-estrela")).toBe("/flair");
+    expect(target("/flair/3d")).toBe("/flair");
+    expect(target("/flair/desafios/mosaico")).toBe("/flair");
+    expect(target("/flair/lojas/loja")).toBeNull();
     expect(target("/photos")).toBe("/atelier");
-    expect(target("/flair/3d")).toBeNull();
   });
 
   it("a aba Quarto do Atelier (o Quarto 3D saiu) leva ao ACERVO; as outras abas e o Atelier sem aba ficam", () => {

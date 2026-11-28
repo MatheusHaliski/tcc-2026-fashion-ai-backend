@@ -17,7 +17,6 @@ import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.events.SideEffectRunner;
 import br.com.fashionai.application.service.FaiPointsService;
-import br.com.fashionai.application.service.InventoryScoreService;
 import br.com.fashionai.domain.model.PieceUsageDiaryEntry;
 import br.com.fashionai.domain.model.WardrobeAvailabilityChange;
 import br.com.fashionai.domain.model.WardrobeItem;
@@ -129,18 +128,13 @@ public class WardrobeEventListeners {
             c.setAvailable(true);
             c.setChangedAt(Instant.now());
             availability.save(c);
-            if (ev.readyForCatalog()) {
-                points.award(ev.userId(), "PIECE_CATALOGED", "PIECE", ev.pieceId().toString(), null);
-            }
+            points.award(ev.userId(), "PIECE_CATALOGED", "PIECE", ev.pieceId().toString(), null);
         });
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onPieceUpdated(DomainEvents.PieceUpdated ev) {
         safe("PieceUpdated", () -> {
-            // RF41: peça cadastrada sem foto real pontua quando fica pronta para o catálogo (1× por peça)
-            pieces.findById(ev.pieceId()).filter(InventoryScoreService::catalogReady)
-                    .ifPresent(w -> points.award(ev.userId(), "PIECE_CATALOGED", "PIECE", ev.pieceId().toString(), null));
             if (ev.completeness() >= 90) {
                 points.award(ev.userId(), "PIECE_COMPLETED", "PIECE", ev.pieceId().toString(), null);
             }

@@ -205,9 +205,6 @@ public class WardrobeItem extends PieceClassification {
     @Column(name = "comment_count", nullable = false)
     private long commentCount;
 
-    @Column(name = "view_count", nullable = false)
-    private long viewCount;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "moderation_status", nullable = false, length = 40)
     private ModerationStatus moderationStatus = ModerationStatus.PENDING;

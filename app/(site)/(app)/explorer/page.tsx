@@ -11,7 +11,6 @@ import { Badge, Button, Card, EmptyState, ErrorState, Input, PageHeader, Select,
 import { GlobalInsights, LevelChip, type Insights } from "@/components/explorer/global-insights";
 import { Globe, countryName, type GlobePoint } from "@/components/globe";
 import { BrandLogo } from "@/components/brand-logo";
-import { RunwayPanel } from "@/components/showcase/runway-panel";
 import { FilterBar } from "@/components/filter-bar";
 import { HypeTrendingPanel } from "@/components/hype/hype-trending";
 import { HypeRankingPanel } from "@/components/hype/hype-ranking";
@@ -47,8 +46,8 @@ export default function ExplorerPage() { return <Suspense><Explorer /></Suspense
 
 function Explorer() {
   const { t } = useI18n(); const { user } = useAuth(); const tax = useTaxonomy(); const sp = useSearchParams();
-  const [tab, setTab] = useState<"runway" | "trending" | "ranking" | "map" | "brands" | "insights">("runway");
-  useEffect(() => { const q = sp.get("tab"); if (q === "passarela") setTab("runway"); else if (q === "brands" || q === "insights" || q === "map" || q === "trending" || q === "ranking") setTab(q); }, [sp]);
+  const [tab, setTab] = useState<"trending" | "ranking" | "map" | "brands" | "insights">("trending");
+  useEffect(() => { const q = sp.get("tab"); if (q === "brands" || q === "insights" || q === "map" || q === "trending" || q === "ranking") setTab(q); }, [sp]);
   // painel do mapa: recorte de volume por estação e cor (a faixa mínima de Hype fica na barra do globo, em v2)
   const [country, setCountry] = useState(""); const [g, setG] = useState({ season: "", color: "" });
   const [f, setF] = useState<{ term: string; country: string; category: string; color: string; season: string; minLevel: HypeLevel | ""; sort: string }>({ term: "", country: "", category: "", color: "", season: "", minLevel: "", sort: "HYPE" });
@@ -74,9 +73,8 @@ function Explorer() {
     <>
       <PageHeader title={t("nav.explorer")} kicker={t("explorer.rf26_explorador_global")} lead={t("explorer.tendencias_agregadas_por_pais_estacao")} actions={<HowItWorks id="explore.search" />} />
       <GuideAuto id="explore.search" />
-      <Tabs tabs={[{ id: "runway", label: t("common.passarela_3d") }, { id: "trending", label: t("hypeTrending.title") }, { id: "ranking", label: t("hypeRanking.title") }, { id: "map", label: t("explorer.painel_global") }, { id: "brands", label: t("explorer.buscar_marcas_lojas") }, { id: "insights", label: t("explorer.insights_globais") }]} value={tab} onChange={setTab} />
+      <Tabs tabs={[{ id: "trending", label: t("hypeTrending.title") }, { id: "ranking", label: t("hypeRanking.title") }, { id: "map", label: t("explorer.painel_global") }, { id: "brands", label: t("explorer.buscar_marcas_lojas") }, { id: "insights", label: t("explorer.insights_globais") }]} value={tab} onChange={setTab} />
       {/* RF53 · cada aba abre com os insights dinâmicos do seu contexto (públicos, agregados; o Em alta passa a janela e a categoria) */}
-      {tab === "runway" && <><InsightStrip context="EXPLORER_RUNWAY" className="mb-4" /><RunwayPanel /></>}
       {tab === "trending" && <HypeTrendingPanel />}
       {tab === "ranking" && <HypeRankingPanel />}
       {tab === "map" && (

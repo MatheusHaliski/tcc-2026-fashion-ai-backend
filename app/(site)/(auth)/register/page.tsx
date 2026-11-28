@@ -7,11 +7,11 @@ import type { Session } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAction } from "@/lib/hooks/use-api";
-import { Button, Chip, Field, Input, Select, Textarea, useNotice, useNoticeOnError } from "@/components/ui";
+import { Button, Chip, Field, Input, Select, useNotice, useNoticeOnError } from "@/components/ui";
 import { AuthCard } from "@/components/auth-form";
 import { MannequinSexPicker, PhotoPicker } from "@/components/photo-picker";
 
-type ProfileType = "PESSOAL" | "MARCA" | "CELEBRIDADE";
+type ProfileType = "PESSOAL" | "MARCA";
 const COUNTRIES = ["BR", "PT", "US", "AR", "ES", "IT", "FR", "GB", "MX", "CL"];
 
 export default function RegisterPage() {
@@ -19,11 +19,10 @@ export default function RegisterPage() {
   const [profileType, setProfileType] = useState<ProfileType>("PESSOAL");
   const [f, setF] = useState({ fullName: "", username: "", email: "", password: "", confirmPassword: "", birthDate: "", country: "BR", acceptTerms: false });
   const [brand, setBrand] = useState({ razaoSocial: "", cnpj: "", nomeFantasia: "", fashionCategory: "", storeUrl: "", commercialContact: "", officialHashtag: "" });
-  const [celeb, setCeleb] = useState({ stageName: "", realName: "", areas: "", verificationUrl: "", professionalHistory: "", representationContact: "", sealConsentGranted: false });
   // RF1 — foto de perfil (vira o rosto do manequim da Passarela 3D) e sexo do manequim
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [sex, setSex] = useState<"FEMININO" | "MASCULINO" | null>(null);
-  const [docs, setDocs] = useState<{ logoUrl: string | null; activityProofUrl: string | null; officialPhotoUrl: string | null; identityProofUrl: string | null }>({ logoUrl: null, activityProofUrl: null, officialPhotoUrl: null, identityProofUrl: null });
+  const [docs, setDocs] = useState<{ logoUrl: string | null; activityProofUrl: string | null }>({ logoUrl: null, activityProofUrl: null });
   const [local, setLocal] = useState<Record<string, string>>({});
   const [usernameState, setUsernameState] = useState<{ available?: boolean; suggestions?: string[] } | null>(null);
   const set = (k: keyof typeof f) => (e: { target: { value: string; checked?: boolean; type?: string } }) => setF((o) => ({ ...o, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
@@ -42,7 +41,6 @@ export default function RegisterPage() {
   const { run, busy, error } = useAction(async () => api.post<Session>("/bff/auth/register", {
     profileType, ...f, avatarUrl, sex,
     brand: profileType === "MARCA" ? { ...brand, logoUrl: docs.logoUrl, activityProofUrl: docs.activityProofUrl } : null,
-    celebrity: profileType === "CELEBRIDADE" ? { ...celeb, officialPhotoUrl: docs.officialPhotoUrl, identityProofUrl: docs.identityProofUrl, areas: celeb.areas.split(",").map((s) => s.trim()).filter(Boolean), fashionInterests: [] } : null,
   }, { anonymous: true }));
 
   async function submit(e: FormEvent) {
@@ -66,8 +64,8 @@ export default function RegisterPage() {
     <AuthCard title={t("auth.registerTitle")} lead={t("auth.registerLead")}
       footer={<>{t("auth.hasAccount")} <Link className="font-semibold text-ink underline" href="/login">{t("nav.login")}</Link></>}>
       <div className="mb-4 flex flex-wrap gap-2" role="radiogroup" aria-label={t("register.tipo_de_perfil")}>
-        {(["PESSOAL", "MARCA", "CELEBRIDADE"] as ProfileType[]).map((p) => (
-          <Chip key={p} active={profileType === p} onClick={() => setProfileType(p)}>{t(p === "PESSOAL" ? "auth.profilePersonal" : p === "MARCA" ? "auth.profileBrand" : "auth.profileCelebrity")}</Chip>
+        {(["PESSOAL", "MARCA"] as ProfileType[]).map((p) => (
+          <Chip key={p} active={profileType === p} onClick={() => setProfileType(p)}>{t(p === "PESSOAL" ? "auth.profilePersonal" : "auth.profileBrand")}</Chip>
         ))}
       </div>
       <form onSubmit={submit} noValidate>
@@ -100,18 +98,6 @@ export default function RegisterPage() {
             ))}
             <PhotoPicker kind="logo" value={docs.logoUrl} onChange={(u) => setDocs((d) => ({ ...d, logoUrl: u }))} label={t("register.logo_da_marca")} hint={t("register.png_com_fundo_transparente_fica")} error={err["brand.logoUrl"]} />
             <PhotoPicker kind="activity-proof" value={docs.activityProofUrl} onChange={(u) => setDocs((d) => ({ ...d, activityProofUrl: u }))} label={t("register.comprovante_de_atividade_opcional")} hint={t("register.so_a_administracao_ve_para")} error={err["brand.activityProofUrl"]} />
-          </fieldset>
-        )}
-        {profileType === "CELEBRIDADE" && (
-          <fieldset className="mb-3 rounded-md border border-line-soft p-3">
-            <legend className="label px-1">{t("auth.celebrityData")}</legend>
-            {([["stageName", t("register.nome_artistico")], ["realName", t("register.nome_real")], ["areas", t("register.areas_separe_por_virgula")], ["verificationUrl", t("register.link_para_verificacao")], ["representationContact", t("register.contato_da_representacao")]] as const).map(([k, label]) => (
-              <Field key={k} label={label} id={k} required={k === "stageName" || k === "realName" || k === "verificationUrl"} hint={k === "verificationUrl" ? t("register.link_perfil_oficial_dica") : undefined} error={err[`celebrity.${k}`] ?? err[k]}><Input id={k} value={celeb[k]} {...(k === "verificationUrl" ? { type: "url", inputMode: "url" as const, placeholder: "https://instagram.com/…", required: true } : {})} onChange={(e) => setCeleb((c) => ({ ...c, [k]: e.target.value }))} /></Field>
-            ))}
-            <PhotoPicker kind="official-photo" value={docs.officialPhotoUrl} onChange={(u) => setDocs((d) => ({ ...d, officialPhotoUrl: u }))} label={t("register.foto_oficial")} hint={t("register.usada_no_perfil_nos_selos")} error={err["celebrity.officialPhotoUrl"]} />
-            <PhotoPicker kind="identity" value={docs.identityProofUrl} onChange={(u) => setDocs((d) => ({ ...d, identityProofUrl: u }))} label={t("register.documento_de_identificacao")} hint={t("register.so_a_administracao_ve_para_2")} error={err["celebrity.identityProofUrl"]} />
-            <Field label={t("register.historico_profissional")} id="professionalHistory"><Textarea id="professionalHistory" value={celeb.professionalHistory} onChange={(e) => setCeleb((c) => ({ ...c, professionalHistory: e.target.value }))} /></Field>
-            <label className="flex items-start gap-2 type-body-sm"><input type="checkbox" checked={celeb.sealConsentGranted} onChange={(e) => setCeleb((c) => ({ ...c, sealConsentGranted: e.target.checked }))} />{" "}{t("register.autorizo_o_uso_do_meu")}</label>
           </fieldset>
         )}
         <section className="mb-3 rounded-md border border-line-soft p-3" aria-labelledby="terms-summary-title">

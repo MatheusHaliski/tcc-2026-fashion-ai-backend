@@ -62,7 +62,7 @@ public class CatalogProductModels {
     /** Põe {@code model3dUrl} (ou null) em cada card, pela chave {@code id}. */
     public void decorate(List<Map<String, Object>> cards) {
         Map<UUID, String> found = urls(cards.stream().map(c -> c.get("id") instanceof UUID u ? u : null).toList());
-        cards.forEach(c -> c.put("model3dUrl", c.get("id") instanceof UUID u ? found.get(u) : null));
+        cards.forEach(c -> c.putIfAbsent("model3dUrl", c.get("id") instanceof UUID u ? found.get(u) : null));
     }
 
     static String urlOf(String renditionsJson) {

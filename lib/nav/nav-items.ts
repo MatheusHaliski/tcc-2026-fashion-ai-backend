@@ -20,7 +20,6 @@ export const NAV_GROUPS: NavGroup[] = [
     { href: "/atelier", key: "nav.atelier", icon: "NAV-10", auth: true },
     { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
     { href: "/acervo", key: "nav.acervo", icon: "ACT-30", auth: true },
-    { href: "/avatar", key: "nav.avatar3d", icon: "ACT-20", auth: true },
   ] },
   { key: "nav.group.create", items: [
     { href: "/looks", key: "nav.myLooks", icon: "NAV-04", auth: true },
@@ -40,6 +39,7 @@ export const NAV_GROUPS: NavGroup[] = [
     { href: "/coupons", key: "nav.coupons", icon: "ACT-26", auth: true },
   ] },
   { key: "nav.group.store", items: [
+    { href: "/points/loja", key: "marketplace.fai_store", icon: "ACT-46", auth: true },
     { href: "/points", key: "nav.points", icon: "ACT-40", auth: true },
   ] },
 ];

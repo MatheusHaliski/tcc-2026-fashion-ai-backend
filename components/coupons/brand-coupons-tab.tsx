@@ -27,7 +27,7 @@ const STATUS_LABEL: Record<string, string> = { get ATIVA() { return tr("flair.at
  * funcionalidade concede (política de promoção dos selos do RF25 e jogos FLAIR), os direitos conquistados à espera
  * de resgate, a conferência do código no caixa e a sub-aba "Todas as promoções" (ativas, inativas e criar promoção).
  */
-export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId: string; celebrity: boolean; onCreateFlair: () => void }) {
+export function BrandCouponsTab({ ownerId, celebrity }: { ownerId: string; celebrity: boolean }) {
   const { t } = useI18n();
   const toast = useToast();
   const admin = useApi<Admin>((signal) => api.get("/api/me/coupons/admin", { signal }), []);
@@ -91,7 +91,7 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
               <p className="type-body-sm mt-1"><b>{p.discount}</b>{p.seal ? t("coupons.brandCouponsTab.exige_o_selo", { name: p.seal.name }) : ""}</p>
               <p className="type-caption text-faint mt-1">{t("coupons.brandCouponsTab.resgate_s_aguardando_resgate", { redeemed: p.redeemed, value: p.quota ? t("coupons.brandCouponsTab.de", { quota: p.quota }) : "", pendingRights: p.pendingRights, value2: p.endsAt ? t("coupons.brandCouponsTab.ate", { toLocaleDateString: new Date(p.endsAt).toLocaleDateString(currentIntl()) }) : "", value3: p.storeUrl ? t("coupons.brandCouponsTab.loja_propria_do_cupom") : "" })}</p>
               {p.reason && !p.active && <p className="type-caption text-mark mt-1">{p.reason}</p>}
-              <div className="mt-2 flex gap-2">{p.source === "SELO" ? <Button size="sm" onClick={() => toggleSeal(p)}>{p.active ? t("common.desativar") : t("common.reativar")}</Button> : <Button size="sm" onClick={onCreateFlair}>{t("coupons.brandCouponsTab.gerenciar_no_flair")}</Button>}</div>
+              <div className="mt-2 flex gap-2">{p.source === "SELO" ? <Button size="sm" onClick={() => toggleSeal(p)}>{p.active ? t("common.desativar") : t("common.reativar")}</Button> : null}</div>
             </Card>))}</div>}
       </>}
 
@@ -99,8 +99,6 @@ export function BrandCouponsTab({ ownerId, celebrity, onCreateFlair }: { ownerId
         <div className="grid gap-3 sm:grid-cols-2">
           <button type="button" className="surface p-3 text-left" onClick={() => { setChooser(false); setForm({ ...empty, open: true, type: "DESCONTO_ECOMMERCE" }); }}>
             <p className="type-h3">{t("coupons.brandCouponsTab.politica_de_promocao_do_selo")}</p><p className="type-body-sm text-muted">{t("coupons.brandCouponsTab.formulario_do_rf25_quem_ganhar")}</p></button>
-          <button type="button" className="surface p-3 text-left" onClick={() => { setChooser(false); onCreateFlair(); }}>
-            <p className="type-h3">{t("common.jogo_flair")}</p><p className="type-body-sm text-muted">{t("coupons.brandCouponsTab.defina_a_combinacao_de_cartas")}</p></button>
         </div>
       </Dialog>
       <Dialog open={form.open} onClose={() => setForm(empty)} size="lg" title={form.id ? t("coupons.brandCouponsTab.editar_promocao_do_selo") : t("coupons.brandCouponsTab.nova_promocao_do_selo_rf25")}

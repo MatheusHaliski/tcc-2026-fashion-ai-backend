@@ -14,7 +14,7 @@ export type PointsSectionId = "saldo" | "ganhar" | "loja";
 /** Onde cada ação rende pontos: o atalho para a tela certa (os códigos vêm da API; sem correspondência, sem atalho). */
 const ACTION_HREF: Record<string, string> = {
   LOOK_DO_DIA: "/autopilot", LOOK_CONFIRMED: "/looks", MOMENT: "/moments", MOMENT_LOOK: "/moments", CHALLENGE: "/challenges", CHALLENGE_DONE: "/challenges",
-  FLAIR_CBC: "/flair/desafios", FLAIR_MATCH: "/flair/partidas", FLAIR_DUEL: "/flair/partidas", PIECE_CREATED: "/pieces/new", REDISCOVERY: "/closet", SHARE: "/feed",
+  PIECE_CREATED: "/pieces/new", REDISCOVERY: "/closet", SHARE: "/feed",
 };
 function hrefFor(action: string): string | null {
   const key = Object.keys(ACTION_HREF).find((k) => action.toUpperCase().startsWith(k) || action.toUpperCase().includes(k));

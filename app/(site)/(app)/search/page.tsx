@@ -25,7 +25,7 @@ import { PublicProfileCard } from "@/components/public-profile-card";
 import { SearchEntityCard } from "@/components/search-entity-card";
 import { SearchElsewhere } from "@/components/search/search-elsewhere";
 
-type Tab = "LOOKS" | "PECAS" | "ACERVO" | "PESSOAS" | "MARCAS" | "CELEBRIDADES";
+type Tab = "LOOKS" | "PECAS" | "ACERVO" | "PESSOAS" | "MARCAS";
 interface Brand { id?: string; userId?: string; slug?: string; name?: string; logoUrl?: string | null; registered?: boolean; publicPieces?: number; avatarUrl?: string | null; }
 type Row = SchemeView | PieceView | PublicProfileSummary | Brand | CatalogProduct;
 interface Page { items: Row[]; nextCursor: string | null; empty?: { message?: string; alternatives?: string[]; trending?: SchemeView[] }; engine?: string; total?: number; }
@@ -84,7 +84,7 @@ function SearchInner() {
   }
   const submit = (value: string) => { setTerm(value); setQ(value); router.replace(`/search?q=${encodeURIComponent(value)}&tab=${tab}`); };
   const active = (Object.keys(f) as (keyof Filters)[]).filter((k) => f[k]);
-  const tabs = (["LOOKS", "PECAS", "ACERVO", "PESSOAS", "MARCAS", "CELEBRIDADES"] as Tab[]).map((id) => ({ id, label: id === "PECAS" ? t("common.pecas") : id === "LOOKS" ? t("search.looks") : id === "ACERVO" ? t("search.acervo") : label(id.toLowerCase()) }));
+  const tabs = (["LOOKS", "PECAS", "ACERVO", "PESSOAS", "MARCAS"] as Tab[]).map((id) => ({ id, label: id === "PECAS" ? t("common.pecas") : id === "LOOKS" ? t("search.looks") : id === "ACERVO" ? t("search.acervo") : label(id.toLowerCase()) }));
   // marca só do catálogo (sem perfil): "Ver peças" abre o acervo inteiro dela, não as peças públicas de quem a cadastrou
   const seeArchive = (brand: string) => { setTab("ACERVO"); setF({ ...NO_FILTERS, brand }); setTerm(""); setQ(""); router.replace("/search?tab=ACERVO"); };
   const useInCreator = (p: CatalogProduct) => router.push(`/pieces/new${qs({ brand: p.brand?.name, q: p.productName, category: p.category, subcategory: p.subcategory })}`);
@@ -146,8 +146,8 @@ function SearchInner() {
           {(items as CatalogProduct[]).map((p) => <li key={p.id}><CatalogResultCard product={p} pickLabel={t("search.usar_no_criador")} onPick={(_variant, prepared) => useInCreator(prepared)} /></li>)}</ul>
         : tab === "PESSOAS" ? <ul className="institutional-profile-feed" aria-label={t("publicProfile.results")}>
           {(items as PublicProfileSummary[]).map((profile) => <li key={profile.id}><PublicProfileCard profile={profile} /></li>)}</ul>
-        : <ul className="institutional-profile-feed" aria-label={t(tab === "MARCAS" ? "search.resultados_marcas" : "search.resultados_celebridades")}>
-          {(items as Brand[]).map((b, i) => <li key={keyOf(b, i)}><SearchEntityCard kind={tab === "MARCAS" ? "MARCAS" : "CELEBRIDADES"} row={b}
+        : <ul className="institutional-profile-feed" aria-label={t("search.resultados_marcas")}>
+          {(items as Brand[]).map((b, i) => <li key={keyOf(b, i)}><SearchEntityCard kind="MARCAS" row={b}
             onSeePieces={seeArchive} /></li>)}</ul>
       )}
       {archive && items.length > 0 && meta?.total !== undefined && <p className="mt-2 type-caption text-muted tabular" role="status">{t("catalog.mostrando", { shown: items.length, total: meta.total })}</p>}

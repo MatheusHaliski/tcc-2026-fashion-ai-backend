@@ -245,3 +245,6 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 .mirror-note { margin-top: 10px; text-align: center; font-size: 13px; color: #3b2f17; }
 @media (max-width: 480px) { .mirror-frame { padding: 10px; border-radius: 140px 140px 18px 18px; } .mirror-glass { border-radius: 130px 130px 10px 10px; } }
 
+.piece-card.is-social.catalog-card .catalog-card-body {
+  overflow-y: auto;
+}

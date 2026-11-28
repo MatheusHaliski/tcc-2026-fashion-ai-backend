@@ -23,10 +23,11 @@ import type { HypeLevel, HypeSummary } from "@/lib/hype/types";
 import { PieceCard } from "@/components/piece-card";
 import { hypeLevelFilter } from "@/components/hype/hype-filters";
 import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
+import { SavedCatalogProducts } from "@/components/catalog/saved-catalog-products";
+import { NegotiationsPanel } from "@/components/marketplace/negotiations-panel";
 import { FaiIcon } from "@/components/fai-icon";
 import { LookExports } from "@/components/look-exports";
 import { SavedLooks } from "@/components/looks/saved-looks";
-import { FlairCollectionTab } from "@/components/flair/flair-collection";
 import { MyArts } from "@/components/my-arts";
 import { MomentsTimelineSection } from "@/components/moments/moment-timeline";
 import { LooksTab } from "@/components/lookbook-looks-tab";
@@ -42,7 +43,7 @@ interface Overview { owner: UserCard; self: boolean; visible: boolean; instituti
  * - Salvos: looks e peças salvos (SegmentPicker; ids antigos saved_looks/saved_pieces viram alias).
  * "Meus cupons resgatados" saiu (era o mesmo componente de /coupons).
  */
-export type TabId = "arts" | "closet" | "flair" | "looks" | "publications" | "favorites" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights" | "moments";
+export type TabId = "negocios" | "arts" | "closet" | "looks" | "publications" | "favorites" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights" | "moments";
 export type SavedView = "looks" | "pieces";
 /** categorias das peças (RF4): só as quatro — peça única não existe mais no formulário */
 const CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
@@ -63,21 +64,19 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
   const count = (id: string) => ov.tabs.find((x) => x.id === id)?.count;
   const saved = (count("saved_looks") ?? 0) + (count("saved_pieces") ?? 0);
   // Looks do dono: a contagem do overview inclui rascunhos, e a aba mostra só os publicados — sem número para não divergir
-  // "Minhas cartas FLAIR" (FLAIR-UT §5) logo depois do closet: a carta é a cópia FLAIR da peça
-  const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: count("closet") }, { id: "flair" as TabId, label: t(ov.self ? "lookbook.flair" : "lookbook.flairVisitor") }, { id: "looks" as TabId, label: t("lookbook.looks"), count: ov.self ? undefined : count("looks") },
+  const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: count("closet") }, { id: "looks" as TabId, label: t("lookbook.looks"), count: ov.self ? undefined : count("looks") },
     { id: "publications" as TabId, label: t("lookbook.publications"), count: count("publications") }, { id: "favorites" as TabId, label: t("lookbook.favorites"), count: count("favorites") },
-    ...(ov.self ? [{ id: "arts" as TabId, label: t("myArts.title") }, { id: "saved" as TabId, label: t("lookbook.saved"), count: saved }, { id: "dna" as TabId, label: t("lookbook.dna") },
+    ...(ov.self ? [{ id: "negocios" as TabId, label: t("marketplace.negotiations") }, { id: "arts" as TabId, label: t("myArts.title") }, { id: "saved" as TabId, label: t("lookbook.saved"), count: saved }, { id: "dna" as TabId, label: t("lookbook.dna") },
       { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") }, { id: "moments" as TabId, label: t("nav.moments") },
     ...(ov.self ? [{ id: "insights" as TabId, label: t("lookbook.insights") }] : [])];
   return (
     <>
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === "closet" && <ClosetTab ownerId={ownerId} self={ov.self} empty={ov.emptyCloset} />}
-      {tab === "flair" && <FlairCollectionTab ownerId={ownerId} self={ov.self} />}
       {tab === "looks" && <LooksTab ownerId={ownerId} self={ov.self} />}
       {tab === "publications" && <PublicationsTab ownerId={ownerId} />}
       {tab === "favorites" && <FavoritesTab ownerId={ownerId} />}
-      {tab === "arts" && ov.self && <MyArts/>}
+      {ov.self && (tab === "arts" ? <MyArts /> : tab === "negocios" ? <NegotiationsPanel /> : null)}
       {tab === "dna" && ov.self && <DnaLooksTab />}
       {tab === "saved" && ov.self && <SavedTab initial={initialSaved} looks={count("saved_looks")} pieces={count("saved_pieces")} />}
       {tab === "daily" && ov.self && <DailyTab />}
@@ -98,7 +97,7 @@ type PieceSort = "recent" | "hype_desc" | "growth";
  * de privacidade, e peça sem Hype público fica "—" e no fim (nunca vale 0). Os selos de marca/celebridade chegam num pedido
  * por página (GET /api/pieces/seals) e dividem o SealSlot com os Selos de Hype com as mesmas vagas do /closet.
  */
-function ClosetTab({ ownerId, self, empty }: { ownerId: string; self: boolean; empty?: Overview["emptyCloset"] }) {
+export function ClosetTab({ ownerId, self, empty }: { ownerId: string; self: boolean; empty?: Overview["emptyCloset"] }) {
   const { t } = useI18n(); const { user } = useAuth(); const [page, setPage] = useState(0); const [category, setCategory] = useState(""); const [state, setState] = useState<(typeof STATES)[number]>("");
   const [sort, setSort] = useState<PieceSort>("recent"); const [hypeLevel, setHypeLevel] = useState("");
   // "Recentes" é a rota de sempre (sem ?sort=); faixa vazia = sem filtro
@@ -182,16 +181,15 @@ function FavoritesTab({ ownerId }: { ownerId: string }) {
   );
 }
 
-/** Salvos: looks e peças salvos numa aba só — o SegmentPicker troca a lista (uma de cada vez, nunca empilhadas). */
 function SavedTab({ initial, looks, pieces }: { initial: SavedView; looks?: number; pieces?: number }) {
   const { t } = useI18n();
-  const [view, setView] = useState<SavedView>(initial);
+  const [view, setView] = useState<SavedView | "catalog">(initial);
   useEffect(() => { setView(initial); }, [initial]);
   return (
     <>
       <SegmentPicker label={t("lookbook.saved")} value={view} onChange={setView} className="mb-3"
-        options={[{ id: "looks", label: t("lookbook.savedLooks"), count: looks }, { id: "pieces", label: t("lookbook.savedPieces"), count: pieces }]} />
-      {view === "looks" ? <SavedLooks /> : <SavedPiecesTab />}
+        options={[{ id: "looks", label: t("lookbook.savedLooks"), count: looks }, { id: "pieces", label: t("lookbook.savedPieces"), count: pieces }, { id: "catalog", label: t("lookbook.savedCatalogProducts") }]} />
+      {view === "looks" ? <SavedLooks /> : view === "catalog" ? <SavedCatalogProducts /> : <SavedPiecesTab />}
     </>
   );
 }
