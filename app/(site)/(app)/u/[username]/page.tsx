@@ -63,7 +63,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               { label: t("profile.copyLink"), onSelect: () => { navigator.clipboard?.writeText(window.location.href).then(() => toast.success(t("common.copied"))).catch(() => undefined); } },
             ]} />
           </>}
-          {data.self && <>{(data.pendingFollowRequests ?? 0) > 0 && <Link href="/notifications#follow-requests" className="btn btn-sm btn-primary">{t("followRequests.atalho", { count: data.pendingFollowRequests ?? 0 })}</Link>}<EditProfileButton /><Link href="/settings" className="btn btn-sm">{t("nav.settings")}</Link><Link href="/explorer?tab=passarela" className="btn btn-sm">{t("common.passarela_3d")}</Link></>}
+          {data.self && <>{(data.pendingFollowRequests ?? 0) > 0 && <Link href="/notifications#follow-requests" className="btn btn-sm btn-primary">{t("followRequests.atalho", { count: data.pendingFollowRequests ?? 0 })}</Link>}<EditProfileButton /><Link href="/settings" className="btn btn-sm">{t("nav.settings")}</Link><Link href={`/u/${encodeURIComponent(username)}?tab=negocios`} className="btn btn-sm">{t("marketplace.negotiations")}</Link><Link href="/seals/new" className="btn btn-sm">{t("brands.slug.novo_selo")}</Link></>}
         </>} />
       {/* RF53 · Lote A5 (P3-15): leitura pública do criador (só itens públicos; perfil fechado ou bloqueado = nada) */}
       {data.contentVisible && data.visibility === "PUBLIC" && <InsightStrip context="CREATOR_PROFILE" params={{ key: data.user.username }} collapsible className="mb-3" />}
@@ -95,11 +95,11 @@ function InstitutionalRedirect({ slug, tab }: { slug: string; tab: string | null
  * saved_looks/saved_pieces → Salvos; cupons/coupons → /coupons (a aba duplicava a página de cupons e saiu do Lookbook).
  * Publicações e Favoritos aceitam também o nome em português (publicacoes, favoritos).
  */
-const TAB_ALIASES: Record<string, TabId> = { saved_looks: "saved", saved_pieces: "saved", publicacoes: "publications", favoritos: "favorites", cartas: "flair", "cartas-flair": "flair" };
+const TAB_ALIASES: Record<string, TabId> = { saved_looks: "saved", saved_pieces: "saved", publicacoes: "publications", favoritos: "favorites" };
 function profileTab(tab: string | null, self: boolean): TabId {
   const t = (tab && TAB_ALIASES[tab]) || tab;
-  if (t === "closet" || t === "flair" || t === "looks" || t === "publications" || t === "favorites" || t === "groups" || t === "moments") return t;
-  if (self && (t === "arts" || t === "dna" || t === "saved" || t === "daily" || t === "capsule" || t === "insights")) return t;
+  if (t === "closet" || t === "looks" || t === "publications" || t === "favorites" || t === "groups" || t === "moments") return t;
+  if (self && (t === "negocios" || t === "arts" || t === "dna" || t === "saved" || t === "daily" || t === "capsule" || t === "insights")) return t;
   return "closet";
 }
 function CouponsRedirect() {

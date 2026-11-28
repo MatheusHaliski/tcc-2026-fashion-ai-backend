@@ -20,7 +20,10 @@ import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/sea
 import { SealPolicyBrands } from "@/components/seal-policy-brands";
 import { SealHypeStat, type SealHypeAggregate } from "@/components/hype/hype-seals";
 import { PieceCard } from "@/components/piece-card";
-import { BrandFlairTab } from "@/components/flair/brand-flair-tab";
+import { ClosetTab } from "@/components/lookbook-tabs";
+import { BrandCatalog } from "@/components/marketplace/brand-catalog";
+import { NegotiationsPanel } from "@/components/marketplace/negotiations-panel";
+import { BrandMarketplaceFeed } from "@/components/marketplace/brand-marketplace-feed";
 import { BrandCouponsTab, BRAND_PROMO_TYPES, CELEB_PROMO_TYPES } from "@/components/coupons/brand-coupons-tab";
 import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
@@ -52,13 +55,12 @@ interface Profile { user?: UserCard; brand?: Record<string, unknown>; celebrity?
 export default function BrandPage({ params }: { params: Promise<{ slug: string }> }) {
   const slug = use(params).slug;   /* vai direto para caminhos da API */ const { t, fmtDate, rich } = useI18n(); const { user, refreshMe } = useAuth(); const router = useRouter(); const searchParams = useSearchParams(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}`, { signal, anonymous: !user }), [slug, !!user]);
-  const [tab, setTab] = useState("ESQUEMAS_DESTAQUE"); const [flairNew, setFlairNew] = useState(0);
+  const [tab, setTab] = useState("LOJAS_FISICAS");
   const [sorts, setSorts] = useState<Record<string, HighlightSort>>({});
   const sortDefault = SORTABLE_TABS[tab]; const sort = sorts[tab] ?? sortDefault;
   const sortParam = sortDefault && sort !== sortDefault ? `?filter=${sort}` : "";
   const requestedTab = searchParams.get("tab")?.toUpperCase();
-  // a aba Guarda-roupa 3D saiu com o Meu Quarto (15/11/2026): o link antigo (?tab=GUARDA_ROUPA) cai na aba padrão
-  useEffect(() => { setTab(requestedTab && requestedTab !== "GUARDA_ROUPA" ? requestedTab : "ESQUEMAS_DESTAQUE"); }, [slug, requestedTab]);
+  useEffect(() => { setTab(requestedTab === "FLAIR" ? "LOJAS_FISICAS" : requestedTab && requestedTab !== "GUARDA_ROUPA" ? requestedTab : "LOJAS_FISICAS"); }, [slug, requestedTab]);
   const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   const promos = useApi<Promotion[]>((signal) => api.get(`/api/users/${ownerId}/promotions`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
@@ -81,7 +83,6 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   type HighlightedPieces = { piece: PieceView; author?: UserCard; schemeId?: string; schemeTitle?: string; seals?: SealBadgeSource[] }[];
   type SavedSchemes = { scheme: SchemeView; author?: UserCard; savedAt?: string }[];
   type SavedPieces = { piece: PieceView; author?: UserCard; snapshot?: boolean; savedAt?: string }[];
-  type Catalog = { piece: PieceView; looks: number; neverInLook: boolean }[];
   /** promotion: vínculo que pôs o look no perfil (RF20/RF21) — emissão, validade, expirado, revalidação pendente */
   type Consecrated = { scheme: SchemeView; seals: SealBadgeSource[]; promotion?: { issuedAt?: string | null; expiresAt?: string | null; expired?: boolean; revalidationPending?: boolean } }[];
   const promotionNote = (p?: Consecrated[number]["promotion"]) => !p ? null : p.expired
@@ -89,7 +90,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
     : p.revalidationPending ? <span className="caption promo-note is-review">{t("brands.slug.promo_revalidacao")}</span>
     : p.issuedAt ? <span className="caption promo-note">{p.expiresAt ? t("brands.slug.promo_vigente_ate", { date: fmtDate(p.issuedAt), until: fmtDate(p.expiresAt) }) : t("brands.slug.promo_vigente", { date: fmtDate(p.issuedAt) })}</span> : null;
   // Esquemas e peças sempre em abas separadas (RF14/RF22): cada aba carrega um único tipo de conteúdo.
-  const tabData = useApi<HighlightedPieces | Catalog | Consecrated | SavedSchemes | SavedPieces>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/tabs/${tab === "LOOKS_CONSAGRADOS" && data?.mode === "ADMINISTRADOR" ? "MEUS_ESQUEMAS" : tab}${sortParam}`, { signal, anonymous: !user }), [slug, tab, !!user, data?.mode, sortParam], { enabled: ["ESQUEMAS_DESTAQUE", "PECAS_DESTAQUE", "CATALOGO", "LOOKS_CONSAGRADOS", "ESQUEMAS_SALVOS", "PECAS_SALVAS"].includes(tab) && !!data });
+  const tabData = useApi<HighlightedPieces | Consecrated | SavedSchemes | SavedPieces>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/tabs/${tab === "LOOKS_CONSAGRADOS" && data?.mode === "ADMINISTRADOR" ? "MEUS_ESQUEMAS" : tab}${sortParam}`, { signal, anonymous: !user }), [slug, tab, !!user, data?.mode, sortParam], { enabled: ["ESQUEMAS_DESTAQUE", "PECAS_DESTAQUE", "LOOKS_CONSAGRADOS", "ESQUEMAS_SALVOS", "PECAS_SALVAS"].includes(tab) && !!data });
   const badges = toSealBadges;
   const emptySeal = { open: false, name: "", tier: "LOOK" as SealTierId, policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN as SealDesign, policy: EMPTY_POLICY };
   // RF25 — política padronizada (regras + tags) no lugar do texto livre; policyText só guarda a descrição antiga, se houver
@@ -101,7 +102,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");
   const owner: UserCard = data.user ?? ({ id: h.userId ?? "", username: h.username ?? h.slug ?? "", displayName: h.name ?? h.username ?? "", avatarUrl: h.logoUrl ?? null, profileType: isCeleb ? "CELEBRIDADE" : "MARCA", verified: h.verified } as unknown as UserCard);
   const reference = institutionalReferenceLine({ ...h, category: (brand.fashionCategory as string) ?? h.category, areas: h.areas ?? (brand.areas as string[]) }, isCeleb);   // ex. 09/10: opção escolhida antes do texto legado
-  const tabs = [...(isCeleb ? [{ id: "ERAS", label: t("brands.slug.eras") }] : [{ id: "COLECOES", label: t("common.colecoes") }]), { id: "ESQUEMAS_DESTAQUE", label: t("brands.slug.esquemas_em_destaque") }, { id: "PECAS_DESTAQUE", label: t("brands.slug.pecas_em_destaque") }, { id: "LOOKS_CONSAGRADOS", label: admin ? t("lookbook.looks") : t("brands.slug.looks_consagrados") }, { id: "CATALOGO", label: t("brands.slug.catalogo_de_pecas") }, { id: "SELOS", label: t("brands.slug.selos", { value: seals.data?.length ?? data.header.activeSeals }) }, { id: "PROMOCOES", label: t("brands.slug.promocoes") }, { id: "FLAIR", label: admin ? t("brands.slug.minhas_combinacoes_flair") : t("brands.slug.combinacoes_flair") }, ...(admin ? [{ id: "CUPONS", label: t("brands.slug.meus_cupons_promocionais") }] : []),
+  const tabs = [...(isCeleb ? [{ id: "ERAS", label: t("brands.slug.eras") }] : [{ id: "COLECOES", label: t("common.colecoes") }]), { id: "ESQUEMAS_DESTAQUE", label: t("brands.slug.esquemas_em_destaque") }, { id: "PECAS_DESTAQUE", label: t("brands.slug.pecas_em_destaque") }, { id: "LOOKS_CONSAGRADOS", label: admin ? t("lookbook.looks") : t("brands.slug.looks_consagrados") }, { id: "CATALOGO", label: t("brands.slug.catalogo_de_pecas") }, { id: "SELOS", label: t("brands.slug.selos", { value: seals.data?.length ?? data.header.activeSeals }) }, { id: "PROMOCOES", label: t("brands.slug.promocoes") }, { id: "LOJAS_FISICAS", label: t("marketplace.physical_stores") }, ...(admin ? [{ id: "CLOSET", label: t("lookbook.closet") }, { id: "NEGOCIOS", label: t("marketplace.negotiations") }, { id: "CUPONS", label: t("brands.slug.meus_cupons_promocionais") }] : []),
     ...(admin ? [{ id: "ATENDIMENTO", label: t("brands.slug.atendimento") }, ...(reviewStatus !== "APROVADO" ? [{ id: "CENTRAL", label: t("issuerReview.central") }] : []), { id: "ESQUEMAS_SALVOS", label: t("brands.slug.esquemas_salvos") }, { id: "PECAS_SALVAS", label: t("lookbook.savedPieces") }, { id: "REVISAO", label: t("brands.slug.revisao_de_vinculos") }, { id: "METRICAS", label: t("brands.slug.metricas") }] : [])];
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
@@ -128,7 +129,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
         photo={!h.userAvatarUrl && !isCeleb ? <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white"><BrandLogo name={(brand.brandName as string) ?? owner.displayName} src={(brand.logoUrl as string) ?? h.logoUrl ?? undefined} size={120} /></span> : undefined}
         counts={{ pieces: h.pieces, schemes: h.schemes, followers: h.followers, following: h.following }}
         hype={isCeleb ? <HypeGroupBadge type="CREATOR" groupKey={ownerId} variant="header" /> : <HypeGroupBadge type="BRAND" groupKey={(brand.brandName as string) ?? h.name} variant="header" />}
-        actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link>{reviewStatus !== "APROVADO" && <IssuerCenterButton status={reviewStatus} onOpen={() => { setTab("CENTRAL"); document.getElementById("perfil-abas")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} />}</>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
+        actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link><Button size="sm" onClick={() => setTab("NEGOCIOS")}>{t("marketplace.negotiations")}</Button>{reviewStatus !== "APROVADO" && <IssuerCenterButton status={reviewStatus} onOpen={() => { setTab("CENTRAL"); document.getElementById("perfil-abas")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} />}</>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
       {/* RF53 · Lote A5 (P3-15): Hype agregado do perfil com o estilo ao lado, crescimento e looks com selo (só públicos) */}
       <InsightStrip context="BRAND_PROFILE" params={{ key: decodeURIComponent(slug) }} collapsible className="mb-3" />
       <div id="perfil-abas" className="scroll-mt-16"><Tabs tabs={tabs} value={tab} onChange={setTab} /></div>
@@ -142,15 +143,17 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       {tab === "CENTRAL" && admin && reviewStatus !== "APROVADO" && <IssuerCenter review={review} />}
       {tab === "ERAS" && isCeleb && <ErasTab slug={slug} admin={admin} />}
       {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} brand={{ name: (brand.brandName as string) ?? h.name ?? owner.displayName, logoUrl: (brand.logoUrl as string) ?? h.logoUrl ?? null }} />}
-      {tab === "FLAIR" && <BrandFlairTab slug={slug} autoNew={flairNew} />}
+      {tab === "LOJAS_FISICAS" && h.verified && <BrandMarketplaceFeed slug={slug} manager={admin} />}
       {tab === "ATENDIMENTO" && admin && <><FittingAppointmentsInbox /><div className="mt-8"><AccessibilityDeclarations /></div><div className="mt-8"><DemandPanel /></div></>}
-      {tab === "CUPONS" && admin && <BrandCouponsTab ownerId={ownerId ?? ""} celebrity={isCeleb} onCreateFlair={() => { setTab("FLAIR"); setFlairNew((n) => n + 1); }} />}
+      {tab === "CUPONS" && admin && <BrandCouponsTab ownerId={ownerId ?? ""} celebrity={isCeleb} />}
       {tab === "ESQUEMAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.looks_de_qualquer_usuario_que")}</p><div className="grid-looks social-card-grid">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} extra={promotionNote(e.promotion)} />)}</div></> : <EmptyState title={t("brands.slug.nenhum_esquema_em_destaque_ainda")} hint={t("brands.slug.aparecem_aqui_os_looks_que")} />)}
       {tab === "PECAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<HighlightedPieces>("piece").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.pecas_que_compoem_os_looks")}</p><div className="grid-cards">{only<HighlightedPieces>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} seals={badges(e.seals)} extra={<span className="caption">{rich("brands.slug.no_look", { schemeTitle: e.schemeTitle, value: e.author ? ` · @${e.author.username}` : "" }, { 0: ($c) => <Link className="underline" href={`/schemes/${e.schemeId}`}>{$c}</Link> })}</span>} />)}</div></> : <EmptyState title={t("brands.slug.nenhuma_peca_em_destaque_ainda")} hint={t("brands.slug.as_pecas_dos_looks_com")} />)}
       {tab === "ESQUEMAS_SALVOS" && admin && (tabData.loading ? <SkeletonGrid /> : only<SavedSchemes>("scheme").length ? <div className="grid-looks social-card-grid">{only<SavedSchemes>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} />)}</div> : <EmptyState title={t("brands.slug.nenhum_esquema_salvo")} />)}
       {tab === "PECAS_SALVAS" && admin && (tabData.loading ? <SkeletonGrid /> : only<SavedPieces>("piece").length ? <div className="grid-cards">{only<SavedPieces>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} extra={e.author ? <span className="caption">{t("brands.slug.de_2", { username: e.author.username, value: e.snapshot ? t("brands.slug.arquivada_pelo_autor") : "" })}</span> : undefined} />)}</div> : <EmptyState title={t("common.nenhuma_peca_salva")} />)}
       {tab === "LOOKS_CONSAGRADOS" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <div className="grid-looks social-card-grid">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} extra={admin ? undefined : promotionNote(e.promotion)} />)}</div> : <EmptyState title={t("common.empty")} />)}
-      {tab === "CATALOGO" && (tabData.loading ? <SkeletonGrid /> : only<Catalog>("piece").length ? <div className="grid-cards">{only<Catalog>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} extra={<span className="caption tabular">{t("brands.slug.looks", { looks: e.looks, value: e.neverInLook ? t("brands.slug.nunca_usada_em_look") : "" })}</span>} />)}</div> : <EmptyState title={t("common.empty")} />)}
+      {tab === "NEGOCIOS" && admin && <NegotiationsPanel embedded />}
+      {tab === "CLOSET" && admin && ownerId && <ClosetTab ownerId={ownerId} self />}
+      {tab === "CATALOGO" && h.verified && <BrandCatalog slug={slug} />}
       {tab === "SELOS" && (
         <>
           <p className="type-body text-muted mb-3">{admin ? t("brands.slug.so_o_dono_deste_perfil") : t("brands.slug.selos_concedidos_por_este_perfil")}</p>

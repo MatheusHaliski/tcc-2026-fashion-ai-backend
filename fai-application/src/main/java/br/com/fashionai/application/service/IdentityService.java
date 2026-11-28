@@ -218,7 +218,7 @@ public class IdentityService {
     @Transactional
     public Session register(RegisterCommand cmd, String ip, String userAgent) {
         ProfileType type = cmd.profileType() == null ? ProfileType.PESSOAL : cmd.profileType();
-        if (type == ProfileType.ADMIN) {
+        if (type != ProfileType.PESSOAL && type != ProfileType.MARCA) {
             throw ApiException.badRequest("TIPO_INVALIDO", Msg.t("identity.tipo_de_perfil_nao_permitido"));
         }
         String mail = cmd.email() == null ? "" : cmd.email().trim().toLowerCase(Locale.ROOT);

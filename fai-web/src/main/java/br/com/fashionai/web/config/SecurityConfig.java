@@ -47,8 +47,8 @@ public class SecurityConfig {
             // os campos dos criadores mandam a sessão, então um GET novo fora daqui também carrega sem mexer nesta lista
             "/api/opcoes/**", "/api/estados-conservacao", "/api/tipos-lavagem", "/api/colecoes", "/api/cortes", "/api/intensidades-termicas", "/api/origens",
             "/api/passport-shares/*", "/api/seals/art",
-            "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",
-            "/api/profiles/*", "/api/profiles/*/signature-piece", "/api/brands", "/api/celebrities", "/api/institutional/**",
+            "/api/feed", "/api/runway", "/api/search", "/api/public-pieces", "/api/marketplace/**",
+            "/api/profiles/*", "/api/profiles/*/signature-piece", "/api/brands", "/api/institutional/**",
             "/api/schemes/*", "/api/schemes/*/card.png", "/api/schemes/*/look3d", "/api/pieces/*", "/api/pieces/*/aura-media/*", "/api/pieces/*/look3d", "/api/dna-schemes/*",
             "/api/interactions/*/*/comments", "/api/interactions/*/*/counters",
             "/api/users/*/lookbook", "/api/users/*/closet", "/api/users/*/seals", "/api/users/*/promotions",
@@ -91,6 +91,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/atelier/guest/*/scene", "/api/atelier/guest/*/catalog", "/api/atelier/guest/*/assets/*", "/api/atelier/guest/*/assets/*/metadata", "/api/atelier/guest/*/versions/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/atelier/guest/*/versions", "/api/atelier/guest/*/assets", "/api/atelier/guest/*/gender-evidence").permitAll()
                         .requestMatchers("/media/restricted/**").hasRole("ADMIN")   // documentos do cadastro (RF1)
+                        .requestMatchers("/api/flair/**", "/api/users/*/flair/**", "/api/institutional/*/flair/**", "/api/celebrities").denyAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/uploads", "/api/auth/login", "/api/auth/refresh",
                                 "/api/auth/password-reset/request", "/api/auth/password-reset/confirm").permitAll()

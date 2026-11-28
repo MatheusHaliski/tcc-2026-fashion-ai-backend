@@ -38,7 +38,7 @@ public class SealDesignService {
 
     public Map<String, Object> upload(CurrentUser user, byte[] bytes) {
         User owner = users.findById(user.id()).orElseThrow();
-        if (owner.getProfileType() != ProfileType.MARCA && owner.getProfileType() != ProfileType.CELEBRIDADE) {
+        if (owner.getProfileType() != ProfileType.MARCA && owner.getProfileType() != ProfileType.CELEBRIDADE && owner.getProfileType() != ProfileType.PESSOAL) {
             throw ApiException.forbidden(Msg.t("sealDesign.so_perfis_de_marca_ou"));
         }
         ImageOps.requireAcceptedImage(bytes);
@@ -91,7 +91,7 @@ public class SealDesignService {
      */
     public Map<String, Object> uploadCore(CurrentUser user, byte[] bytes) {
         User owner = users.findById(user.id()).orElseThrow();
-        if (owner.getProfileType() != ProfileType.MARCA && owner.getProfileType() != ProfileType.CELEBRIDADE) {
+        if (owner.getProfileType() != ProfileType.MARCA && owner.getProfileType() != ProfileType.CELEBRIDADE && owner.getProfileType() != ProfileType.PESSOAL) {
             throw ApiException.forbidden(Msg.t("sealDesign.so_perfis_de_marca_ou"));
         }
         ImageOps.requireAcceptedImage(bytes);

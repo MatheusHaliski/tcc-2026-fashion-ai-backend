@@ -51,7 +51,9 @@ public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID
             + " and w.user.profileVisibility = br.com.fashionai.domain.model.enums.Visibility.PUBLIC"
             + " and w.user.status = br.com.fashionai.domain.model.enums.AccountStatus.ACTIVE"
             + " and w.moderationStatus = br.com.fashionai.domain.model.enums.ModerationStatus.APPROVED"
-            + " and w.availabilityStatus <> br.com.fashionai.domain.model.enums.AvailabilityStatus.ARCHIVED")
+            + " and w.availabilityStatus <> br.com.fashionai.domain.model.enums.AvailabilityStatus.ARCHIVED"
+            + " and (w.user.profileType <> br.com.fashionai.domain.model.enums.ProfileType.MARCA or (w.forSale = true and (w.expiresAt is null or w.expiresAt > current_timestamp)))"
+            + " and ((w.archiveOnExpiry = false and w.negotiationId is null) or w.expiresAt is null or w.expiresAt > current_timestamp)")
     List<WardrobeItem> findAllPublic(Pageable pageable);
 
     /** RF8 — peças públicas e aprovadas de uma marca do catálogo (aba Marcas da busca). */

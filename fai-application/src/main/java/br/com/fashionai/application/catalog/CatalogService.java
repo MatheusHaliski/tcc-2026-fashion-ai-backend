@@ -325,7 +325,7 @@ public class CatalogService {
     }
 
     /** Cards de uma lista do acervo (foto canônica ou principal, variantes, marca), na ordem recebida, sem pontuação. */
-    List<Map<String, Object>> cards(List<CatalogProduct> list) {
+    public List<Map<String, Object>> cards(List<CatalogProduct> list) {
         return cards(list, null, null);
     }
 
@@ -556,8 +556,8 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public Map<String, Object> product(UUID id, UUID variantId, UUID imageId) {
         CatalogProduct p = products.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("catalog.produto")));
-        if (CatalogPhotoEligibility.excluded(p)) throw ApiException.notFound(Msg.t("catalog.produto"));
         Brand b = brands.findById(p.getBrandId()).orElse(null);
+        if (CatalogPhotoEligibility.excluded(p) || !ManagedCatalogPiece.visible(p, b)) throw ApiException.notFound(Msg.t("catalog.produto"));
         List<CatalogImage> imgs = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId());
         List<CatalogVariant> productVariants=variants.findByProductIdOrderByVariantKey(p.getId());
         CatalogVariant requested=variantId==null?null:productVariants.stream().filter(v->variantId.equals(v.getId())&&id.equals(v.getProductId()))
@@ -647,10 +647,9 @@ public class CatalogService {
     @Transactional
     public Views.PieceView addToWardrobe(CurrentUser user, AddRequest a) {
         CatalogProduct p = products.findById(a.productId()).orElseThrow(() -> ApiException.notFound(Msg.t("catalog.produto")));
-        if (CatalogPhotoEligibility.excluded(p)) {
-            throw ApiException.badRequest("PRODUTO_RECUSADO", Msg.t("catalog.produto_recusado"));
-        }
+        if (CatalogPhotoEligibility.excluded(p)) throw ApiException.badRequest("PRODUTO_RECUSADO", Msg.t("catalog.produto_recusado"));
         Brand b = brands.findById(p.getBrandId()).orElseThrow(() -> ApiException.notFound(Msg.t("common.brand")));
+        if (!ManagedCatalogPiece.visible(p, b)) throw ApiException.notFound(Msg.t("catalog.produto"));
         CatalogVariant chosenVariant = a.variantId() == null ? null : variants.findById(a.variantId())
                 .filter(v -> v.getProductId().equals(p.getId())).orElseThrow(()->ApiException.notFound("Catalog variant"));
         CatalogVariant variant = chosenVariant;
@@ -679,7 +678,7 @@ public class CatalogService {
         String name = a.name() != null && !a.name().isBlank() ? a.name().trim() : CatalogIngestService.plainText(p.getProductName());
         // a peça herda a foto do card: master processado (nível B) ou a URL oficial COM o recorte semântico (nível A) —
         // nunca a foto original inteira quando o pipeline já a enquadrou
-        Map<String, Object> card = CatalogImagePipelineService.cardImage(chosen, p, productVariants);
+        Map<String, Object> card = ManagedCatalogPiece.image(p, b, CatalogImagePipelineService.cardImage(chosen, p, productVariants));
         if (card!=null) {
             UUID effective=CatalogImageIdentity.effectiveVariantId(chosen,p,productVariants);
             if(effective!=null) card.put("variantId",effective);
@@ -693,7 +692,7 @@ public class CatalogService {
                 a.background(), null, null, null, null, null, false, null, null, null, false);
         Views.PieceView view = wardrobe.createFromCatalog(user, form, new CatalogPick(p.getId(),
                 variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card,
-                productModels == null ? null : productModels.url(p.getId())));
+                p.getManagedPiece() != null ? p.getManagedPiece().getModel3dUrl() : productModels == null ? null : productModels.url(p.getId())));
         if (Boolean.TRUE.equals(a.favorite())) {
             view = wardrobe.toggles(user, view.id(), true, null, null);
         }

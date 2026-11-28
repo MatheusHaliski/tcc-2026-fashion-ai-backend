@@ -109,7 +109,6 @@ function Settings() {
           <Card>
             {heading(t("common.editar_perfil"), "profile")}
             <EditProfileForm />
-            <Switch checked={!me.runwayOptOut} onChange={(v) => call(() => api.patch("/api/me/profile", { runwayOptOut: !v }), v ? t("settings.seu_look_do_dia_volta") : t("settings.voce_saiu_da_passarela_3d"))} label={t("settings.desfilar_meu_look_do_dia")} />
             <div className="mt-2 flex flex-wrap gap-2"><label className="btn btn-sm cursor-pointer">{t("settings.imagem_de_capa")}<input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.append("file", f); call(() => api.upload("/api/me/cover", fd), t("common.saved")); }} /></label></div>
             <Field label={t("auth.country")} id="country"><div className="flex gap-2"><Input id="country" value={profile.country} onChange={(e) => setProfile({ ...profile, country: e.target.value.toUpperCase() })} maxLength={2} /><Button onClick={() => call(() => api.patch("/api/me/profile", { country: profile.country }), t("common.saved"))}>{t("common.save")}</Button></div></Field>
 

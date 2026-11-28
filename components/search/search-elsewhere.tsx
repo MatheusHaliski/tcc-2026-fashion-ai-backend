@@ -6,7 +6,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
 
 /** Abas da busca que o servidor responde por termo (GET /api/search?tab=…). */
-export const SEARCH_TABS = ["LOOKS", "PECAS", "PESSOAS", "MARCAS", "CELEBRIDADES"] as const;
+export const SEARCH_TABS = ["LOOKS", "PECAS", "PESSOAS", "MARCAS"] as const;
 export type SearchTab = typeof SEARCH_TABS[number];
 
 /**

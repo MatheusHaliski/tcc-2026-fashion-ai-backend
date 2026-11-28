@@ -57,7 +57,7 @@ import br.com.fashionai.domain.repository.*;
  */
 @Service
 public class SearchService {
-    public static final List<String> TABS = List.of("LOOKS", "PECAS", "PESSOAS", "MARCAS", "CELEBRIDADES");
+    public static final List<String> TABS = List.of("LOOKS", "PECAS", "PESSOAS", "MARCAS");
 
     /**
      * Filtros combináveis (CA03). {@code hypeLevel} é FILTRO de faixa mínima do HypeScore v2 público (ex.: HOT = "Em alta"),
@@ -194,7 +194,7 @@ public class SearchService {
 
     boolean visible(CurrentUser viewer, WardrobeItem w, Set<UUID> blocked) {
         return !blocked.contains(w.getUser().getId()) && w.getUser().getStatus() == AccountStatus.ACTIVE && showcaseAllows(viewer, w.getUser())
-                && w.getModerationStatus() == ModerationStatus.APPROVED
+                && !br.com.fashionai.application.wardrobe.BrandClosetVisibility.onlyInCloset(w) && w.getModerationStatus() == ModerationStatus.APPROVED
                 && guard.canView(viewer, w.getUser().getId(), SchemeService.moreRestrictive(w.getVisibility(), w.getUser().getProfileVisibility()));
     }
 
@@ -624,9 +624,7 @@ public class SearchService {
             case "PESSOAS" -> users.searchPersonalProfiles(term, viewer != null && User.isTestUsername(viewer.username()),
                     blocked.isEmpty() ? List.of(new UUID(0, 0)) : blocked, PageRequest.of(0, want));
             case "MARCAS" -> brandResults(needle, want);
-            default -> celebrities.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
-                    .filter(c -> term.isEmpty() || c.getStageName().toLowerCase(Locale.ROOT).contains(needle))
-                    .limit(want).map(c -> Map.of("userId", c.getOwner().getId(), "username", c.getOwner().getUsername(), "name", c.getStageName(), "slug", c.getSlug(), "avatarUrl", String.valueOf(c.getAvatarUrl()))).toList();
+            default -> List.of();
         };
         List<?> results = all.size() <= offset ? List.of() : all.subList(offset, Math.min(all.size(), offset + limit));
         String nextCursor = all.size() > offset + limit ? encodeOffset(offset + limit) : null;

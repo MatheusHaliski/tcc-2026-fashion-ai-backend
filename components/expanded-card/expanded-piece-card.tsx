@@ -23,6 +23,8 @@ import { FashionMotionButton } from "@/components/hype/fashion-motion-button";
 import { useFashionDepth } from "@/lib/hype/use-fashion-depth";
 import { useAuraLive } from "@/lib/hype/use-aura-live";
 import { fashionCardLevel } from "@/lib/hype/fashion-card";
+import { usePieceCommerceCells } from "@/components/pieces/piece-commerce-cells";
+import { INFO_FIELD_LABEL, infoGridOf } from "@/lib/cards/info-grid";
 import { PieceCardPanels } from "@/components/piece-card-panels";
 import { PieceDetailFacts } from "@/components/piece-detail-facts";
 import { useStudioBackdrops } from "@/components/studio";
@@ -50,6 +52,9 @@ export type ExpandedPieceCardProps = {
 
 export function ExpandedPieceCard({ piece, context = "detail", slots, seals = [], onOpenPhoto, children }: ExpandedPieceCardProps) {
   const isPreview = context === "preview";
+  const commerce = usePieceCommerceCells(piece);
+  const commerceRows = infoGridOf(piece.background, "piece").fields.flatMap((field): [string, ReactNode][] =>
+    (field === "expiry" || field === "deal") && commerce[field] ? [[t(INFO_FIELD_LABEL[field]), commerce[field]]] : []);
   const { headerControls, visibilityLabel, primaryAction, interactionBar, photoNotice, extraFacts } = slots ?? {};
   const { t } = useI18n();
   const backdrops = useStudioBackdrops();
@@ -116,7 +121,7 @@ export function ExpandedPieceCard({ piece, context = "detail", slots, seals = []
                 {primaryAction}
               </section>
               {interactionBar}
-              <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} auraMode={auraMode} live={live} />
+              <PieceCardPanels piece={piece} summary={hype.summary} loading={hype.loading} error={hype.error} auraMode={auraMode} live={live} infoRows={commerceRows} />
               <section className="pd-section" aria-labelledby={`pd-facts-${piece.id}`}>
                 <h3 id={`pd-facts-${piece.id}`} className="pd-h">{t("pieceDetail.detalhes")}</h3>
                 <PieceDetailFacts piece={piece}/>

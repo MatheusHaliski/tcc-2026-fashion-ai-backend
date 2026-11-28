@@ -12,7 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class PieceStudioMedia extends VersionedAuditableEntity {
+public abstract class PieceStudioMedia extends PieceCommerceAttributes {
     /** RF4 · Estúdio: foto de produto (fundo de estúdio, luz e sombra) exibida na vitrine; o recorte segue em imageUrl. */
     @Column(name = "studio_image_url", length = 1024)
     private String studioImageUrl;

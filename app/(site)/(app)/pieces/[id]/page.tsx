@@ -3,6 +3,7 @@ import { use } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useI18n } from "@/lib/i18n/i18n";
+import { useAuth } from "@/lib/auth/session";
 import { FaiIcon } from "@/components/fai-icon";
 import { ExpandedPiece } from "@/components/expanded-card";
 
@@ -12,10 +13,12 @@ import { ExpandedPiece } from "@/components/expanded-card";
  */
 export default function PiecePage({ params }: { params: Promise<{ id: string }> }) {
   const id = encodeURIComponent(use(params).id);   /* vai direto para caminhos da API: nada de "../" vindo da URL */ const { t } = useI18n(); const sp = useSearchParams();
+  const { user } = useAuth();
   const fromScheme = sp.get("fromScheme");
   return (
     <div className="expanded-page">
       {fromScheme && <p className="mb-3"><Link href={`/schemes/${fromScheme}`} className="btn btn-sm"><FaiIcon id="SOC-10" size={20} variant="glyph" decorative />{t("pieces.id.voltar_ao_look", { value: "" })}</Link></p>}
+      {user && <Link href={`/marketplace-negotiations?piece=${id}`} className="btn btn-sm mb-3">{t("marketplace.neg_new")}</Link>}
       <ExpandedPiece id={id} from={fromScheme} startEditing={sp.get("edit") === "1"} />
     </div>
   );

@@ -22,6 +22,8 @@ public final class DomainEvents {
     public record PieceUpdated(UUID userId, UUID pieceId, int completeness) {
     }
 
+    public record PieceSaleChanged(UUID pieceId) {}
+
     public record PieceDeleted(UUID userId, UUID pieceId) {
     }
 

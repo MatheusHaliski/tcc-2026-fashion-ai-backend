@@ -64,7 +64,6 @@ export function EditProfileForm({ onDone }: { onDone?: () => void }) {
           {me.user.avatarUrl && <button type="button" className="ep-remove" disabled={busy} aria-label={t("common.remover_foto")} title={t("common.remover_foto")} onClick={async () => { try { await api.patch("/api/me/profile", { avatarUrl: "" }); await refreshMe(); notice.success(t("editProfile.foto_removida_o_manequim_volta")); } catch (e) { notice.fromError(e); } }}>✕</button>}
         </div>
         {/* avatar 3D: a caixa isométrica leva ao criador do avatar (RF40) */}
-        {!brand && <Link href="/avatar" className="ep-cube" aria-label={t("editProfile.meu_avatar_3d")} title={t("editProfile.meu_avatar_3d")}><IsoCube size={44} /></Link>}
         <input ref={file} type="file" accept="image/*" className="sr-only" tabIndex={-1} onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
       </div>
       {row(t("common.nome"), <Input id="ep-name" value={f.displayName} onChange={(e) => setF({ ...f, displayName: e.target.value })} maxLength={80} />, "ep-name")}

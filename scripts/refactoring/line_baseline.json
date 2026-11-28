@@ -21,7 +21,7 @@
  "rule": "docs/refactoring/LINE_RULES.md",
  "files": {
   "app/(site)/(app)/pieces/new/page.tsx": {
-   "max": 299,
+   "max": 279,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/app-shell.tsx": {
@@ -81,7 +81,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/lookbook-tabs.tsx": {
-   "max": 352,
+   "max": 350,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "components/multi-piece-review.test.tsx": {
@@ -169,7 +169,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/catalog/CatalogService.java": {
-   "max": 760,
+   "max": 759,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/catalog/image/CatalogImageBatchCli.java": {
@@ -381,7 +381,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/IssuerReviewService.java": {
-   "max": 595,
+   "max": 592,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/LookbookService.java": {
@@ -421,7 +421,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/SearchService.java": {
-   "max": 838,
+   "max": 836,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-application/src/main/java/br/com/fashionai/application/service/ShowcaseService.java": {
@@ -525,7 +525,7 @@
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-domain/src/main/java/br/com/fashionai/domain/model/WardrobeItem.java": {
-   "max": 302,
+   "max": 299,
    "reason": "legado acima do limite em 2026-10-31 (bcaee73+02); só pode diminuir"
   },
   "fai-infrastructure/persistence-mysql/src/main/java/br/com/fashionai/infrastructure/mysql/demo/MysqlDemoDataAdminAdapter.java": {

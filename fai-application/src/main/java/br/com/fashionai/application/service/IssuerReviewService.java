@@ -2,7 +2,6 @@ package br.com.fashionai.application.service;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -75,6 +74,9 @@ public class IssuerReviewService {
     private final Audit audit;
     private final List<String> notifyEmails;
     private final String frontendUrl;
+    @org.springframework.beans.factory.annotation.Autowired
+    private br.com.fashionai.application.marketplace.VerifiedBrandCatalog verifiedBrandCatalog;
+
     private Executor mailExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public IssuerReviewService(UserRepository users, BrandProfileRepository brands, CelebrityProfileRepository celebrities,
@@ -105,13 +107,7 @@ public class IssuerReviewService {
     }
 
     static List<String> parse(String csv) {
-        List<String> out = new ArrayList<>();
-        if (csv == null) {
-            return out;
-        }
-        Arrays.stream(csv.split("[,;\\s]+")).map(s -> s.trim().toLowerCase(Locale.ROOT))
-                .filter(s -> s.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+") && !out.contains(s)).forEach(out::add);
-        return out;
+        return IssuerNotificationAddresses.parse(csv);
     }
 
     private List<User> admins() {
@@ -573,6 +569,7 @@ public class IssuerReviewService {
             p.setIdentityVerified(true);
             if (p instanceof BrandProfile b) {
                 b.setDocumentVerified(true);
+                if (verifiedBrandCatalog != null) verifiedBrandCatalog.linkApprovedBrand(b.getId());
             }
             if (p instanceof CelebrityProfile c) {
                 c.setRequiresSealReview(true);             // RF21.CA19 — celebridade sempre revisa

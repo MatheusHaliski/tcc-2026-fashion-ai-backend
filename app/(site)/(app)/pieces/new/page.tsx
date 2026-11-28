@@ -12,10 +12,7 @@ import { useAuth } from "@/lib/auth/session";
 import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/components/ui";
-import { useApi } from "@/lib/hooks/use-api";
-import type { FlairCollectionCard } from "@/components/flair/flair-game-card";
-import type { FlairPreview } from "@/components/flair/flair-collection";
-import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
+import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, isNoBrand, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCreationPreview } from "@/components/pieces/piece-creation-preview";
 import { useWideScreen } from "@/lib/hooks/use-wide-screen";
 import { PiecePhotoShortcut } from "@/components/pieces/piece-photo-shortcut";
@@ -24,6 +21,8 @@ import { PieceArtEditor } from "@/components/piece-art-editor";
 import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { CatalogPickSummary, LensPrefillNote, type CatalogPick } from "@/components/catalog/catalog-pick-summary";
+import { BrandSaleFields, type BrandSalePlacement } from "@/components/marketplace/brand-sale-fields";
+import { createPieceRequest } from "@/lib/pieces/create-piece-request";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
 import { MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
 import { PieceMoreStep } from "@/components/piece-more-step";
@@ -68,13 +67,14 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const [step, setStep] = useState<Step>("piece");
   // RF4 · duas formas de adicionar: busca catalogada (+ formulário) ou fotografar (várias fotos, várias peças por foto)
   const [mode, setMode] = useState<AddMode>(initialMode);
+  const [listing, setListing] = useState<BrandSalePlacement>({ store: null, expiresOn: "" });
   const [pick, setPick] = useState<CatalogPick | null>(null);
   // modo Fotografar: a peça detectada escolhida segue pelas mesmas etapas (Avançar → Mais detalhes…), sem modal
   const [photoPick, setPhotoPick] = useState<PhotoPick | null>(null);
   const [savedKeys, setSavedKeys] = useState<string[]>([]);
   const [availableKeys, setAvailableKeys] = useState<string[]>([]);
   const { value, setValue, pre, catalogSub, autoSex } = usePieceCreationState(initial, prefill, tax, CATEGORY_IDS);
-  // arte do card (RF11 v2 + campos do Background Studio): um só config, o mesmo que o detalhe grava depois
+  const brandVerified = user?.profileType === "MARCA" && user.verified;
   const [background, setBackground] = useState<Record<string, unknown>>({ skin: "atelier" });
   // Total frame: o enquadramento escolhido aqui vai com a arte da peça (background.photoFraming) e vale em todo card dela
   const [defaultFraming] = usePhotoFraming();
@@ -86,16 +86,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveProblem, setSaveProblem] = useState<string | null>(null);
   const [stepProblem, setStepProblem] = useState<string | null>(null);
-  // Depois de salvar: "Compartilhar no feed" vem DESLIGADO (privacidade: a peça é salva como a revisão mostra); ligado,
-  // o post é o próprio card e a peça privada passa a pública (a revisão avisa). "Converter para FLAIR" (desligado) cria
-  // a cópia em Minhas cartas FLAIR e não publica nada.
   const [shareToFeed, setShareToFeed] = useState(false);
-  const [toFlair, setToFlair] = useState(false);
-  const flairDraft = JSON.stringify({ category: value.category, subcategory: value.subcategory || null, price: value.price === "" ? null : Number(value.price),
-    brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandId: value.brandId || null, catalogProductId: pick?.product.id ?? null,
-    styles: value.style, occasions: value.occasion, color: value.color || null, material: value.material || null });
-  const flairPreview = useApi<FlairPreview>((signal) => api.post<FlairPreview>("/api/flair/cards/preview", JSON.parse(flairDraft), { signal }), [flairDraft],
-    { enabled: toFlair && step === "review" && !!value.category });
 
   /** Tipo da peça (primeira escolha da etapa Peça): ocasiões fora do permitido para o tipo saem. */
   function chooseCategory(category: string) {
@@ -153,26 +144,14 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
         const q = photoPick.index >= 0 ? `?index=${photoPick.index}` : "";
         draftId = (await api.upload<{ draftId: string }>(`/api/pieces/analysis/multi/${photoPick.draftId}/pieces${q}`, fd)).draftId;
       }
-      const payload = toPayload({ ...value, useDefaultImage: !draftId, background, ...(draftId ? { draftId } : {}) });
-      // produto do catálogo: criação por referência (RF47); sem produto, a peça leva os dados do formulário (RF4)
-      const p = pick && mode === "catalog"
-        ? await api.post<PieceView>("/api/pieces/from-catalog", { productId: pick.product.id, variantId: pick.variant?.id ?? null, size: value.size || null, condition: value.condition || null,
-            price: payload.price, purchaseDate: payload.purchaseDate, purchaseLocation: value.purchaseLocation || null, favorite: false, forSale: value.forSale, notes: value.notes || null,
-            visibility: value.visibility, occasion: value.occasion, style: value.style, color: value.color || null, material: value.material || null, sex: value.sex || null, name: value.name || null, background })
-        : await api.post<PieceView>("/api/pieces", payload);
+      const p = await createPieceRequest(value, background, draftId, brandVerified && value.forSale ? listing : null, mode === "catalog" ? pick : null);
       setFieldErrors({}); toast.success(t("piece.created"));
       // as opções rodam depois da peça salva: se uma falhar, a peça fica e o aviso diz o que não deu certo
-      if (shareToFeed) {
+      if (shareToFeed && (user?.profileType !== "MARCA" || value.forSale)) {
         try {
           await api.post(`/api/interactions/PIECE/${p.id}/shares`, { channel: "FEED", ...(value.visibility === "PRIVATE" ? { publish: true } : {}) });
           toast.success(t("interactions.sharedToFeed"));
         } catch (e) { toast.fromError(e, t("pieces.new.share_falhou")); }
-      }
-      if (toFlair) {
-        try {
-          const card = await api.post<FlairCollectionCard>("/api/flair/cards", { pieceId: p.id });
-          toast.success(t("pieces.new.flair_feito", { tier: t(`flairCard.tier.${card.tier}`), ovr: card.ovr }));
-        } catch (e) { toast.fromError(e, t("pieces.new.flair_falhou")); }
       }
       // foto com outras peças ainda por cadastrar: volta à etapa Peça para escolher a próxima, sem sair da página
       if (mode === "photos" && photoPick) {
@@ -222,20 +201,22 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
       {step === "review" ? <Button variant="primary" size="lg" onClick={submit} loading={busy} disabled={!!done}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button> : <Button variant="primary" onClick={() => advance(STEPS[idx + 1])}>{t("common.next")}</Button>}
     </div>
   );
-  // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
   const wide = useWideScreen();
-  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category, subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(mode === "catalog" && pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: step === "review" ? savedVisibility(value.visibility, shareToFeed) : value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category, subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(mode === "catalog" && pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, ...(brandVerified && value.forSale ? { commerce: { negotiationStartedAt: new Date().toISOString(), expiresAt: listing.expiresOn ? listing.expiresOn + "T12:00:00Z" : null, tryOnCount: 0, viewCount: 0 } } : {}), visibility: step === "review" ? savedVisibility(brandVerified && value.forSale ? "PUBLIC" : value.visibility, shareToFeed) : value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   return (
     <>
       <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} actions={<CreatorWelcome kind="piece" onEntry />} />
       {/* RF54 — veio do "É minha" do FashionAI Lens: o que a leitura viu já está no formulário, para conferir */}
       {pre.fromLens && <LensPrefillNote scan={pre.scan} />}
       <SegmentPicker className="mb-4" label={t("pieces.new.forma_de_adicionar")} value={mode} onChange={setMode}
-        options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
+        options={[{ id: "catalog", label: t("marketplace.create_from_catalog") }, { id: "photos", label: t("marketplace.create_from_photo") }]} />
       <PieceCreationSteps value={step} onChange={advance} />
       {/* na etapa da arte o editor tem a própria prévia do mesmo card */}
       <div className={step === "art" ? "piece-create-layout is-art" : wide ? "piece-create-layout has-aside" : "piece-create-layout"}>
         <div className="piece-create-main min-w-0">
+          {step === "review" && brandVerified && value.forSale && <Card className="mb-3">
+            <BrandSaleFields value={listing} onChange={setListing} />
+          </Card>}
           {/* as fotos analisadas ficam montadas entre as etapas (só escondidas): voltar para a próxima peça não perde nada */}
           {mode === "photos" && (
             <div className="mb-4" hidden={step !== "piece"}><Card>
@@ -280,8 +261,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
           {step === "art" && <Card><PieceArtEditor background={background} onBackgroundChange={setBackground} piece={previewPiece} styles={value.style} occasions={value.occasion} previewPlacement={wide ? "inline" : "dialog"} />{nav}</Card>}
           {step === "review" && (
             <Card>
-              <PieceReviewStep value={value} origin={origin} image={officialImg ?? asset} shareToFeed={shareToFeed} onShareToFeed={setShareToFeed}
-                toFlair={toFlair} onToFlair={setToFlair} flairPreview={flairPreview}>
+              <PieceReviewStep value={user?.profileType === "MARCA" ? { ...value, visibility: brandVerified && value.forSale ? "PUBLIC" : "PRIVATE" } : value} origin={origin} shareToFeed={shareToFeed} onShareToFeed={setShareToFeed} brandVerified={!!brandVerified} brandProfile={user?.profileType === "MARCA"} onForSale={(forSale) => setValue((v) => ({ ...v, forSale }))}>
                 {saveProblem && <p role="alert" className="error-text mb-2">{saveProblem}</p>}
                 {nav}
               </PieceReviewStep>

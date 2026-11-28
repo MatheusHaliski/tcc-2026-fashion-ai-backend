@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,8 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Catálogo de marcas referenciado por ClothesPiece.brandId (taxonomia §brand). SEEDED = carga inicial;
@@ -68,6 +71,9 @@ public class Brand extends VersionedAuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_profile_id")
     private BrandProfile brandProfile;
+
+    @OneToMany(mappedBy = "brand")
+    private List<PhysicalStore> physicalStores = new ArrayList<>();
 
     public Brand(String name, String slug, BrandSource source) {
         this.name = name;

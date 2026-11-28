@@ -13,12 +13,11 @@ import { FaiIcon } from "@/components/fai-icon";
 import { MomentCard } from "@/components/moments/moment-shared";
 import { MomentNowHero } from "@/components/moments/moment-now";
 import { MomentCalendar } from "@/components/moments/moment-calendar";
-import { GroupMomentsPanel } from "@/components/moments/flair-moments";
 import { MomentsReplay } from "@/components/moments/moment-timeline";
 import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
-type Tab = "now" | "upcoming" | "calendar" | "mine" | "flair";
-const TABS: Tab[] = ["now", "upcoming", "calendar", "mine", "flair"];
+type Tab = "now" | "upcoming" | "calendar" | "mine";
+const TABS: Tab[] = ["now", "upcoming", "calendar", "mine"];
 
 /**
  * MOMENTOS — o tempo da moda dentro do FashionAI (docs/momentos/MOMENTOS.md). Não é uma lista de missões: é
@@ -36,7 +35,7 @@ function MomentsInner() {
   const [at, setAt] = useState(Date.now()); useEffect(() => { if (home.data) setAt(Date.now()); }, [home.data]);
   const h = home.data;
   const tabs = [{ id: "now" as Tab, label: t("moments.tab.now"), count: h?.active.length }, { id: "upcoming" as Tab, label: t("moments.tab.upcoming"), count: h?.upcoming.length }, { id: "calendar" as Tab, label: t("moments.tab.calendar") },
-    ...(user ? [{ id: "mine" as Tab, label: t("moments.tab.mine") }, { id: "flair" as Tab, label: t("moments.tab.flair"), count: h?.group ? h.group.activeCount + h.group.upcomingCount : undefined }] : [])];
+    ...(user ? [{ id: "mine" as Tab, label: t("moments.tab.mine") }] : [])];
   return (
     <>
       <PageHeader title={t("nav.moments")} kicker={t("moments.kicker")} lead={h?.principle ?? t("moments.lead")} actions={<><HowItWorks id="moments.calendar" /><Link href="/challenges" className="btn btn-sm"><FaiIcon id="ACT-43" size={24} decorative />{t("moments.routine_challenges")}</Link></>} />
@@ -49,7 +48,6 @@ function MomentsInner() {
           {h.active.filter((m) => m.id !== h.featured?.id).length > 0 && <section aria-labelledby="also-now"><h2 id="also-now" className="type-h3 mb-2">{t("moments.also_now")}</h2><div className="grid-looks">{h.active.filter((m) => m.id !== h.featured?.id).map((m) => <MomentCard key={m.id} m={m} receivedAt={at} />)}</div></section>}
           {h.upcoming.length > 0 && <section aria-labelledby="next-up"><div className="flex items-baseline justify-between"><h2 id="next-up" className="type-h3 mb-2">{t("moments.tab.upcoming")}</h2><button type="button" className="btn btn-ghost btn-sm" onClick={() => setTab("upcoming")}>{t("common.see")}</button></div><div className="grid-looks">{h.upcoming.slice(0, 3).map((m) => <MomentCard key={m.id} m={m} receivedAt={at} compact />)}</div></section>}
           {user && h.mine && <section className="grid gap-3 sm:grid-cols-3"><Card><p className="label">{t("moments.tab.mine")}</p><p className="type-body tabular">{t("moments.mine_summary", { participated: h.mine.participated, completed: h.mine.completed, points: h.mine.points })}</p><button type="button" className="btn btn-sm mt-2" onClick={() => setTab("mine")}>{t("common.see")}</button></Card>
-            <Card><p className="label">{t("moments.tab.flair")}</p><p className="type-body">{h.group ? t("moments.group_summary", { name: h.group.name, active: h.group.activeCount, upcoming: h.group.upcomingCount }) : t("moments.flair.no_group")}</p><button type="button" className="btn btn-sm mt-2" onClick={() => setTab("flair")}>{t("common.see")}</button></Card>
             <Card><p className="label">{t("moments.tab.calendar")}</p><p className="type-body">{t("moments.calendar_teaser")}</p><button type="button" className="btn btn-sm mt-2" onClick={() => setTab("calendar")}>{t("common.see")}</button></Card></section>}
         </div>
       ))}
@@ -64,7 +62,6 @@ function MomentsInner() {
           <Section title={t("moments.mine_completed")} items={mine.data.completed} at={at} empty={t("moments.mine_completed_empty")} />
         </div>
       ))}
-      {tab === "flair" && user && (home.loading ? <Skeleton className="h-48" /> : <GroupMomentsPanel group={h?.group ?? null} />)}
     </>
   );
 }

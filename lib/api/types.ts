@@ -1,3 +1,4 @@
+import type { PieceCommerce } from "@/lib/marketplace/piece-commerce";
 import type {FashionCard,AuraContextMetadata} from "@/lib/fashion-card/types";
 /** Tipos espelhando os records do backend (Views.java e serviços). Campos opcionais quando o backend pode omitir. */
 export interface UserCard {
@@ -28,6 +29,8 @@ export interface PieceView {
   brandLogoUrl?: string | null; brandSource?: string | null; color: string; colorHex?: string | null; material?: string; size?: string; market?: string; style: string[]; occasion: string[];
   seals: string[]; price?: number | null; imageUrl?: string | null; originalImageUrl?: string | null; thumbnailUrl?: string | null; defaultImage: boolean;
   /** RF4 · a foto da peça foi recriada por IA a pedido da pessoa: o card mostra o selo "IA" */ aiGeneratedImage?: boolean;
+  commerce?: PieceCommerce;
+  expiresAt?: string | null; archiveOnExpiry?: boolean;
   visibility: string; disponivel: boolean; availabilityStatus: string; condition?: string | null; favorite: boolean; forSale: boolean; wearCount: number;
   estadoConservacao?: ReferenceOption | null; origem?: ReferenceOption | null; corte?: ReferenceOption | null; colecao?: ReferenceOption | null; intensidadeTermica?: ReferenceOption | null; tipoLavagem?: ReferenceOption | null; careInstructions?: string | null;
   /** "Para doar" (estado público, como "à venda"; os dois são exclusivos — o backend limpa o outro) */ forDonation?: boolean;

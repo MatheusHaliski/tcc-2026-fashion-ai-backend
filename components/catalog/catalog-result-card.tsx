@@ -13,6 +13,10 @@ import { DefaultGarmentPhoto } from "./default-garment-photo";
 import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
 import { usePhotoFraming } from "@/lib/photo-framing";
 import { CatalogModel3d } from "./catalog-model3d";
+import { CatalogSaveButton } from "./catalog-save-button";
+import { CatalogPieceDetails } from "./catalog-piece-details";
+import { recordPieceActivity } from "@/lib/marketplace/piece-commerce";
+import { PieceCardFrame } from "@/components/pieces/piece-card-frame";
 
 const ProductFitDialog = dynamic(() => import("@/components/fit/ProductFitDialog").then(module => module.ProductFitDialog), { ssr: false });
 
@@ -31,16 +35,18 @@ function reasonLabel(r: MatchReason, t: T): string {
 }
 
 /** Card de resultado: foto oficial dominante (ou a ilustração da categoria), marca, nome, modelo, cor, tipo e fonte. */
-export function CatalogResultCard({ product: original, onPick, pickLabel, selectedVariant: controlledVariant, onVariantChange, busy, disabled }: {
+export function CatalogResultCard({ product: original, onPick, pickLabel, selectedVariant: controlledVariant, onVariantChange, busy, disabled, onSavedChange }: {
   product: CatalogProduct;
   onPick: (variant: CatalogVariant | null, prepared: CatalogProduct, prepare: () => CatalogProduct | Promise<CatalogProduct>) => void; busy?: boolean; disabled?: boolean;
   pickLabel?: string;
+  onSavedChange?: (saved: boolean) => void;
   selectedVariant?: CatalogVariant | null;
   onVariantChange?: (variant: CatalogVariant) => void;
 }) {
   const { t } = useI18n();
   const { user } = useAuth();
   const [fitOpen, setFitOpen] = useState(false);
+  const [details, setDetails] = useState(false);
   const tax = useTaxonomy();
   // a escolha local vale só para a resposta em que foi feita: se a busca devolve o mesmo produto em outra variante
   // (outro SKU, outra cor), a variante antiga não fica ativa por cima da nova (exercício 20)
@@ -61,8 +67,8 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
   const [framing] = usePhotoFraming();
   const source = p.source?.domain && p.source.domain !== "null" ? p.source.domain : t("catalog.fonte_fashionai");
   return (
-    <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
-      <div className="catalog-card-media" style={{ aspectRatio: framing === "WHOLE" ? "3 / 4" : photoAspect(p.catalogImage?.aspect) }}>
+    <PieceCardFrame ref={preview.ref} className="pc is-social catalog-card" aria-label={p.productName} aria-busy={preview.pending}>
+      <div className="pc-media catalog-card-media" style={{ aspectRatio: framing === "WHOLE" ? "3 / 4" : photoAspect(p.catalogImage?.aspect) }}>
         {!hasUsableCatalogPreview(p) || preview.failed || !img
           ? <><DefaultGarmentPhoto category={p.category} subcategory={p.subcategory} color={variant?.color ?? p.color} colorHex={variant?.color ? undefined : p.colorHex} framing={framing} alt={t("catalog.defaultIllustration")}/>{preview.failed && <button type="button" className="btn btn-sm catalog-photo-retry" onClick={preview.retry}>{t("common.retry")}</button>}</>
           : <CatalogPhoto requiredFrame onRetry={preview.retry} framing={framing} image={p.catalogImage} category={p.category} subcategory={p.subcategory} color={variant?.color ?? p.color} colorHex={variant?.color ? undefined : p.colorHex} alt={`${p.brand?.name ?? ""} ${p.productName}`}/>}
@@ -70,10 +76,17 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
         {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}
         {p.ingestionStatus === "DISCOVERED" && <Badge tone="chalk" className="catalog-card-new">{t("catalog.loja_oficial")}</Badge>}
       </div>
-      <div className="catalog-card-body">
+      <div className="pc-id catalog-card-body">
         <p className="flex items-center gap-1.5 type-caption text-muted"><BrandLogo name={p.brand?.name} src={p.brand?.logoUrl} size={18} />{p.brand?.name}</p>
-        <h3 className="type-h3 leading-tight">{p.productName}</h3>
+        <h3 className="pc-name type-h3 leading-tight">
+          <button type="button" className="text-left" onClick={() => {
+            setDetails(true);
+            if (user) recordPieceActivity("catalog", p.id, "view");
+          }}>{p.productName}</button>
+        </h3>
         <p className="type-body-sm text-muted">{[p.modelName && p.modelName !== p.productName ? p.modelName : null, subcategoryLabel(p.subcategory)].filter(Boolean).join(" · ")}</p>
+        {p.auraMetamorphoseStatus === "SPECIAL" && <Badge tone="chalk">{t("marketplace.special")}</Badge>}
+        {p.status === "EXPIRED" && <Badge tone="chalk">{t("marketplace.not_for_sale")}</Badge>}
         {p.description && <p className="catalog-card-desc type-caption text-muted">{p.description}</p>}
         {(p.matchScore?.reasons?.length ?? 0) > 0 && (
           <ul className="catalog-reasons" aria-label={t("catalog.design.por_que_esta")}>
@@ -94,7 +107,9 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
         {p.model3dUrl && <CatalogModel3d url={p.model3dUrl} name={p.productName} />}
         <Button variant="primary" size="sm" className="mt-2 self-start" onClick={() => onPick(variant, p, preview.prepare)} loading={busy} disabled={disabled}>{busy ? t("catalog.verificando_foto") : pickLabel ?? t("catalog.e_esta")}</Button>
       </div>
+      <footer className="c-extra"><CatalogSaveButton id={p.id} onChange={onSavedChange} /></footer>
+      {details && <CatalogPieceDetails product={p} onSavedChange={onSavedChange} onClose={() => setDetails(false)} />}
       {fitOpen && <ProductFitDialog product={p} open onClose={() => setFitOpen(false)} />}
-    </article>
+    </PieceCardFrame>
   );
 }

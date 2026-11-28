@@ -1,6 +1,7 @@
 package br.com.fashionai.domain.model;
 
 import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
+import br.com.fashionai.domain.model.enums.CatalogSaleStatus;
 import br.com.fashionai.domain.model.enums.CatalogSourceStatus;
 import br.com.fashionai.domain.model.enums.CatalogSourceType;
 import jakarta.persistence.CollectionTable;
@@ -11,6 +12,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -28,7 +30,11 @@ import org.hibernate.annotations.BatchSize;
 @NoArgsConstructor
 @Entity
 @Table(name = "catalog_products")
-public class CatalogProduct extends VersionedAuditableEntity {
+public class CatalogProduct extends PieceCommerceAttributes {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "managed_wardrobe_item_id")
+    private WardrobeItem managedPiece;
+
     @Column(name = "brand_id", nullable = false, length = 36)
     private UUID brandId;
 
@@ -146,6 +152,10 @@ public class CatalogProduct extends VersionedAuditableEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "ingestion_status", nullable = false, length = 30)
     private CatalogIngestionStatus ingestionStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private CatalogSaleStatus status = CatalogSaleStatus.AVAILABLE;
 
     @Column(name = "dedup_key", nullable = false, length = 255)
     private String dedupKey;

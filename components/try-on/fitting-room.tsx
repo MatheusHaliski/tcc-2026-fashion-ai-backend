@@ -1,4 +1,5 @@
 "use client";
+import { recordPieceActivity } from "@/lib/marketplace/piece-commerce";
 
 import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -66,6 +67,7 @@ export function FittingRoom() {
   function pickProduct(product: CatalogProduct, variant: CatalogVariant | null) {
     setHeroId(product.id);
     session.pickProduct(product, variant);
+    recordPieceActivity("catalog", product.id, "try-on");
   }
 
   function saveTry() {
@@ -141,7 +143,11 @@ export function FittingRoom() {
           {tab === "wardrobe" && (
             <WardrobeBrowser
               pieces={data.pieces} needsReview={data.needsReview} items={session.items} slotNames={session.slotNames}
-              onRemove={session.remove} onTryOnEntry={(entry) => session.tryOn(fromWardrobe(entry))}
+              onRemove={session.remove} onTryOnEntry={(entry) => {
+                const piece = fromWardrobe(entry);
+                session.tryOn(piece);
+                if (piece.pieceId) recordPieceActivity("wardrobe", piece.pieceId, "try-on");
+              }}
             />
           )}
           {tab === "saved" && <SavedTries saved={savedTries.saved} onRestore={restoreSaved} onDelete={savedTries.remove} />}

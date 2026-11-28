@@ -46,7 +46,7 @@ final class CatalogCards {
         m.put("gender", p.getGender());
         m.put("productCode", p.getProductCode());
         m.put("sku", p.getSku());
-        Map<String, Object> catalogImage = CatalogImagePipelineService.cardImage(img, p, productVariants);
+        Map<String, Object> catalogImage = ManagedCatalogPiece.image(p, b, CatalogImagePipelineService.cardImage(img, p, productVariants));
         UUID effective = CatalogImageIdentity.effectiveVariantId(img, p, productVariants);
         if (effective != null) {
             if (catalogImage != null) catalogImage.put("variantId", effective);
@@ -59,8 +59,11 @@ final class CatalogCards {
         m.put("source", Map.of("type", p.getSourceType().name(), "domain", String.valueOf(p.getSourceDomain()),
                 "productUrl", String.valueOf(p.getOfficialProductUrl()), "status", p.getSourceStatus().name(),
                 "lastVerifiedAt", String.valueOf(p.getLastVerifiedAt())));
+        m.put("status", ManagedCatalogPiece.saleStatus(p).name());
         m.put("ingestionStatus", p.getIngestionStatus().name());
         m.put("ownersCount", p.getOwnersCount());
+        m.put("commerce", ManagedCatalogPiece.commerce(p, b));
+        ManagedCatalogPiece.decorate(m, p, b);
         return m;
     }
 

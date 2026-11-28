@@ -294,7 +294,7 @@ public class WardrobeService {
             }
         }
         WardrobeItem w = CreationLookDefaults.piece(owner, form, draft, formWriter(), lookTypePreferences);
-        w.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
+        w.setVisibility(BrandClosetVisibility.effective(w, form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner)));
         if (draft != null) {
             draftImport.importDraft(owner, w, draft, form);
         } else {
@@ -443,7 +443,7 @@ public class WardrobeService {
 
     /** Visibilidade efetiva da peça: a mais restritiva entre a da peça e a do perfil do dono (mesma regra dos esquemas). */
     public static Visibility effectiveVisibility(WardrobeItem w) {
-        return SchemeService.moreRestrictive(w.getVisibility(), w.getUser().getProfileVisibility());
+        return SchemeService.moreRestrictive(BrandClosetVisibility.effective(w, w.getVisibility()), w.getUser().getProfileVisibility());
     }
 
     public Views.ViewerState viewerState(CurrentUser viewer, WardrobeItem w) {
@@ -496,7 +496,6 @@ public class WardrobeService {
             w.setFavorite(favorite);
         }
         if (disponivel != null) {
-            // disponível e indisponível são exclusivos entre si (RF31.CA06).
             boolean changed = w.isDisponivel() != disponivel;
             w.setDisponivel(disponivel);
             w.setAvailabilityStatus(disponivel ? AvailabilityStatus.AVAILABLE : AvailabilityStatus.UNAVAILABLE);
@@ -506,6 +505,7 @@ public class WardrobeService {
             }
         }
         PieceFormWriter.applyListing(w, forSale, forDonation);
+        if (forSale != null || forDonation != null) events.publishEvent(new DomainEvents.PieceSaleChanged(id));
         return Views.piece(w, viewerState(user, w), null);
     }
 

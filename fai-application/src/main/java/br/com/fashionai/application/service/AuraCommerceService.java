@@ -35,7 +35,11 @@ public class AuraCommerceService {
   offer.setCode(form.code());offer.setName(form.name().trim());offer.setFamily(form.family());offer.setPricePoints(form.pricePoints());offer.setActive(Boolean.TRUE.equals(form.active()));offer.setConfigJson(Json.write(form.config()));offers.save(offer);return view(offer);
  }
  @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED) public Map<String,Object> purchase(CurrentUser user,String code){
-  guard.requireApprovedInstitutional(user,"aura-store:purchase","Somente marcas e celebridades aprovadas podem comprar licença de arte AURA.");
+  if (user != null && user.profileType() == br.com.fashionai.domain.model.enums.ProfileType.PESSOAL) {
+   guard.requireCanCreate(user);
+  } else {
+   guard.requireApprovedInstitutional(user, "aura-store:purchase", "O perfil de marca precisa estar verificado.");
+  }
   ledger.lockOwner(user.id()).orElseThrow(()->ApiException.notFound("Usuário"));
   AuraArtOffer offer=offers.lockByCode(code).orElseThrow(()->ApiException.notFound("Preset"));
   Optional<AuraIssuerLicense> existing=licenses.findByOwnerIdAndPresetCode(user.id(),code);

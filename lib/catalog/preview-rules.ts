@@ -4,7 +4,7 @@ import type { CatalogProduct } from "@/lib/api/catalog";
  * Regras puras da prévia (foto enquadrada) do cartão do catálogo: identidade da fonte, campos que a prévia traz, e
  * quando uma prévia ainda vale para a variante, a categoria, a cor e a foto de origem atuais do produto.
  */
-export type PreviewFields = Pick<CatalogProduct, "catalogImage" | "imageProcessingStatus" | "images" | "imageSource">;
+export type PreviewFields = Pick<CatalogProduct, "wardrobeItemId" | "catalogImage" | "imageProcessingStatus" | "images" | "imageSource">;
 export type PreviewContext = PreviewFields & Partial<Pick<CatalogProduct, "selectedVariant" | "category" | "subcategory" | "color" | "imageUrl" | "imageSource">>;
 
 /** Identidade da fonte/variante: muda quando a foto precisa ser reenquadrada (exclui metadados editáveis sem relação). */
@@ -50,6 +50,7 @@ export const hasFlatLay = (product: PreviewContext) =>
   product.catalogImage?.whole?.version === "FLAT_LAY_V1" && !!product.catalogImage.whole.url;
 export function hasCachedPreview(product: PreviewContext) {
   if (hasFlatLay(product)) return true;
+  if (product.wardrobeItemId && hasUsableCatalogPreview(product)) return true;
   const state = product.catalogImage?.previewCache;
   if(product.catalogImage?.photoSet?.version === "CATALOG_PHOTO_SET_V2" && ["READY","DEFAULT"].includes(product.catalogImage.photoSet.status)) return hasUsableCatalogPreview(product);
   return hasUsableCatalogPreview(product) && state?.version === "CATALOG_PREVIEW_FRAMES_V2" && state.status === "READY";

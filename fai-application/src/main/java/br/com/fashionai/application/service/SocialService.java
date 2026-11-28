@@ -280,7 +280,7 @@ public class SocialService {
     public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel, boolean publish) {
         guard.requireCanCreate(user);
         Target t = target(user, type, id);
-        if (!t.available()) {
+        if (!t.available() || t.entity() instanceof WardrobeItem w && br.com.fashionai.application.wardrobe.BrandClosetVisibility.onlyInCloset(w)) {
             throw ApiException.conflict("INDISPONIVEL", Msg.t("social.este_conteudo_esta_marcado_como"));
         }
         Map<String, Object> out = new LinkedHashMap<>();

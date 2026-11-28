@@ -68,6 +68,9 @@ public class DnaService {
                               List<String> style, Season seasonalTheme, String rationale) {
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private FaiPointsService points;
+
     private final DnaOverview overviews;
     private final DnaLifeIdentity life;
     private final DnaCard card;
@@ -106,7 +109,9 @@ public class DnaService {
 
     @Transactional
     public Map<String, Object> generate(CurrentUser user, LifeForm form) {
-        return life.generate(user, form);
+        Map<String, Object> result = life.generate(user, form);
+        if (points != null) points.award(user.id(), "DNA_CREATED", "STYLE_DNA", "style-dna", null);
+        return result;
     }
 
     /** CA05 — editar a Identidade de Vida regenera só a Frase; a Camada 1 permanece intacta. */
@@ -141,7 +146,11 @@ public class DnaService {
     // ================================================================== Esquemas de DNA (anatomias A1–A4, narrativas B1–B12)
     @Transactional
     public Map<String, Object> createDnaScheme(CurrentUser user, DnaSchemeForm f) {
-        return writer.createDnaScheme(user, f);
+        Map<String, Object> result = writer.createDnaScheme(user, f);
+        if (points != null && result.get("id") != null) {
+            points.award(user.id(), "DNA_CREATED", "DNA_SCHEME", result.get("id").toString(), null);
+        }
+        return result;
     }
 
     @Transactional

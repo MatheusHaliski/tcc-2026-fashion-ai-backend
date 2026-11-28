@@ -6,5 +6,6 @@ public enum CatalogSourceType {
     OFFICIAL_STORE,
     AUTHORIZED_RETAILER,
     PARTNER_API,
+    VERIFIED_BRAND_PROFILE,
     MANUAL_ADMIN
 }
